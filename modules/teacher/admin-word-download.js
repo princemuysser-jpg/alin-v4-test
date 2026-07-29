@@ -46,8 +46,6 @@
 
   window.openTeacherRequestSource=async function(id){
     const result=await originalOpen(id);
-    const cur=typeof current!=='undefined'?current:(window.current||=async function(id){
-    const result=await originalOpen(id);
     const cur=typeof current!=='undefined'?current:(window.current||{});
 
     if(String(cur.role||'')==='admin'){

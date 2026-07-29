@@ -1,4 +1,4 @@
-const VERSION='alin-v4.0.7-admin-word-download';
+const VERSION='alin-v4.0.8-word-download-fix';
 const STATIC_CACHE=`${VERSION}-static`;
 const RUNTIME_CACHE=`${VERSION}-runtime`;
 const CORE=[
