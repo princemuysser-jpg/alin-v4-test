@@ -69,4 +69,5 @@
   window.ALINAuth=Object.assign(window.ALINAuth||{},
     {createAccount,createAccountFromAdmin,updateAccountFromAdmin,resetPasswordFromAdmin,repairAuthLink,deleteAccountFromAdmin});
   window.ALINAccountAdmin=Object.freeze({createAccount,createAccountFromAdmin,updateAccountFromAdmin,resetPasswordFromAdmin,repairAuthLink,deleteAccountFromAdmin});
+  window.addAccount=createAccountFromAdmin;
 })();
