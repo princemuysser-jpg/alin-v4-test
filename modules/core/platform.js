@@ -75,7 +75,7 @@
   function teacherName(id){return (stateDb.accounts?.teachers||[]).find(row=>String(row.id)===String(id))?.name||''}
   function libIsOpen(library){return !(library?.is_open===false||String(library?.is_open)==='false'||String(library?.open_status||'').toLowerCase()==='closed')}
   function libStatusText(library){return libIsOpen(library)?'مفتوح الآن':library?.open_note||'مغلق حالياً'}
-  function activeLibraries(){return (stateDb.accounts?.libraries||[]).filter(library=>library.status==='active')}
+  function activeLibraries(){return (stateDb.accounts?.libraries||[]).filter(library=>!library.status||library.status==='active')}
   function deliveryFee(){return Number(stateDb.settings?.delivery_fee||0)}
   function isMissingTableError(error,table=''){
     const message=String(error?.message||error||'').toLowerCase();

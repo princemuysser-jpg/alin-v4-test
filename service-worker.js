@@ -1,4 +1,4 @@
-const VERSION='alin-v4.0.0-clean';
+const VERSION='alin-v4.0.4-library-cart';
 const STATIC_CACHE=`${VERSION}-static`;
 const RUNTIME_CACHE=`${VERSION}-runtime`;
 const CORE=[

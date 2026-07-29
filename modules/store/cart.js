@@ -74,7 +74,7 @@
     return {subtotal,discount:Math.min(subtotal,Math.max(0,num(discount))),total:Math.max(0,subtotal-Math.max(0,num(discount))),coupon};
   }
   function hasProducts(){return rows().some(line=>line.kind!=='booklet')}
-  function activeLibraries(){return (window.db?.accounts?.libraries||[]).filter(item=>item.status==='active')}
+  function activeLibraries(){return (window.db?.accounts?.libraries||[]).filter(item=>!item.status||item.status==='active')}
   function libraryOpen(library){
     try{return typeof window.libIsOpen==='function'?!!window.libIsOpen(library):!(library?.is_open===false||String(library?.is_open)==='false'||library?.open_status==='closed')}catch(_){return true}
   }

@@ -1295,7 +1295,7 @@ window.Alin.helpers={
   function teacherName(id){return (stateDb.accounts?.teachers||[]).find(row=>String(row.id)===String(id))?.name||''}
   function libIsOpen(library){return !(library?.is_open===false||String(library?.is_open)==='false'||String(library?.open_status||'').toLowerCase()==='closed')}
   function libStatusText(library){return libIsOpen(library)?'مفتوح الآن':library?.open_note||'مغلق حالياً'}
-  function activeLibraries(){return (stateDb.accounts?.libraries||[]).filter(library=>library.status==='active')}
+  function activeLibraries(){return (stateDb.accounts?.libraries||[]).filter(library=>!library.status||library.status==='active')}
   function deliveryFee(){return Number(stateDb.settings?.delivery_fee||0)}
   function isMissingTableError(error,table=''){
     const message=String(error?.message||error||'').toLowerCase();
@@ -3923,7 +3923,7 @@ window.Alin.helpers={
     return {subtotal,discount:Math.min(subtotal,Math.max(0,num(discount))),total:Math.max(0,subtotal-Math.max(0,num(discount))),coupon};
   }
   function hasProducts(){return rows().some(line=>line.kind!=='booklet')}
-  function activeLibraries(){return (window.db?.accounts?.libraries||[]).filter(item=>item.status==='active')}
+  function activeLibraries(){return (window.db?.accounts?.libraries||[]).filter(item=>!item.status||item.status==='active')}
   function libraryOpen(library){
     try{return typeof window.libIsOpen==='function'?!!window.libIsOpen(library):!(library?.is_open===false||String(library?.is_open)==='false'||library?.open_status==='closed')}catch(_){return true}
   }
