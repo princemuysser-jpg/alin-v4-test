@@ -1,4 +1,4 @@
-const VERSION='alin-v4.0.9-teacher-review-status';
+const VERSION='alin-v4.0.10-teacher-status-guard';
 const STATIC_CACHE=`${VERSION}-static`;
 const RUNTIME_CACHE=`${VERSION}-runtime`;
 const CORE=[
