@@ -1,4 +1,4 @@
-const VERSION='alin-v4.0.5-tracking';
+const VERSION='alin-v4.0.6-word-preview';
 const STATIC_CACHE=`${VERSION}-static`;
 const RUNTIME_CACHE=`${VERSION}-runtime`;
 const CORE=[
