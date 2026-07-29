@@ -4745,12 +4745,12 @@ window.AlinCourierModules['recordCourierSettlementForOrder']=typeof recordCourie
       if(!c?.rpc)throw new Error('خدمة التتبع غير متاحة');
       const {data,error}=await c.rpc('alin_track_order',{p_order_number:code});
       if(error)throw error;
-      if(!data?.found){box.textContent='لم يتم العثور على الطلب. تأكد من رقم التتبع.';return}
-      const status=String(data.status||'new');
+      const order=Array.isArray(data)?data[0]:data;if(!order?.order_number){box.textContent='لم يتم العثور على الطلب. تأكد من رقم التتبع.';return}
+      const status=String(order.status||'new');
       const normalized=status==='delivered'?'completed':status;
       const reached=steps.indexOf(normalized);
-      box.innerHTML=`<b>${clean(data.order_number)} — ${clean(data.title||'طلب منصة آلين')}</b>${data.ready_eta?`<br><small>الجاهزية المتوقعة: ${clean(data.ready_eta)}</small>`:''}<div class="timeline v31">${steps.map((step,index)=>`<span class="${index<=Math.max(0,reached)?'done':''}">${labels[step]}</span>`).join('')}</div>`;
-      document.dispatchEvent(new CustomEvent('alin:tracking-rendered',{detail:{code,data,status:normalized}}));
+      box.innerHTML=`<b>${clean(order.order_number)} — ${clean(order.title||'طلب منصة آلين')}</b>${order.ready_eta?`<br><small>الجاهزية المتوقعة: ${clean(order.ready_eta)}</small>`:''}<div class="timeline v31">${steps.map((step,index)=>`<span class="${index<=Math.max(0,reached)?'done':''}">${labels[step]}</span>`).join('')}</div>`;
+      document.dispatchEvent(new CustomEvent('alin:tracking-rendered',{detail:{code,data:order,status:normalized}}));
     }catch(error){
       console.error('[ALIN tracking]',error);
       box.textContent='تعذر التحقق الآن. أعد المحاولة بعد قليل.';
