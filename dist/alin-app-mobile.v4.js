@@ -99,7 +99,7 @@ function alinV72TeacherName(item){
 async function teacherRequestStatus(id,status){ await update('teacher_requests',{status},{id}); await audit('teacher_request','تحديث طلب مدرس '+id+' إلى '+status); await load(); renderTeacherRequestsAdmin(); }
 
 async function openTeacherRequestSource(id){
-  const r=(db.teacherRequests||[]).find(x=>String(x.id)===String(id));
+  const r=(db.teacherRequests||db.teacher_requests||[]).find(x=>String(x.id)===String(id));
   if(!r?.source_file_path)return alert('لا يوجد ملف مرفوع لهذا الطلب');
   const fileName=String(r.source_file_name||r.source_file_path||'').toLowerCase();
   if(!fileName.endsWith('.docx') && String(r.source_file_type||'').toLowerCase()!=='docx'){
