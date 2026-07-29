@@ -1,4 +1,4 @@
-const VERSION='alin-v4.0.8-word-download-fix';
+const VERSION='alin-v4.0.9-teacher-review-status';
 const STATIC_CACHE=`${VERSION}-static`;
 const RUNTIME_CACHE=`${VERSION}-runtime`;
 const CORE=[
