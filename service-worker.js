@@ -1,4 +1,4 @@
-const VERSION='alin-v4.0.12-cache-fix';
+const VERSION='alin-v4.0.13-courier-assignment';
 const STATIC_CACHE=`${VERSION}-static`;
 const RUNTIME_CACHE=`${VERSION}-runtime`;
 const CORE=[

@@ -11,7 +11,7 @@
   const dbx=()=>window.db||{};
   const orders=()=>arr(dbx().orders);
   const libraries=()=>arr(dbx().accounts?.libraries);
-  const couriers=()=>arr(dbx().accounts?.couriers).length?arr(dbx().accounts?.couriers):arr(dbx().couriers);
+  const couriers=()=>{const a=arr(dbx().accounts?.couriers),d=arr(dbx().couriers),m=new Map(d.map(x=>[String(x.id),x]));return a.length?a.map(x=>({...x,...(m.get(String(x.id))||{}),id:x.id,status:x.status||(m.get(String(x.id))||{}).status})):d};
   const products=()=>arr(dbx().products);
   const statusLabels={
     pending:'قيد الانتظار',new:'جديد',pending_admin:'بانتظار الإدارة',payment_pending:'بانتظار الدفع',paid:'مدفوع',
