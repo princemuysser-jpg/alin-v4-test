@@ -98,12 +98,36 @@ Deno.serve(async (req: Request) => {
         });
         nextAuthUserId = resolved.id;
       } else if (nextAuthUserId) {
-        const authChanges: Record<string, unknown> = {
-          user_metadata: { name: nextName, username: nextUsername, role: requestedRole },
-        };
-        if (nextUsername !== normalizeUsername(account.username)) authChanges.email = emailForUsername(nextUsername);
-        const { error: authUpdateError } = await admin.auth.admin.updateUserById(nextAuthUserId, authChanges);
-        if (authUpdateError) throw authUpdateError;
+        const identityChanged =
+          nextUsername !== normalizeUsername(account.username)
+          || nextName !== cleanText(account.name, 120)
+          || requestedRole !== cleanText(account.role, 30);
+
+        if (identityChanged) {
+          const authChanges: Record<string, unknown> = {
+            user_metadata: { name: nextName, username: nextUsername, role: requestedRole },
+          };
+
+          if (nextUsername !== normalizeUsername(account.username)) {
+            authChanges.email = emailForUsername(nextUsername);
+          }
+
+          const { error: authUpdateError } = await admin.auth.admin.updateUserById(nextAuthUserId, authChanges);
+
+          if (authUpdateError) {
+            const authMessage = String(authUpdateError.message || '');
+
+            if (/user.*not found|not found|does not exist/i.test(authMessage)) {
+              throw new Error('رابط الدخول للحساب مفقود. اكتب كلمة مرور جديدة ثم احفظ الحساب');
+            }
+
+            if (/already (?:been )?registered|already exists|email.*registered|duplicate/i.test(authMessage)) {
+              throw new Error('اسم الدخول مستخدم مسبقاً');
+            }
+
+            throw authUpdateError;
+          }
+        }
       }
       account.auth_user_id = nextAuthUserId || null;
 
