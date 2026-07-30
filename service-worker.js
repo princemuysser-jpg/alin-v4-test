@@ -1,4 +1,4 @@
-const VERSION='alin-v4.0.13-courier-assignment';
+const VERSION='alin-v4.0.1-courier-assignment';
 const STATIC_CACHE=`${VERSION}-static`;
 const RUNTIME_CACHE=`${VERSION}-runtime`;
 const CORE=[
@@ -42,13 +42,13 @@ async function networkFirst(request){
     if(response.ok)await cache.put(request,response.clone());
     return response;
   }catch(_){
-    return (await cache.match(request,{ignoreSearch:false}))||(await caches.match(request,{ignoreSearch:false}))||Response.error();
+    return (await cache.match(request,{ignoreSearch:true}))||(await caches.match(request,{ignoreSearch:true}))||Response.error();
   }
 }
 
 async function staleWhileRevalidate(request,event){
   const cache=await caches.open(STATIC_CACHE);
-  const cached=await cache.match(request,{ignoreSearch:false});
+  const cached=await cache.match(request,{ignoreSearch:true});
   const refresh=fetch(request,{cache:'no-store'}).then(async response=>{
     if(response.ok)await cache.put(request,response.clone());
     return response;
@@ -59,7 +59,7 @@ async function staleWhileRevalidate(request,event){
 
 async function cacheFirstRuntime(request){
   const cache=await caches.open(RUNTIME_CACHE);
-  const cached=await cache.match(request,{ignoreSearch:false});
+  const cached=await cache.match(request,{ignoreSearch:true});
   if(cached)return cached;
   const response=await fetch(request);
   if(response.ok)await cache.put(request,response.clone());
@@ -75,14 +75,14 @@ self.addEventListener('fetch',event=>{
   if(request.mode==='navigate'){
     event.respondWith(networkFirst(request).then(async response=>
       response&&response.type!=='error'?response:
-      (await caches.match(request,{ignoreSearch:false}))||(await caches.match('./index.html'))
+      (await caches.match(request,{ignoreSearch:true}))||(await caches.match('./index.html'))
     ));
     return;
   }
 
   if(url.origin===self.location.origin){
     const codeAsset=['script','style','worker'].includes(request.destination)||/\.(?:html?|css|js|json|webmanifest)$/i.test(url.pathname);
-    if(codeAsset){event.respondWith(networkFirst(request));return;}
+    if(codeAsset){event.respondWith(staleWhileRevalidate(request,event));return;}
     event.respondWith(cacheFirstRuntime(request));
     return;
   }

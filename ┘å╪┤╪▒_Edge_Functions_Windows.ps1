@@ -1,4 +1,4 @@
-param(
+﻿param(
   [Parameter(Mandatory=$true)][string]$ProjectRef,
   [Parameter(Mandatory=$true)][string]$BootstrapKey,
   [Parameter(Mandatory=$true)][string]$AllowedOrigins
@@ -15,5 +15,6 @@ npx supabase functions deploy admin-create-account --project-ref $ProjectRef
 npx supabase functions deploy admin-update-account --project-ref $ProjectRef
 npx supabase functions deploy admin-delete-account --project-ref $ProjectRef
 npx supabase functions deploy admin-reset-password --project-ref $ProjectRef
+npx supabase functions deploy admin-assign-order --project-ref $ProjectRef
 Write-Host 'تم نشر وظائف منصة آلين.' -ForegroundColor Green
 Write-Host 'بعد إنشاء أول مدير غيّر أو احذف ALIN_BOOTSTRAP_KEY واحذف setup-new-project.html من الموقع العام.' -ForegroundColor Yellow
