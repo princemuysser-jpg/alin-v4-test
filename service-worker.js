@@ -1,4 +1,4 @@
-const VERSION='alin-v4.1.1-boot-connection-fixed';
+const VERSION='alin-v4.1.2-courier-assignment-fixed';
 const STATIC_CACHE=`${VERSION}-static`;
 const RUNTIME_CACHE=`${VERSION}-runtime`;
 
