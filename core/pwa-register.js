@@ -7,7 +7,7 @@
 
   window.addEventListener('load',async()=>{
     try{
-      const registration=await navigator.serviceWorker.register('./service-worker.js?v=4.0.0',{scope:'./',updateViaCache:'none'});
+      const registration=await navigator.serviceWorker.register('./service-worker.js?v=4.0.12',{scope:'./',updateViaCache:'none'});
       registration.addEventListener('updatefound',()=>{
         const worker=registration.installing;
         if(!worker)return;
