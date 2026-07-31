@@ -1,4 +1,4 @@
-/* ALIN mobile recovery — tracking + options actions — 2026-07-31 */
+/* ALIN recovery — tracking + options actions — 2026-08-01 */
 (function(){
   'use strict';
 
@@ -14,15 +14,24 @@
 
   function closeMobileSheets(){
     if(typeof window.alinCloseMobileSheets === 'function'){
-      window.alinCloseMobileSheets();
-      return;
+      try{
+        window.alinCloseMobileSheets();
+      }catch(error){
+        console.warn('ALIN sheet close error', error);
+      }
     }
+
     ['alinAccountSheet','alinTrackingSheet'].forEach(function(id){
       var element = byId(id);
       if(element) element.hidden = true;
     });
+
     var backdrop = byId('alinSheetBackdrop');
     if(backdrop) backdrop.hidden = true;
+
+    var desktopModal = byId('alinDesktopOptionsModal');
+    if(desktopModal) desktopModal.classList.add('hidden');
+
     if(document.body) document.body.style.overflow = '';
   }
 
@@ -108,30 +117,182 @@
     }
   }
 
+  function optionRoots(){
+    return document.querySelectorAll('#alinAccountSheet, #alinDesktopOptionsModal');
+  }
+
   function updateOptionStates(){
     var currentLanguage =
       (window.AlinI18n && typeof window.AlinI18n.current === 'function'
         ? window.AlinI18n.current()
         : document.documentElement.dataset.alinLanguage) || 'ar';
 
-    document.querySelectorAll('#alinAccountSheet [data-lang]').forEach(function(button){
-      var active = button.getAttribute('data-lang') === currentLanguage;
-      button.classList.toggle('active', active);
-      button.classList.toggle('is-active', active);
-      button.setAttribute('aria-pressed', active ? 'true' : 'false');
+    optionRoots().forEach(function(root){
+      root.querySelectorAll('[data-lang]').forEach(function(button){
+        var active = button.getAttribute('data-lang') === currentLanguage;
+        button.classList.toggle('active', active);
+        button.classList.toggle('is-active', active);
+        button.setAttribute('aria-pressed', active ? 'true' : 'false');
+      });
     });
 
     var currentTheme = document.documentElement.dataset.alinTheme === 'dark' ? 'dark' : 'light';
-    document.querySelectorAll('#alinAccountSheet [data-theme]').forEach(function(button){
-      var active = button.getAttribute('data-theme') === currentTheme;
-      button.classList.toggle('active', active);
-      button.classList.toggle('is-active', active);
-      button.setAttribute('aria-pressed', active ? 'true' : 'false');
+    optionRoots().forEach(function(root){
+      root.querySelectorAll('[data-theme]').forEach(function(button){
+        var active = button.getAttribute('data-theme') === currentTheme;
+        button.classList.toggle('active', active);
+        button.classList.toggle('is-active', active);
+        button.setAttribute('aria-pressed', active ? 'true' : 'false');
+      });
     });
   }
 
+  function ensureDesktopOptionsStyle(){
+    if(byId('alinDesktopOptionsStyle')) return;
+
+    var style = document.createElement('style');
+    style.id = 'alinDesktopOptionsStyle';
+    style.textContent =
+      'body.store-desktop .desktop-options-icon{display:grid;place-items:center;width:25px;height:25px}' +
+      'body.store-desktop .desktop-options-icon svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}' +
+      '#alinDesktopOptionsModal .alin-desktop-options-card{width:min(760px,calc(100vw - 40px));max-width:760px;padding:24px;border-radius:24px}' +
+      '#alinDesktopOptionsModal .alin-desktop-options-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:18px;padding-left:40px}' +
+      '#alinDesktopOptionsModal .alin-desktop-options-head h2{margin:0 0 5px;color:#0b3158;font-size:26px}' +
+      '#alinDesktopOptionsModal .alin-desktop-options-head p{margin:0;color:#66778a}' +
+      '#alinDesktopOptionsModal .alin-desktop-options-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}' +
+      '#alinDesktopOptionsModal .alin-desktop-option{display:grid;gap:11px;min-width:0;padding:17px;border:1px solid #dfe6ee;border-radius:18px;background:#fff;color:#14365b;text-align:right;box-shadow:0 8px 24px rgba(15,48,81,.06)}' +
+      '#alinDesktopOptionsModal button.alin-desktop-option{cursor:pointer}' +
+      '#alinDesktopOptionsModal .alin-desktop-option strong{font-size:17px}' +
+      '#alinDesktopOptionsModal .alin-desktop-option small{color:#6b7b8d;line-height:1.6}' +
+      '#alinDesktopOptionsModal .alin-desktop-option-title{display:flex;align-items:center;gap:10px}' +
+      '#alinDesktopOptionsModal .alin-desktop-option-icon{display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:#edf5fc;font-size:20px}' +
+      '#alinDesktopOptionsModal .alin-desktop-choice-group{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}' +
+      '#alinDesktopOptionsModal .alin-desktop-choice-group.theme{grid-template-columns:repeat(2,minmax(0,1fr))}' +
+      '#alinDesktopOptionsModal .alin-choice{min-height:42px;border:1px solid #d6e0ea;border-radius:12px;background:#f5f8fb;color:#173b61;font-weight:800;cursor:pointer}' +
+      '#alinDesktopOptionsModal .alin-choice.active,#alinDesktopOptionsModal .alin-choice.is-active,#alinDesktopOptionsModal .alin-choice[aria-pressed="true"]{border-color:#0c416f;background:#0c416f;color:#fff}' +
+      'html[data-alin-theme="dark"] #alinDesktopOptionsModal .alin-desktop-options-card{background:#0a2239;color:#eaf4ff}' +
+      'html[data-alin-theme="dark"] #alinDesktopOptionsModal .alin-desktop-options-head h2,html[data-alin-theme="dark"] #alinDesktopOptionsModal .alin-desktop-option strong{color:#eaf4ff}' +
+      'html[data-alin-theme="dark"] #alinDesktopOptionsModal .alin-desktop-options-head p,html[data-alin-theme="dark"] #alinDesktopOptionsModal .alin-desktop-option small{color:#a9bdd1}' +
+      'html[data-alin-theme="dark"] #alinDesktopOptionsModal .alin-desktop-option{border-color:#29445f;background:#102d48;color:#eaf4ff}' +
+      'html[data-alin-theme="dark"] #alinDesktopOptionsModal .alin-desktop-option-icon,html[data-alin-theme="dark"] #alinDesktopOptionsModal .alin-choice{border-color:#34516c;background:#173753;color:#eaf4ff}' +
+      '@media(max-width:760px){#alinDesktopOptionsModal .alin-desktop-options-grid{grid-template-columns:1fr}}';
+
+    document.head.appendChild(style);
+  }
+
+  function ensureDesktopOptionsUi(){
+    if(!document.body || !document.body.classList.contains('store-desktop')) return;
+
+    ensureDesktopOptionsStyle();
+
+    var actions = document.querySelector('.desktop-store-actions');
+    if(actions && !byId('alinDesktopOptionsButton')){
+      var button = document.createElement('button');
+      button.id = 'alinDesktopOptionsButton';
+      button.type = 'button';
+      button.className = 'desktop-action desktop-options';
+      button.setAttribute('aria-label', 'خيارات');
+      button.innerHTML =
+        '<span class="desktop-options-icon" aria-hidden="true">' +
+          '<svg viewBox="0 0 24 24"><path d="M4 7h10"/><path d="M18 7h2"/><circle cx="16" cy="7" r="2"/><path d="M4 17h2"/><path d="M10 17h10"/><circle cx="8" cy="17" r="2"/></svg>' +
+        '</span><small>خيارات</small>';
+
+      var exitButton = actions.querySelector('[data-desktop-control="exit"]');
+      actions.insertBefore(button, exitButton || null);
+
+      button.addEventListener('click', function(){
+        if(typeof window.alinOpenDesktopOptions === 'function'){
+          window.alinOpenDesktopOptions();
+        }
+      });
+    }
+
+    var modal = byId('alinDesktopOptionsModal');
+    if(!modal){
+      modal = document.createElement('div');
+      modal.id = 'alinDesktopOptionsModal';
+      modal.className = 'modal hidden';
+      modal.setAttribute('role', 'dialog');
+      modal.setAttribute('aria-modal', 'true');
+      modal.setAttribute('aria-label', 'خيارات');
+      modal.innerHTML =
+        '<div class="modal-card alin-desktop-options-card">' +
+          '<button type="button" class="x" data-desktop-options-close aria-label="إغلاق">×</button>' +
+          '<div class="alin-desktop-options-head"><div><h2>خيارات</h2><p>الحساب واللغة ومظهر المنصة</p></div></div>' +
+          '<div class="alin-desktop-options-grid">' +
+            '<button type="button" class="alin-desktop-option" data-desktop-option-action="account">' +
+              '<span class="alin-desktop-option-title"><span class="alin-desktop-option-icon">👤</span><strong>حسابي</strong></span>' +
+              '<small>تسجيل الدخول وإدارة حساب الطالب</small>' +
+            '</button>' +
+            '<section class="alin-desktop-option">' +
+              '<span class="alin-desktop-option-title"><span class="alin-desktop-option-icon">🌐</span><strong>اللغة</strong></span>' +
+              '<small>اختر لغة واجهة المنصة</small>' +
+              '<div class="alin-desktop-choice-group">' +
+                '<button type="button" class="alin-choice" data-lang="ar">العربية</button>' +
+                '<button type="button" class="alin-choice" data-lang="ku">کوردی</button>' +
+                '<button type="button" class="alin-choice" data-lang="en">English</button>' +
+              '</div>' +
+            '</section>' +
+            '<section class="alin-desktop-option">' +
+              '<span class="alin-desktop-option-title"><span class="alin-desktop-option-icon">◐</span><strong>المظهر</strong></span>' +
+              '<small>الوضع النهاري أو الليلي</small>' +
+              '<div class="alin-desktop-choice-group theme">' +
+                '<button type="button" class="alin-choice" data-theme="light">نهاري</button>' +
+                '<button type="button" class="alin-choice" data-theme="dark">ليلي</button>' +
+              '</div>' +
+            '</section>' +
+            '<button type="button" class="alin-desktop-option" data-desktop-option-action="contact">' +
+              '<span class="alin-desktop-option-title"><span class="alin-desktop-option-icon">💬</span><strong>تواصل معنا</strong></span>' +
+              '<small>للاستفسار والدعم</small>' +
+            '</button>' +
+            '<button type="button" class="alin-desktop-option" data-desktop-option-action="about">' +
+              '<span class="alin-desktop-option-title"><span class="alin-desktop-option-icon">ⓘ</span><strong>حول منصة آلين</strong></span>' +
+              '<small>معلومات عن المنصة وخدماتها</small>' +
+            '</button>' +
+          '</div>' +
+        '</div>';
+
+      document.body.appendChild(modal);
+
+      modal.addEventListener('click', function(event){
+        if(event.target === modal || event.target.closest('[data-desktop-options-close]')){
+          closeMobileSheets();
+          return;
+        }
+
+        var languageButton = event.target.closest('[data-lang]');
+        if(languageButton && typeof window.alinSetLanguage === 'function'){
+          window.alinSetLanguage(languageButton.getAttribute('data-lang'));
+          return;
+        }
+
+        var themeButton = event.target.closest('[data-theme]');
+        if(themeButton && typeof window.alinSetTheme === 'function'){
+          window.alinSetTheme(themeButton.getAttribute('data-theme'));
+          return;
+        }
+
+        var actionButton = event.target.closest('[data-desktop-option-action]');
+        if(!actionButton) return;
+
+        var action = actionButton.getAttribute('data-desktop-option-action');
+        if(action === 'account' && typeof window.alinOpenRealAccount === 'function'){
+          window.alinOpenRealAccount();
+        }else if(action === 'contact' && typeof window.alinContactUs === 'function'){
+          window.alinContactUs();
+        }else if(action === 'about' && typeof window.alinAboutPlatform === 'function'){
+          window.alinAboutPlatform();
+        }
+      });
+    }
+  }
+
   function installOptionActions(){
-    if(!document.body || !document.body.classList.contains('store-mobile')) return;
+    if(!document.body) return;
+
+    var isMobile = document.body.classList.contains('store-mobile');
+    var isDesktop = document.body.classList.contains('store-desktop');
+    if(!isMobile && !isDesktop) return;
 
     window.alinOpenRealAccount = function(){
       closeMobileSheets();
@@ -233,6 +394,20 @@
       showInfo(title, text, '');
     };
 
+    window.alinOpenDesktopOptions = function(){
+      ensureDesktopOptionsUi();
+      var modal = byId('alinDesktopOptionsModal');
+      if(!modal) return false;
+      modal.classList.remove('hidden');
+      updateOptionStates();
+      return true;
+    };
+
+    window.alinCloseDesktopOptions = function(){
+      closeMobileSheets();
+    };
+
+    ensureDesktopOptionsUi();
     updateOptionStates();
   }
 
