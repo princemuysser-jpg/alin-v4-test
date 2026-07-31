@@ -488,3 +488,12 @@ html[data-alin-theme="dark"] body.store-mobile .mobile-header-icon-btn{
   body.store-mobile .v99-deal-copy{padding:18px!important}
   body.store-mobile .v99-deal-copy h2{font-size:23px!important}
 }
+
+/* ALIN v4.2.2 — hide the legacy shell header whenever the public store page is active. */
+body.store-mobile #app:has(> main > #storePage:not(.hidden)) > .topbar{
+  display:none!important;
+}
+body.store-mobile #app:has(> main > #storePage:not(.hidden)) > main{
+  margin:0!important;
+  padding:0!important;
+}
