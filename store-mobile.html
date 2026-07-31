@@ -77,6 +77,328 @@
   <link rel="stylesheet" href="./store/banners.css?v=4.1.5">
 <style id="alinAuthBootStyle">html[data-alin-auth-boot="1"] body>*{visibility:hidden!important}html[data-alin-auth-boot="1"] body::before{content:"جارٍ فتح منصة آلين...";visibility:visible;position:fixed;inset:0;display:grid;place-items:center;background:#f7f9fc;color:#102342;font:800 18px system-ui;z-index:2147483647}</style>
 <script>setTimeout(()=>document.documentElement.removeAttribute('data-alin-auth-boot'),3500)</script>
+
+<style id="alin-mobile-layout-fix-v415">
+/* ALIN v4.1.5 — mobile layout correction, 2026-07-31.
+   Presentation only. No JavaScript, Supabase, cart, order or account logic changes. */
+
+/* Keep the fixed bottom navigation from covering the final content. */
+body.store-mobile #storePage{
+  padding-bottom:calc(132px + env(safe-area-inset-bottom))!important;
+}
+body.store-mobile #storePage .store-shell{
+  padding-bottom:calc(118px + env(safe-area-inset-bottom))!important;
+}
+
+/* The bottom navigation already owns order tracking; remove the duplicated large block. */
+body.store-mobile #orderTrackBox{
+  display:none!important;
+}
+
+/* One clean search border instead of a bordered input inside a bordered label. */
+body.store-mobile .mobile-search-premium,
+body.store-mobile .mobile-search-row{
+  min-width:0!important;
+}
+body.store-mobile .mobile-search-premium label,
+body.store-mobile .mobile-search-row label{
+  display:flex!important;
+  align-items:center!important;
+  width:100%!important;
+  min-width:0!important;
+  overflow:hidden!important;
+}
+body.store-mobile .mobile-search-premium input,
+body.store-mobile .mobile-search-row input,
+body.store-mobile #searchInput{
+  flex:1 1 auto!important;
+  width:100%!important;
+  min-width:0!important;
+  height:100%!important;
+  margin:0!important;
+  padding:0 8px!important;
+  border:0!important;
+  outline:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  -webkit-appearance:none!important;
+  appearance:none!important;
+}
+body.store-mobile #searchInput:focus{
+  border:0!important;
+  outline:0!important;
+  box-shadow:none!important;
+}
+
+/* Stable two-column catalogue and a centred final card when the count is odd. */
+body.store-mobile #storeGrid{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  align-items:stretch!important;
+  gap:10px!important;
+  width:100%!important;
+  min-width:0!important;
+}
+body.store-mobile #storeGrid>.v99-product-card{
+  display:flex!important;
+  flex-direction:column!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  height:100%!important;
+  margin:0!important;
+}
+body.store-mobile #storeGrid>.v99-product-card:last-child:nth-child(odd){
+  grid-column:1 / -1!important;
+  justify-self:center!important;
+  width:calc((100% - 10px)/2)!important;
+}
+body.store-mobile #storeGrid .v99-product-body{
+  display:flex!important;
+  flex:1 1 auto!important;
+  flex-direction:column!important;
+  min-width:0!important;
+}
+body.store-mobile #storeGrid .v99-actions{
+  margin-top:auto!important;
+}
+body.store-mobile #storeGrid .v99-product-body h3,
+body.store-mobile #storeGrid .v99-product-body p,
+body.store-mobile #storeGrid .v99-card-meta span{
+  overflow-wrap:anywhere!important;
+}
+
+/* Options sheet: reset legacy generic button/card rules and give every row a clear owner. */
+body.store-mobile #alinAccountSheet{
+  right:10px!important;
+  left:10px!important;
+  bottom:max(8px,env(safe-area-inset-bottom))!important;
+  width:auto!important;
+  max-width:none!important;
+  max-height:calc(100dvh - 18px)!important;
+  padding:10px 14px 20px!important;
+  overflow:auto!important;
+  border-radius:24px 24px 14px 14px!important;
+  box-sizing:border-box!important;
+}
+body.store-mobile #alinAccountSheet .alin-sheet-head{
+  display:flex!important;
+  align-items:flex-start!important;
+  justify-content:space-between!important;
+  gap:12px!important;
+  margin:0 0 12px!important;
+  padding:12px 2px 14px!important;
+  border-bottom:1px solid #dfe5ec!important;
+}
+body.store-mobile #alinAccountSheet .alin-sheet-head>div{
+  min-width:0!important;
+}
+body.store-mobile #alinAccountSheet .alin-sheet-head h2{
+  margin:0!important;
+  font-size:26px!important;
+  line-height:1.25!important;
+}
+body.store-mobile #alinAccountSheet .alin-sheet-head p{
+  margin:5px 0 0!important;
+  font-size:12px!important;
+  line-height:1.55!important;
+}
+body.store-mobile #alinAccountSheet .alin-sheet-head>button{
+  position:static!important;
+  flex:0 0 42px!important;
+  display:grid!important;
+  place-items:center!important;
+  width:42px!important;
+  min-width:42px!important;
+  height:42px!important;
+  margin:0!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:14px!important;
+  background:#0b3a66!important;
+  color:#fff!important;
+  box-shadow:none!important;
+  font-size:27px!important;
+  line-height:1!important;
+}
+body.store-mobile #alinAccountSheet .alin-options-list{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr)!important;
+  gap:10px!important;
+  width:100%!important;
+  min-width:0!important;
+  padding:0!important;
+}
+body.store-mobile #alinAccountSheet .alin-option-action{
+  position:static!important;
+  display:grid!important;
+  grid-template-columns:46px minmax(0,1fr) 18px!important;
+  align-items:center!important;
+  gap:11px!important;
+  width:100%!important;
+  min-width:0!important;
+  min-height:76px!important;
+  height:auto!important;
+  margin:0!important;
+  padding:12px!important;
+  overflow:hidden!important;
+  border:1px solid #dde5ee!important;
+  border-radius:17px!important;
+  background:#fff!important;
+  color:#102f55!important;
+  box-shadow:0 7px 20px rgba(9,39,75,.07)!important;
+  text-align:right!important;
+  line-height:normal!important;
+}
+body.store-mobile #alinAccountSheet .alin-option-action>div{
+  display:grid!important;
+  gap:4px!important;
+  min-width:0!important;
+  text-align:right!important;
+}
+body.store-mobile #alinAccountSheet .alin-option-action b,
+body.store-mobile #alinAccountSheet .alin-option-row b{
+  display:block!important;
+  margin:0!important;
+  color:#102f55!important;
+  font-size:16px!important;
+  font-weight:900!important;
+  line-height:1.35!important;
+}
+body.store-mobile #alinAccountSheet .alin-option-action small,
+body.store-mobile #alinAccountSheet .alin-option-row small{
+  display:block!important;
+  margin:0!important;
+  color:#6b7788!important;
+  font-size:11px!important;
+  font-weight:600!important;
+  line-height:1.55!important;
+  white-space:normal!important;
+}
+body.store-mobile #alinAccountSheet .alin-option-icon{
+  position:static!important;
+  display:grid!important;
+  place-items:center!important;
+  width:46px!important;
+  min-width:46px!important;
+  height:46px!important;
+  margin:0!important;
+  padding:0!important;
+  border-radius:14px!important;
+  background:#f2f6fa!important;
+  color:#0b3a66!important;
+  font-size:22px!important;
+  line-height:1!important;
+  box-shadow:none!important;
+}
+body.store-mobile #alinAccountSheet .alin-option-chevron{
+  position:static!important;
+  display:block!important;
+  width:18px!important;
+  min-width:18px!important;
+  color:#8c98a8!important;
+  font-size:28px!important;
+  line-height:1!important;
+  text-align:center!important;
+}
+body.store-mobile #alinAccountSheet .alin-option-row{
+  position:static!important;
+  display:grid!important;
+  grid-template-columns:46px minmax(0,1fr)!important;
+  grid-template-areas:"icon copy" "choices choices"!important;
+  align-items:center!important;
+  gap:10px 11px!important;
+  width:100%!important;
+  min-width:0!important;
+  min-height:0!important;
+  margin:0!important;
+  padding:12px!important;
+  overflow:hidden!important;
+  border:1px solid #dde5ee!important;
+  border-radius:17px!important;
+  background:#fff!important;
+  color:#102f55!important;
+  box-shadow:0 7px 20px rgba(9,39,75,.07)!important;
+  text-align:right!important;
+}
+body.store-mobile #alinAccountSheet .alin-option-row>.alin-option-icon{
+  grid-area:icon!important;
+}
+body.store-mobile #alinAccountSheet .alin-option-row>div:not(.alin-choice-group){
+  grid-area:copy!important;
+  display:grid!important;
+  gap:4px!important;
+  min-width:0!important;
+}
+body.store-mobile #alinAccountSheet .alin-choice-group{
+  grid-area:choices!important;
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:7px!important;
+  width:100%!important;
+  min-width:0!important;
+  margin:0!important;
+  padding:0!important;
+}
+body.store-mobile #alinAccountSheet .alin-choice-group.alin-theme-toggle{
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+}
+body.store-mobile #alinAccountSheet .alin-choice{
+  position:static!important;
+  display:grid!important;
+  place-items:center!important;
+  width:100%!important;
+  min-width:0!important;
+  height:43px!important;
+  min-height:43px!important;
+  margin:0!important;
+  padding:0 5px!important;
+  border:1px solid #d8e1eb!important;
+  border-radius:13px!important;
+  background:#f5f8fb!important;
+  color:#15375e!important;
+  box-shadow:none!important;
+  font-size:13px!important;
+  font-weight:800!important;
+  line-height:1.2!important;
+  white-space:nowrap!important;
+}
+body.store-mobile #alinAccountSheet .alin-choice.active,
+body.store-mobile #alinAccountSheet .alin-choice.is-active,
+body.store-mobile #alinAccountSheet .alin-choice[aria-pressed="true"]{
+  border-color:#0c416f!important;
+  background:#0c416f!important;
+  color:#fff!important;
+}
+
+html[data-alin-theme="dark"] body.store-mobile #alinAccountSheet .alin-option-action,
+html[data-alin-theme="dark"] body.store-mobile #alinAccountSheet .alin-option-row{
+  border-color:var(--ao-border)!important;
+  background:var(--ao-surface)!important;
+  color:var(--ao-ink)!important;
+}
+html[data-alin-theme="dark"] body.store-mobile #alinAccountSheet .alin-option-action b,
+html[data-alin-theme="dark"] body.store-mobile #alinAccountSheet .alin-option-row b{
+  color:var(--ao-ink)!important;
+}
+html[data-alin-theme="dark"] body.store-mobile #alinAccountSheet .alin-option-icon,
+html[data-alin-theme="dark"] body.store-mobile #alinAccountSheet .alin-choice{
+  border-color:var(--ao-border)!important;
+  background:#102a44!important;
+  color:var(--ao-ink)!important;
+}
+
+@media(max-width:370px){
+  body.store-mobile #alinAccountSheet{right:6px!important;left:6px!important;padding-inline:10px!important}
+  body.store-mobile #alinAccountSheet .alin-option-action,
+  body.store-mobile #alinAccountSheet .alin-option-row{padding:10px!important;gap:8px!important}
+  body.store-mobile #alinAccountSheet .alin-choice{font-size:11px!important}
+  body.store-mobile #storeGrid{gap:7px!important}
+  body.store-mobile #storeGrid>.v99-product-card:last-child:nth-child(odd){width:calc((100% - 7px)/2)!important}
+}
+
+</style>
 </head>
 <body class="store-mobile">
 <section class="login" id="login">
