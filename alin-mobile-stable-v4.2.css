@@ -1,0 +1,490 @@
+/* ALIN v4.2.0 — stable mobile layout.
+   Layout only: no business logic, event handlers, Supabase calls, or role permissions. */
+
+html,
+body.store-mobile{
+  width:100%;
+  max-width:100%;
+  overflow-x:clip!important;
+}
+
+body.store-mobile{
+  margin:0!important;
+  padding:0 0 calc(86px + env(safe-area-inset-bottom))!important;
+  background:var(--ao-bg,#f6f8fb)!important;
+}
+
+body.store-mobile *,
+body.store-mobile *::before,
+body.store-mobile *::after{box-sizing:border-box}
+
+body.store-mobile #app,
+body.store-mobile #app>main,
+body.store-mobile #storePage,
+body.store-mobile .store-shell{
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+}
+
+/* Store mode already exists in navigation.js. No observer or extra JavaScript is needed. */
+body.store-mobile #app.store-mode>.topbar{display:none!important}
+body.store-mobile #app.store-mode>main{margin:0!important;padding:0!important}
+
+body.store-mobile #storePage{
+  margin:0 auto!important;
+  padding:0 12px calc(94px + env(safe-area-inset-bottom))!important;
+  overflow:visible!important;
+}
+body.store-mobile .store-shell{padding:0 0 24px!important}
+
+/* Header: identity and actions above a full-width search field. */
+body.store-mobile .alin-mobile-premium-header,
+body.store-mobile .alin98-header{
+  position:sticky!important;
+  top:0!important;
+  z-index:900!important;
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) auto!important;
+  grid-template-areas:"brand actions" "search search"!important;
+  align-items:center!important;
+  gap:9px!important;
+  width:auto!important;
+  min-width:0!important;
+  margin:0 -12px!important;
+  padding:10px 12px 12px!important;
+  border:0!important;
+  border-bottom:1px solid #e2e8f0!important;
+  border-radius:0!important;
+  background:rgba(255,255,255,.97)!important;
+  box-shadow:0 7px 22px rgba(7,31,61,.07)!important;
+  backdrop-filter:blur(14px);
+}
+body.store-mobile .alin-mobile-brand,
+body.store-mobile .alin98-brand{
+  grid-area:brand!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  gap:8px!important;
+  width:auto!important;
+  min-width:0!important;
+}
+body.store-mobile .alin98-logo{
+  width:42px!important;
+  min-width:42px!important;
+  height:42px!important;
+  border-radius:13px!important;
+  font-size:23px!important;
+}
+body.store-mobile .alin98-brand>span{min-width:0!important}
+body.store-mobile .alin98-brand strong{
+  display:block!important;
+  overflow:hidden!important;
+  font-size:17px!important;
+  line-height:1.25!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+}
+body.store-mobile .alin98-brand small{
+  display:block!important;
+  max-width:210px!important;
+  margin-top:2px!important;
+  overflow:hidden!important;
+  color:#667085!important;
+  font-size:10px!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+}
+body.store-mobile .mobile-header-actions{
+  grid-area:actions!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-end!important;
+  gap:6px!important;
+  width:auto!important;
+  min-width:0!important;
+  margin:0!important;
+}
+body.store-mobile .mobile-header-actions .mobile-header-icon-btn,
+body.store-mobile .alin-v94-notification-button{
+  display:grid!important;
+  place-items:center!important;
+  width:42px!important;
+  min-width:42px!important;
+  height:42px!important;
+  padding:0!important;
+  border:1px solid #dbe3ed!important;
+  border-radius:13px!important;
+  background:#f8fafc!important;
+  color:#0b3158!important;
+  box-shadow:none!important;
+  visibility:visible!important;
+  opacity:1!important;
+}
+body.store-mobile .mobile-header-actions .mobile-header-icon-btn small,
+body.store-mobile .alin-v94-notification-button small{display:none!important}
+body.store-mobile .mobile-search-row,
+body.store-mobile .mobile-search-premium{
+  grid-area:search!important;
+  display:block!important;
+  width:100%!important;
+  min-width:0!important;
+  margin:0!important;
+}
+body.store-mobile .mobile-search-row label,
+body.store-mobile .mobile-search-premium label{
+  display:flex!important;
+  align-items:center!important;
+  gap:9px!important;
+  width:100%!important;
+  min-width:0!important;
+  height:46px!important;
+  margin:0!important;
+  padding:0 12px!important;
+  border:1px solid #dbe3ed!important;
+  border-radius:14px!important;
+  background:#f7f9fc!important;
+  box-shadow:none!important;
+}
+body.store-mobile .mobile-search-row input,
+body.store-mobile .mobile-search-premium input{
+  flex:1 1 auto!important;
+  width:100%!important;
+  min-width:0!important;
+  height:100%!important;
+  padding:0!important;
+  border:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  color:#102a4d!important;
+  font-size:14px!important;
+  text-align:right!important;
+}
+body.store-mobile .mobile-account-status{
+  display:block!important;
+  margin:8px 2px 10px!important;
+  color:#667085!important;
+  font-size:11px!important;
+  text-align:right!important;
+}
+
+/* Four categories stay as two readable rows on phones and portrait tablets. */
+body.store-mobile .alin98-cats{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:9px!important;
+  width:100%!important;
+  min-width:0!important;
+  margin:0 0 18px!important;
+}
+body.store-mobile .alin98-cats>button[data-v99-category]{
+  display:grid!important;
+  grid-template-columns:43px minmax(0,1fr)!important;
+  align-items:center!important;
+  justify-items:start!important;
+  gap:9px!important;
+  width:100%!important;
+  min-width:0!important;
+  min-height:76px!important;
+  padding:10px!important;
+  overflow:hidden!important;
+  border-radius:16px!important;
+  text-align:right!important;
+  touch-action:manipulation;
+}
+body.store-mobile .alin98-cats .cat-icon{
+  width:43px!important;
+  min-width:43px!important;
+  height:43px!important;
+  border-radius:13px!important;
+}
+body.store-mobile .alin98-cats .cat-copy{
+  display:block!important;
+  width:100%!important;
+  min-width:0!important;
+  overflow:hidden!important;
+}
+body.store-mobile .alin98-cats .cat-copy strong{
+  display:block!important;
+  margin:0 0 3px!important;
+  overflow:hidden!important;
+  font-size:14px!important;
+  line-height:1.25!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+}
+body.store-mobile .alin98-cats .cat-copy small{
+  display:-webkit-box!important;
+  overflow:hidden!important;
+  font-size:9px!important;
+  line-height:1.35!important;
+  white-space:normal!important;
+  -webkit-box-orient:vertical!important;
+  -webkit-line-clamp:2!important;
+}
+
+body.store-mobile .alin98-title,
+body.store-mobile .v99-section-head{
+  display:flex!important;
+  align-items:flex-end!important;
+  justify-content:space-between!important;
+  gap:10px!important;
+  min-width:0!important;
+  margin:17px 0 10px!important;
+}
+body.store-mobile .alin98-title>div,
+body.store-mobile .v99-section-head>div{min-width:0!important}
+body.store-mobile .alin98-title h2,
+body.store-mobile .v99-section-head h2{
+  margin:0!important;
+  font-size:21px!important;
+  line-height:1.35!important;
+}
+body.store-mobile .alin98-title button{flex:0 0 auto!important}
+
+/* Two-column catalogue at every supported mobile/tablet width. */
+body.store-mobile #storeGrid{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:10px!important;
+  width:100%!important;
+  min-width:0!important;
+  margin:0!important;
+}
+body.store-mobile #storeGrid>*{
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+}
+body.store-mobile #storeGrid .v99-product-card,
+body.store-mobile #storeGrid .alin-v76-card,
+body.store-mobile #storeGrid .card{
+  width:100%!important;
+  min-width:0!important;
+  margin:0!important;
+  overflow:hidden!important;
+  border-radius:16px!important;
+}
+body.store-mobile #storeGrid .v99-product-media,
+body.store-mobile #storeGrid .alin-v76-cover,
+body.store-mobile #storeGrid .cover{
+  width:100%!important;
+  height:150px!important;
+  min-height:150px!important;
+  overflow:hidden!important;
+}
+body.store-mobile #storeGrid .v99-product-media img,
+body.store-mobile #storeGrid .alin-v76-cover img,
+body.store-mobile #storeGrid .cover img{
+  width:100%!important;
+  height:100%!important;
+  object-fit:cover!important;
+}
+body.store-mobile #storeGrid .v99-product-body,
+body.store-mobile #storeGrid .alin-v76-body{min-width:0!important;padding:10px!important}
+body.store-mobile #storeGrid h3{
+  margin:5px 0!important;
+  overflow:hidden!important;
+  font-size:14px!important;
+  line-height:1.4!important;
+  text-overflow:ellipsis!important;
+}
+body.store-mobile #storeGrid p,
+body.store-mobile #storeGrid small{
+  overflow:hidden!important;
+  font-size:10px!important;
+  line-height:1.4!important;
+  text-overflow:ellipsis!important;
+}
+body.store-mobile #storeGrid .price,
+body.store-mobile #storeGrid .alin-v76-price,
+body.store-mobile #storeGrid .v99-price{
+  margin:6px 0!important;
+  font-size:16px!important;
+}
+body.store-mobile #storeGrid .v99-actions,
+body.store-mobile #storeGrid .alin-v76-actions{
+  display:grid!important;
+  grid-template-columns:1fr!important;
+  gap:6px!important;
+}
+body.store-mobile #storeGrid button{
+  width:100%!important;
+  min-width:0!important;
+  min-height:40px!important;
+  padding:8px 5px!important;
+  border-radius:11px!important;
+  font-size:11px!important;
+  touch-action:manipulation;
+}
+
+/* Horizontal discovery rails never widen the document. */
+body.store-mobile .v99-rail-root,
+body.store-mobile .v99-personalized,
+body.store-mobile .v99-curated-rails{width:100%!important;max-width:100%!important;min-width:0!important}
+body.store-mobile .v99-rail{
+  max-width:100%!important;
+  grid-auto-columns:min(78vw,300px)!important;
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+  overscroll-behavior-inline:contain!important;
+  scroll-snap-type:inline proximity;
+}
+body.store-mobile .v99-rail>*{scroll-snap-align:start}
+
+body.store-mobile #orderTrackBox,
+body.store-mobile .store-real-stats,
+body.store-mobile .store-success{max-width:100%!important}
+body.store-mobile #orderTrackBox .track-form{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) auto!important;
+  gap:7px!important;
+}
+body.store-mobile #orderTrackBox input{min-width:0!important}
+body.store-mobile .store-real-stats{
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:6px!important;
+}
+
+/* Stable bottom bar and sheets. */
+body.store-mobile .alin98-bottom,
+body.store-mobile .alin-mobile-bottom-v103{
+  right:8px!important;
+  left:8px!important;
+  bottom:max(7px,env(safe-area-inset-bottom))!important;
+  width:auto!important;
+  min-height:64px!important;
+  transform:none!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  padding:5px!important;
+  border-radius:20px!important;
+}
+body.store-mobile .alin98-bottom button,
+body.store-mobile .alin-mobile-bottom-v103 button{
+  min-width:0!important;
+  min-height:52px!important;
+  padding:5px 2px!important;
+  border-radius:14px!important;
+}
+body.store-mobile .alin98-bottom small,
+body.store-mobile .alin-mobile-bottom-v103 small{
+  overflow:hidden!important;
+  font-size:9px!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+}
+body.store-mobile .alin-mobile-sheet{
+  right:8px!important;
+  left:8px!important;
+  width:auto!important;
+  max-width:none!important;
+  max-height:calc(100dvh - 16px)!important;
+  transform:none!important;
+  overflow:auto!important;
+  border-radius:22px 22px 12px 12px!important;
+}
+
+/* Partner pages: horizontal tabs and one-column content on mobile. */
+body.store-mobile #teacherPage,
+body.store-mobile #libraryPage,
+body.store-mobile #courierPage,
+body.store-mobile #adminPage{
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  padding:12px 12px calc(92px + env(safe-area-inset-bottom))!important;
+  overflow-x:clip!important;
+}
+body.store-mobile .teacher-tabs,
+body.store-mobile .library-v116-tabs,
+body.store-mobile .courier-v161-tabs,
+body.store-mobile #adminPage .admin-tabs{
+  display:flex!important;
+  flex-wrap:nowrap!important;
+  gap:7px!important;
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  padding:7px!important;
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+  scrollbar-width:none;
+}
+body.store-mobile .teacher-tabs::-webkit-scrollbar,
+body.store-mobile .library-v116-tabs::-webkit-scrollbar,
+body.store-mobile .courier-v161-tabs::-webkit-scrollbar,
+body.store-mobile #adminPage .admin-tabs::-webkit-scrollbar{display:none}
+body.store-mobile .teacher-tabs button,
+body.store-mobile .library-v116-tabs button,
+body.store-mobile .courier-v161-tabs button,
+body.store-mobile #adminPage .admin-tabs button{
+  flex:0 0 auto!important;
+  width:auto!important;
+  min-width:max-content!important;
+  white-space:nowrap!important;
+}
+body.store-mobile #teacherContent,
+body.store-mobile #libraryV116Content,
+body.store-mobile #courierV161Content,
+body.store-mobile #adminContent{width:100%!important;max-width:100%!important;min-width:0!important}
+body.store-mobile .form-grid,
+body.store-mobile .two,
+body.store-mobile .admin-v122-order,
+body.store-mobile .v164-order-grid{grid-template-columns:1fr!important}
+body.store-mobile .row{min-width:0!important}
+
+/* Dark mode keeps the same geometry. */
+html[data-alin-theme="dark"] body.store-mobile .alin-mobile-premium-header,
+html[data-alin-theme="dark"] body.store-mobile .alin98-header{
+  background:rgba(9,29,51,.98)!important;
+  border-color:#24425e!important;
+}
+html[data-alin-theme="dark"] body.store-mobile .mobile-search-row label,
+html[data-alin-theme="dark"] body.store-mobile .mobile-search-premium label,
+html[data-alin-theme="dark"] body.store-mobile .mobile-header-icon-btn{
+  background:#102a44!important;
+  border-color:#31516e!important;
+  color:#f4f7fb!important;
+}
+
+@media (max-width:374px){
+  body.store-mobile #storePage{padding-inline:8px!important}
+  body.store-mobile .alin-mobile-premium-header,
+  body.store-mobile .alin98-header{margin-inline:-8px!important;padding-inline:8px!important}
+  body.store-mobile .alin98-brand strong{font-size:16px!important}
+  body.store-mobile .alin98-brand small{max-width:145px!important}
+  body.store-mobile .alin98-cats{gap:7px!important}
+  body.store-mobile .alin98-cats>button[data-v99-category]{grid-template-columns:38px minmax(0,1fr)!important;gap:7px!important;padding:8px!important}
+  body.store-mobile .alin98-cats .cat-icon{width:38px!important;min-width:38px!important;height:38px!important}
+  body.store-mobile #storeGrid{gap:7px!important}
+  body.store-mobile #storeGrid .v99-product-media,
+  body.store-mobile #storeGrid .alin-v76-cover,
+  body.store-mobile #storeGrid .cover{height:132px!important;min-height:132px!important}
+}
+
+@media (min-width:600px) and (max-width:899px){
+  body.store-mobile #storePage{max-width:760px!important;padding-inline:18px!important}
+  body.store-mobile .alin-mobile-premium-header,
+  body.store-mobile .alin98-header{margin-inline:-18px!important;padding-inline:18px!important}
+  body.store-mobile .alin98-cats{gap:12px!important}
+  body.store-mobile .alin98-cats>button[data-v99-category]{min-height:84px!important;padding:12px!important}
+  body.store-mobile #storeGrid{gap:14px!important}
+  body.store-mobile #storeGrid .v99-product-media,
+  body.store-mobile #storeGrid .alin-v76-cover,
+  body.store-mobile #storeGrid .cover{height:190px!important;min-height:190px!important}
+  body.store-mobile .v99-rail{grid-auto-columns:min(44vw,320px)!important}
+  body.store-mobile .alin98-bottom,
+  body.store-mobile .alin-mobile-bottom-v103{right:50%!important;left:auto!important;width:min(680px,calc(100% - 24px))!important;transform:translateX(50%)!important}
+  body.store-mobile .alin-mobile-sheet{right:50%!important;left:auto!important;width:min(620px,calc(100% - 24px))!important;transform:translateX(50%)!important}
+}
+
+@media (min-width:600px) and (max-width:899px){
+  body.store-mobile .v99-deal-feature{
+    grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr)!important;
+    min-height:220px!important;
+  }
+  body.store-mobile .v99-deal-media{min-height:220px!important}
+  body.store-mobile .v99-deal-copy{padding:18px!important}
+  body.store-mobile .v99-deal-copy h2{font-size:23px!important}
+}
