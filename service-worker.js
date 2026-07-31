@@ -1,4 +1,4 @@
-const VERSION='alin-v4.2.1-mobile-desktop-unified';
+const VERSION='alin-v4.1.5-tracking-case-fixed';
 const STATIC_CACHE=`${VERSION}-static`;
 const RUNTIME_CACHE=`${VERSION}-runtime`;
 
@@ -7,12 +7,12 @@ const CORE=[
   './','./index.html','./store-desktop.html','./store-mobile.html','./alin-config.js',
   './manifest-desktop.webmanifest','./manifest-mobile.webmanifest',
   './dist/alin-core.v4.js','./alin-app-desktop.v4.1.5.js','./alin-app-mobile.v4.1.5.js',
-  './modules/core/navigation.js','./options.js','./modules/core/account-admin-service.js',
+  './modules/core/navigation.js','./modules/core/account-admin-service.js',
   './modules/teacher/admin-word-download.js','./core/boot-recovery.js','./core/pwa-register.js',
   './core/device-router.js','./core/runtime-guard.js','./core/splash.js',
   './dist/css/desktop.bundle.css','./dist/css/mobile.bundle.css',
   './styles/alin-tokens.css','./styles/alin-shared.css','./styles/alin-branding.css',
-  './styles/alin-i18n.css','./styles/alin-desktop.css','./styles/alin-mobile.css','./alin-mobile-stable-v4.2.css','./styles/alin-splash.css',
+  './styles/alin-i18n.css','./styles/alin-desktop.css','./styles/alin-mobile.css','./styles/alin-splash.css',
   './store/banners.css','./store/mobile-navigation.css',
   './assets/images/alin-splash-desktop.webp','./assets/images/alin-splash-mobile.webp',
   './assets/icons/icon-192.png','./assets/icons/icon-512.png'
