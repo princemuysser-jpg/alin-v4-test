@@ -1147,10 +1147,10 @@ window.AlinTeacherModules.unpublishTeacherBooklet=unpublishTeacherBooklet;
   function drawProtectedPrintFooter(canvas,order){
     const context=canvas?.getContext?.('2d');
     if(!context)return;
-    const fontSize=Math.max(13,Math.min(22,Math.round(canvas.width/72)));
+    const fontSize=Math.max(16,Math.min(28,Math.round(canvas.width/58)));
     const x=Math.round(canvas.width/2);
-    const y=Math.round(canvas.height*0.54);
-    const maxWidth=Math.round(canvas.width*0.72);
+    const y=Math.round(canvas.height*0.52);
+    const maxWidth=Math.round(canvas.width*0.82);
     let darkBackground=false;
     try{
       const sampleWidth=Math.max(60,Math.min(maxWidth,canvas.width));
@@ -1166,9 +1166,11 @@ window.AlinTeacherModules.unpublishTeacherBooklet=unpublishTeacherBooklet;
       darkBackground=samples>0&&(luminance/samples)<128;
     }catch(_){darkBackground=false;}
     context.save();
-    context.globalAlpha=darkBackground?0.24:0.11;
-    context.fillStyle=darkBackground?'#ffffff':'#1f2f46';
-    context.font=`600 ${fontSize}px Tahoma, Arial, sans-serif`;
+    context.globalAlpha=darkBackground?0.58:0.34;
+    context.fillStyle=darkBackground?'#ffffff':'#17263b';
+    context.font=`700 ${fontSize}px Tahoma, Arial, sans-serif`;
+    context.shadowColor=darkBackground?'rgba(0,0,0,.45)':'rgba(255,255,255,.75)';
+    context.shadowBlur=Math.max(1,Math.round(fontSize*0.08));
     context.textAlign='center';
     context.textBaseline='middle';
     if('direction' in context)context.direction='rtl';

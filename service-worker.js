@@ -1,4 +1,4 @@
-const VERSION='alin-v4.1.6-protected-print-center';
+const VERSION='alin-v4.1.6-protected-print-center-clear';
 const STATIC_CACHE=`${VERSION}-static`;
 const RUNTIME_CACHE=`${VERSION}-runtime`;
 
