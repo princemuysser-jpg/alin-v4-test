@@ -1130,6 +1130,34 @@ window.AlinTeacherModules.unpublishTeacherBooklet=unpublishTeacherBooklet;
   const toastSafe=(m)=>typeof toast==='function'?toast(m):alert(m);
   const escSafe=(v)=>typeof esc==='function'?esc(v):String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const copies=(o)=>Math.max(1,Number(o?.qty||o?.quantity||1));
+  function libraryNameForProtectedPrint(order){
+    try{
+      const dbx=window.db||{};
+      const id=String(order?.library_id||order?.pickup_library_id||order?.assigned_library_id||'');
+      const libraries=[...(Array.isArray(dbx.accounts?.libraries)?dbx.accounts.libraries:[]),...(Array.isArray(dbx.libraries)?dbx.libraries:[])];
+      const library=libraries.find(item=>[item?.id,item?.library_id,item?.account_id,item?.user_id].some(value=>String(value||'')===id));
+      return String(library?.name||window.current?.name||'المكتبة');
+    }catch(_){return String(window.current?.name||'المكتبة');}
+  }
+  function protectedPrintText(order){
+    const orderNo=String(order?.order_number||order?.id||'—');
+    const date=new Date().toLocaleDateString('ar-IQ',{year:'numeric',month:'2-digit',day:'2-digit'});
+    return `منصة آلين • الطلب ${orderNo} • ${libraryNameForProtectedPrint(order)} • ${date}`;
+  }
+  function drawProtectedPrintFooter(canvas,order){
+    const context=canvas?.getContext?.('2d');
+    if(!context)return;
+    const fontSize=Math.max(9,Math.min(16,Math.round(canvas.width/120)));
+    context.save();
+    context.globalAlpha=0.24;
+    context.fillStyle='#26364b';
+    context.font=`${fontSize}px Tahoma, Arial, sans-serif`;
+    context.textAlign='center';
+    context.textBaseline='bottom';
+    if('direction' in context)context.direction='rtl';
+    context.fillText(protectedPrintText(order),canvas.width/2,canvas.height-Math.max(4,Math.round(fontSize*0.35)),canvas.width-Math.max(24,fontSize*2));
+    context.restore();
+  }
   function findOrder(id){try{return (db.orders||[]).find(x=>String(x.id)===String(id));}catch(_){return null;}}
   function findBooklet(order){
     try{
@@ -1196,6 +1224,7 @@ window.AlinTeacherModules.unpublishTeacherBooklet=unpublishTeacherBooklet;
       canvas.setAttribute('aria-label',`صفحة ${n}`);
       surface.appendChild(canvas);wrap.append(label,surface);pages.appendChild(wrap);
       await page.render({canvasContext:canvas.getContext('2d',{alpha:false}),viewport}).promise;
+      drawProtectedPrintFooter(canvas,activeOrder);
     }
     status.hidden=true;
     status.style.display='none';
@@ -1243,6 +1272,7 @@ window.AlinTeacherModules.unpublishTeacherBooklet=unpublishTeacherBooklet;
         const viewport=page.getViewport({scale:2});
         const canvas=document.createElement('canvas');canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height);
         await page.render({canvasContext:canvas.getContext('2d',{alpha:false}),viewport}).promise;
+        drawProtectedPrintFooter(canvas,activeOrder);
         images.push(canvas.toDataURL('image/jpeg',0.96));
       }
       let frame=document.getElementById('alinPrintFrameV119');

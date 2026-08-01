@@ -1,4 +1,4 @@
-const VERSION='alin-v4.1.5-tracking-case-fixed';
+const VERSION='alin-v4.1.6-protected-print';
 const STATIC_CACHE=`${VERSION}-static`;
 const RUNTIME_CACHE=`${VERSION}-runtime`;
 
