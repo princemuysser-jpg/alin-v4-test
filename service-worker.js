@@ -1,4 +1,4 @@
-const VERSION='alin-v4.1.7.2-complete-deployment-fix';
+const VERSION='alin-v4.1.7.3-complete-deployment-fix';
 const STATIC_CACHE=`${VERSION}-static`;
 const RUNTIME_CACHE=`${VERSION}-runtime`;
 
@@ -47,9 +47,9 @@ self.addEventListener('message',event=>{
 });
 
 function fallbackPath(request){
-  const pathname=new URL(request.url).pathname.toLowerCase();
-  if(pathname.endsWith('/store-mobile.html'))return './store-mobile.html';
-  if(pathname.endsWith('/store-desktop.html'))return './store-desktop.html';
+  const pathname=new URL(request.url).pathname.toLowerCase().replace(/\/+$/,'');
+  if(/\/store-mobile(?:\.html)?$/.test(pathname))return './store-mobile.html';
+  if(/\/store-desktop(?:\.html)?$/.test(pathname))return './store-desktop.html';
   return './index.html';
 }
 
