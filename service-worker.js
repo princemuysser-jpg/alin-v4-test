@@ -1,10 +1,11 @@
-const VERSION='alin-v4.1.5-tracking-case-fixed';
+const VERSION='alin-v4.1.7-performance-student-isolation';
 const STATIC_CACHE=`${VERSION}-static`;
 const RUNTIME_CACHE=`${VERSION}-runtime`;
 
-// ملفات التشغيل الأساسية. تُخزّن مسبقاً حتى لا تفتح الواجهة بدون التطبيق.
+// ملفات التشغيل الأساسية. تُخزّن مسبقاً حتى تفتح المنصة فوراً في الزيارات التالية.
 const CORE=[
   './','./index.html','./store-desktop.html','./store-mobile.html','./alin-config.js',
+  './alin-performance-v4.1.7.js',
   './manifest-desktop.webmanifest','./manifest-mobile.webmanifest',
   './dist/alin-core.v4.js','./alin-app-desktop.v4.1.5.js','./alin-app-mobile.v4.1.5.js',
   './modules/core/navigation.js','./modules/core/account-admin-service.js',
@@ -38,23 +39,8 @@ self.addEventListener('activate',event=>event.waitUntil(
 ));
 self.addEventListener('message',event=>{if(event.data?.type==='SKIP_WAITING')self.skipWaiting()});
 
-async function networkFirst(request,timeoutMs=15000){
-  const cache=await caches.open(RUNTIME_CACHE);
-  const controller=new AbortController();
-  const timer=setTimeout(()=>controller.abort(),timeoutMs);
-  try{
-    const response=await fetch(request,{cache:'no-store',signal:controller.signal});
-    if(response.ok)await cache.put(request,response.clone());
-    return response;
-  }catch(_){
-    return (await cache.match(request,{ignoreSearch:true}))
-      ||(await caches.match(request,{ignoreSearch:true}))
-      ||Response.error();
-  }finally{clearTimeout(timer)}
-}
-
-async function staleWhileRevalidate(request,event){
-  const cache=await caches.open(STATIC_CACHE);
+async function staleWhileRevalidate(request,event,cacheName=STATIC_CACHE){
+  const cache=await caches.open(cacheName);
   const cached=await cache.match(request,{ignoreSearch:true});
   const refresh=fetch(request,{cache:'no-store'}).then(async response=>{
     if(response.ok)await cache.put(request,response.clone());
@@ -77,20 +63,22 @@ self.addEventListener('fetch',event=>{
   const request=event.request;
   if(request.method!=='GET')return;
   const url=new URL(request.url);
+
+  // بيانات Supabase تبقى مباشرة ولا تُخزّن داخل Service Worker.
   if(url.hostname.includes('supabase.co'))return;
 
+  // الصفحة تظهر من الكاش فوراً، ويجري تحديثها بالخلفية.
   if(request.mode==='navigate'){
-    event.respondWith(networkFirst(request,15000).then(async response=>
+    event.respondWith(staleWhileRevalidate(request,event,STATIC_CACHE).then(async response=>
       response&&response.type!=='error'?response:
-      (await caches.match(request,{ignoreSearch:true}))||(await caches.match('./index.html',{ignoreSearch:true}))
+      (await caches.match('./index.html',{ignoreSearch:true}))||Response.error()
     ));
     return;
   }
 
   if(url.origin===self.location.origin){
     const codeAsset=['script','style','worker'].includes(request.destination)||/\.(?:html?|css|js|json|webmanifest)$/i.test(url.pathname);
-    // لا نقطع ملفات التطبيق بعد 3.5 ثوانٍ. نخدم النسخة المخزنة ونحدّثها بالخلفية.
-    if(codeAsset){event.respondWith(staleWhileRevalidate(request,event));return;}
+    if(codeAsset){event.respondWith(staleWhileRevalidate(request,event,STATIC_CACHE));return;}
     event.respondWith(cacheFirstRuntime(request));
     return;
   }
