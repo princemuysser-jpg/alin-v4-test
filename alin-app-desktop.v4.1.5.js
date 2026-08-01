@@ -1147,32 +1147,32 @@ window.AlinTeacherModules.unpublishTeacherBooklet=unpublishTeacherBooklet;
   function drawProtectedPrintFooter(canvas,order){
     const context=canvas?.getContext?.('2d');
     if(!context)return;
-    const fontSize=Math.max(9,Math.min(14,Math.round(canvas.width/135)));
-    const margin=Math.max(12,Math.round(fontSize*1.2));
-    const y=canvas.height-Math.max(7,Math.round(fontSize*0.65));
-    const maxWidth=Math.round(canvas.width*0.46);
+    const fontSize=Math.max(13,Math.min(22,Math.round(canvas.width/72)));
+    const x=Math.round(canvas.width/2);
+    const y=Math.round(canvas.height*0.54);
+    const maxWidth=Math.round(canvas.width*0.72);
     let darkBackground=false;
     try{
-      const sampleWidth=Math.max(24,Math.min(maxWidth,canvas.width-margin));
-      const sampleHeight=Math.max(8,Math.round(fontSize*1.4));
-      const sampleX=Math.max(0,canvas.width-margin-sampleWidth);
-      const sampleY=Math.max(0,Math.min(canvas.height-sampleHeight,y-sampleHeight));
+      const sampleWidth=Math.max(60,Math.min(maxWidth,canvas.width));
+      const sampleHeight=Math.max(24,Math.round(fontSize*2.2));
+      const sampleX=Math.max(0,Math.round(x-sampleWidth/2));
+      const sampleY=Math.max(0,Math.round(y-sampleHeight/2));
       const pixels=context.getImageData(sampleX,sampleY,sampleWidth,sampleHeight).data;
       let luminance=0,samples=0;
-      for(let i=0;i<pixels.length;i+=64){
+      for(let i=0;i<pixels.length;i+=96){
         luminance+=(pixels[i]*0.2126)+(pixels[i+1]*0.7152)+(pixels[i+2]*0.0722);
         samples++;
       }
-      darkBackground=samples>0&&(luminance/samples)<135;
+      darkBackground=samples>0&&(luminance/samples)<128;
     }catch(_){darkBackground=false;}
     context.save();
-    context.globalAlpha=darkBackground?0.72:0.34;
-    context.fillStyle=darkBackground?'#ffffff':'#26364b';
-    context.font=`${fontSize}px Tahoma, Arial, sans-serif`;
-    context.textAlign='right';
-    context.textBaseline='bottom';
+    context.globalAlpha=darkBackground?0.24:0.11;
+    context.fillStyle=darkBackground?'#ffffff':'#1f2f46';
+    context.font=`600 ${fontSize}px Tahoma, Arial, sans-serif`;
+    context.textAlign='center';
+    context.textBaseline='middle';
     if('direction' in context)context.direction='rtl';
-    context.fillText(protectedPrintText(order),canvas.width-margin,y,maxWidth);
+    context.fillText(protectedPrintText(order),x,y,maxWidth);
     context.restore();
   }
   function findOrder(id){try{return (db.orders||[]).find(x=>String(x.id)===String(id));}catch(_){return null;}}
