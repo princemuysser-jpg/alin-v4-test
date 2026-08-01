@@ -1,6 +1,6 @@
-// منصة آلين v4.1.7.1 — تحسين السرعة وفصل جلسات الطلبة وإصلاح فتح الصفحات.
+// منصة آلين v4.1.7.2 — تحسين السرعة وفصل جلسات الطلبة وإصلاح فتح الصفحات.
 window.ALIN_CONFIG=Object.freeze({
-  version:'4.1.7.1-performance-student-isolation-nav-fix',
+  version:'4.1.7.2-complete-deployment-fix',
   desktopPage:'./store-desktop.html',
   mobilePage:'./store-mobile.html',
   currency:'د.ع',
@@ -16,7 +16,7 @@ window.ALIN_CONFIG=Object.freeze({
 (function loadAlinPerformanceLayer(){
   if(document.querySelector('script[data-alin-performance="4.1.7"]'))return;
   const script=document.createElement('script');
-  script.src='./alin-performance-v4.1.7.js?v=4.1.7.1';
+  script.src='./alin-performance-v4.1.7.js?v=4.1.7.2';
   script.defer=true;
   script.dataset.alinPerformance='4.1.7';
   script.onerror=()=>console.warn('ALIN: تعذر تحميل طبقة تحسين الأداء؛ سيستمر النظام بالوضع الاعتيادي.');

@@ -1,4 +1,4 @@
-const VERSION='alin-v4.1.7.1-performance-student-isolation-nav-fix';
+const VERSION='alin-v4.1.7.2-complete-deployment-fix';
 const STATIC_CACHE=`${VERSION}-static`;
 const RUNTIME_CACHE=`${VERSION}-runtime`;
 
