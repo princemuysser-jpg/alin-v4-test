@@ -109,12 +109,11 @@
 .alin415-track-status{flex:0 0 auto!important;padding:8px 12px!important;border:1px solid #efd28c!important;border-radius:999px!important;background:#fff1cf!important;color:#8a6114!important;font-size:12px!important;font-weight:900!important}
 .alin415-track-status.done{border-color:#bce5cd!important;background:#e9f8ef!important;color:#16794a!important}
 .alin415-track-status.cancel{border-color:#f0c4c0!important;background:#fff0ef!important;color:#b42318!important}
-.alin415-track-details{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:10px!important;margin-top:12px!important}
+.alin415-track-details{display:grid!important;grid-template-columns:minmax(210px,.42fr) minmax(0,1fr)!important;gap:10px!important;margin-top:12px!important}
 .alin415-track-detail{min-width:0!important;padding:13px 14px!important;border:1px solid #e1e8f0!important;border-radius:16px!important;background:#fff!important}
-.alin415-track-detail.wide{grid-column:1/-1!important}
 .alin415-track-detail small{display:block!important;margin-bottom:6px!important;color:#7c8898!important;font-size:11px!important}
 .alin415-track-detail b{display:block!important;color:#203b5d!important;font-size:14px!important;line-height:1.65!important;overflow-wrap:anywhere!important}
-.alin415-track-timeline{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:8px!important;margin-top:16px!important;padding:18px 12px!important;border:1px solid #e0e8f1!important;border-radius:19px!important;background:#fff!important}
+.alin415-track-timeline{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:8px!important;margin-top:16px!important;padding:18px 12px!important;border:1px solid #e0e8f1!important;border-radius:19px!important;background:#fff!important}
 .alin415-track-step{display:grid!important;justify-items:center!important;gap:7px!important;text-align:center!important;color:#8491a0!important;min-width:0!important}
 .alin415-track-step i{width:38px!important;height:38px!important;display:grid!important;place-items:center!important;border-radius:50%!important;background:#eef2f6!important;color:#788595!important;font-style:normal!important;font-weight:900!important}
 .alin415-track-step.done i{background:#0d477b!important;color:#fff!important}.alin415-track-step.current i{background:#d8ad48!important;color:#102b50!important;box-shadow:0 0 0 4px rgba(216,173,72,.18)!important}
@@ -126,7 +125,7 @@
 .alin-track415-mark:after{content:""!important;position:absolute!important;width:9px!important;height:9px!important;left:7px!important;top:5px!important;border:3px solid #b98214!important;border-radius:50% 50% 50% 0!important;background:#fff7df!important;transform:rotate(-45deg)!important;box-sizing:border-box!important}
 .alin-track415-mark i{position:absolute!important;width:2px!important;height:9px!important;right:14px!important;bottom:8px!important;background:#0b3158!important;transform:rotate(90deg)!important}
 body.store-desktop .alin-track415-button:hover .alin-track415-mark,body.store-desktop .alin-track415-button:focus-visible .alin-track415-mark{background:linear-gradient(145deg,#0b3158,#155487)!important}.alin-track415-button:hover .alin-track415-mark:before,.alin-track415-button:focus-visible .alin-track415-mark:before{border-color:#fff!important}.alin-track415-button:hover .alin-track415-mark i,.alin-track415-button:focus-visible .alin-track415-mark i{background:#fff!important}
-@media(max-width:850px){#alinTrack415Layer{padding:10px!important}#alinTrack415Panel{width:100%!important;max-height:95vh!important;border-radius:20px!important}#alinTrack415Header{padding:24px 60px 22px 18px!important}#alinTrack415Header .alin-track415-mark{width:56px!important;height:56px!important;min-width:56px!important}#alinTrack415Search{grid-template-columns:1fr!important;padding:16px!important}#alinTrack415Result{padding:16px!important}.alin415-track-details,.alin415-track-summary{grid-template-columns:1fr 1fr!important}.alin415-track-timeline{overflow-x:auto!important;grid-template-columns:repeat(5,125px)!important;justify-content:start!important}}
+@media(max-width:850px){#alinTrack415Layer{padding:10px!important}#alinTrack415Panel{width:100%!important;max-height:95vh!important;border-radius:20px!important}#alinTrack415Header{padding:24px 60px 22px 18px!important}#alinTrack415Header .alin-track415-mark{width:56px!important;height:56px!important;min-width:56px!important}#alinTrack415Search{grid-template-columns:1fr!important;padding:16px!important}#alinTrack415Result{padding:16px!important}.alin415-track-details{grid-template-columns:1fr!important}.alin415-track-timeline{overflow-x:auto!important;grid-template-columns:repeat(4,135px)!important;justify-content:start!important}}
 </style>
 </head>
 <body class="store-desktop">
@@ -348,33 +347,67 @@ body.store-desktop .alin-track415-button:hover .alin-track415-mark,body.store-de
   const first=(obj,keys,fallback='—')=>{for(const k of keys){const v=obj?.[k];if(v!==undefined&&v!==null&&String(v).trim()!=='')return v}return fallback};
   const money=v=>{const n=Number(v);return Number.isFinite(n)?n.toLocaleString('ar-IQ',{maximumFractionDigits:0})+' د.ع':'—'};
   const date=v=>{if(!v)return '—';const d=new Date(v);return Number.isNaN(d.getTime())?String(v):d.toLocaleString('ar-IQ',{dateStyle:'medium',timeStyle:'short'})};
-  const labels={pending:'جديد',new:'جديد',payment_pending:'بانتظار التأكيد',pending_admin:'قيد المراجعة',assigned:'قيد المراجعة',accepted:'قيد المراجعة',processing:'قيد التجهيز',printing:'قيد الطباعة',ready:'جاهز',picked_up:'جاهز',out_delivery:'في الطريق',out_for_delivery:'في الطريق',completed:'تم التسليم',delivered:'تم التسليم',cancelled:'ملغي',canceled:'ملغي'};
-  const stage=s=>{s=String(s||'new').toLowerCase();if(['cancelled','canceled'].includes(s))return -1;if(['completed','delivered'].includes(s))return 4;if(['ready','picked_up','out_delivery','out_for_delivery'].includes(s))return 3;if(s==='printing')return 2;if(['processing','assigned','accepted','pending_admin'].includes(s))return 1;return 0};
-  const steps=['جديد','قيد المراجعة','قيد الطباعة','جاهز','تم التسليم'];
+  const normalizeStatus=value=>String(value||'new').trim().toLowerCase();
+  const isCourierOrder=row=>{
+    const fulfillment=String(first(row,['fulfillment_type','delivery_type','shipping_type','order_delivery_type'],'')).toLowerCase();
+    return ['home_delivery','delivery','courier','door_delivery'].includes(fulfillment)
+      || Boolean(first(row,['courier_id','assigned_courier_id','courier_name','delivery_area'],''));
+  };
+  const isPrintableOrder=row=>{
+    const kind=String(first(row,['item_type','product_type','category','order_type'],'')).toLowerCase();
+    const title=String(first(row,['title','item_name','product_name','order_title'],'')).toLowerCase();
+    return ['booklet','booklets','print','printing','malzama'].some(token=>kind.includes(token))
+      || /ملزمة|ملازم|طباعة/.test(title);
+  };
+  const flowFor=(row,status)=>{
+    const courier=isCourierOrder(row);
+    const printable=isPrintableOrder(row);
+    const cancelled=['cancelled','canceled','rejected'].includes(status);
+    if(cancelled)return {courier,printable,cancelled:true,index:-1,steps:[]};
+    if(courier){
+      let index=0;
+      if(['assigned','accepted','picked_up','processing','printing','ready'].includes(status))index=1;
+      if(['out_delivery','out_for_delivery'].includes(status))index=2;
+      if(['completed','delivered'].includes(status))index=3;
+      return {courier,printable,cancelled:false,index,steps:['تم الاستلام','تم تعيين المندوب','في الطريق','تم التسليم']};
+    }
+    let index=0;
+    if(['assigned','accepted','processing','printing'].includes(status))index=1;
+    if(['ready','picked_up','out_delivery','out_for_delivery'].includes(status))index=2;
+    if(['completed','delivered'].includes(status))index=3;
+    return {courier,printable,cancelled:false,index,steps:['تم الاستلام',printable?'قيد الطباعة':'قيد التجهيز','جاهز','تم التسليم']};
+  };
+  const statusLabel=(row,status)=>{
+    const flow=flowFor(row,status);
+    if(flow.cancelled)return 'ملغي';
+    if(['completed','delivered'].includes(status))return 'تم التسليم';
+    if(flow.courier){
+      if(['out_delivery','out_for_delivery'].includes(status))return 'في الطريق';
+      if(['accepted','picked_up'].includes(status))return 'استلم المندوب الطلب';
+      if(['assigned','processing','printing','ready'].includes(status))return 'تم تعيين المندوب';
+      return 'تم الاستلام';
+    }
+    if(['ready','picked_up','out_delivery','out_for_delivery'].includes(status))return 'جاهز';
+    if(['assigned','accepted','processing','printing'].includes(status))return flow.printable?'قيد الطباعة':'قيد التجهيز';
+    return 'تم الاستلام';
+  };
   const empty=()=>'<div class="alin415-track-empty"><span class="symbol">⌖</span><b>جاهز لتتبع طلبك</b><small>أدخل رقم الطلب واضغط «تتبع الآن».</small></div>';
   const normalize=data=>{if(Array.isArray(data))return data[0]||null;if(data&&typeof data==='object'&&Array.isArray(data.data))return data.data[0]||null;if(data&&typeof data==='object'&&data.data&&typeof data.data==='object')return data.data;return data&&typeof data==='object'?data:null};
   const candidates=value=>{const raw=String(value||'').trim();return [...new Set([raw,raw.toUpperCase(),raw.toLowerCase()])].filter(Boolean)};
   const render=(row,typed)=>{
     const box=$('alinTrack415Result');if(!box)return;
-    const status=String(first(row,['status','order_status'],'new')).toLowerCase();
-    const idx=stage(status),cancel=idx<0,done=idx===4;
+    const status=normalizeStatus(first(row,['status','order_status'],'new'));
+    const flow=flowFor(row,status);
     const number=first(row,['order_number','tracking_code','id'],typed);
     const title=first(row,['title','item_name','product_name','order_title'],'طلب منصة آلين');
-    const student=first(row,['student_name','customer_name','customer','name'],'—');
-    const point=first(row,['library_name','courier_name','delivery_name','fulfillment_name'],'—');
     const notes=first(row,['notes','note','status_note','delivery_notes'],'لا توجد ملاحظات');
-    const total=first(row,['total_amount','grand_total','total','amount'],null);
-    const copies=first(row,['copies','quantity','qty','total_copies'],'—');
-    const pickup=first(row,['pickup_code','delivery_code','receive_code','receipt_code'],'—');
-    box.innerHTML=`<section class="alin415-track-head"><div><small>رقم الطلب</small><h3>${esc(number)}</h3><p>${esc(title)}</p></div><span class="alin415-track-status ${cancel?'cancel':done?'done':''}">${esc(labels[status]||status)}</span></section>
-    <section class="alin415-track-details">
-      <article class="alin415-track-detail"><small>اسم الطالب</small><b>${esc(student)}</b></article>
-      <article class="alin415-track-detail"><small>المكتبة أو المندوب</small><b>${esc(point)}</b></article>
-      <article class="alin415-track-detail"><small>التاريخ</small><b>${esc(date(first(row,['created_at','order_date','updated_at'],'')))}</b></article>
-      <article class="alin415-track-detail wide"><small>الملاحظات</small><b>${esc(notes)}</b></article>
+    const created=date(first(row,['created_at','order_date','updated_at'],''));
+    box.innerHTML=`<section class="alin415-track-head"><div><small>رقم الطلب</small><h3>${esc(number)}</h3><p>${esc(title)}</p></div><span class="alin415-track-status ${flow.cancelled?'cancel':flow.index===3?'done':''}">${esc(statusLabel(row,status))}</span></section>
+    <section class="alin415-track-details compact">
+      <article class="alin415-track-detail"><small>التاريخ</small><b>${esc(created)}</b></article>
+      <article class="alin415-track-detail"><small>الملاحظات</small><b>${esc(notes)}</b></article>
     </section>
-    ${cancel?'<div class="alin415-track-alert error" style="margin-top:14px">هذا الطلب ملغي.</div>':`<section class="alin415-track-timeline">${steps.map((name,i)=>`<article class="alin415-track-step ${i<idx?'done':i===idx?'current':''}"><i>${i<idx?'✓':i+1}</i><b>${name}</b></article>`).join('')}</section>`}
-    <section class="alin415-track-summary"><article><small>قيمة الطلب</small><b>${total===null?'—':esc(money(total))}</b></article><article><small>عدد النسخ</small><b>${esc(copies)}</b></article><article><small>رمز الاستلام</small><b>${esc(pickup)}</b></article></section>`;
+    ${flow.cancelled?'<div class="alin415-track-alert error" style="margin-top:14px">هذا الطلب ملغي.</div>':`<section class="alin415-track-timeline">${flow.steps.map((name,i)=>`<article class="alin415-track-step ${i<flow.index?'done':i===flow.index?'current':''}"><i>${i<flow.index?'✓':i+1}</i><b>${name}</b></article>`).join('')}</section>`}`;
   };
   async function search(){
     const input=$('alinTrack415Input'),box=$('alinTrack415Result');if(!box)return false;

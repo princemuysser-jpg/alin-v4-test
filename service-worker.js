@@ -1,4 +1,4 @@
-const VERSION='alin-v4.1.5-safe-track-modal-2';
+const VERSION='alin-v4.1.5-safe-track-flow-3';
 const STATIC_CACHE=`${VERSION}-static`;
 const RUNTIME_CACHE=`${VERSION}-runtime`;
 
