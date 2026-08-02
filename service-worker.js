@@ -1,13 +1,13 @@
-const VERSION='alin-v4.1.8.1-visible-receipts';
+const VERSION='alin-v4.1.8.2-hardwired-receipts';
 const STATIC_CACHE=`${VERSION}-static`;
 const RUNTIME_CACHE=`${VERSION}-runtime`;
 
 const CORE=[
-  './','./index.html','./store-desktop.html','./store-mobile.html','./alin-config.js',
+  './','./index.html','./store-desktop.html','./store-mobile.html','./store-desktop-4182.html','./store-mobile-4182.html','./alin-config.js',
   './alin-performance-v4.1.7.js',
   './manifest-desktop.webmanifest','./manifest-mobile.webmanifest',
-  './dist/alin-core.v4.js','./alin-app-desktop.v4.1.5.js','./alin-app-mobile.v4.1.5.js',
-  './modules/core/navigation.js','./modules/core/account-admin-service.js','./core/receipt-system.js','./core/receipt-center.js',
+  './dist/alin-core.v4.js','./alin-app-desktop.v4.1.8.2.js','./alin-app-mobile.v4.1.8.2.js',
+  './modules/core/navigation.js','./modules/core/account-admin-service.js','./core/receipt-system-v4182.js','./core/receipt-center-v4182.js',
   './modules/teacher/admin-word-download.js','./core/boot-recovery.js','./core/pwa-register.js',
   './core/device-router.js','./core/runtime-guard.js','./core/splash.js',
   './dist/css/desktop.bundle.css','./dist/css/mobile.bundle.css',

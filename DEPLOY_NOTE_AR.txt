@@ -1,7 +1,1 @@
-منصة آلين v4.1.8.1 — إصلاح الوصولات الفعلي
-
-ارفع محتويات هذا ZIP بالكامل كـ New deployment على مشروع alin-v4-test.
-بعد اكتمال النشر افتح:
-https://test.alinplatform.com/store-desktop?rev=4181
-
-مهم: تبويب الوصولات يظهر بعد الأرباح/الحسابات حسب نوع الحساب.
+ارفع هذا ZIP كاملاً كـ New deployment ثم افتح: https://test.alinplatform.com/store-desktop-4182.html
