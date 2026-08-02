@@ -1,34 +1,45 @@
-ALIN v4.2.0 CLEAN INTEGRATION REPORT
+ALIN v4.1.5 — تقرير التنظيف الآمن
 ====================================
-Base: Alin_v4_1_5_Stable_Clean_Baseline_2026-07-31
-Build type: complete integrated project (not a patch)
 
-Integrated modules:
-- modules/core/receipts.js
-- modules/store/desktop-tools.js
-- modules/store/student-auth.js (secure rewrite)
+النسخة: 4.1.5-tracking-case-fixed
+نوع الحزمة: Stable Clean Baseline
+التاريخ: 2026-07-31
 
-Updated routing:
-- Teacher receipts tab registered through TeacherApp.
-- Admin receipts tab registered through AlinAdminModules.
-- Library and courier receipts handled by their native dashboard routers.
+الهدف:
+تنظيف الحزمة من الملفات القديمة والمكررة بدون تغيير منطق العمل أو قاعدة البيانات.
 
-Student privacy:
-- Student order list uses alin_student_orders RPC with token + device binding.
-- Student orders are kept in memory and are not taken from window.db.orders.
-- Checkout identity is locked to the signed-in student account.
+ما تم حذفه بعد التأكد من عدم استدعائه:
+- أربع حزم JavaScript قديمة للإصدارين 4.1.3 و4.1.4.
+- نسختان قديمتان مكررتان داخل مجلد dist.
+- صفحة store-mobile(1).html المكررة.
+- ملف alin-mobile-stable-v4.2.css التجريبي غير المستخدم.
+- ملف options.js القديم غير المستخدم.
+- ملفات بصمات وتقارير قديمة أو مكررة أو بأسماء مشوهة.
 
-Performance:
-- Cached public/session snapshot renders before network refresh.
-- Translation observer is idle in Arabic and batches mutations through requestAnimationFrame.
-- New versioned bundles and service worker prevent mixed old/new code.
+ما بقي محفوظاً:
+- حزم التشغيل الحالية للموبايل والكمبيوتر v4.1.5.
+- dist/alin-core.v4.js وملفات CSS الحالية.
+- core/boot-recovery.js المثبت للتتبع والخيارات.
+- جميع ملفات modules وcore وstore اللازمة للصيانة.
+- ملفات assets وmanifest وService Worker.
+- ملفات SQL وSupabase.
 
-Validation performed:
-- JavaScript syntax check for all source and generated bundles.
-- Desktop runtime integration test with mocked Supabase:
-  admin/teacher/library/courier receipts, role scoping, student RPC isolation,
-  receipt preview, desktop tracking and options.
-- Mobile runtime integration test with mocked Supabase:
-  receipt tabs/rendering for all roles and isolated student page.
-- Local reference scan for HTML, manifests and service-worker core files.
-- ZIP integrity test and SHA-256 manifest generation.
+تغييرات النصوص فقط:
+- توحيد رقم الإصدار في alin-config.js إلى 4.1.5-tracking-case-fixed.
+- تصحيح عنوان صفحة الموبايل إلى v4.1.5.
+- تحديث مولد إعداد المشروع الجديد إلى v4.1.5.
+
+نتائج الفحص الآلي:
+- ملفات JavaScript المفحوصة: 82 — نجح فحص الصياغة.
+- سكربتات JavaScript داخل HTML: 5 — نجح فحص الصياغة.
+- ملفات CSS: 11 — الأقواس متوازنة.
+- ملفات HTML الرئيسية: 4.
+- ملفات Service Worker الأساسية: 32 من 32 موجودة.
+- مراجع محلية مفقودة: 0.
+- مراجع تشغيل لملفات محذوفة: 0.
+- ملفات تشغيل حرجة طابقت النسخة المستقرة بدون تعديل: 9.
+
+حدود الفحص:
+- هذا فحص بنيوي ومحلي للحزمة.
+- الفحص الوظيفي على الموقع الحي تم بواسطة صاحب المنصة قبل التنظيف وأكد عدم وجود عيب في المسار المجرب.
+- لم يتم تنفيذ SQL أو تعديل بيانات Supabase.
