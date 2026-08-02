@@ -1,5 +1,6 @@
-نشر منصة آلين v4.1.9.0
-
-هذه حزمة كاملة من الجذر، بدون مجلد خارجي وبدون سكربتات حقن أو ترقيعات وصولات منفصلة.
-بعد رفع المحتويات إلى main انتظر اكتمال Production deployment ثم افتح:
-https://test.alinplatform.com/store-desktop.html?rev=4190
+طريقة الرفع:
+1- فك ضغط الملف.
+2- ارفع جميع المحتويات إلى جذر فرع main واستبدل الملفات الموجودة.
+3- انتظر Production deployment.
+4- افتح https://test.alinplatform.com/version.html ويجب أن يظهر 4.1.9.1.
+5- افتح https://test.alinplatform.com/store-desktop.html?rev=4.1.9.1.
