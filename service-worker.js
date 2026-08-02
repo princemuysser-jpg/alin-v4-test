@@ -1,4 +1,4 @@
-const VERSION='alin-v4.1.5-header-tracking-1';
+const VERSION='alin-v4.1.5-safe-track-modal-2';
 const STATIC_CACHE=`${VERSION}-static`;
 const RUNTIME_CACHE=`${VERSION}-runtime`;
 

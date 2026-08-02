@@ -4841,7 +4841,7 @@ window.AlinCourierModules['recordCourierSettlementForOrder']=typeof recordCourie
 
 /* modules/store/tracking.js */
 // === store/tracking.js ===
-/* ALIN v4.1.5 — desktop header tracking modal, bounded icons and detailed result. */
+/* ALIN v4.1.5 — tracking accepts mixed-case order numbers and legacy RPC responses. */
 (function(){
   'use strict';
 
@@ -4855,103 +4855,107 @@ window.AlinCourierModules['recordCourierSettlementForOrder']=typeof recordCourie
   const normalizeCode=value=>String(value??'')
     .replace(/[٠-٩]/g,d=>'0123456789'['٠١٢٣٤٥٦٧٨٩'.indexOf(d)])
     .replace(/\s+/g,'').trim();
-  const firstValue=(row,keys,fallback='—')=>{for(const key of keys){const value=row?.[key];if(value!==undefined&&value!==null&&String(value).trim()!=='')return value}return fallback};
-  const formatDate=value=>{const date=value?new Date(value):null;if(!date||Number.isNaN(date.getTime()))return'—';try{return date.toLocaleString(window.AlinI18n?.locale?.()||'ar-IQ',{dateStyle:'medium',timeStyle:'short'})}catch(_){return date.toLocaleString()}};
-  const formatMoney=value=>Number(value||0).toLocaleString(window.AlinI18n?.locale?.()||'ar-IQ',{maximumFractionDigits:0});
   function trackingCandidates(value){
     const raw=normalizeCode(value),items=[];
     const add=candidate=>{candidate=String(candidate||'').trim();if(candidate&&!items.includes(candidate))items.push(candidate)};
     add(raw);
     const parts=raw.split('-');
-    if(parts.length>=2){const suffix=parts.pop();add(parts.map((part,index)=>index===0?part.toUpperCase():part).concat(String(suffix).toLowerCase()).join('-'))}
-    add(raw.toUpperCase());add(raw.toLowerCase());return items;
+    if(parts.length>=2){
+      const suffix=parts.pop();
+      add(parts.map((part,index)=>index===0?part.toUpperCase():part).concat(String(suffix).toLowerCase()).join('-'));
+    }
+    add(raw.toUpperCase());
+    add(raw.toLowerCase());
+    return items;
   }
-  const normalizeStatus=value=>{const status=String(value||'new').trim().toLowerCase();if(status==='delivered')return'completed';if(status==='out_delivery')return'out_for_delivery';if(status==='pending')return'new';return status};
-  function rowFromRpc(data){if(Array.isArray(data))return data[0]||null;if(data&&Array.isArray(data.rows))return data.rows[0]||null;if(data&&data.found===false)return null;if(data&&data.order&&typeof data.order==='object')return data.order;return data&&typeof data==='object'?data:null}
-  function isHomeDelivery(row){const fulfillment=String(row?.fulfillment_type||row?.delivery_type||'').toLowerCase();return['home_delivery','delivery','courier'].includes(fulfillment)||Boolean(row?.delivery_area)}
-  function stageIndex(status){const map={new:0,payment_pending:0,pending_admin:0,assigned:1,accepted:1,processing:1,printing:2,ready:3,picked_up:3,out_for_delivery:3,completed:4};return Object.prototype.hasOwnProperty.call(map,status)?map[status]:0}
-  function timelineLabels(home){return home?['جديد','قيد المراجعة','قيد التجهيز','في الطريق','تم التسليم']:['جديد','قيد المراجعة','قيد الطباعة','جاهز','تم التسليم']}
-  function icon(name){
-    const paths={
-      new:'<path d="M7 3h10a2 2 0 0 1 2 2v16H5V5a2 2 0 0 1 2-2Z"/><path d="M8 8h8M8 12h6"/>',
-      review:'<circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 4 4"/>',
-      print:'<path d="M7 8V3h10v5M7 17H5a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M7 14h10v7H7z"/>',
-      ready:'<path d="m4 7 8-4 8 4-8 4-8-4Z"/><path d="m4 7 8 4 8-4v10l-8 4-8-4V7Z"/>',
-      done:'<circle cx="12" cy="12" r="9"/><path d="m8 12 2.7 2.7L16.5 9"/>'
+  const normalizeStatus=value=>{
+    const status=String(value||'new').trim().toLowerCase();
+    if(status==='delivered')return'completed';
+    if(status==='out_delivery')return'out_for_delivery';
+    if(status==='pending')return'new';
+    return status;
+  };
+  function rowFromRpc(data){
+    if(Array.isArray(data))return data[0]||null;
+    if(data&&Array.isArray(data.rows))return data.rows[0]||null;
+    if(data&&data.found===false)return null;
+    if(data&&data.order&&typeof data.order==='object')return data.order;
+    return data&&typeof data==='object'?data:null;
+  }
+  function isHomeDelivery(row){
+    const fulfillment=String(row?.fulfillment_type||row?.delivery_type||'').toLowerCase();
+    return ['home_delivery','delivery','courier'].includes(fulfillment)||Boolean(row?.delivery_area);
+  }
+  function stageIndex(status){
+    const map={
+      new:0,payment_pending:0,pending_admin:0,
+      assigned:1,accepted:1,processing:1,printing:1,
+      ready:2,picked_up:2,
+      out_for_delivery:3,
+      completed:4
     };
-    return `<svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">${paths[name]||paths.new}</svg>`;
+    return Object.prototype.hasOwnProperty.call(map,status)?map[status]:0;
   }
-  function detail(label,value,kind='') {return `<article class="alin-tracking-detail ${kind}"><small>${clean(label)}</small><b>${clean(value)}</b></article>`}
+  function timelineLabels(home){
+    return home
+      ? ['تم استلام الطلب','تم تعيين المندوب','استلم المندوب الطلب','الطلب في الطريق','تم التسليم']
+      : ['تم استلام الطلب','قيد التجهيز','جاهز بالمكتبة','بانتظار الاستلام','تم التسليم'];
+  }
   function renderTracking(box,row,code){
-    const status=normalizeStatus(row.status),cancelled=['cancelled','rejected'].includes(status),current=statusLabels[status]||String(row.status||'قيد المتابعة');
-    const number=firstValue(row,['order_number','tracking_code'],code),title=firstValue(row,['title','item_name','product_name'],'طلب منصة آلين');
-    const student=firstValue(row,['student_name','customer_name','name']);
-    const partner=isHomeDelivery(row)?firstValue(row,['courier_name','driver_name'],'لم يُعيّن المندوب بعد'):firstValue(row,['library_name','pickup_library_name'],'لم تُعيّن المكتبة بعد');
-    const date=formatDate(firstValue(row,['created_at','order_date','date'],''));
-    const notes=firstValue(row,['notes','student_notes','delivery_landmark'],'لا توجد ملاحظات');
-    const quantity=firstValue(row,['qty','quantity','copies_count','copy_count'],'1');
-    const total=firstValue(row,['total','total_amount','grand_total'],0);
-    const pickup=firstValue(row,['pickup_code','delivery_code','receive_code'],'—');
-    const labels=timelineLabels(isHomeDelivery(row)),reached=stageIndex(status),icons=['new','review','print','ready','done'];
-    box.className='alin-tracking-result show';
-    box.innerHTML=`
-      <section class="alin-tracking-order-head">
-        <div><small>رقم الطلب</small><h3 dir="ltr">${clean(number)}</h3><p>${clean(title)}</p></div>
-        <span class="alin-tracking-status ${cancelled?'cancelled':status==='completed'?'completed':''}">${clean(current)}</span>
-      </section>
-      <section class="alin-tracking-details">
-        ${detail('اسم الطالب',student)}
-        ${detail(isHomeDelivery(row)?'المندوب':'المكتبة',partner)}
-        ${detail('تاريخ الطلب',date)}
-        ${detail('الملاحظات',notes,'wide')}
-      </section>
-      ${cancelled?`<div class="alin-tracking-alert cancelled">الطلب ${clean(current)}. راجع إدارة منصة آلين عند الحاجة.</div>`:`
-      <section class="alin-tracking-timeline" aria-label="مراحل الطلب">
-        ${labels.map((label,index)=>`<article class="${index<reached?'done':index===reached?'current':''}"><span>${icon(icons[index])}</span><b>${clean(label)}</b><small>${index<reached?'مكتمل':index===reached?'المرحلة الحالية':'بانتظار التنفيذ'}</small></article>`).join('')}
-      </section>`}
-      <section class="alin-tracking-summary">
-        <article><small>قيمة الطلب</small><b>${formatMoney(total)} د.ع</b></article>
-        <article><small>الكمية / النسخ</small><b>${clean(quantity)}</b></article>
-        <article><small>رمز الاستلام</small><b dir="ltr">${clean(pickup)}</b></article>
-      </section>`;
+    const status=normalizeStatus(row.status);
+    const cancelled=['cancelled','rejected'].includes(status);
+    const current=statusLabels[status]||String(row.status||'قيد المتابعة');
+    const title=row.title||row.item_name||'طلب منصة آلين';
+    const number=row.order_number||row.tracking_code||code;
+    if(cancelled){
+      box.innerHTML=`<b>${clean(number)} — ${clean(title)}</b><div class="track-current is-cancelled">الحالة الحالية: ${clean(current)}</div>`;
+    }else{
+      const reached=stageIndex(status),labels=timelineLabels(isHomeDelivery(row));
+      box.innerHTML=`<b>${clean(number)} — ${clean(title)}</b><div class="track-current">الحالة الحالية: <strong>${clean(current)}</strong></div>${row.ready_eta?`<small>الجاهزية المتوقعة: ${clean(row.ready_eta)}</small>`:''}<div class="timeline v31">${labels.map((label,index)=>`<span class="${index<=reached?'done':''}" aria-current="${index===reached?'step':'false'}">${clean(label)}</span>`).join('')}</div>`;
+    }
     document.dispatchEvent(new CustomEvent('alin:tracking-rendered',{detail:{code,data:row,status}}));
   }
-  function initialResult(){const box=document.getElementById('trackOrderResult');if(box)box.innerHTML='<div class="alin-tracking-empty"><span aria-hidden="true">⌖</span><b>جاهز لتتبع طلبك</b><small>أدخل رقم الطلب في الحقل أعلاه ثم اضغط «تتبع الآن».</small></div>'}
-  window.openTrackingModal=function(){
-    const modal=document.getElementById('orderTrackingModal');if(!modal)return false;
-    modal.classList.remove('hidden');modal.setAttribute('aria-hidden','false');document.body.classList.add('alin-tracking-open');
-    window.setTimeout(()=>document.getElementById('trackOrderInput')?.focus(),60);return true;
-  };
-  window.closeTrackingModal=function(){
-    const modal=document.getElementById('orderTrackingModal');if(!modal)return false;
-    modal.classList.add('hidden');modal.setAttribute('aria-hidden','true');document.body.classList.remove('alin-tracking-open');return true;
-  };
   window.trackOrder=async function(){
-    const input=document.getElementById('trackOrderInput'),box=document.getElementById('trackOrderResult');if(!box)return false;
-    const code=normalizeCode(input?.value||'');if(input)input.value=code;
-    box.className='alin-tracking-result show';
-    if(code.length<4){box.innerHTML='<div class="alin-tracking-alert">اكتب رقم الطلب الكامل أولاً.</div>';return false}
-    box.innerHTML='<div class="alin-tracking-loading"><span></span><b>جارٍ التحقق من حالة الطلب...</b></div>';
+    const input=document.getElementById('trackOrderInput');
+    const box=document.getElementById('trackOrderResult');
+    if(!box)return false;
+    const code=normalizeCode(input?.value||'');
+    if(input)input.value=code;
+    box.className='track-result show';
+    if(code.length<4){box.textContent='اكتب رقم الطلب الكامل أولاً';return false}
+    box.textContent='جارٍ التحقق من حالة الطلب...';
     try{
-      const client=window.sb||(window.AlinCloud&&window.AlinCloud.client?.());if(!client?.rpc)throw new Error('خدمة التتبع غير متاحة');
+      const client=window.sb||(window.AlinCloud&&window.AlinCloud.client?.());
+      if(!client?.rpc)throw new Error('خدمة التتبع غير متاحة');
       let row=null,lastError=null,matchedCode=code;
-      for(const candidate of trackingCandidates(code)){const {data,error}=await client.rpc('alin_track_order',{p_order_number:candidate});if(error){lastError=error;break}row=rowFromRpc(data);if(row){matchedCode=candidate;break}}
+      for(const candidate of trackingCandidates(code)){
+        const {data,error}=await client.rpc('alin_track_order',{p_order_number:candidate});
+        if(error){lastError=error;break}
+        row=rowFromRpc(data);
+        if(row){matchedCode=candidate;break}
+      }
       if(lastError)throw lastError;
-      if(!row){box.innerHTML='<div class="alin-tracking-alert not-found"><b>لم يتم العثور على الطلب</b><small>تأكد من رقم التتبع وأعد المحاولة.</small></div>';return false}
-      if(input)input.value=row.order_number||matchedCode;renderTracking(box,row,matchedCode);return true;
+      if(!row){box.textContent='لم يتم العثور على الطلب. تأكد من رقم التتبع.';return false}
+      if(input)input.value=row.order_number||matchedCode;
+      renderTracking(box,row,matchedCode);
+      return true;
     }catch(error){
-      console.error('[ALIN tracking v4.1.5 modal]',error);const message=String(error?.message||'');
-      box.innerHTML=`<div class="alin-tracking-alert error"><b>تعذر التحقق الآن</b><small>${/PGRST202|Could not find the function|schema cache/i.test(message)?'خدمة تتبع الطلب غير مهيأة في قاعدة البيانات.':'أعد المحاولة بعد قليل.'}</small></div>`;return false;
+      console.error('[ALIN tracking v4.1.5]',error);
+      const message=String(error?.message||'');
+      box.textContent=/PGRST202|Could not find the function|schema cache/i.test(message)
+        ?'خدمة تتبع الطلب غير مهيأة في قاعدة البيانات.'
+        :'تعذر التحقق الآن. أعد المحاولة بعد قليل.';
+      return false;
     }
   };
-  function bind(){
-    const input=document.getElementById('trackOrderInput'),modal=document.getElementById('orderTrackingModal');
-    if(input&&input.dataset.alinTrackingBound!=='1'){input.dataset.alinTrackingBound='1';input.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();window.trackOrder()}})}
-    if(modal&&modal.dataset.alinTrackingBound!=='1'){modal.dataset.alinTrackingBound='1';modal.addEventListener('click',event=>{if(event.target===modal)window.closeTrackingModal()})}
-    document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!document.getElementById('orderTrackingModal')?.classList.contains('hidden'))window.closeTrackingModal()});
-    initialResult();
+  function bindTrackingInput(){
+    const input=document.getElementById('trackOrderInput');
+    if(!input||input.dataset.alinTrackingBound==='1')return;
+    input.dataset.alinTrackingBound='1';
+    input.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();window.trackOrder()}});
   }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind,{once:true});else bind();
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bindTrackingInput,{once:true});
+  else bindTrackingInput();
 })();
 
 ;
