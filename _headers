@@ -1,0 +1,12 @@
+/service-worker.js
+  Cache-Control: no-cache, no-store, must-revalidate
+/index.html
+  Cache-Control: no-cache, no-store, must-revalidate
+/store-desktop.html
+  Cache-Control: no-cache, no-store, must-revalidate
+/store-mobile.html
+  Cache-Control: no-cache, no-store, must-revalidate
+/store-desktop
+  Cache-Control: no-cache, no-store, must-revalidate
+/store-mobile
+  Cache-Control: no-cache, no-store, must-revalidate
