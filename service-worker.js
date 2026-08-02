@@ -1,4 +1,4 @@
-const VERSION='alin-v4.1.8.0-unified-receipts';
+const VERSION='alin-v4.1.9.0-clean-integrated-receipts';
 const STATIC_CACHE=`${VERSION}-static`;
 const RUNTIME_CACHE=`${VERSION}-runtime`;
 
@@ -7,7 +7,7 @@ const CORE=[
   './alin-performance-v4.1.7.js',
   './manifest-desktop.webmanifest','./manifest-mobile.webmanifest',
   './dist/alin-core.v4.js','./alin-app-desktop.v4.1.5.js','./alin-app-mobile.v4.1.5.js',
-  './modules/core/navigation.js','./modules/core/account-admin-service.js','./core/receipt-system.js',
+  './modules/core/navigation.js','./modules/core/receipts.js','./modules/core/account-admin-service.js',
   './modules/teacher/admin-word-download.js','./core/boot-recovery.js','./core/pwa-register.js',
   './core/device-router.js','./core/runtime-guard.js','./core/splash.js',
   './dist/css/desktop.bundle.css','./dist/css/mobile.bundle.css',
