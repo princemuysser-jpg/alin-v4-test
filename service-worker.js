@@ -1,10 +1,10 @@
-const VERSION='alin-v4.1.5.2-cloudflare-route-fix';
+const VERSION='alin-v4.1.5-tracking-case-fixed';
 const STATIC_CACHE=`${VERSION}-static`;
 const RUNTIME_CACHE=`${VERSION}-runtime`;
 
 // ملفات التشغيل الأساسية. تُخزّن مسبقاً حتى لا تفتح الواجهة بدون التطبيق.
 const CORE=[
-  './','./index.html','./app-desktop/','./app-mobile/','./alin-config.js',
+  './','./index.html','./store-desktop.html','./store-mobile.html','./alin-config.js',
   './manifest-desktop.webmanifest','./manifest-mobile.webmanifest',
   './dist/alin-core.v4.js','./alin-app-desktop.v4.1.5.js','./alin-app-mobile.v4.1.5.js',
   './modules/core/navigation.js','./modules/core/account-admin-service.js',
@@ -15,10 +15,7 @@ const CORE=[
   './styles/alin-i18n.css','./styles/alin-desktop.css','./styles/alin-mobile.css','./styles/alin-splash.css',
   './store/banners.css','./store/mobile-navigation.css',
   './assets/images/alin-splash-desktop.webp','./assets/images/alin-splash-mobile.webp',
-  './assets/icons/icon-192.png','./assets/icons/icon-512.png',
-  './modules/features/receipts-center.js','./modules/features/student-page.js',
-  './modules/features/desktop-options-tracking.js','./modules/features/performance-safe.js',
-  './styles/alin-receipts.css','./styles/alin-student-page.css','./styles/alin-desktop-tools.css'
+  './assets/icons/icon-192.png','./assets/icons/icon-512.png'
 ];
 
 async function cacheCore(){

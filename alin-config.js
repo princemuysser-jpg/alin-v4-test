@@ -1,8 +1,8 @@
 // منصة آلين v4 — مشروع Alin Platform التجريبي.
 window.ALIN_CONFIG=Object.freeze({
   version:'4.1.5-tracking-case-fixed',
-  desktopPage:'./app-desktop/',
-  mobilePage:'./app-mobile/',
+  desktopPage:'./store-desktop.html',
+  mobilePage:'./store-mobile.html',
   currency:'د.ع',
   locale:'ar-IQ',
   locales:{ar:'ar-IQ',ku:'ckb-IQ',en:'en-IQ'},
