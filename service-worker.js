@@ -1,10 +1,10 @@
-const VERSION='alin-v4.1.5.1-clean-features';
+const VERSION='alin-v4.1.5.2-cloudflare-route-fix';
 const STATIC_CACHE=`${VERSION}-static`;
 const RUNTIME_CACHE=`${VERSION}-runtime`;
 
 // ملفات التشغيل الأساسية. تُخزّن مسبقاً حتى لا تفتح الواجهة بدون التطبيق.
 const CORE=[
-  './','./index.html','./store-desktop.html','./store-mobile.html','./alin-config.js',
+  './','./index.html','./app-desktop/','./app-mobile/','./alin-config.js',
   './manifest-desktop.webmanifest','./manifest-mobile.webmanifest',
   './dist/alin-core.v4.js','./alin-app-desktop.v4.1.5.js','./alin-app-mobile.v4.1.5.js',
   './modules/core/navigation.js','./modules/core/account-admin-service.js',
