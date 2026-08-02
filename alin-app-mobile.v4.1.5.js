@@ -869,7 +869,7 @@ window.AlinTeacherModules.unpublishTeacherBooklet=unpublishTeacherBooklet;
   }
   function notificationsView(){const ns=notifications();return `<section class="library-v116-panel"><div class="library-v116-toolbar"><h3>إشعارات المكتبة</h3><button onclick="AlinLibraryV116.markAllRead()">تحديد الكل كمقروء</button></div><div class="library-v116-list">${ns.map(n=>{const read=window.AlinNotifications?.isRead?.(n,{role:'library',id:libId()})??Boolean(n.read_at||n.is_read);return `<article class="library-v116-notification ${read?'':'unread'}"><b>${escx(n.title||'إشعار')}</b><p>${escx(n.message||n.text||'')}</p><small>${escx(n.created_at||'')}</small></article>`}).join('')||'<div class="library-v116-empty">لا توجد إشعارات</div>'}</div></section>`}
   function settingsView(){const l=getLibrary()||{};return `<section class="library-v116-panel"><h3>إعدادات المكتبة</h3><div class="library-v116-settings"><div class="library-v116-field"><small>اسم المكتبة</small><b>${escx(l.name||'—')}</b></div><div class="library-v116-field"><small>المنطقة</small><b>${escx(l.area||'—')}</b></div><div class="library-v116-field"><small>أقرب نقطة دالة</small><b>${escx(l.landmark||'—')}</b></div><div class="library-v116-field"><small>واتساب</small><b>${escx(l.whatsapp||l.phone||'—')}</b></div><div class="library-v116-field"><small>اسم الدخول</small><b>${escx(l.username||currentUser()?.username||'—')}</b></div><div class="library-v116-field"><small>حالة المكتبة</small><b>${isOpen(l)?'مفتوحة':'مغلقة'}</b></div><div class="library-v116-settings-actions"><button onclick="AlinLibraryV116.toggleOpen()">${isOpen(l)?'إغلاق المكتبة':'فتح المكتبة'}</button><button class="secondary" onclick="alert('تغيير كلمة المرور يكون من إدارة الحسابات حالياً')">تغيير كلمة المرور</button><button class="logout" onclick="logout()">تسجيل الخروج</button></div></div></section>`}
-  function render(){if(currentUser()?.role!=='library')return;updateHeader();document.querySelectorAll('.library-v116-tabs button').forEach(b=>b.classList.toggle('active',b.dataset.libraryTab===state.tab));const c=document.getElementById('libraryV116Content');if(!c)return;if(state.tab==='orders')c.innerHTML=ordersView();else if(state.tab==='finance')c.innerHTML=financeView();else if(state.tab==='receipts')c.innerHTML=window.AlinReceipts?.renderLibrary?.()||'<div class="library-v116-empty">تعذر تحميل قسم الوصولات.</div>';else if(state.tab==='notifications')c.innerHTML=notificationsView();else if(state.tab==='settings')c.innerHTML=settingsView();else c.innerHTML=home()}
+  function render(){if(currentUser()?.role!=='library')return;updateHeader();document.querySelectorAll('.library-v116-tabs button').forEach(b=>b.classList.toggle('active',b.dataset.libraryTab===state.tab));const c=document.getElementById('libraryV116Content');if(!c)return;c.innerHTML=state.tab==='orders'?ordersView():state.tab==='finance'?financeView():state.tab==='notifications'?notificationsView():state.tab==='settings'?settingsView():home()}
   async function toggleOpen(){
     const lib=getLibrary();if(!lib)return alert('تعذر تحديد حساب المكتبة');
     const open=!isOpen(lib);
@@ -1130,53 +1130,6 @@ window.AlinTeacherModules.unpublishTeacherBooklet=unpublishTeacherBooklet;
   const toastSafe=(m)=>typeof toast==='function'?toast(m):alert(m);
   const escSafe=(v)=>typeof esc==='function'?esc(v):String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const copies=(o)=>Math.max(1,Number(o?.qty||o?.quantity||1));
-  function libraryNameForProtectedPrint(order){
-    try{
-      const dbx=window.db||{};
-      const id=String(order?.library_id||order?.pickup_library_id||order?.assigned_library_id||'');
-      const libraries=[...(Array.isArray(dbx.accounts?.libraries)?dbx.accounts.libraries:[]),...(Array.isArray(dbx.libraries)?dbx.libraries:[])];
-      const library=libraries.find(item=>[item?.id,item?.library_id,item?.account_id,item?.user_id].some(value=>String(value||'')===id));
-      return String(library?.name||window.current?.name||'المكتبة');
-    }catch(_){return String(window.current?.name||'المكتبة');}
-  }
-  function protectedPrintText(order){
-    const orderNo=String(order?.order_number||order?.id||'—');
-    const date=new Date().toLocaleDateString('ar-IQ',{year:'numeric',month:'2-digit',day:'2-digit'});
-    return `منصة آلين • الطلب ${orderNo} • ${libraryNameForProtectedPrint(order)} • ${date}`;
-  }
-  function drawProtectedPrintFooter(canvas,order){
-    const context=canvas?.getContext?.('2d');
-    if(!context)return;
-    const fontSize=Math.max(16,Math.min(28,Math.round(canvas.width/58)));
-    const x=Math.round(canvas.width/2);
-    const y=Math.round(canvas.height*0.52);
-    const maxWidth=Math.round(canvas.width*0.82);
-    let darkBackground=false;
-    try{
-      const sampleWidth=Math.max(60,Math.min(maxWidth,canvas.width));
-      const sampleHeight=Math.max(24,Math.round(fontSize*2.2));
-      const sampleX=Math.max(0,Math.round(x-sampleWidth/2));
-      const sampleY=Math.max(0,Math.round(y-sampleHeight/2));
-      const pixels=context.getImageData(sampleX,sampleY,sampleWidth,sampleHeight).data;
-      let luminance=0,samples=0;
-      for(let i=0;i<pixels.length;i+=96){
-        luminance+=(pixels[i]*0.2126)+(pixels[i+1]*0.7152)+(pixels[i+2]*0.0722);
-        samples++;
-      }
-      darkBackground=samples>0&&(luminance/samples)<128;
-    }catch(_){darkBackground=false;}
-    context.save();
-    context.globalAlpha=darkBackground?0.58:0.34;
-    context.fillStyle=darkBackground?'#ffffff':'#17263b';
-    context.font=`700 ${fontSize}px Tahoma, Arial, sans-serif`;
-    context.shadowColor=darkBackground?'rgba(0,0,0,.45)':'rgba(255,255,255,.75)';
-    context.shadowBlur=Math.max(1,Math.round(fontSize*0.08));
-    context.textAlign='center';
-    context.textBaseline='middle';
-    if('direction' in context)context.direction='rtl';
-    context.fillText(protectedPrintText(order),x,y,maxWidth);
-    context.restore();
-  }
   function findOrder(id){try{return (db.orders||[]).find(x=>String(x.id)===String(id));}catch(_){return null;}}
   function findBooklet(order){
     try{
@@ -1243,7 +1196,6 @@ window.AlinTeacherModules.unpublishTeacherBooklet=unpublishTeacherBooklet;
       canvas.setAttribute('aria-label',`صفحة ${n}`);
       surface.appendChild(canvas);wrap.append(label,surface);pages.appendChild(wrap);
       await page.render({canvasContext:canvas.getContext('2d',{alpha:false}),viewport}).promise;
-      drawProtectedPrintFooter(canvas,activeOrder);
     }
     status.hidden=true;
     status.style.display='none';
@@ -1291,7 +1243,6 @@ window.AlinTeacherModules.unpublishTeacherBooklet=unpublishTeacherBooklet;
         const viewport=page.getViewport({scale:2});
         const canvas=document.createElement('canvas');canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height);
         await page.render({canvasContext:canvas.getContext('2d',{alpha:false}),viewport}).promise;
-        drawProtectedPrintFooter(canvas,activeOrder);
         images.push(canvas.toDataURL('image/jpeg',0.96));
       }
       let frame=document.getElementById('alinPrintFrameV119');
@@ -3487,7 +3438,7 @@ window.deleteCoupon = deleteCoupon;
   const {$,$$,arr,escv,moneyv,now,notify,currentAccount,dbx,areasOf,statusOf,statusLabel,resolveCourier,allOrders,myOrders,done,active,today,financials,orderState,friendlyOrderError,mapLink,phoneLink,waLink,fmtDate,transitionOrder,refreshCourierData,resetRefresh}=core;
   let renderSerial=0;
   const pendingOrders=new Set();
-  function ensureTabs(){const nav=$('.courier-v161-tabs');if(!nav)return;const wanted=[['home','الرئيسية'],['current','طلبات التوصيل'],['completed','المكتملة'],['finance','الحسابات'],['receipts','الوصولات'],['notifications','الإشعارات'],['profile','حسابي']];nav.innerHTML=wanted.map(([key,label])=>`<button type="button" data-courier-tab="${key}" onclick="renderCourierDashboard('${key}')">${label}${key==='current'?'<span id="courierCurrentBadge" hidden>0</span>':''}${key==='notifications'?'<span id="courierNotifyBadge" hidden>0</span>':''}</button>`).join('')}
+  function ensureTabs(){const nav=$('.courier-v161-tabs');if(!nav)return;const wanted=[['home','الرئيسية'],['current','طلبات التوصيل'],['completed','المكتملة'],['finance','الحسابات'],['notifications','الإشعارات'],['profile','حسابي']];nav.innerHTML=wanted.map(([key,label])=>`<button type="button" data-courier-tab="${key}" onclick="renderCourierDashboard('${key}')">${label}${key==='current'?'<span id="courierCurrentBadge" hidden>0</span>':''}${key==='notifications'?'<span id="courierNotifyBadge" hidden>0</span>':''}</button>`).join('')}
   function notificationsFor(c){return window.AlinNotifications?.visible?.({role:'courier',id:String(c?.id||'')})||arr(dbx().notifications).filter(n=>String(n.courier_id||n.user_id||n.recipient_id||n.target_id||'')===String(c?.id)||['courier','delegate','all'].includes(String(n.target_role||n.role||n.audience||''))).sort((a,b)=>String(b.created_at||'').localeCompare(String(a.created_at||'')))}
   function setHeader(c,tab){const name=$('#courierV161Name'),areas=$('#courierV161Areas');if(name)name.textContent=c?.name||currentAccount()?.name||'المندوب';if(areas)areas.textContent=areasOf(c).join('، ')||'غير محددة';$$('.courier-v161-tabs [data-courier-tab]').forEach(b=>b.classList.toggle('active',b.dataset.courierTab===tab));const cb=$('#courierCurrentBadge'),nb=$('#courierNotifyBadge'),activeCount=myOrders(c).filter(active).length,unread=window.AlinNotifications?.unreadCount?.({role:'courier',id:String(c?.id||'')})??notificationsFor(c).filter(n=>!(n.read_at||n.is_read)).length;if(cb){cb.textContent=activeCount;cb.hidden=!activeCount}if(nb){nb.textContent=unread;nb.hidden=!unread}}
   function summary(c,rows){const f=financials(c);return `<section class="v174-metrics"><article><small>طلبات جديدة</small><strong>${rows.filter(o=>['assigned','new','pending_admin'].includes(String(o.status||''))).length}</strong></article><article><small>قيد التوصيل</small><strong>${rows.filter(o=>['accepted','picked_up','out_for_delivery','processing'].includes(String(o.status||''))).length}</strong></article><article><small>تم التسليم اليوم</small><strong>${rows.filter(o=>done(o)&&today(o)).length}</strong></article><article><small>كل المكتملة</small><strong>${rows.filter(done).length}</strong></article><article><small>أرباح التوصيل</small><strong>${moneyv(f.earnings)} د.ع</strong></article><article class="debt"><small>ذمتك للإدارة</small><strong>${moneyv(f.debt)} د.ع</strong></article></section>`}
@@ -3498,7 +3449,7 @@ window.deleteCoupon = deleteCoupon;
   function notificationsHtml(c,rows){const notes=notificationsFor(c);return `${summary(c,rows)}<section class="v164-section-head"><div><h2>إشعارات المندوب</h2><p>الطلبات الجديدة ورسائل الإدارة والتسويات.</p></div><button onclick="alinV164CourierReadAll()">تحديد الكل كمقروء</button></section><div class="v164-notifications">${notes.map(n=>{const read=window.AlinNotifications?.isRead?.(n,{role:'courier',id:String(c?.id||'')})??Boolean(n.read_at||n.is_read);return `<article class="${read?'read':''}"><div><h3>${escv(n.title||'إشعار')}</h3><p>${escv(n.message||n.body||'')}</p><small>${escv(fmtDate(n.created_at))}</small></div>${read?'':`<button onclick="alinV164CourierRead('${escv(n.id)}')">مقروء</button>`}</article>`}).join('')||'<div class="empty">لا توجد إشعارات.</div>'}</div>`}
   function profileHtml(c,rows){return `${summary(c,rows)}<section class="v164-profile"><div class="v164-profile-head"><div class="v161-avatar">${escv((c.name||'م').slice(0,1))}</div><div><h2>${escv(c.name||'مندوب')}</h2><p>${escv(c.phone||currentAccount()?.phone||'بدون هاتف')}</p></div><span class="v161-status ${statusOf(c)}">${statusLabel(statusOf(c))}</span></div><div class="v164-profile-fields"><label>حالة العمل<select id="v161MyAvailability"><option value="available" ${statusOf(c)==='available'?'selected':''}>متاح</option><option value="busy" ${statusOf(c)==='busy'?'selected':''}>مشغول</option><option value="offline" ${statusOf(c)==='offline'?'selected':''}>خارج الخدمة</option></select></label><div><small>مناطق العمل</small><div class="v161-area-chips">${areasOf(c).map(a=>`<span>${escv(a)}</span>`).join('')||'<span>غير محددة</span>'}</div></div></div><button onclick="alinV161SaveMyStatus()">حفظ الحالة</button></section>`}
   function unavailableHtml(){return `<section class="v174-panel"><h2>تعذر ربط صفحة المندوب بالحساب</h2><p>اضغط إعادة المحاولة. إذا استمرت الحالة افتح حساب المندوب من لوحة المدير واحفظه مرة واحدة.</p><button onclick="alinRefreshCourierPage()">إعادة تحميل بيانات المندوب</button></section>`}
-  async function renderCourierDashboard(tab='home',options={}){const serial=++renderSerial,box=$('#courierV161Content');if(!box)return false;ensureTabs();let c=resolveCourier();setHeader(c,tab);if(!c){box.innerHTML=unavailableHtml();return false}let rows=myOrders(c);const paint=()=>{if(serial!==renderSerial)return;setHeader(c,tab);if(tab==='home')box.innerHTML=homeHtml(c,rows);else if(tab==='current')box.innerHTML=ordersHtml(c,rows,false);else if(tab==='completed')box.innerHTML=ordersHtml(c,rows,true);else if(tab==='finance')box.innerHTML=financeHtml(c,rows);else if(tab==='receipts')box.innerHTML=window.AlinReceipts?.renderCourier?.(c,rows)||'<div class="empty">تعذر تحميل قسم الوصولات.</div>';else if(tab==='notifications')box.innerHTML=notificationsHtml(c,rows);else box.innerHTML=profileHtml(c,rows)};paint();if(options.refresh!==false){c=await refreshCourierData(Boolean(options.force));if(serial!==renderSerial)return true;if(!c){box.innerHTML=unavailableHtml();return false}rows=myOrders(c);paint()}return true}
+  async function renderCourierDashboard(tab='home',options={}){const serial=++renderSerial,box=$('#courierV161Content');if(!box)return false;ensureTabs();let c=resolveCourier();setHeader(c,tab);if(!c){box.innerHTML=unavailableHtml();return false}let rows=myOrders(c);const paint=()=>{if(serial!==renderSerial)return;setHeader(c,tab);if(tab==='home')box.innerHTML=homeHtml(c,rows);else if(tab==='current')box.innerHTML=ordersHtml(c,rows,false);else if(tab==='completed')box.innerHTML=ordersHtml(c,rows,true);else if(tab==='finance')box.innerHTML=financeHtml(c,rows);else if(tab==='notifications')box.innerHTML=notificationsHtml(c,rows);else box.innerHTML=profileHtml(c,rows)};paint();if(options.refresh!==false){c=await refreshCourierData(Boolean(options.force));if(serial!==renderSerial)return true;if(!c){box.innerHTML=unavailableHtml();return false}rows=myOrders(c);paint()}return true}
   async function updateOrder(id,values,message){try{await update('orders',values,{id});const row=allOrders().find(x=>String(x.id)===String(id));if(row)Object.assign(row,values);await refreshCourierData(true);await renderCourierDashboard('current',{refresh:false});notify(message);return true}catch(error){console.error('[ALIN courier order]',error);notify(friendlyOrderError(error));return false}}
   async function transitionCourierOrder(id,status,reason=''){
     const key=String(id);
@@ -5183,85 +5134,3 @@ window.AlinCourierModules['recordCourierSettlementForOrder']=typeof recordCourie
 })();
 
 ;
-
-
-// === modules/core/receipts.js ===
-/* ALIN v4.1.9.1 — integrated receipts sections for all roles. */
-(function(){
-  'use strict';
-  if(window.AlinReceipts?.version==='4.1.9.1')return;
-  const arr=v=>Array.isArray(v)?v:[];
-  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const num=v=>Number(v||0);
-  const same=(a,b)=>String(a??'')===String(b??'');
-  const locale=()=>window.AlinI18n?.locale?.()||'ar-IQ';
-  const money=v=>Math.round(num(v)).toLocaleString(locale());
-  const fmtDate=v=>{if(!v)return '—';try{return new Intl.DateTimeFormat(locale(),{dateStyle:'medium',timeStyle:'short'}).format(new Date(v))}catch(_){return String(v)}};
-  const db=()=>window.db||{};
-  const statusLabel=v=>({new:'جديد',pending:'قيد الانتظار',pending_admin:'بانتظار الإدارة',processing:'قيد التجهيز',printing:'قيد الطباعة',ready:'جاهز',completed:'مكتمل',delivered:'تم التسليم',cancelled:'ملغي',canceled:'ملغي',paid:'مدفوع',settled:'تمت التسوية',approved:'موافق عليه',active:'فعال',assigned:'تم التعيين',out_for_delivery:'قيد التوصيل'}[String(v||'').toLowerCase()]||String(v||'غير محدد'));
-  function accountLists(){const s=db().accounts||{};return {teachers:arr(s.teachers),libraries:arr(s.libraries),couriers:arr(s.couriers),all:arr(s.all)}}
-  function currentId(role,context={}){
-    if(role==='teacher')return String(context.id||window.current?.id||'');
-    if(role==='library'){
-      const cur=window.current||{}, list=accountLists().libraries;
-      const found=list.find(r=>[cur.id,cur.library_id,cur.account_id,cur.user_id].some(id=>id&&[r.id,r.account_id,r.user_id].some(v=>same(v,id))))||list.find(r=>cur.username&&same(r.username,cur.username));
-      return String(found?.id||cur.library_id||cur.id||'');
-    }
-    if(role==='courier')return String(context.courier?.id||window.current?.id||'');
-    return '';
-  }
-  function ordersFor(role,context={}){
-    const rows=arr(db().orders); if(role==='admin')return rows;
-    const id=currentId(role,context);
-    if(role==='teacher'){
-      if(Array.isArray(context.orders))return context.orders;
-      const books=arr(db().booklets).filter(r=>same(r.teacher_id,id)); const ids=new Set(books.map(r=>String(r.id)));
-      return rows.filter(r=>same(r.teacher_id,id)||ids.has(String(r.item_id||r.booklet_id||'')));
-    }
-    if(role==='library')return rows.filter(r=>[r.library_id,r.pickup_library_id,r.assigned_library_id].some(v=>same(v,id)));
-    if(role==='courier')return rows.filter(r=>[r.courier_id,r.delegate_id,r.assigned_courier_id].some(v=>same(v,id)));
-    return [];
-  }
-  function allSettlements(){
-    const s=db(); const rows=[...arr(s.settlements),...arr(s.librarySettlements),...arr(s.library_settlements),...arr(s.teacherPayouts),...arr(s.teacher_payouts),...arr(s.courierSettlements),...arr(s.courier_settlements),...arr(s.payouts),...arr(s.withdrawals)];
-    const seen=new Set(); return rows.filter((r,i)=>{if(!r)return false;const k=String(r.id||r.receipt_number||r.voucher_number||`${r.created_at||''}-${r.amount||''}-${i}`);if(seen.has(k))return false;seen.add(k);return true});
-  }
-  function settlementsFor(role,context={}){
-    if(role==='admin')return allSettlements(); const id=currentId(role,context);
-    return allSettlements().filter(r=>{
-      const key=String(r.role||r.account_role||r.entity_role||'').toLowerCase();
-      const ids=role==='teacher'?[r.teacher_id,r.account_id,r.user_id]:role==='library'?[r.library_id,r.account_id,r.user_id]:[r.courier_id,r.delegate_id,r.account_id,r.user_id];
-      return ids.some(v=>same(v,id))||key===role;
-    });
-  }
-  const orderAmount=r=>num(r.total||r.total_amount||r.amount||r.grand_total);
-  const orderNumber=r=>r.order_number||r.receipt_number||r.id||'—';
-  const settlementNumber=r=>r.receipt_number||r.voucher_number||r.settlement_number||r.id||'—';
-  function items(role,context={}){
-    const orders=ordersFor(role,context).map(r=>({key:`order:${r.id||orderNumber(r)}`,kind:'order',number:orderNumber(r),date:r.completed_at||r.delivered_at||r.updated_at||r.created_at||r.date,title:r.title||r.item_name||r.product_name||'طلب منصة آلين',subtitle:r.student_name||r.customer_name||'طلب عميل',amount:orderAmount(r),status:statusLabel(r.status),raw:r}));
-    const settlements=settlementsFor(role,context).map(r=>({key:`settlement:${r.id||settlementNumber(r)}`,kind:'settlement',number:settlementNumber(r),date:r.settled_at||r.paid_at||r.updated_at||r.created_at||r.date,title:r.title||r.note||'تسوية حساب',subtitle:r.account_name||r.entity_name||r.teacher_name||r.library_name||r.courier_name||'حركة مالية',amount:num(r.amount||r.paid_amount||r.settled_amount||r.total),status:statusLabel(r.status||'settled'),raw:r}));
-    return [...orders,...settlements].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))).slice(0,300);
-  }
-  const roleTitle=r=>({admin:'وصولات الإدارة',teacher:'وصولات المدرس',library:'وصولات المكتبة',courier:'وصولات المندوب'}[r]||'الوصولات');
-  const roleSubtitle=r=>({admin:'كل وصولات الطلبات والتسويات المالية في المنصة.',teacher:'وصولات طلبات ملازمك وتسويات أرباحك.',library:'وصولات الطباعة والتسليم وتسويات المكتبة.',courier:'وصولات التوصيل وتسويات المندوب.'}[r]||'');
-  function card(role,item){const key=encodeURIComponent(item.key), search=esc(`${item.number} ${item.title} ${item.subtitle}`.toLowerCase());return `<article class="alin-receipt-row" data-receipt-search="${search}"><div class="alin-receipt-icon">${item.kind==='order'?'ط':'ت'}</div><div class="alin-receipt-main"><div><span class="alin-receipt-kind">${item.kind==='order'?'وصل طلب':'وصل تسوية'}</span><b>${esc(item.number)}</b></div><h3>${esc(item.title)}</h3><p>${esc(item.subtitle)} • ${esc(fmtDate(item.date))}</p></div><div class="alin-receipt-side"><strong>${money(item.amount)} د.ع</strong><span>${esc(item.status)}</span><button type="button" onclick="AlinReceipts.open('${esc(role)}','${key}')">عرض الوصل</button></div></article>`}
-  function section(role,context={}){const list=items(role,context), orders=list.filter(x=>x.kind==='order').length, settles=list.length-orders, total=list.reduce((s,x)=>s+x.amount,0), id=`alinReceiptsList-${role}`;return `<section class="alin-receipts-section" data-receipts-role="${esc(role)}"><header class="alin-receipts-head"><div><span class="alin-receipts-brand">منصة آلين</span><h2>${esc(roleTitle(role))}</h2><p>${esc(roleSubtitle(role))}</p></div><div class="alin-receipts-mark">آ</div></header><div class="alin-receipts-stats"><article><small>كل الوصولات</small><strong>${list.length}</strong></article><article><small>وصولات الطلبات</small><strong>${orders}</strong></article><article><small>وصولات التسويات</small><strong>${settles}</strong></article><article><small>إجمالي المبالغ</small><strong>${money(total)} د.ع</strong></article></div><div class="alin-receipts-toolbar"><input type="search" placeholder="ابحث برقم الوصل أو الاسم" oninput="AlinReceipts.filter('${id}',this.value)"><button type="button" class="secondary" onclick="AlinReceipts.refresh('${esc(role)}')">تحديث</button></div><div class="alin-receipts-list" id="${id}">${list.map(x=>card(role,x)).join('')||'<div class="alin-receipts-empty">لا توجد وصولات مسجلة حالياً.</div>'}</div></section>`}
-  function contextFor(role){if(role==='teacher')return window.TeacherApp?.data?.()||{};return {}}
-  function resolve(role,key){return items(role,contextFor(role)).find(x=>x.key===key)||null}
-  function shell(title,item,body){return `<article class="alin-receipt-sheet" id="alinCurrentReceipt"><header><div class="alin-sheet-logo">آ</div><div><h1>منصة آلين</h1><p>ملازم • قرطاسية • هدايا</p></div><div class="alin-sheet-code"><small>رقم الوصل</small><b>${esc(item.number)}</b><span>${esc(fmtDate(item.date))}</span></div></header><div class="alin-sheet-title"><h2>${esc(title)}</h2><span>نسخة رسمية</span></div>${body}<footer><div><b>توقيع المستلم</b><span>________________</span></div><div><b>توقيع الإدارة</b><span>________________</span></div><p>شكراً لاستخدام منصة آلين</p></footer></article>`}
-  function orderReceipt(item){const r=item.raw, qty=Math.max(1,num(r.qty||r.quantity||1)), unit=item.amount/qty, type=r.fulfillment_type==='delivery'||r.fulfillment_type==='home_delivery'?'توصيل للمنزل':'استلام من المكتبة';return shell('إيصال استلام طلب',item,`<div class="alin-receipt-grid"><div><small>اسم الطالب</small><b>${esc(r.student_name||r.customer_name||'—')}</b></div><div><small>حالة الطلب</small><b>${esc(statusLabel(r.status))}</b></div><div><small>طريقة الاستلام</small><b>${esc(type)}</b></div><div><small>المكتبة / المندوب</small><b>${esc(r.library_name||r.courier_name||r.delegate_name||'—')}</b></div></div><div class="alin-receipt-table"><div class="head"><span>الصنف</span><span>الكمية</span><span>سعر الوحدة</span><span>الإجمالي</span></div><div><span>${esc(r.title||r.item_name||r.product_name||'طلب')}</span><span>${qty}</span><span>${money(unit)} د.ع</span><span>${money(item.amount)} د.ع</span></div></div><div class="alin-receipt-total"><span>المبلغ الكلي</span><strong>${money(item.amount)} د.ع</strong></div><div class="alin-receipt-notes"><b>ملاحظات:</b> ${esc(r.notes||r.note||'لا توجد ملاحظات')}</div>`)}
-  function settlementReceipt(item){const r=item.raw, previous=num(r.previous_balance||r.balance_before||r.old_balance), remaining=num(r.remaining||r.balance_after||r.remaining_balance), entity=r.account_name||r.entity_name||r.teacher_name||r.library_name||r.courier_name||'—';return shell('إيصال تسوية حساب',item,`<div class="alin-receipt-grid"><div><small>الجهة</small><b>${esc(entity)}</b></div><div><small>نوع التسوية</small><b>${esc(r.type||r.kind||r.role||'تسوية مالية')}</b></div><div><small>طريقة الدفع</small><b>${esc(r.payment_method||r.method||'نقداً')}</b></div><div><small>الحالة</small><b>${esc(statusLabel(r.status||'settled'))}</b></div></div><div class="alin-settlement-summary"><div><small>الرصيد السابق</small><strong>${money(previous)} د.ع</strong></div><div><small>المبلغ المسدد</small><strong>${money(item.amount)} د.ع</strong></div><div><small>المتبقي</small><strong>${money(remaining)} د.ع</strong></div></div><div class="alin-receipt-notes"><b>البيان:</b> ${esc(r.note||r.description||item.title)}</div>`)}
-  function open(role,encoded){const key=decodeURIComponent(String(encoded||'')), item=resolve(role,key);if(!item){window.alert('تعذر العثور على بيانات الوصل. حدّث البيانات وحاول مرة أخرى.');return false}const box=document.getElementById('checkoutBox'), modal=document.getElementById('checkoutModal');if(!box||!modal){window.alert('تعذر فتح معاينة الوصل.');return false}box.innerHTML=`<div class="alin-receipt-preview">${item.kind==='settlement'?settlementReceipt(item):orderReceipt(item)}<div class="alin-receipt-actions no-print"><button type="button" onclick="AlinReceipts.printCurrent()">طباعة / حفظ PDF</button><button type="button" class="secondary" onclick="AlinReceipts.close()">إغلاق</button></div></div>`;modal.classList.remove('hidden');modal.dataset.receiptOpen='1';return true}
-  function close(){const modal=document.getElementById('checkoutModal');if(typeof window.closeCheckout==='function')window.closeCheckout();else modal?.classList.add('hidden');if(modal)delete modal.dataset.receiptOpen}
-  function printCurrent(){if(document.getElementById('alinCurrentReceipt'))window.print()}
-  function filter(id,value){const q=String(value||'').trim().toLowerCase(), safe=(window.CSS&&typeof CSS.escape==='function')?CSS.escape(id):String(id).replace(/[^a-zA-Z0-9_-]/g,'\\$&');document.querySelectorAll(`#${safe} .alin-receipt-row`).forEach(row=>{row.hidden=Boolean(q&&!String(row.dataset.receiptSearch||'').includes(q))})}
-  function refresh(role){if(role==='teacher')window.TeacherApp?.render?.();else if(role==='admin')window.adminTab?.('receipts');else if(role==='library')(window.AlinLibraryV116?.render||window.renderLibrary)?.();else if(role==='courier')window.renderCourierDashboard?.('receipts',{refresh:true})}
-  function renderTeacher(context){const host=document.getElementById('teacherContent');if(host)host.innerHTML=section('teacher',context)}
-  function renderAdmin(host){const target=host||document.getElementById('adminContent');if(target)target.innerHTML=section('admin')}
-  const renderLibrary=()=>section('library');
-  const renderCourier=(courier,orders)=>section('courier',{courier,orders});
-  function register(){try{if(window.TeacherApp&&!window.TeacherApp.tabs?.has?.('receipts'))window.TeacherApp.registerTab('receipts',renderTeacher)}catch(e){console.warn('[ALIN receipts teacher]',e)}try{if(window.AlinAdminModules&&!window.AlinAdminModules.has?.('receipts'))window.AlinAdminModules.register('receipts',renderAdmin)}catch(e){console.warn('[ALIN receipts admin]',e)}}
-  window.AlinReceipts=Object.freeze({version:'4.1.9.1',section,renderTeacher,renderAdmin,renderLibrary,renderCourier,open,close,printCurrent,filter,refresh,items});
-  register(); if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',register,{once:true});
-})();
-
