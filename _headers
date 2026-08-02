@@ -11,11 +11,18 @@
 /store-mobile
   Cache-Control: no-cache, no-store, must-revalidate
 
-/store-desktop-4182.html
+/store-desktop-4183.html
   Cache-Control: no-cache, no-store, must-revalidate
-/store-mobile-4182.html
+/store-mobile-4183.html
   Cache-Control: no-cache, no-store, must-revalidate
-/core/receipt-system-v4182.js
+/core/receipt-system-v4183.js
   Cache-Control: no-cache, no-store, must-revalidate
-/core/receipt-center-v4182.js
+/core/receipt-center-v4183.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/core/receipt-actions-v4183.js
+  Cache-Control: no-cache, no-store, must-revalidate
+/alin-app-desktop.v4.1.8.3.js
+  Cache-Control: no-cache, no-store, must-revalidate
+/alin-app-mobile.v4.1.8.3.js
   Cache-Control: no-cache, no-store, must-revalidate
