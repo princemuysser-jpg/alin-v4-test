@@ -9,7 +9,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' blob: https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; worker-src 'self' blob: https://cdn.jsdelivr.net; frame-src 'self' blob:;">
 <script>(function(){try{var mode=localStorage.getItem('alin_theme_v234')==='dark'?'dark':'light';document.documentElement.dataset.alinTheme=mode;document.documentElement.dataset.alinThemeMode=mode}catch(_){document.documentElement.dataset.alinTheme='light';document.documentElement.dataset.alinThemeMode='light'}})();</script>
 <meta content="width=device-width,initial-scale=1" name="viewport"/>
-<title>متجر آلين v4.1.5</title>
+<title>متجر آلين v4.2.0</title>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
 <meta content="#f8f3e8" name="theme-color"/>
@@ -19,16 +19,16 @@
 <link href="./manifest-desktop.webmanifest" rel="manifest"/>
 <link href="assets/icons/icon-192.png" rel="icon" sizes="192x192" type="image/png"/>
 <link href="assets/icons/icon-192.png" rel="apple-touch-icon"/>
-<link href="./dist/css/desktop.bundle.css?v=4.1.5" rel="stylesheet"/>
-<link href="./styles/alin-tokens.css?v=4.1.5" rel="stylesheet"/>
-<link href="./styles/alin-shared.css?v=4.1.5" rel="stylesheet"/>
-<link href="./styles/alin-branding.css?v=4.1.5" rel="stylesheet"/>
-<link href="./styles/alin-i18n.css?v=4.1.5" rel="stylesheet"/>
-<link href="./styles/alin-desktop.css?v=4.1.5" rel="stylesheet"/>
-<link rel="preload" href="./alin-app-desktop.v4.1.5.js?v=4.1.5" as="script">
+<link href="./dist/css/desktop.bundle.css?v=4.2.0" rel="stylesheet"/>
+<link href="./styles/alin-tokens.css?v=4.2.0" rel="stylesheet"/>
+<link href="./styles/alin-shared.css?v=4.2.0" rel="stylesheet"/>
+<link href="./styles/alin-branding.css?v=4.2.0" rel="stylesheet"/>
+<link href="./styles/alin-i18n.css?v=4.2.0" rel="stylesheet"/>
+<link href="./styles/alin-desktop.css?v=4.2.0" rel="stylesheet"/>
+<link rel="preload" href="./alin-app-desktop.v4.2.0.js?v=4.2.0" as="script">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7" defer onerror="window.__ALIN_CDN_ERROR__=true;console.error('تعذر تحميل Supabase')"></script>
-<script src="./alin-config.js?v=4.1.5"></script>
-<script src="./dist/alin-core.v4.js?v=4.1.5" defer></script>
+<script src="./alin-config.js?v=4.2.0"></script>
+<script src="./dist/alin-core.v4.js?v=4.2.0" defer></script>
 
 
 
@@ -73,7 +73,7 @@
 
 
 
-  <link rel="stylesheet" href="./store/banners.css?v=4.1.5">
+  <link rel="stylesheet" href="./store/banners.css?v=4.2.0">
 <style id="alinAuthBootStyle">html[data-alin-auth-boot="1"] body>*{visibility:hidden!important}html[data-alin-auth-boot="1"] body::before{content:"جارٍ فتح منصة آلين...";visibility:visible;position:fixed;inset:0;display:grid;place-items:center;background:#f7f9fc;color:#102342;font:800 18px system-ui;z-index:2147483647}</style>
 <script>setTimeout(()=>document.documentElement.removeAttribute('data-alin-auth-boot'),3500)</script>
 </head>
@@ -116,6 +116,8 @@
 <input id="searchInput" oninput="renderStore()" placeholder="ابحث عن ملزمة، مادة، مدرس أو منتج" type="search"/>
 </label>
 <div class="alin98-actions desktop-store-actions">
+<button aria-label="تتبع الطلب" class="desktop-action desktop-tracking" data-desktop-control="tracking" onclick="AlinDesktopTools.openTracking()" type="button"><span aria-hidden="true" class="desktop-tracking-icon"></span><small>تتبع الطلب</small></button>
+<button aria-label="الخيارات" class="desktop-action desktop-options" data-desktop-control="options" onclick="AlinDesktopTools.openOptions()" type="button"><span aria-hidden="true" class="alin-desktop-options-icon"></span><small>خيارات</small></button>
 <button aria-label="المفضلة" class="desktop-action" data-desktop-control="favorites" data-v99-action="desktopFavorites" type="button"><span aria-hidden="true" class="desktop-favorite-icon"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z"/></svg></span><small>المفضلة</small><span class="desktop-action-count" hidden="" id="v99DesktopFavoriteCount">0</span></button>
 <button aria-label="الإشعارات" class="desktop-action desktop-notification" data-desktop-control="notifications" onclick="AlinStoreNotifications?.open?.()" type="button"><span aria-hidden="true" class="desktop-notification-icon"><svg viewBox="0 0 24 24"><path d="M6.5 9.25a5.5 5.5 0 0 1 11 0c0 4.2 1.15 5.75 2.25 6.9H4.25c1.1-1.15 2.25-2.7 2.25-6.9Z"/><path d="M9.4 19a2.8 2.8 0 0 0 5.2 0"/><path d="M12 3V1.75"/></svg></span><small>الإشعارات</small><span class="alin98-notify-count desktop-action-count" hidden="">0</span></button>
 <button aria-label="سلة المشتريات" class="desktop-action desktop-cart" data-desktop-control="cart" onclick="openCart()" type="button"><svg aria-hidden="true" class="desktop-cart-icon alin-cart-nav-icon" style="stroke:#0b5fa5" viewBox="0 0 28 28"><path d="M2.8 4.5h3.1l2.2 11.1a2.3 2.3 0 0 0 2.3 1.9h10.2a2.3 2.3 0 0 0 2.2-1.8l1.5-7.1H7"/><path d="M10 12.9h12.9"/><circle cx="11" cy="22.2" r="1.7"/><circle cx="21" cy="22.2" r="1.7"/></svg><small>السلة</small><span class="desktop-action-count" hidden="" id="desktopCartCount">0</span></button>
@@ -146,11 +148,6 @@
 <div class="store-products-head compact-store-head" id="storeProducts"></div>
 <div class="grid store-product-grid" id="storeGrid"></div>
 <section class="v99-student-hub" id="v99StudentHub"></section>
-<section class="v31-track-box" id="orderTrackBox">
-<div><h2>تتبع حالة الطلب</h2><p>اكتب رقم الطلب لمعرفة هل هو قيد التجهيز، جاهز بالمكتبة، أو تم التسليم.</p></div>
-<div class="track-form"><input id="trackOrderInput" placeholder="مثال: ALIN-0001 أو رقم الطلب"/><button onclick="trackOrder()">تتبع</button></div>
-<div class="track-result" id="trackOrderResult"></div>
-</section>
 <section class="store-real-stats" id="storeAbout"><div><span id="alinStatBooklets">0</span><small>ملزمة متاحة</small></div><div><span id="alinStatTeachers">0</span><small>مدرس</small></div><div><span id="alinStatLibraries">0</span><small>مكتبة</small></div></section>
 <nav aria-label="بوابات الشركاء" class="desktop-partner-access"><span>بوابات الشركاء:</span><button onclick="logout();showLogin('teacher')" type="button">المدرس</button><button onclick="logout();openLibraryJoinPortal()" type="button">المكتبة</button><button onclick="logout();showLogin('admin')" type="button">الإدارة</button></nav>
 <div class="store-success">آلين... نرافقك في طريق النجاح ♡</div>
@@ -164,6 +161,7 @@
 <button onclick="teacherTab('booklets')">ملازمي</button>
 <button onclick="teacherTab('orders')">الطلبات</button>
 <button onclick="teacherTab('finance')">الأرباح</button>
+<button data-teacher-tab="receipts" onclick="teacherTab('receipts')" type="button">الوصولات</button>
 <button data-teacher-tab="notifications" id="teacherNotificationsTabV160" onclick="teacherTab('notifications')" type="button"><span aria-hidden="true">🔔</span> الإشعارات <span class="teacher-v160-badge" hidden="" id="teacherNotificationsBadgeV160">0</span></button>
 <button onclick="teacherTab('requests')">رفع ملزمة</button>
 <button onclick="teacherTab('review')">طلبات النشر</button>
@@ -183,6 +181,7 @@
 <button class="active" data-library-tab="home" type="button">الرئيسية</button>
 <button data-library-tab="orders" type="button">الطلبات <span hidden="" id="libraryV116OrdersBadge">0</span></button>
 <button data-library-tab="finance" type="button">الحسابات</button>
+<button data-library-tab="receipts" type="button">الوصولات</button>
 <button data-library-tab="notifications" type="button">الإشعارات <span hidden="" id="libraryV116NotifyBadge">0</span></button>
 <button data-library-tab="settings" type="button">الإعدادات</button>
 </nav>
@@ -191,11 +190,11 @@
 </section>
 <section class="page hidden courier-v161-page" id="courierPage">
 <header class="courier-v161-hero"><div><small>صفحة المندوب</small><h1 id="courierV161Name">المندوب</h1><p>مناطق العمل: <span id="courierV161Areas">—</span></p></div><span>منصة آلين للتوصيل</span></header>
-<nav class="courier-v161-tabs"><button class="active" data-courier-tab="home" onclick="renderCourierDashboard('home')">الرئيسية</button><button data-courier-tab="current" onclick="renderCourierDashboard('current')">طلبات التوصيل</button><button data-courier-tab="completed" onclick="renderCourierDashboard('completed')">المكتملة</button><button data-courier-tab="finance" onclick="renderCourierDashboard('finance')">الحسابات</button><button data-courier-tab="notifications" onclick="renderCourierDashboard('notifications')">الإشعارات</button><button data-courier-tab="profile" onclick="renderCourierDashboard('profile')">حسابي</button></nav>
+<nav class="courier-v161-tabs"><button class="active" data-courier-tab="home" onclick="renderCourierDashboard('home')">الرئيسية</button><button data-courier-tab="current" onclick="renderCourierDashboard('current')">طلبات التوصيل</button><button data-courier-tab="completed" onclick="renderCourierDashboard('completed')">المكتملة</button><button data-courier-tab="finance" onclick="renderCourierDashboard('finance')">الحسابات</button><button data-courier-tab="receipts" onclick="renderCourierDashboard('receipts')">الوصولات</button><button data-courier-tab="notifications" onclick="renderCourierDashboard('notifications')">الإشعارات</button><button data-courier-tab="profile" onclick="renderCourierDashboard('profile')">حسابي</button></nav>
 <main id="courierV161Content"></main>
 </section>
 <section class="page hidden" id="adminPage">
-<div class="admin-heading"><div><h2>لوحة إدارة آلين</h2><p>إدارة المنصة من مكان واحد</p></div><span class="version-badge">v4.1.5</span></div>
+<div class="admin-heading"><div><h2>لوحة إدارة آلين</h2><p>إدارة المنصة من مكان واحد</p></div><span class="version-badge">v4.2.0</span></div>
 <div class="stats" id="adminStats"></div>
 <div class="admin-tabs">
 <button onclick="adminTab('dashboard')">الرئيسية</button>
@@ -210,6 +209,7 @@
 <button onclick="adminTab('deliveryOrders')">طلبات التوصيل</button>
 <button onclick="adminTab('courierSettlements')">تسويات المندوبين</button>
 <button onclick="adminTab('finance')">الأرباح</button>
+<button data-admin-tab="receipts" onclick="adminTab('receipts')" type="button">الوصولات</button>
 <button onclick="adminTab('ads')">الإعلانات</button>
 <button onclick="adminTab('coupons')">الكوبونات</button>
 <button onclick="adminTab('notifications')">مركز الإشعارات</button>
@@ -271,11 +271,9 @@
   
 
 
-<script src="./core/pwa-register.js?v=4.1.5" defer></script>
-<script src="./core/boot-recovery.js?v=4.1.5" defer></script>
-<script src="./modules/core/navigation.js?v=4.1.5" defer></script>
-<script src="./alin-app-desktop.v4.1.5.js?v=4.1.5" defer onload="alinAppBundleLoaded()" onerror="alinAppBundleFailed()"></script>
-<script src="./modules/core/account-admin-service.js?v=4.1.5" defer></script>
-<script src="./modules/teacher/admin-word-download.js?v=4.1.5" defer></script>
+<script src="./core/pwa-register.js?v=4.2.0" defer></script>
+<script src="./core/boot-recovery.js?v=4.2.0" defer></script>
+<script src="./alin-app-desktop.v4.2.0.js?v=4.2.0" defer onload="alinAppBundleLoaded()" onerror="alinAppBundleFailed()"></script>
+<script src="./modules/teacher/admin-word-download.js?v=4.2.0" defer></script>
 </body>
 </html>
