@@ -1,4 +1,4 @@
-const VERSION='alin-v4.1.5.4-approved-ui';
+const VERSION='alin-v4.1.5-header-tracking-1';
 const STATIC_CACHE=`${VERSION}-static`;
 const RUNTIME_CACHE=`${VERSION}-runtime`;
 
@@ -15,8 +15,7 @@ const CORE=[
   './styles/alin-i18n.css','./styles/alin-desktop.css','./styles/alin-mobile.css','./styles/alin-splash.css',
   './store/banners.css','./store/mobile-navigation.css',
   './assets/images/alin-splash-desktop.webp','./assets/images/alin-splash-mobile.webp',
-  './assets/icons/icon-192.png','./assets/icons/icon-512.png',
-
+  './assets/icons/icon-192.png','./assets/icons/icon-512.png'
 ];
 
 async function cacheCore(){

@@ -1,0 +1,12 @@
+ALIN 4.1.5 — Desktop Header Tracking Validation
+================================================
+Base: Alin v4.1.5 stable clean baseline
+
+Applied:
+- Removed the old tracking section from the storefront body.
+- Added a bounded tracking button to the desktop header actions.
+- Added a modal with order-code input and detailed results.
+- Preserved the existing alin_track_order RPC and Supabase data model.
+- Added explicit SVG width/height limits to prevent oversized icon rendering.
+- Added close-on-backdrop, Escape, Enter-to-search and body scroll lock.
+- No SQL changes. No database data changes.

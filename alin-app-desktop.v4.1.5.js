@@ -4841,7 +4841,7 @@ window.AlinCourierModules['recordCourierSettlementForOrder']=typeof recordCourie
 
 /* modules/store/tracking.js */
 // === store/tracking.js ===
-/* ALIN v4.1.5 — tracking accepts mixed-case order numbers and legacy RPC responses. */
+/* ALIN v4.1.5 — desktop header tracking modal, bounded icons and detailed result. */
 (function(){
   'use strict';
 
@@ -4855,150 +4855,103 @@ window.AlinCourierModules['recordCourierSettlementForOrder']=typeof recordCourie
   const normalizeCode=value=>String(value??'')
     .replace(/[٠-٩]/g,d=>'0123456789'['٠١٢٣٤٥٦٧٨٩'.indexOf(d)])
     .replace(/\s+/g,'').trim();
+  const firstValue=(row,keys,fallback='—')=>{for(const key of keys){const value=row?.[key];if(value!==undefined&&value!==null&&String(value).trim()!=='')return value}return fallback};
+  const formatDate=value=>{const date=value?new Date(value):null;if(!date||Number.isNaN(date.getTime()))return'—';try{return date.toLocaleString(window.AlinI18n?.locale?.()||'ar-IQ',{dateStyle:'medium',timeStyle:'short'})}catch(_){return date.toLocaleString()}};
+  const formatMoney=value=>Number(value||0).toLocaleString(window.AlinI18n?.locale?.()||'ar-IQ',{maximumFractionDigits:0});
   function trackingCandidates(value){
     const raw=normalizeCode(value),items=[];
     const add=candidate=>{candidate=String(candidate||'').trim();if(candidate&&!items.includes(candidate))items.push(candidate)};
     add(raw);
     const parts=raw.split('-');
-    if(parts.length>=2){
-      const suffix=parts.pop();
-      add(parts.map((part,index)=>index===0?part.toUpperCase():part).concat(String(suffix).toLowerCase()).join('-'));
-    }
-    add(raw.toUpperCase());
-    add(raw.toLowerCase());
-    return items;
+    if(parts.length>=2){const suffix=parts.pop();add(parts.map((part,index)=>index===0?part.toUpperCase():part).concat(String(suffix).toLowerCase()).join('-'))}
+    add(raw.toUpperCase());add(raw.toLowerCase());return items;
   }
-  const normalizeStatus=value=>{
-    const status=String(value||'new').trim().toLowerCase();
-    if(status==='delivered')return'completed';
-    if(status==='out_delivery')return'out_for_delivery';
-    if(status==='pending')return'new';
-    return status;
-  };
-  function rowFromRpc(data){
-    if(Array.isArray(data))return data[0]||null;
-    if(data&&Array.isArray(data.rows))return data.rows[0]||null;
-    if(data&&data.found===false)return null;
-    if(data&&data.order&&typeof data.order==='object')return data.order;
-    return data&&typeof data==='object'?data:null;
-  }
-  function isHomeDelivery(row){
-    const fulfillment=String(row?.fulfillment_type||row?.delivery_type||'').toLowerCase();
-    return ['home_delivery','delivery','courier'].includes(fulfillment)||Boolean(row?.delivery_area);
-  }
-  function stageIndex(status){
-    const map={
-      new:0,payment_pending:0,pending_admin:0,
-      assigned:1,accepted:1,processing:1,
-      printing:2,
-      ready:3,picked_up:3,out_for_delivery:3,
-      completed:4
+  const normalizeStatus=value=>{const status=String(value||'new').trim().toLowerCase();if(status==='delivered')return'completed';if(status==='out_delivery')return'out_for_delivery';if(status==='pending')return'new';return status};
+  function rowFromRpc(data){if(Array.isArray(data))return data[0]||null;if(data&&Array.isArray(data.rows))return data.rows[0]||null;if(data&&data.found===false)return null;if(data&&data.order&&typeof data.order==='object')return data.order;return data&&typeof data==='object'?data:null}
+  function isHomeDelivery(row){const fulfillment=String(row?.fulfillment_type||row?.delivery_type||'').toLowerCase();return['home_delivery','delivery','courier'].includes(fulfillment)||Boolean(row?.delivery_area)}
+  function stageIndex(status){const map={new:0,payment_pending:0,pending_admin:0,assigned:1,accepted:1,processing:1,printing:2,ready:3,picked_up:3,out_for_delivery:3,completed:4};return Object.prototype.hasOwnProperty.call(map,status)?map[status]:0}
+  function timelineLabels(home){return home?['جديد','قيد المراجعة','قيد التجهيز','في الطريق','تم التسليم']:['جديد','قيد المراجعة','قيد الطباعة','جاهز','تم التسليم']}
+  function icon(name){
+    const paths={
+      new:'<path d="M7 3h10a2 2 0 0 1 2 2v16H5V5a2 2 0 0 1 2-2Z"/><path d="M8 8h8M8 12h6"/>',
+      review:'<circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 4 4"/>',
+      print:'<path d="M7 8V3h10v5M7 17H5a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M7 14h10v7H7z"/>',
+      ready:'<path d="m4 7 8-4 8 4-8 4-8-4Z"/><path d="m4 7 8 4 8-4v10l-8 4-8-4V7Z"/>',
+      done:'<circle cx="12" cy="12" r="9"/><path d="m8 12 2.7 2.7L16.5 9"/>'
     };
-    return Object.prototype.hasOwnProperty.call(map,status)?map[status]:0;
+    return `<svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">${paths[name]||paths.new}</svg>`;
   }
-  function timelineLabels(home){
-    return home
-      ? ['تم استلام الطلب','تم تعيين المندوب','استلم المندوب الطلب','الطلب في الطريق','تم التسليم']
-      : ['تم استلام الطلب','قيد التجهيز','جاهز بالمكتبة','بانتظار الاستلام','تم التسليم'];
-  }
-  const trackingDate=value=>{const d=value?new Date(value):null;if(!d||Number.isNaN(d.getTime()))return'—';return d.toLocaleString(window.AlinI18n?.locale?.()||'ar-IQ',{dateStyle:'medium',timeStyle:'short'})};
-  const trackingMoney=value=>Number(value||0).toLocaleString(window.AlinI18n?.locale?.()||'ar-IQ',{maximumFractionDigits:0});
-  const firstValue=(row,keys,fallback='—')=>{for(const key of keys){const value=row?.[key];if(value!==undefined&&value!==null&&String(value).trim()!=='')return value}return fallback};
-  function trackingSvg(name){
-    const icons={
-      new:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10a2 2 0 0 1 2 2v14H5V5a2 2 0 0 1 2-2Z"/><path d="M8 8h8M8 12h6"/></svg>',
-      review:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 4 4"/></svg>',
-      print:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8V3h10v5M7 17H5a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M7 14h10v7H7z"/></svg>',
-      ready:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 7 8-4 8 4-8 4-8-4Z"/><path d="m4 7 8 4 8-4v10l-8 4-8-4V7Z"/></svg>',
-      done:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12 2.7 2.7L16.5 9"/></svg>',
-      user:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4.5 21a7.5 7.5 0 0 1 15 0"/></svg>',
-      store:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v10h16V10M3 10l2-6h14l2 6"/><path d="M8 20v-6h8v6M3 10c1.2 1.5 2.7 1.5 4 0 1.3 1.5 2.8 1.5 4 0 1.2 1.5 2.7 1.5 4 0 1.3 1.5 2.8 1.5 4 0"/></svg>',
-      calendar:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14a2 2 0 0 1 2 2v14H3V6a2 2 0 0 1 2-2Z"/><path d="M7 2v4M17 2v4M3 9h18"/></svg>',
-      note:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14v18H5z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>',
-      copy:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="11" height="11" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg>'
-    };return icons[name]||icons.note;
-  }
-  function detailCard(icon,labelText,value){return `<div class="alin-track-detail"><span class="alin-track-detail__icon">${trackingSvg(icon)}</span><div><small>${clean(labelText)}</small><b>${clean(value)}</b></div></div>`}
+  function detail(label,value,kind='') {return `<article class="alin-tracking-detail ${kind}"><small>${clean(label)}</small><b>${clean(value)}</b></article>`}
   function renderTracking(box,row,code){
-    const status=normalizeStatus(row.status);
-    const cancelled=['cancelled','rejected'].includes(status);
-    const current=statusLabels[status]||String(row.status||'قيد المتابعة');
-    const number=row.order_number||row.tracking_code||code;
-    const student=firstValue(row,['student_name','customer_name','name'],'—');
-    const destination=firstValue(row,['library_name','courier_name','delegate_name','assigned_to_name','delivery_area'],'—');
-    const note=firstValue(row,['notes','note','delivery_note','admin_note'],'لا توجد ملاحظات');
-    const created=trackingDate(firstValue(row,['updated_at','created_at','order_date'],null));
-    const total=trackingMoney(firstValue(row,['total','total_amount','amount'],0));
-    const qty=firstValue(row,['qty','quantity','copies_count','copies'],1);
-    const pickup=firstValue(row,['pickup_code','delivery_code','receive_code'],null);
-    const reached=cancelled?-1:stageIndex(status);
-    const steps=[
-      {key:'new',title:'جديد',sub:'تم استلام الطلب'},
-      {key:'review',title:'قيد المراجعة',sub:'جاري مراجعة الطلب'},
-      {key:'print',title:'قيد الطباعة',sub:'جاري تجهيز الطلب'},
-      {key:'ready',title:'جاهز',sub:'تم تجهيز الطلب'},
-      {key:'done',title:'تم التسليم',sub:'اكتمل تسليم الطلب'}
-    ];
-    const statusClass=cancelled?'is-cancelled':reached>=4?'is-complete':'is-active';
-    box.innerHTML=`<article class="alin-track-result-card ${statusClass}" data-track-status="${clean(status)}">
-      <header class="alin-track-result-head">
-        <div class="alin-track-number"><small>رقم الطلب</small><div><b dir="ltr">${clean(number)}</b><button type="button" class="alin-track-copy" aria-label="نسخ رقم الطلب" title="نسخ رقم الطلب">${trackingSvg('copy')}</button></div></div>
-        <span class="alin-track-status ${statusClass}">${cancelled?'×':'✓'} ${clean(current)}</span>
-      </header>
-      <section class="alin-track-details">
-        ${detailCard('user','اسم الطالب',student)}
-        ${detailCard('store','المكتبة أو المندوب',destination)}
-        ${detailCard('calendar','آخر تحديث',created)}
-        ${detailCard('note','الملاحظات',note)}
+    const status=normalizeStatus(row.status),cancelled=['cancelled','rejected'].includes(status),current=statusLabels[status]||String(row.status||'قيد المتابعة');
+    const number=firstValue(row,['order_number','tracking_code'],code),title=firstValue(row,['title','item_name','product_name'],'طلب منصة آلين');
+    const student=firstValue(row,['student_name','customer_name','name']);
+    const partner=isHomeDelivery(row)?firstValue(row,['courier_name','driver_name'],'لم يُعيّن المندوب بعد'):firstValue(row,['library_name','pickup_library_name'],'لم تُعيّن المكتبة بعد');
+    const date=formatDate(firstValue(row,['created_at','order_date','date'],''));
+    const notes=firstValue(row,['notes','student_notes','delivery_landmark'],'لا توجد ملاحظات');
+    const quantity=firstValue(row,['qty','quantity','copies_count','copy_count'],'1');
+    const total=firstValue(row,['total','total_amount','grand_total'],0);
+    const pickup=firstValue(row,['pickup_code','delivery_code','receive_code'],'—');
+    const labels=timelineLabels(isHomeDelivery(row)),reached=stageIndex(status),icons=['new','review','print','ready','done'];
+    box.className='alin-tracking-result show';
+    box.innerHTML=`
+      <section class="alin-tracking-order-head">
+        <div><small>رقم الطلب</small><h3 dir="ltr">${clean(number)}</h3><p>${clean(title)}</p></div>
+        <span class="alin-tracking-status ${cancelled?'cancelled':status==='completed'?'completed':''}">${clean(current)}</span>
       </section>
-      ${pickup?`<section class="alin-track-pickup"><div><small>رمز الاستلام</small><b dir="ltr">${clean(pickup)}</b></div><p>أبرز هذا الرمز عند استلام الطلب.</p></section>`:''}
-      ${cancelled?`<section class="alin-track-alert is-error"><strong>${clean(current)}</strong><span>راجع إدارة منصة آلين لمعرفة التفاصيل.</span></section>`:`<section class="alin-track-timeline" aria-label="مراحل الطلب">${steps.map((step,index)=>`<div class="alin-track-step ${index<reached?'is-done':index===reached?'is-current':''}"><span>${trackingSvg(step.key)}</span><b>${step.title}</b><small>${step.sub}</small></div>`).join('')}</section><section class="alin-track-alert ${reached>=4?'is-success':'is-info'}"><strong>${reached>=4?'تم تسليم الطلب بنجاح':clean(current)}</strong><span>${reached>=4?'شكراً لثقتك بمنصة آلين':'سيتم تحديث الحالة تلقائياً عند انتقال الطلب إلى المرحلة التالية.'}</span></section>`}
-      <footer class="alin-track-summary"><div><small>إجمالي الطلب</small><b>${clean(qty)}</b></div><div><small>قيمة الطلب</small><b>${total} د.ع</b></div><div><small>حالة الطلب</small><b>${clean(current)}</b></div></footer>
-    </article>`;
-    box.querySelector('.alin-track-copy')?.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(String(number));window.toast?.('تم نسخ رقم الطلب')}catch(_){window.prompt?.('انسخ رقم الطلب',String(number))}});
+      <section class="alin-tracking-details">
+        ${detail('اسم الطالب',student)}
+        ${detail(isHomeDelivery(row)?'المندوب':'المكتبة',partner)}
+        ${detail('تاريخ الطلب',date)}
+        ${detail('الملاحظات',notes,'wide')}
+      </section>
+      ${cancelled?`<div class="alin-tracking-alert cancelled">الطلب ${clean(current)}. راجع إدارة منصة آلين عند الحاجة.</div>`:`
+      <section class="alin-tracking-timeline" aria-label="مراحل الطلب">
+        ${labels.map((label,index)=>`<article class="${index<reached?'done':index===reached?'current':''}"><span>${icon(icons[index])}</span><b>${clean(label)}</b><small>${index<reached?'مكتمل':index===reached?'المرحلة الحالية':'بانتظار التنفيذ'}</small></article>`).join('')}
+      </section>`}
+      <section class="alin-tracking-summary">
+        <article><small>قيمة الطلب</small><b>${formatMoney(total)} د.ع</b></article>
+        <article><small>الكمية / النسخ</small><b>${clean(quantity)}</b></article>
+        <article><small>رمز الاستلام</small><b dir="ltr">${clean(pickup)}</b></article>
+      </section>`;
     document.dispatchEvent(new CustomEvent('alin:tracking-rendered',{detail:{code,data:row,status}}));
   }
-  function trackingMessage(box,type,title,text){box.className='track-result alin-track-result show';box.innerHTML=`<div class="alin-track-message ${type||''}"><span>${type==='loading'?'…':type==='error'?'!':'i'}</span><div><b>${clean(title)}</b>${text?`<small>${clean(text)}</small>`:''}</div></div>`}
+  function initialResult(){const box=document.getElementById('trackOrderResult');if(box)box.innerHTML='<div class="alin-tracking-empty"><span aria-hidden="true">⌖</span><b>جاهز لتتبع طلبك</b><small>أدخل رقم الطلب في الحقل أعلاه ثم اضغط «تتبع الآن».</small></div>'}
+  window.openTrackingModal=function(){
+    const modal=document.getElementById('orderTrackingModal');if(!modal)return false;
+    modal.classList.remove('hidden');modal.setAttribute('aria-hidden','false');document.body.classList.add('alin-tracking-open');
+    window.setTimeout(()=>document.getElementById('trackOrderInput')?.focus(),60);return true;
+  };
+  window.closeTrackingModal=function(){
+    const modal=document.getElementById('orderTrackingModal');if(!modal)return false;
+    modal.classList.add('hidden');modal.setAttribute('aria-hidden','true');document.body.classList.remove('alin-tracking-open');return true;
+  };
   window.trackOrder=async function(){
-    const input=document.getElementById('trackOrderInput');
-    const box=document.getElementById('trackOrderResult');
-    if(!box)return false;
-    const code=normalizeCode(input?.value||'');
-    if(input)input.value=code;
-    box.className='track-result alin-track-result show';
-    if(code.length<4){trackingMessage(box,'error','رقم الطلب غير مكتمل','اكتب رقم الطلب الكامل ثم حاول مرة ثانية.');return false}
-    trackingMessage(box,'loading','جارٍ التحقق من حالة الطلب','لحظات ونجيب لك آخر تحديث.');
+    const input=document.getElementById('trackOrderInput'),box=document.getElementById('trackOrderResult');if(!box)return false;
+    const code=normalizeCode(input?.value||'');if(input)input.value=code;
+    box.className='alin-tracking-result show';
+    if(code.length<4){box.innerHTML='<div class="alin-tracking-alert">اكتب رقم الطلب الكامل أولاً.</div>';return false}
+    box.innerHTML='<div class="alin-tracking-loading"><span></span><b>جارٍ التحقق من حالة الطلب...</b></div>';
     try{
-      const client=window.sb||(window.AlinCloud&&window.AlinCloud.client?.());
-      if(!client?.rpc)throw new Error('خدمة التتبع غير متاحة');
+      const client=window.sb||(window.AlinCloud&&window.AlinCloud.client?.());if(!client?.rpc)throw new Error('خدمة التتبع غير متاحة');
       let row=null,lastError=null,matchedCode=code;
-      for(const candidate of trackingCandidates(code)){
-        const {data,error}=await client.rpc('alin_track_order',{p_order_number:candidate});
-        if(error){lastError=error;break}
-        row=rowFromRpc(data);
-        if(row){matchedCode=candidate;break}
-      }
+      for(const candidate of trackingCandidates(code)){const {data,error}=await client.rpc('alin_track_order',{p_order_number:candidate});if(error){lastError=error;break}row=rowFromRpc(data);if(row){matchedCode=candidate;break}}
       if(lastError)throw lastError;
-      if(!row){trackingMessage(box,'error','لم يتم العثور على الطلب','تأكد من رقم التتبع المكتوب وحاول مرة ثانية.');return false}
-      if(input)input.value=row.order_number||matchedCode;
-      renderTracking(box,row,matchedCode);
-      return true;
+      if(!row){box.innerHTML='<div class="alin-tracking-alert not-found"><b>لم يتم العثور على الطلب</b><small>تأكد من رقم التتبع وأعد المحاولة.</small></div>';return false}
+      if(input)input.value=row.order_number||matchedCode;renderTracking(box,row,matchedCode);return true;
     }catch(error){
-      console.error('[ALIN tracking v4.1.5]',error);
-      const message=String(error?.message||'');
-      const missing=/PGRST202|Could not find the function|schema cache/i.test(message);
-      trackingMessage(box,'error',missing?'خدمة التتبع غير مهيأة':'تعذر التحقق الآن',missing?'راجع إعداد دالة التتبع في قاعدة البيانات.':'أعد المحاولة بعد قليل.');
-      return false;
+      console.error('[ALIN tracking v4.1.5 modal]',error);const message=String(error?.message||'');
+      box.innerHTML=`<div class="alin-tracking-alert error"><b>تعذر التحقق الآن</b><small>${/PGRST202|Could not find the function|schema cache/i.test(message)?'خدمة تتبع الطلب غير مهيأة في قاعدة البيانات.':'أعد المحاولة بعد قليل.'}</small></div>`;return false;
     }
   };
-  function bindTrackingInput(){
-    const input=document.getElementById('trackOrderInput');
-    if(!input||input.dataset.alinTrackingBound==='1')return;
-    input.dataset.alinTrackingBound='1';
-    input.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();window.trackOrder()}});
+  function bind(){
+    const input=document.getElementById('trackOrderInput'),modal=document.getElementById('orderTrackingModal');
+    if(input&&input.dataset.alinTrackingBound!=='1'){input.dataset.alinTrackingBound='1';input.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();window.trackOrder()}})}
+    if(modal&&modal.dataset.alinTrackingBound!=='1'){modal.dataset.alinTrackingBound='1';modal.addEventListener('click',event=>{if(event.target===modal)window.closeTrackingModal()})}
+    document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!document.getElementById('orderTrackingModal')?.classList.contains('hidden'))window.closeTrackingModal()});
+    initialResult();
   }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bindTrackingInput,{once:true});
-  else bindTrackingInput();
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind,{once:true});else bind();
 })();
 
 ;
@@ -5130,159 +5083,3 @@ window.AlinCourierModules['recordCourierSettlementForOrder']=typeof recordCourie
 })();
 
 ;
-
-/* === ALIN v4.1.5.2 INTEGRATED FEATURES START === */
-/* ALIN v4.1.5.1 — clean unified receipt center. Loaded after the stable app bundle. */
-(function(){
-  'use strict';
-  const STATUS={pending:'قيد الانتظار',new:'جديد',pending_admin:'بانتظار الإدارة',payment_pending:'بانتظار التأكيد',processing:'قيد التجهيز',printing:'قيد الطباعة',accepted:'مقبول',ready:'جاهز',assigned:'مُسند',picked_up:'تم الاستلام',out_for_delivery:'قيد التوصيل',out_delivery:'قيد التوصيل',completed:'تم التسليم',delivered:'تم التسليم',cancelled:'ملغي',canceled:'ملغي',rejected:'مرفوض'};
-  const arr=v=>Array.isArray(v)?v:[];
-  const same=(a,b)=>String(a??'')===String(b??'');
-  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const money=v=>Number(v||0).toLocaleString(window.AlinI18n?.locale?.()||'ar-IQ',{maximumFractionDigits:0});
-  const date=v=>{const d=v?new Date(v):new Date();return Number.isNaN(d.getTime())?'—':d.toLocaleString(window.AlinI18n?.locale?.()||'ar-IQ',{dateStyle:'medium',timeStyle:'short'})};
-  const label=v=>STATUS[String(v||'').toLowerCase()]||String(v||'—');
-  const db=()=>window.db||{};
-  const current=()=>window.current||null;
-
-  function accountCollection(role){const accounts=db().accounts||{};return arr(role==='teacher'?accounts.teachers:role==='library'?accounts.libraries:role==='courier'?accounts.couriers:[])}
-  function account(role){
-    const c=current()||{};const ids=[c.id,c.account_id,c.user_id,c[role+'_id']].filter(Boolean);
-    return accountCollection(role).find(row=>ids.some(id=>[row.id,row.account_id,row.user_id].some(value=>same(value,id))))
-      ||accountCollection(role).find(row=>c.username&&same(row.username,c.username))
-      ||accountCollection(role).find(row=>c.name&&same(row.name,c.name))||c;
-  }
-  function accountId(role){const a=account(role)||{},c=current()||{};return String(a.id||c[role+'_id']||c.id||'')}
-  function teacherBookIds(id){return new Set(arr(db().booklets).filter(row=>same(row.teacher_id,id)).map(row=>String(row.id)))}
-  function orders(role=String(current()?.role||'')){
-    if(role==='student')return arr(window.AlinStudentPage?.orders?.());
-    const rows=arr(db().orders),id=accountId(role);
-    if(role==='admin'||role==='accountant')return rows;
-    if(role==='teacher'){const books=teacherBookIds(id);return rows.filter(row=>same(row.teacher_id,id)||books.has(String(row.item_id||row.booklet_id||'')))}
-    if(role==='library')return rows.filter(row=>[row.library_id,row.pickup_library_id,row.assigned_library_id].some(v=>same(v,id)));
-    if(role==='courier')return rows.filter(row=>[row.courier_id,row.delegate_id,row.assigned_courier_id].some(v=>same(v,id)));
-    return [];
-  }
-  function settlements(role=String(current()?.role||'')){
-    const id=accountId(role),d=db();
-    if(role==='admin'||role==='accountant')return [...arr(d.librarySettlements||d.library_settlements),...arr(d.teacherSettlements||d.teacher_settlements),...arr(d.courierSettlements||d.delegate_settlements),...arr(d.adminSettlements||d.admin_settlements),...arr(d.settlements)];
-    if(role==='teacher')return [...arr(d.teacherSettlements||d.teacher_settlements),...arr(d.settlements)].filter(row=>same(row.teacher_id||row.party_id||row.account_id,id));
-    if(role==='library')return [...arr(d.librarySettlements||d.library_settlements),...arr(d.settlements)].filter(row=>same(row.library_id||row.party_id||row.account_id,id));
-    if(role==='courier')return [...arr(d.courierSettlements||d.delegate_settlements),...arr(d.settlements)].filter(row=>same(row.courier_id||row.delegate_id||row.party_id||row.account_id,id));
-    return [];
-  }
-  const orderKey=row=>encodeURIComponent(String(row.id||row.order_id||row.order_number||row.tracking_code||''));
-  const settlementKey=row=>encodeURIComponent(String(row.id||row.receipt_number||row.voucher_number||''));
-  const done=row=>['completed','delivered'].includes(String(row?.status||'').toLowerCase());
-  function party(role,row={}){if(role==='student')return window.AlinStudentPage?.current?.()?.name||row.student_name||'الطالب';if(role==='admin'||role==='accountant')return'إدارة منصة آلين';return account(role)?.name||current()?.name||row.student_name||'منصة آلين'}
-  function scopedOrder(key,role){const value=decodeURIComponent(String(key||''));return orders(role).find(row=>[row.id,row.order_id,row.order_number,row.tracking_code].some(v=>same(v,value)))||null}
-  function scopedSettlement(key,role){const value=decodeURIComponent(String(key||''));return settlements(role).find(row=>[row.id,row.receipt_number,row.voucher_number].some(v=>same(v,value)))||null}
-  function type(role,row){if(role==='courier')return done(row)?'إيصال تسليم مندوب':'إيصال طلب توصيل';if(role==='library')return done(row)?'إيصال تسليم طلب':'إيصال استلام طلب';if(role==='teacher')return'إيصال بيع ملزمة';if(role==='student')return'إيصال طلب الطالب';return done(row)?'إيصال طلب مكتمل':'إيصال طلب'}
-  function receiptSearchText(...values){return values.map(v=>String(v??'')).join(' ').toLowerCase()}
-  function orderRow(row,role){
-    const n=row.order_number||row.tracking_code||row.id||'—',title=row.title||row.item_name||'طلب منصة آلين',state=label(row.status),kind=done(row)?'طلب مكتمل':'وصول طلب';
-    const search=receiptSearchText(n,title,row.student_name,state,row.library_name,row.courier_name);
-    return `<article class="alin-receipt-row" data-receipt-kind="order" data-receipt-search="${esc(search)}"><div class="alin-receipt-row__main"><div class="alin-receipt-row__code"><b dir="ltr">${esc(n)}</b><small>${esc(date(row.created_at||row.updated_at))}</small></div><div class="alin-receipt-row__title"><b>${esc(title)}</b><small>${esc(row.student_name||party(role,row))}</small></div><span class="alin-receipt-badge ${done(row)?'is-done':'is-open'}">${esc(kind)}</span></div><div class="alin-receipt-row__actions"><strong>${money(row.total)} د.ع</strong><button type="button" class="secondary" onclick="AlinReceipts.previewOrder('${orderKey(row)}','${esc(role)}')">معاينة</button><button type="button" onclick="AlinReceipts.printOrder('${orderKey(row)}','${esc(role)}')">طباعة / حفظ PDF</button></div></article>`
-  }
-  function settlementRow(row,role){
-    const n=row.receipt_number||row.voucher_number||row.id||'تسوية',search=receiptSearchText(n,row.note,row.notes,row.payment_method,row.status,party(role,row));
-    return `<article class="alin-receipt-row settlement" data-receipt-kind="settlement" data-receipt-search="${esc(search)}"><div class="alin-receipt-row__main"><div class="alin-receipt-row__code"><b dir="ltr">${esc(n)}</b><small>${esc(date(row.created_at||row.updated_at))}</small></div><div class="alin-receipt-row__title"><b>تسوية مالية</b><small>${esc(party(role,row))}</small></div><span class="alin-receipt-badge is-settlement">تسوية</span></div><div class="alin-receipt-row__actions"><strong>${money(row.amount)} د.ع</strong><button type="button" class="secondary" onclick="AlinReceipts.previewSettlement('${settlementKey(row)}','${esc(role)}')">معاينة</button><button type="button" onclick="AlinReceipts.printSettlement('${settlementKey(row)}','${esc(role)}')">طباعة / حفظ PDF</button></div></article>`
-  }
-  function centerHtml(role){
-    const os=[...orders(role)].sort((a,b)=>String(b.created_at||'').localeCompare(String(a.created_at||''))),ss=[...settlements(role)].sort((a,b)=>String(b.created_at||'').localeCompare(String(a.created_at||''))),completed=os.filter(done),total=completed.reduce((sum,row)=>sum+Number(row.total||0),0),all=[...os.map(row=>orderRow(row,role)),...ss.map(row=>settlementRow(row,role))].join('');
-    return `<section class="alin-receipt-center" data-receipt-role="${esc(role)}"><header class="alin-receipt-center__head"><div><small>منصة آلين</small><h2>الوصولات</h2><p>عرض وصولات الطلبات والتسويات الخاصة بهذا الحساب بصورة مرتبة.</p></div><span>${os.length+ss.length}</span></header><section class="alin-receipt-metrics"><article><span class="metric-icon">▣</span><div><small>الوصولات</small><strong>${os.length+ss.length}</strong><em>جميع الوصولات</em></div></article><article><span class="metric-icon">☷</span><div><small>كل الطلبات</small><strong>${os.length}</strong><em>جميع الطلبات</em></div></article><article><span class="metric-icon">✓</span><div><small>الطلبات المكتملة</small><strong>${completed.length}</strong><em>من أصل ${os.length} طلب</em></div></article><article><span class="metric-icon">د.ع</span><div><small>إجمالي المبالغ</small><strong>${money(total)} د.ع</strong><em>قيمة الطلبات المكتملة</em></div></article></section><section class="alin-receipt-workspace"><div class="alin-receipt-browser"><div class="alin-receipt-tabs"><button class="active" type="button" data-receipt-filter="all">الكل</button><button type="button" data-receipt-filter="order">وصولات الطلبات</button><button type="button" data-receipt-filter="settlement">وصولات التسويات</button></div><div class="alin-receipt-search"><span>⌕</span><input type="search" placeholder="ابحث برقم الطلب أو الوصل أو اسم العميل..." data-receipt-search-input></div><div class="alin-receipt-list">${all||'<div class="empty">لا توجد وصولات لهذا الحساب.</div>'}</div><div class="alin-receipt-empty-filter" hidden>لا توجد نتائج مطابقة للبحث.</div></div><aside class="alin-receipt-preview"><header><div><small>معاينة الوصل</small><b>اختر وصلاً من القائمة</b></div><button type="button" data-receipt-preview-close aria-label="إغلاق المعاينة">×</button></header><div class="alin-receipt-preview__body"><div class="alin-receipt-preview-empty"><span>▤</span><b>المعاينة تظهر هنا</b><small>اضغط على زر معاينة لأي وصل.</small></div></div></aside></section></section>`
-  }
-  function applyCenterFilter(root){const active=root.querySelector('[data-receipt-filter].active')?.dataset.receiptFilter||'all',query=String(root.querySelector('[data-receipt-search-input]')?.value||'').trim().toLowerCase();let visible=0;root.querySelectorAll('.alin-receipt-row[data-receipt-kind]').forEach(row=>{const kind=row.dataset.receiptKind||'',text=row.dataset.receiptSearch||'',show=(active==='all'||kind===active)&&(!query||text.includes(query));row.hidden=!show;if(show)visible++});const empty=root.querySelector('.alin-receipt-empty-filter');if(empty)empty.hidden=visible!==0}
-  function bindCenter(root){root.querySelectorAll('[data-receipt-filter]').forEach(button=>button.addEventListener('click',()=>{root.querySelectorAll('[data-receipt-filter]').forEach(node=>node.classList.toggle('active',node===button));applyCenterFilter(root)}));root.querySelector('[data-receipt-search-input]')?.addEventListener('input',()=>applyCenterFilter(root));root.querySelector('[data-receipt-preview-close]')?.addEventListener('click',()=>{const body=root.querySelector('.alin-receipt-preview__body');if(body)body.innerHTML='<div class="alin-receipt-preview-empty"><span>▤</span><b>المعاينة تظهر هنا</b><small>اضغط على زر معاينة لأي وصل.</small></div>'})}
-  function renderCenter(role,host){const target=host||document.getElementById(role==='admin'?'adminContent':role==='teacher'?'teacherContent':role==='library'?'libraryV116Content':'courierV161Content');if(!target)return false;target.innerHTML=centerHtml(role);const root=target.querySelector('.alin-receipt-center');if(root)bindCenter(root);return true}
-  function setRoleButton(role,button){const selectors=role==='library'?'.library-v116-tabs button':role==='courier'?'.courier-v161-tabs button':'';if(selectors)document.querySelectorAll(selectors).forEach(node=>node.classList.toggle('active',node===button));document.body.dataset.alinReceiptRole=role}
-  function openCenter(role,button){setRoleButton(role,button||null);return renderCenter(role)}
-  function shell(content,title){document.getElementById('alinReceiptDialog')?.remove();const root=document.createElement('div');root.id='alinReceiptDialog';root.className='alin-receipt-dialog';root.innerHTML=`<button class="alin-receipt-backdrop" type="button" aria-label="إغلاق"></button><section class="alin-receipt-dialog__panel" role="dialog" aria-modal="true" aria-label="${esc(title)}"><div class="alin-receipt-toolbar no-print"><button type="button" data-receipt-print>طباعة / حفظ PDF</button><button type="button" class="secondary" data-receipt-close>إغلاق</button></div>${content}</section>`;document.body.appendChild(root);document.body.classList.add('alin-receipt-open');const close=()=>{root.remove();document.body.classList.remove('alin-receipt-open')};root.querySelector('[data-receipt-close]')?.addEventListener('click',close);root.querySelector('.alin-receipt-backdrop')?.addEventListener('click',close);root.querySelector('[data-receipt-print]')?.addEventListener('click',()=>window.print());return root}
-  function orderReceipt(row,role){const n=row.order_number||row.tracking_code||row.id||'—',qty=Math.max(1,Number(row.qty||1)),delivery=Number(row.delivery_fee||0),total=Number(row.total||0),unit=Number(row.unit_price||row.price||((total-delivery)/qty)||0),location=(row.fulfillment_type==='home_delivery'||row.delivery_type==='courier')?(row.delivery_area||row.delivery_landmark||'توصيل للبيت'):(row.library_name||'استلام من المكتبة');return `<article class="alin-print-receipt" id="alinPrintableReceipt" dir="rtl"><header><div class="alin-print-brand"><span>آ</span><div><h1>منصة آلين</h1><p>ملازم • قرطاسية • هدايا</p></div></div><div class="alin-print-receipt__number"><small>${esc(type(role,row))}</small><b>${esc(n)}</b></div></header><section class="alin-print-info"><div><small>التاريخ</small><b>${esc(date(row.created_at||row.updated_at))}</b></div><div><small>الحالة</small><b>${esc(label(row.status))}</b></div><div><small>اسم الطالب</small><b>${esc(row.student_name||party(role,row)||'—')}</b></div><div><small>رقم الهاتف</small><b dir="ltr">${esc(row.student_phone||'—')}</b></div><div><small>طريقة الاستلام</small><b>${esc(location)}</b></div><div><small>الجهة</small><b>${esc(party(role,row))}</b></div></section><table><thead><tr><th>الصنف</th><th>الكمية</th><th>سعر الوحدة</th><th>الإجمالي</th></tr></thead><tbody><tr><td>${esc(row.title||row.item_name||'طلب منصة آلين')}</td><td>${qty}</td><td>${money(unit)} د.ع</td><td>${money(Math.max(0,total-delivery))} د.ع</td></tr>${delivery?`<tr><td>أجرة التوصيل</td><td>1</td><td>${money(delivery)} د.ع</td><td>${money(delivery)} د.ع</td></tr>`:''}</tbody></table><section class="alin-print-total"><span>المبلغ الكلي</span><strong>${money(total)} د.ع</strong></section><section class="alin-print-notes"><div><small>ملاحظات</small><p>${esc(row.notes||row.note||row.delivery_note||'لا توجد ملاحظات')}</p></div><div class="alin-print-sign"><span>توقيع المستلم</span><span>توقيع الجهة</span></div></section><footer>شكراً لاستخدام منصة آلين</footer></article>`}
-  function settlementReceipt(row,role){const n=row.receipt_number||row.voucher_number||row.id||'—';return `<article class="alin-print-receipt settlement" id="alinPrintableReceipt" dir="rtl"><header><div class="alin-print-brand"><span>آ</span><div><h1>منصة آلين</h1><p>ملازم • قرطاسية • هدايا</p></div></div><div class="alin-print-receipt__number"><small>إيصال تسوية حساب</small><b>${esc(n)}</b></div></header><section class="alin-print-info"><div><small>التاريخ</small><b>${esc(date(row.created_at||row.updated_at))}</b></div><div><small>الجهة</small><b>${esc(party(role,row))}</b></div><div><small>نوع الجهة</small><b>${esc(role==='teacher'?'مدرس':role==='library'?'مكتبة':role==='courier'?'مندوب':'إدارة')}</b></div><div><small>طريقة التسوية</small><b>${esc(row.payment_method||'نقداً')}</b></div><div><small>الحالة</small><b>${esc(row.status||'مثبتة')}</b></div><div><small>رقم الوصل</small><b>${esc(n)}</b></div></section><section class="alin-settlement-summary"><div><small>المبلغ المسدد</small><strong>${money(row.amount)} د.ع</strong></div><div><small>ملاحظات</small><p>${esc(row.note||row.notes||'تسوية حساب مثبتة في منصة آلين')}</p></div></section><section class="alin-print-notes"><div class="alin-print-sign"><span>توقيع منصة آلين</span><span>توقيع الجهة</span></div></section><footer>شكراً لاستخدام منصة آلين</footer></article>`}
-  function activePreview(role){return document.querySelector(`.alin-receipt-center[data-receipt-role="${String(role||'').replace(/[^a-z]/gi,'')}"] .alin-receipt-preview__body`)}
-  function renderPreview(content,title,role){const target=activePreview(role);if(!target){shell(content,title);return null}target.innerHTML=`<div class="alin-receipt-preview-toolbar no-print"><div><small>المعاينة الحالية</small><b>${esc(title)}</b></div><button type="button" onclick="window.print()">طباعة / حفظ PDF</button></div>${content}`;target.closest('.alin-receipt-preview')?.scrollIntoView?.({behavior:'smooth',block:'nearest'});return target}
-  function previewOrder(key,role=String(current()?.role||'student')){const row=scopedOrder(key,role);if(!row){window.toast?.('هذا الوصل غير متاح لهذا الحساب');return false}renderPreview(orderReceipt(row,role),type(role,row),role);return true}
-  function previewSettlement(key,role=String(current()?.role||'')){const row=scopedSettlement(key,role);if(!row){window.toast?.('هذا الوصل غير متاح لهذا الحساب');return false}renderPreview(settlementReceipt(row,role),'إيصال تسوية حساب',role);return true}
-  function printOrder(key,role=String(current()?.role||'student')){if(!previewOrder(key,role))return false;setTimeout(()=>window.print(),80);return true}
-  function printSettlement(key,role=String(current()?.role||'')){if(!previewSettlement(key,role))return false;setTimeout(()=>window.print(),80);return true}
-  function openOrder(key,role=String(current()?.role||'student')){return previewOrder(key,role)}
-  function openSettlement(key,role=String(current()?.role||'')){return previewSettlement(key,role)}
-  function close(){document.getElementById('alinReceiptDialog')?.remove();document.body.classList.remove('alin-receipt-open')}
-  function install(){window.TeacherApp?.registerTab?.('receipts',()=>renderCenter('teacher'));window.AlinAdminModules?.register?.('receipts',host=>renderCenter('admin',host));document.addEventListener('click',event=>{const button=event.target.closest('[data-alin-receipts-role]');if(button){event.preventDefault();openCenter(button.dataset.alinReceiptsRole,button);return}if(event.target.closest('.library-v116-tabs [data-library-tab],.courier-v161-tabs [data-courier-tab]'))delete document.body.dataset.alinReceiptRole});window.addEventListener('alin:data-refreshed',()=>{const role=document.body.dataset.alinReceiptRole;if(role)renderCenter(role)});document.addEventListener('keydown',event=>{if(event.key==='Escape')close()})}
-  const api=Object.freeze({renderCenter,openCenter,orders,settlements,previewOrder,previewSettlement,printOrder,printSettlement,openOrder,openSettlement,close,orderKey,settlementKey});window.AlinReceipts=api;
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
-})();
-
-/* ALIN v4.1.5.1 — secure student page using the existing v4.1.5 Supabase RPCs. */
-(function(){
-  'use strict';
-  const SESSION_KEY='alin_student_secure_session_v3',DEVICE_KEY='alin_device_id_v3';
-  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const money=v=>Number(v||0).toLocaleString(window.AlinI18n?.locale?.()||'ar-IQ',{maximumFractionDigits:0});
-  let rows=[],loading=null;
-  function session(){try{return JSON.parse(sessionStorage.getItem(SESSION_KEY)||'null')}catch(_){return null}}
-  function current(){return session()?.student||null}
-  function device(){try{return localStorage.getItem(DEVICE_KEY)||'browser-session'}catch(_){return'browser-session'}}
-  function client(){return window.sb||window.AlinCloud?.client?.()||null}
-  function orders(){return rows.slice()}
-  async function fetchOrders(force=false){const state=session();if(!state?.token){rows=[];return[]}if(loading&&!force)return loading;loading=(async()=>{const c=client();if(!c?.rpc)throw new Error('خدمة حساب الطالب غير متاحة');const {data,error}=await c.rpc('alin_student_orders',{p_token:state.token,p_device:device()});if(error)throw error;rows=Array.isArray(data)?data:[];window.dispatchEvent(new CustomEvent('alin:student-orders',{detail:{orders:rows.slice()}}));return rows.slice()})();try{return await loading}finally{loading=null}}
-  function orderKey(row){return encodeURIComponent(String(row.order_id||row.order_number||row.id||''))}
-  function orderHtml(row){const number=row.order_number||row.id||'—';return `<article class="student-secure-order"><div><b>${esc(number)} — ${esc(row.item_name||row.title||'طلب')}</b><small>${esc(row.status||'جديد')} • ${money(row.total)} د.ع</small></div><div><button type="button" class="secondary" data-student-track="${esc(encodeURIComponent(String(number)))}">تتبع</button><button type="button" onclick="AlinReceipts.openOrder('${orderKey(row)}','student')">وصل</button></div></article>`}
-  function dashboard(student){return `<section class="student-secure-page"><header><div class="student-secure-avatar">${esc((student.name||'ط').slice(0,1))}</div><div><small>صفحة الطالب</small><h2>${esc(student.name||'الطالب')}</h2><p dir="ltr">${esc(student.phone||'')}</p></div><button type="button" class="secondary" data-student-edit>تعديل الحساب</button></header><section class="student-secure-summary"><article><small>طلباتي</small><strong id="studentSecureOrdersCount">${rows.length}</strong></article><article><small>الوصولات</small><strong id="studentSecureReceiptsCount">${rows.length}</strong></article><article><small>حالة الحساب</small><strong>فعال</strong></article></section><div class="student-secure-title"><div><h3>طلباتي ووصولاتي</h3><p>هذه البيانات مرتبطة بجلسة هذا الطالب فقط.</p></div><button type="button" class="secondary" data-student-refresh>تحديث</button></div><div id="studentSecureOrders" class="student-secure-orders">${rows.length?rows.map(orderHtml).join(''):'<p class="muted">جارٍ تحميل طلباتك...</p>'}</div><footer><button type="button" class="danger" data-student-logout>تسجيل خروج</button></footer></section>`}
-  function bind(box){box.querySelector('[data-student-edit]')?.addEventListener('click',()=>window.showStudentAuthForm?.('edit'));box.querySelector('[data-student-refresh]')?.addEventListener('click',()=>refresh(true));box.querySelector('[data-student-logout]')?.addEventListener('click',()=>window.studentLogout?.());box.querySelectorAll('[data-student-track]').forEach(button=>button.addEventListener('click',()=>{const number=decodeURIComponent(button.dataset.studentTrack||'');close();if(document.body.classList.contains('store-desktop'))window.AlinDesktopTools?.openTracking?.(number);else{const input=document.getElementById('alinMobileTrackingInput');if(input)input.value=number;window.alinOpenTrackingSheet?.()}}))}
-  function renderRows(){const box=document.getElementById('studentSecureOrders');if(box){box.innerHTML=rows.length?rows.map(orderHtml).join(''):'<div class="empty">لا توجد طلبات في هذا الحساب.</div>';bind(box.closest('.student-secure-page')||document)}const count=document.getElementById('studentSecureOrdersCount'),receipts=document.getElementById('studentSecureReceiptsCount');if(count)count.textContent=String(rows.length);if(receipts)receipts.textContent=String(rows.length)}
-  function modal(){return document.getElementById('studentAuthModal')}
-  function close(){modal()?.classList.add('hidden')}
-  async function open(mode='login'){
-    const student=current();if(!student){window.openStudentAuth?.(mode);return false}
-    const box=document.getElementById('studentAuthBox');if(!box)return false;box.innerHTML=dashboard(student);modal()?.classList.remove('hidden');bind(box);
-    try{await fetchOrders();renderRows()}catch(error){const host=document.getElementById('studentSecureOrders');if(host)host.innerHTML=`<div class="empty">${esc(error.message||'تعذر تحميل الطلبات')}</div>`}
-    return true;
-  }
-  async function refresh(force=true){try{await fetchOrders(force);renderRows()}catch(error){window.toast?.(error.message||'تعذر تحميل الطلبات')}}
-  function lockCheckout(){const student=current();if(!student)return;const name=document.getElementById('studentName'),phone=document.getElementById('studentPhone');if(name){name.value=student.name||'';name.readOnly=true;name.dataset.studentLocked='1'}if(phone){phone.value=student.phone||'';phone.readOnly=true;phone.dataset.studentLocked='1'}}
-  function install(){document.addEventListener('alin:cart-rendered',lockCheckout);window.addEventListener('alin:student-session',event=>{rows=[];if(event.detail?.student&&modal()&&!modal().classList.contains('hidden'))setTimeout(()=>open(),0)});window.addEventListener('alin:order-created',()=>{if(current())setTimeout(()=>refresh(true),700)});document.addEventListener('click',event=>{const button=event.target.closest('[data-open-student-page]');if(button){event.preventDefault();open()}});if(current())fetchOrders().catch(()=>{})}
-  const api=Object.freeze({open,close,current,orders,fetchOrders,refresh});window.AlinStudentPage=api;
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
-})();
-
-/* ALIN v4.1.5.1 — desktop options and tracking, without changing the stable boot path. */
-(function(){
-  'use strict';
-  if(!document.body?.classList.contains('store-desktop'))return;
-  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  let returnFocus=null;
-  function close(){document.getElementById('alinDesktopDialog')?.remove();document.body.classList.remove('alin-desktop-dialog-open');try{returnFocus?.focus?.()}catch(_){}returnFocus=null}
-  function shell(title,subtitle,body,variant=''){close();returnFocus=document.activeElement;const root=document.createElement('div');root.id='alinDesktopDialog';root.className=`alin-desktop-dialog ${variant||''}`.trim();root.innerHTML=`<button type="button" class="alin-desktop-dialog__backdrop" aria-label="إغلاق"></button><section class="alin-desktop-dialog__panel" role="dialog" aria-modal="true" aria-label="${esc(title)}"><header><div class="alin-desktop-dialog__heading"><h2>${esc(title)}</h2><p>${esc(subtitle||'')}</p></div><button type="button" class="alin-desktop-dialog__close" aria-label="إغلاق">×</button></header><div class="alin-desktop-dialog__body">${body}</div></section>`;document.body.appendChild(root);document.body.classList.add('alin-desktop-dialog-open');root.querySelector('.alin-desktop-dialog__backdrop')?.addEventListener('click',close);root.querySelector('.alin-desktop-dialog__close')?.addEventListener('click',close);return root}
-  function trackingHeroIcon(){return `<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M24 4c-8.1 0-14.5 6.4-14.5 14.4 0 10.4 14.5 25.4 14.5 25.4s14.5-15 14.5-25.4C38.5 10.4 32.1 4 24 4Z"/><path d="m16.5 18 7.5-4 7.5 4-7.5 4-7.5-4Z"/><path d="m16.5 18 7.5 4 7.5-4v8.5L24 31l-7.5-4.5V18Z"/></svg>`}
-  function openTracking(initial=''){
-    const body=`<section class="alin-tracking-page">
-      <div class="alin-tracking-hero"><span>${trackingHeroIcon()}</span><div><small>منصة آلين</small><h3>تتبع الطلب</h3><p>أدخل رقم الطلب لمعرفة حالته الحالية ومسار التجهيز والتسليم.</p></div></div>
-      <div class="alin-tracking-search-card"><label for="trackOrderInput"><span>رقم الطلب</span><input id="trackOrderInput" dir="ltr" value="${esc(initial)}" placeholder="مثال: ALIN-0001" autocomplete="off" spellcheck="false"></label><button type="button" data-track-submit><span>تتبع الآن</span><i>‹</i></button></div>
-      <div class="track-result alin-track-result" id="trackOrderResult" aria-live="polite"><div class="alin-track-empty"><span>${trackingHeroIcon()}</span><b>اكتب رقم الطلب للبدء</b><small>ستظهر هنا حالة الطلب ومراحل التجهيز والتسليم.</small></div></div>
-    </section>`;
-    const root=shell('تتبع الطلب','متابعة واضحة وآمنة لطلبك من منصة آلين.',body,'is-tracking');
-    const input=root.querySelector('#trackOrderInput');
-    const submit=()=>typeof window.trackOrder==='function'?window.trackOrder():null;
-    root.querySelector('[data-track-submit]')?.addEventListener('click',submit);
-    input?.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();submit()}});
-    setTimeout(()=>{input?.focus();if(initial)submit()},0)
-  }
-  const option=(icon,title,sub,action)=>`<button type="button" class="alin-desktop-option" data-option-action="${esc(action)}"><span>${icon}</span><div><b>${esc(title)}</b><small>${esc(sub)}</small></div><i>‹</i></button>`;
-  function openOptions(){const student=window.AlinStudentPage?.current?.()||window.currentStudent?.()||null,theme=document.documentElement.dataset.alinTheme==='dark'?'dark':'light',language=window.AlinI18n?.current?.()||'ar';const root=shell('الخيارات','الحساب والتتبع واللغة ومظهر المنصة.',`<section class="alin-desktop-options"><div class="alin-desktop-options__profile"><span>👤</span><div><b>${esc(student?.name||'حساب الطالب')}</b><small>${esc(student?.phone||'سجل الدخول لمشاهدة طلباتك ووصولاتك')}</small></div></div>${option('👤','حسابي','صفحة الطالب والطلبات والوصولات','account')}${option('<svg class="alin-option-track-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7Z"/><path d="m8.5 8.5 3.5-2 3.5 2-3.5 2-3.5-2Z"/><path d="m8.5 8.5 3.5 2 3.5-2v4L12 14.5l-3.5-2v-4Z"/></svg>','تتبع الطلب','متابعة حالة الطلب برقم التتبع','tracking')}<div class="alin-desktop-option-row"><span>🌐</span><div><b>اللغة</b><small>لغة واجهة المنصة</small></div><div class="alin-desktop-choice-group"><button type="button" data-language="ar" class="${language==='ar'?'active':''}">العربية</button><button type="button" data-language="ku" class="${language==='ku'?'active':''}">کوردی</button><button type="button" data-language="en" class="${language==='en'?'active':''}">English</button></div></div><div class="alin-desktop-option-row"><span>◐</span><div><b>المظهر</b><small>الوضع النهاري أو الليلي</small></div><div class="alin-desktop-choice-group"><button type="button" data-theme-choice="light" class="${theme==='light'?'active':''}">نهاري</button><button type="button" data-theme-choice="dark" class="${theme==='dark'?'active':''}">ليلي</button></div></div>${option('💬','تواصل معنا','الدعم والاستفسارات','contact')}${option('ⓘ','حول منصة آلين','الخدمات ومعلومات المنصة','about')}</section>`);root.querySelector('[data-option-action="account"]')?.addEventListener('click',()=>{close();window.AlinStudentPage?.open?.()||window.openStudentAuth?.()});root.querySelector('[data-option-action="tracking"]')?.addEventListener('click',()=>openTracking());root.querySelector('[data-option-action="contact"]')?.addEventListener('click',()=>{close();window.alinContactUs?.()});root.querySelector('[data-option-action="about"]')?.addEventListener('click',()=>{close();window.alinAboutPlatform?.()});root.querySelectorAll('[data-language]').forEach(button=>button.addEventListener('click',()=>{window.alinSetLanguage?.(button.dataset.language);openOptions()}));root.querySelectorAll('[data-theme-choice]').forEach(button=>button.addEventListener('click',()=>{window.alinSetTheme?.(button.dataset.themeChoice);openOptions()}))}
-  function refreshAccountLabel(){const student=window.AlinStudentPage?.current?.()||window.currentStudent?.(),label=document.querySelector('[data-desktop-control="options"] small');if(label)label.textContent=student?.name||'خيارات'}
-  window.AlinDesktopTools=Object.freeze({openTracking,openOptions,close,refreshAccountLabel});window.addEventListener('alin:student-session',refreshAccountLabel);document.addEventListener('keydown',event=>{if(event.key==='Escape')close()});if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',refreshAccountLabel,{once:true});else refreshAccountLabel();
-})();
-
-/* ALIN v4.1.5.1 — conservative visual performance improvements. */
-(function(){
-  'use strict';
-  function optimizeImages(root=document){root.querySelectorAll?.('img').forEach(image=>{if(!image.hasAttribute('loading'))image.loading='lazy';if(!image.hasAttribute('decoding'))image.decoding='async';image.draggable=false})}
-  function optimize(){optimizeImages();document.documentElement.dataset.alinPerformance='safe'}
-  document.addEventListener('alin:store-rendered',event=>optimizeImages(event.target||document));
-  document.addEventListener('alin:data-refreshed',()=>requestAnimationFrame(optimize));
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',optimize,{once:true});else optimize();
-})();
-
-/* === ALIN v4.1.5.2 INTEGRATED FEATURES END === */
