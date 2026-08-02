@@ -1,4 +1,4 @@
-const VERSION='alin-v4.1.5.1-clean-features';
+const VERSION='alin-v4.1.5.2-integrated';
 const STATIC_CACHE=`${VERSION}-static`;
 const RUNTIME_CACHE=`${VERSION}-runtime`;
 
@@ -16,9 +16,7 @@ const CORE=[
   './store/banners.css','./store/mobile-navigation.css',
   './assets/images/alin-splash-desktop.webp','./assets/images/alin-splash-mobile.webp',
   './assets/icons/icon-192.png','./assets/icons/icon-512.png',
-  './modules/features/receipts-center.js','./modules/features/student-page.js',
-  './modules/features/desktop-options-tracking.js','./modules/features/performance-safe.js',
-  './styles/alin-receipts.css','./styles/alin-student-page.css','./styles/alin-desktop-tools.css'
+
 ];
 
 async function cacheCore(){
