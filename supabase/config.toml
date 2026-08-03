@@ -1,7 +1,0 @@
-# وظائف الدخول الأول والتسجيل يجب أن تستقبل المستخدم قبل وجود جلسة.
-# الحماية الفعلية داخل الكود: مفتاح Bootstrap + حارس محاولات الدخول.
-[functions.bootstrap-first-admin]
-verify_jwt = false
-
-[functions.secure-login]
-verify_jwt = false
