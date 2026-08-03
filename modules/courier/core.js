@@ -1,0 +1,244 @@
+// === courier/core.js ===
+/* ALIN v4.1.2 — courier assignment compatibility for old and new Supabase backends. */
+(function(){
+  'use strict';
+
+  const $=s=>document.querySelector(s), $$=s=>Array.from(document.querySelectorAll(s));
+  const arr=v=>Array.isArray(v)?v:[];
+  const escv=v=>typeof esc==='function'?esc(v):String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const moneyv=v=>typeof money==='function'?money(v):Number(v||0).toLocaleString(window.AlinI18n?.locale?.()||'ar-IQ');
+  const now=()=>new Date().toISOString();
+  const notify=m=>typeof toast==='function'?toast(m):alert(m);
+  const currentAccount=()=>{try{return window.current||current||null}catch(_){return window.current||null}};
+  const dbx=()=>window.db||{};
+  const client=()=>window.sb||window.AlinCloud?.client?.()||null;
+  const DEFAULT_AREAS=['القادسية','الحرية','الإسكان','عرفة','رحيم آوه','شوراو','طريق بغداد','الواسطي','دوميز','بنجا علي','تسعين','حي النصر','حي النداء','الخضراء','المصلى','القورية','الشورجة','واحد حزيران','الحي العسكري','حي المعلمين','حي الجامعة','حي عدن','حي الزوراء','حي الحسين','حي العمل الشعبي','غرناطة','المنصور','البلديات','الشرطة','النداء'];
+  let refreshPromise=null,lastRefresh=0;
+
+  window.AlinCourierModules=window.AlinCourierModules||{};
+  window.ALIN_KIRKUK_AREAS=DEFAULT_AREAS.slice();
+  window.alinNormalizeDeliveryArea=window.alinNormalizeDeliveryArea||function(value){
+    return String(value||'').replace(/[ـً-ٰٟ]/g,'').replace(/\s+/g,' ').trim().split(/\s*[—–-]\s*/)[0].trim();
+  };
+
+  function keyOf(row){return String(row?.account_id||row?.accountId||row?.user_id||row?.id||row?.auth_user_id||row?.username||'')}
+  function normalizeCourier(row){
+    if(!row)return null;
+    const accountId=String(row.account_id||row.accountId||row.user_id||row.id||'');
+    const rawId=String(row.id||'');
+    return {...row,id:accountId||rawId,account_id:accountId||rawId,courier_row_id:(rawId&&accountId&&rawId!==accountId)?rawId:(row.courier_row_id||null),role:'courier'};
+  }
+  function allCouriers(){
+    const database=dbx(),accounts=database.accounts||{};
+    const sources=[...arr(accounts.couriers),...arr(accounts.all).filter(x=>x.role==='courier'),...arr(database.couriers),...arr(window.couriers)];
+    const map=new Map();
+    for(const raw of sources){const row=normalizeCourier(raw),key=keyOf(row);if(key)map.set(key,{...(map.get(key)||{}),...row,id:key,account_id:key,role:'courier'})}
+    return [...map.values()];
+  }
+  function areasOf(c){
+    if(!c)return[];let raw=c.areas||c.area_ids||c.area||[];
+    if(Array.isArray(raw))return [...new Set(raw.map(String).map(x=>x.trim()).filter(Boolean))];
+    if(typeof raw==='string'){
+      try{const parsed=JSON.parse(raw);if(Array.isArray(parsed))return [...new Set(parsed.map(String).map(x=>x.trim()).filter(Boolean))]}catch(_){ }
+      return [...new Set(raw.split(/[,،|]/).map(x=>x.trim()).filter(Boolean))];
+    }
+    return[];
+  }
+  function areaRows(){
+    const rows=arr(dbx().delivery_areas||dbx().deliveryAreas).filter(x=>x.active!==false&&String(x.status||'active')!=='inactive');
+    return rows.length?rows:DEFAULT_AREAS.map((name,index)=>({id:`KA${index+1}`,name,status:'active',sort_order:index+1}));
+  }
+  function statusOf(c){if(!c||c.status==='inactive')return'inactive';const s=String(c.availability||c.work_status||'available');return ['available','busy','offline'].includes(s)?s:'available'}
+  function statusLabel(s){return({available:'متاح',busy:'مشغول',offline:'خارج الخدمة',inactive:'موقوف',active:'فعال'})[s]||s}
+  function resolveCourier(){
+    const me=currentAccount();if(!me||String(me.role)!=='courier')return null;
+    const rows=allCouriers();
+    const found=rows.find(c=>[c.id,c.account_id,c.courier_row_id].filter(Boolean).map(String).includes(String(me.id)))
+      ||rows.find(c=>me.auth_user_id&&String(c.auth_user_id||'')===String(me.auth_user_id))
+      ||rows.find(c=>me.username&&String(c.username||'').toLowerCase()===String(me.username).toLowerCase());
+    const merged={...me,...(found||{}),id:found?.id||me.id,role:'courier'};
+    if(!merged.areas&&merged.area)merged.areas=[merged.area];
+    return merged;
+  }
+  function allOrders(){return arr(dbx().orders)}
+  function myOrders(c=resolveCourier()){
+    if(!c)return[];
+    const ids=new Set([c.id,c.account_id,c.courier_row_id,currentAccount()?.id].filter(Boolean).map(String));
+    return allOrders().filter(o=>ids.has(String(o.courier_id||o.delegate_id||o.courier_account_id||'')))
+      .sort((a,b)=>String(b.created_at||b.updated_at||'').localeCompare(String(a.created_at||a.updated_at||'')));
+  }
+  function settlements(){return arr(window.courierSettlements).length?arr(window.courierSettlements):arr(dbx().courierSettlements||dbx().delegate_settlements)}
+  function done(o){return ['completed','delivered'].includes(String(o.status||''))}
+  function cancelled(o){return ['cancelled','rejected','assignment_expired'].includes(String(o.status||''))}
+  function active(o){return !done(o)&&!cancelled(o)}
+  function activeLoad(c){return myOrders(c).filter(active).length}
+  function today(o){const x=o.delivered_at||o.completed_at||o.updated_at||o.created_at||'';return String(x).slice(0,10)===new Date().toISOString().slice(0,10)}
+  function todayDone(c){return myOrders(c).filter(o=>done(o)&&today(o)).length}
+  function financials(c){
+    const serverSummary=window.AlinFinance?.delegateSummary?.(c?.id);
+    if(serverSummary)return{collected:+serverSummary.collected||0,earnings:+serverSummary.earnings||+serverSummary.earned||0,paid:+serverSummary.settled||+serverSummary.paid||0,debt:+serverSummary.debt||+serverSummary.remaining||0,balance:+serverSummary.earned||0};
+    const rows=myOrders(c).filter(done),collected=rows.reduce((a,o)=>a+(+o.total||0),0),earnings=rows.reduce((a,o)=>a+(+o.delegate_profit||+o.courier_profit||0),0);
+    const paid=settlements().filter(s=>String(s.courier_id||s.delegate_id||s.party_id||'')===String(c.id)&&String(s.status||'paid')!=='cancelled').reduce((a,s)=>a+(+s.amount||0),0);
+    return{collected,earnings,paid,debt:Math.max(0,collected-earnings-paid),balance:earnings};
+  }
+  function orderState(st){return({pending:'جديد',pending_admin:'بانتظار التعيين',assigned:'بانتظار القبول',new:'طلب جديد',accepted:'مقبول',picked_up:'تم استلام الطلب',out_for_delivery:'في الطريق',out_delivery:'في الطريق',processing:'قيد التنفيذ',printing:'قيد الطباعة',ready:'جاهز',completed:'تم التسليم',delivered:'تم التسليم',cancelled:'ملغي',rejected:'مرفوض'})[st]||st||'جديد'}
+  function messageText(error){
+    const direct=String(error?.message||error||'').trim();
+    const details=String(error?.details||'').trim();
+    const hint=String(error?.hint||'').trim();
+    return [direct,details,hint].filter(Boolean).join(' — ');
+  }
+  function friendlyOrderError(error){
+    const msg=messageText(error);
+    if(/failed to fetch|networkerror|load failed|fetch failed/i.test(msg))return 'تعذر الاتصال بخدمة الطلبات. تحقق من الإنترنت ثم أعد المحاولة.';
+    if(/jwt|session|token|auth session missing|not authenticated/i.test(msg))return 'انتهت جلسة الحساب. سجل الخروج ثم ادخل مرة ثانية.';
+    if(/المندوب غير مرتبط بمنطقة الطلب|حساب المندوب غير موجود|حساب المندوب غير فعال|الطلب غير موجود|غير مسموح|الحالة الحالية|سبب الرفض|مكتمل|ملغي/.test(msg))return msg;
+    return msg||'تعذر تحديث طلب المندوب.';
+  }
+  function assignmentCompatibilityError(error){
+    const msg=messageText(error);
+    return /alin_admin_assign_order|schema cache|function .* does not exist|could not find the function|بيانات المندوب غير مهيأة|column .* does not exist|orders_status_valid/i.test(msg);
+  }
+  function missingColumnError(error){return /column .* does not exist|schema cache/i.test(messageText(error))}
+  function isAdminAccount(){return ['admin','accountant'].includes(String(currentAccount()?.role||''))}
+  function orderById(id){return allOrders().find(o=>String(o.id)===String(id))||null}
+  function courierById(id){return allCouriers().find(c=>[c.id,c.account_id,c.courier_row_id].filter(Boolean).map(String).includes(String(id)))||null}
+  function isHomeDelivery(o){return String(o?.fulfillment_type||'')==='home_delivery'||['courier','delivery','home_delivery'].includes(String(o?.delivery_type||''))}
+  function currentHistory(o){return Array.isArray(o?.status_history)?o.status_history:[]}
+  async function legacyEdgeAssignment(orderId,courierId,libraryId){
+    const invoke=window.ALINAuthRuntime?.invokeAdmin;
+    if(typeof invoke!=='function')throw new Error('خدمة التعيين القديمة غير متاحة');
+    const data=await invoke('admin-assign-order',{order_id:String(orderId),courier_id:courierId?String(courierId):null,library_id:libraryId?String(libraryId):null});
+    if(data?.order)mergeOrder(data.order);
+    return data;
+  }
+  async function directAssignment(orderId,courierId,libraryId){
+    const c=client();if(!c?.from)throw new Error('خدمة Supabase غير متاحة');
+    if(!isAdminAccount())throw new Error('هذه العملية متاحة للإدارة فقط');
+    const order=orderById(orderId);if(!order)throw new Error('الطلب غير موجود');
+    const status=String(order.status||'new').toLowerCase();
+    if(['completed','delivered','cancelled','canceled','rejected'].includes(status))throw new Error('لا يمكن تغيير تعيين طلب مكتمل أو ملغي');
+    const home=isHomeDelivery(order),stamp=now();
+    let canonicalCourier=null;
+    if(home&&courierId){
+      const courier=courierById(courierId);if(!courier||courier.status==='inactive')throw new Error('حساب المندوب غير موجود أو غير فعال');
+      const area=window.alinNormalizeDeliveryArea(order.delivery_area),areas=areasOf(courier).map(window.alinNormalizeDeliveryArea);
+      if(area&&areas.length&&!areas.includes(area))throw new Error('المندوب غير مرتبط بمنطقة الطلب');
+      canonicalCourier=String(courier.account_id||courier.id||courierId);
+    }
+    if(!home&&courierId)throw new Error('طلب الاستلام من المكتبة لا يقبل تعيين مندوب');
+    if(!home&&!libraryId)throw new Error('اختر مكتبة لاستلام الطلب');
+    const same=canonicalCourier&&String(order.courier_id||order.delegate_id||'')===canonicalCourier;
+    const nextStatus=home?(canonicalCourier?(same&&['accepted','picked_up','out_for_delivery'].includes(status)?status:'assigned'):'pending_admin'):status;
+    const history=[...currentHistory(order),{status:nextStatus,at:stamp,by:currentAccount()?.id||'admin',role:'admin',reason:canonicalCourier?'تعيين المندوب':home?'إلغاء تعيين المندوب':'تعيين مكتبة الاستلام'}];
+    const full=home?{
+      courier_id:canonicalCourier,delegate_id:canonicalCourier,status:nextStatus,assignment_status:canonicalCourier?(nextStatus==='accepted'?'accepted':'assigned'):'pending_admin',
+      assigned_at:canonicalCourier?(same?(order.assigned_at||stamp):stamp):null,accepted_at:nextStatus==='accepted'?order.accepted_at:null,picked_up_at:nextStatus==='picked_up'?order.picked_up_at:null,
+      out_for_delivery_at:nextStatus==='out_for_delivery'?order.out_for_delivery_at:null,status_history:history,updated_at:stamp
+    }:{library_id:String(libraryId),pickup_library_id:String(libraryId),courier_id:null,delegate_id:null,status_history:history,updated_at:stamp};
+    const candidates=home?[
+      full,
+      {courier_id:canonicalCourier,delegate_id:canonicalCourier,status:nextStatus,assignment_status:canonicalCourier?'assigned':'pending_admin',assigned_at:canonicalCourier?stamp:null,updated_at:stamp},
+      {courier_id:canonicalCourier,delegate_id:canonicalCourier,status:nextStatus,updated_at:stamp},
+      {courier_id:canonicalCourier,status:nextStatus,updated_at:stamp},
+      {delegate_id:canonicalCourier,status:nextStatus,updated_at:stamp},
+      {courier_id:canonicalCourier,updated_at:stamp},
+      {delegate_id:canonicalCourier,updated_at:stamp}
+    ]:[full,{library_id:String(libraryId),pickup_library_id:String(libraryId),updated_at:stamp},{library_id:String(libraryId),updated_at:stamp},{pickup_library_id:String(libraryId),updated_at:stamp}];
+    let lastError=null;
+    for(const patch of candidates){
+      const {data,error}=await c.from('orders').update(patch).eq('id',String(orderId)).select('*').maybeSingle();
+      if(!error&&data){mergeOrder(data);try{await c.from('order_timeline').insert({order_id:String(orderId),status:String(data.status||nextStatus),actor_id:currentAccount()?.id||null,actor_role:'admin',reason:canonicalCourier?'تعيين المندوب':home?'إلغاء تعيين المندوب':'تعيين مكتبة الاستلام',created_at:stamp})}catch(_){ }return{ok:true,order:data,compatibility:'direct'}}
+      lastError=error||new Error('لم يرجع الخادم الطلب بعد التحديث');
+      if(!missingColumnError(lastError)&&!/orders_status_valid|check constraint/i.test(messageText(lastError)))break;
+    }
+    throw lastError||new Error('تعذر تحديث الطلب');
+  }
+  function mergeOrder(order){
+    if(!order?.id)return;
+    const rows=allOrders(),index=rows.findIndex(x=>String(x.id)===String(order.id));
+    if(index>=0)Object.assign(rows[index],order);else rows.unshift(order);
+  }
+  async function rpc(name,args){
+    const c=client();if(!c?.rpc)throw new Error('خدمة Supabase غير متاحة');
+    const {data,error}=await c.rpc(name,args);if(error)throw error;
+    if(!data?.ok)throw new Error(data?.error||'لم يؤكد الخادم تنفيذ العملية');
+    if(data.order)mergeOrder(data.order);
+    return data;
+  }
+  async function assignOrder(orderId,courierId=null,libraryId=null){
+    const courier=courierId?courierById(courierId):null;
+    const canonicalCourier=courier?String(courier.account_id||courier.id||courierId):(courierId?String(courierId):null);
+    let result;
+    try{
+      result=await rpc('alin_admin_assign_order',{p_order_id:String(orderId),p_courier_id:canonicalCourier,p_library_id:libraryId?String(libraryId):null});
+    }catch(rpcError){
+      if(!assignmentCompatibilityError(rpcError))throw rpcError;
+      try{result=await legacyEdgeAssignment(orderId,canonicalCourier,libraryId)}
+      catch(edgeError){
+        try{result=await directAssignment(orderId,canonicalCourier,libraryId)}
+        catch(directError){
+          const details=[messageText(rpcError),messageText(edgeError),messageText(directError)].filter(Boolean).join(' — ');
+          throw new Error(details||'تعذر تحديث الطلب');
+        }
+      }
+    }
+    if(typeof window.load==='function')await window.load({force:true,reason:'courier-assignment-v4.1.2'});
+    return result;
+  }
+  async function transitionOrder(orderId,status,reason=''){
+    if(!window.AlinFinance?.transitionOrder)throw new Error('خدمة حركة الطلبات غير جاهزة');
+    const result=await window.AlinFinance.transitionOrder(String(orderId),String(status),String(reason||''));
+    if(result?.order)mergeOrder(result.order);
+    return result;
+  }
+  function mapLink(o){const lat=o.delivery_latitude||o.delivery_lat||o.latitude,lng=o.delivery_longitude||o.delivery_lng||o.longitude;return o.delivery_location_url||o.delivery_map_url||o.gps_url||(lat&&lng?`https://maps.google.com/?q=${lat},${lng}`:'')}
+  function phoneLink(p){p=String(p||'').replace(/\D/g,'');return p?`tel:+${p.startsWith('964')?p:'964'+p.replace(/^0/,'')}`:'#'}
+  function waLink(p){p=String(p||'').replace(/\D/g,'');return p?`https://wa.me/${p.startsWith('964')?p:'964'+p.replace(/^0/,'')}`:'#'}
+  function fmtDate(v){if(!v)return'—';try{return new Date(v).toLocaleString(window.AlinI18n?.locale?.()||'ar-IQ')}catch(_){return String(v)}}
+  function matchingCouriers(area){const target=window.alinNormalizeDeliveryArea(area);return allCouriers().filter(c=>c.status!=='inactive'&&areasOf(c).some(name=>window.alinNormalizeDeliveryArea(name)===target)).sort((a,b)=>activeLoad(a)-activeLoad(b))}
+  function activeCouriers(){return allCouriers().filter(c=>c.status!=='inactive')}
+  function alinCouriersOptions(){return activeCouriers().map(c=>`<option value="${escv(c.id)}">${escv(c.name||'مندوب')}${areasOf(c).length?' — '+escv(areasOf(c).join('، ')):''}</option>`).join('')}
+
+  function mergeOwnRows(courierRow,orderRows){
+    const database=dbx();
+    if(courierRow){
+      const rows=allCouriers().filter(x=>String(x.id)!==String(courierRow.id));rows.push(courierRow);
+      database.couriers=rows;database.accounts=database.accounts||{};database.accounts.couriers=rows;
+      try{window.couriers=rows}catch(_){ }
+    }
+    if(Array.isArray(orderRows)){
+      const ownId=String(currentAccount()?.id||''),freshIds=new Set(orderRows.map(x=>String(x.id)));
+      const retained=allOrders().filter(x=>!freshIds.has(String(x.id))&&String(x.courier_id||x.delegate_id||'')!==ownId);
+      database.orders=[...orderRows,...retained];
+    }
+  }
+  async function refreshCourierData(force=false){
+    const me=currentAccount();if(!me||me.role!=='courier')return null;
+    if(!force&&Date.now()-lastRefresh<2500)return resolveCourier();
+    if(refreshPromise)return refreshPromise;
+    refreshPromise=(async()=>{
+      const c=client();if(!c)return resolveCourier();
+      const [courierResult,ordersResult]=await Promise.all([
+        c.from('couriers').select('*').eq('id',me.id).maybeSingle(),
+        c.from('orders').select('*').or(`courier_id.eq.${me.id},delegate_id.eq.${me.id}`).order('created_at',{ascending:false})
+      ]);
+      if(courierResult.error)console.warn('[ALIN courier row]',courierResult.error);
+      if(ordersResult.error)console.warn('[ALIN courier orders]',ordersResult.error);
+      mergeOwnRows(courierResult.data||null,ordersResult.error?null:(ordersResult.data||[]));lastRefresh=Date.now();return resolveCourier();
+    })().catch(error=>{console.error('[ALIN courier refresh]',error);return resolveCourier()}).finally(()=>{refreshPromise=null});
+    return refreshPromise;
+  }
+  function resetRefresh(){lastRefresh=0}
+
+  window.AlinCourierCore=Object.freeze({
+    version:'4.1.2',$, $$, arr, escv, moneyv, now, notify, currentAccount, dbx,
+    allCouriers, areasOf, areaRows, statusOf, statusLabel, resolveCourier,
+    allOrders, myOrders, settlements, done, cancelled, active, activeLoad, today, todayDone, financials,
+    orderState, friendlyOrderError, mapLink, phoneLink, waLink, fmtDate,
+    matchingCouriers, activeCouriers, alinCouriersOptions, assignOrder, transitionOrder,
+    refreshCourierData, resetRefresh
+  });
+})();
+
+;
