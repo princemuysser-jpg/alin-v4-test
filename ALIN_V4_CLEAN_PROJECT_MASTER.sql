@@ -935,6 +935,8 @@ create trigger orders_protect_update before update on public.orders for each row
 create or replace function public.alin_create_store_orders_guarded(
   p_items jsonb,
   p_customer jsonb,
+  p_student_token text,
+  p_student_device text,
   p_fulfillment jsonb default '{}'::jsonb,
   p_coupon_code text default null,
   p_request_key text default null,
@@ -957,6 +959,17 @@ declare
   v_subtotal numeric; v_discount numeric; v_total numeric; v_index integer:=0; v_id text; v_number text;
   v_student_id text;
 begin
+  select ss.student_id into v_student_id
+  from public.student_sessions ss
+  where ss.token_hash=encode(extensions.digest(coalesce(p_student_token,''),'sha256'),'hex')
+    and ss.device_hash=encode(extensions.digest(coalesce(p_student_device,''),'sha256'),'hex')
+    and ss.revoked_at is null and ss.expires_at>now()
+  limit 1;
+  if btrim(coalesce(p_student_token,''))<>'' and v_student_id is null then raise exception 'جلسة الطالب منتهية. سجل الدخول من جديد'; end if;
+  if v_student_id is not null then
+    select p.name,p.phone into v_name,v_phone from public.student_profiles p where p.id=v_student_id;
+    if not found then raise exception 'حساب الطالب غير متاح'; end if;
+  end if;
   if jsonb_typeof(p_items)<>'array' or jsonb_array_length(p_items)=0 then raise exception 'السلة فارغة'; end if;
   if jsonb_array_length(p_items)>30 then raise exception 'عدد عناصر السلة أكبر من الحد المسموح'; end if;
   v_phone:=regexp_replace(v_phone,'[^0-9+]','','g');
@@ -1014,7 +1027,6 @@ begin
     raise exception 'اختر طريقة استلام صحيحة';
   end if;
 
-  select id into v_student_id from public.student_profiles where phone=v_phone limit 1;
 
   if p_coupon_code is not null and btrim(p_coupon_code)<>'' then
     select * into v_coupon from public.coupons c where lower(c.code)=lower(btrim(p_coupon_code)) for update;
@@ -1102,6 +1114,22 @@ begin
   update public.checkout_requests set status='completed',result=v_result,completed_at=now() where id=v_request_id;
   return query select x.order_number,x.order_id from jsonb_to_recordset(v_result) x(order_number text,order_id text);
 end $$;
+
+-- توافق مع الواجهات القديمة: الطلب كزائر لا يرتبط بأي حساب طالب بمجرد تشابه رقم الهاتف.
+create or replace function public.alin_create_store_orders_guarded(
+  p_items jsonb,
+  p_customer jsonb,
+  p_fulfillment jsonb default '{}'::jsonb,
+  p_coupon_code text default null,
+  p_request_key text default null,
+  p_device_id text default null
+)
+returns table(order_number text,order_id text)
+language sql security definer set search_path=public as $$
+  select * from public.alin_create_store_orders_guarded(
+    p_items,p_customer,null,null,p_fulfillment,p_coupon_code,p_request_key,p_device_id
+  )
+$$;
 
 -- =========================================================
 -- 7) انتقال حالة الطلب والحسابات الذرية
@@ -1760,7 +1788,7 @@ language sql security definer set search_path=public as $$
   select o.order_number,o.title,o.total,o.status,o.created_at
   from public.orders o
   join public.student_profiles p on p.id=public.alin_student_session_id(p_token,p_device)
-  where o.student_id=p.id or o.student_phone=p.phone
+  where o.student_id=p.id
   order by o.created_at desc limit 100
 $$;
 
@@ -1849,6 +1877,7 @@ grant execute on function public.alin_login_guard_fail(text,text) to service_rol
 grant execute on function public.alin_login_guard_success(text,text) to service_role;
 
 grant execute on function public.alin_create_store_orders_guarded(jsonb,jsonb,jsonb,text,text,text) to anon,authenticated;
+grant execute on function public.alin_create_store_orders_guarded(jsonb,jsonb,text,text,jsonb,text,text,text) to anon,authenticated;
 grant execute on function public.alin_track_order(text) to anon,authenticated;
 grant execute on function public.alin_student_register(text,text,text,text) to anon,authenticated;
 grant execute on function public.alin_student_login(text,text,text) to anon,authenticated;
@@ -1905,7 +1934,7 @@ select
   to_regclass('public.orders') is not null as orders_ready,
   to_regclass('public.ledger') is not null as ledger_ready,
   to_regclass('public.settlements') is not null as settlements_ready,
-  to_regprocedure('public.alin_create_store_orders_guarded(jsonb,jsonb,jsonb,text,text,text)') is not null as checkout_ready,
+  to_regprocedure('public.alin_create_store_orders_guarded(jsonb,jsonb,text,text,jsonb,text,text,text)') is not null as checkout_ready,
   to_regprocedure('public.alin_order_transition_atomic(text,text,text)') is not null as transition_ready,
   to_regprocedure('public.alin_upsert_order_finance_atomic(text)') is not null as finance_ready,
   (select count(*) from information_schema.columns where table_schema='public' and table_name='orders') as orders_columns,

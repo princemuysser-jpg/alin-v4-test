@@ -1,4 +1,4 @@
-const VERSION='alin-v4.1.5-tracking-receipts-3';
+const VERSION='alin-v4.1.5-receipts3-student-isolation1';
 const STATIC_CACHE=`${VERSION}-static`;
 const RUNTIME_CACHE=`${VERSION}-runtime`;
 

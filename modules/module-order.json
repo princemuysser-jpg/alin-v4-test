@@ -15,6 +15,7 @@
     "modules/admin/shell.js",
     "modules/admin/accounts.js",
     "modules/core/features.js",
+    "modules/store/student-isolation.js",
     "modules/store/discovery-core.js",
     "modules/store/discovery-catalog.js",
     "modules/store/discovery-details.js",

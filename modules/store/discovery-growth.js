@@ -12,7 +12,7 @@
       const student=typeof window.currentStudent==='function'?window.currentStudent():null;
       if(student){profile.phone=student.phone;profile.name=student.name}
     }catch(_){/* ignore */}
-    localStorage.setItem('alin_v99_student_profile',JSON.stringify(profile));
+    localStorage.setItem(ctx.profileStorageKey?ctx.profileStorageKey():'alin_v99_student_profile',JSON.stringify(profile));
     ctx.renderStage?.();
     ctx.renderEffectiveStore?.();
     if(profile.phone&&state.schema.student_profiles&&hasSb()){
@@ -32,14 +32,14 @@
     if(!root)return;
     let student=null;
     try{student=typeof window.currentStudent==='function'?window.currentStudent():null}catch(_){/* ignore */}
-    const orders=student?(window.db?.orders||[]).filter(order=>order.student_phone===student.phone).slice(0,5):[];
+    const orders=student?(window.AlinStudentAuth?.orders?.()||[]).slice(0,5):[];
     if(ctx.isDesktop()||ctx.isMobile()){
       if(!student){root.innerHTML='';return}
-      root.innerHTML=`<div class="v99-section-head"><div><h2>طلباتي الأخيرة</h2><small>إعادة الطلب أو متابعة حالته بسهولة</small></div></div><article class="v99-hub-card desktop-orders-card">${orders.map(order=>`<div class="v99-order-row"><div><b>${esc(order.title||order.order_number||order.id)}</b><small>${esc(order.status||'جديد')}${order.ready_eta?` • جاهز تقريباً ${esc(order.ready_eta)}`:''}</small></div><button data-v99-action="reorder" data-id="${esc(order.id)}">أعد الطلب</button></div>`).join('')||'<p>لا توجد طلبات سابقة.</p>'}</article>`;
+      root.innerHTML=`<div class="v99-section-head"><div><h2>طلباتي الأخيرة</h2><small>إعادة الطلب أو متابعة حالته بسهولة</small></div></div><article class="v99-hub-card desktop-orders-card">${orders.map(order=>`<div class="v99-order-row"><div><b>${esc(order.title||order.order_number||order.id)}</b><small>${esc(order.status||'جديد')}${order.ready_eta?` • جاهز تقريباً ${esc(order.ready_eta)}`:''}</small></div><button type="button" onclick="window.AlinStudentAuth?.track?.('${encodeURIComponent(String(order.order_number||order.id||''))}')">تتبع</button></div>`).join('')||'<p>لا توجد طلبات سابقة.</p>'}</article>`;
       return;
     }
     const loyalty=(state.tables.loyalty_accounts||[]).find(row=>student&&row.phone===student.phone);
-    root.innerHTML=`<div class="v99-section-head"><div><h2>مساحة الطالب</h2><small>طلباتك ومكافآتك وخيارات الطلب الجماعي</small></div></div><div class="v99-hub-grid"><article class="v99-hub-card"><h3>آخر الطلبات</h3>${student?(orders.map(order=>`<div class="v99-order-row"><div><b>${esc(order.title||order.order_number||order.id)}</b><small>${esc(order.status||'جديد')}${order.ready_eta?` • جاهز تقريباً ${esc(order.ready_eta)}`:''}</small></div><button data-v99-action="reorder" data-id="${esc(order.id)}">أعد الطلب</button></div>`).join('')||'<p>لا توجد طلبات سابقة.</p>'):'<p>سجل دخول الطالب لرؤية طلباتك.</p>'}</article><article class="v99-hub-card"><h3>نقاط آلين</h3>${loyalty?`<div class="v99-price">${fmt(loyalty.points_balance)} نقطة</div><p>يُحتسب الرصيد من النظام الآمن فقط.</p>`:'<div class="v99-notice">لا يوجد رصيد نقاط متاح. تظهر النقاط هنا بعد تفعيل نظام النقاط وربط الحساب.</div>'}</article><article class="v99-hub-card"><h3>طلب جماعي</h3><p>اجمع طلبات زملائك في مجموعة واحدة عندما تكون الخدمة مفعلة.</p><button data-v99-action="groupOrder">إنشاء أو انضمام</button></article></div>`;
+    root.innerHTML=`<div class="v99-section-head"><div><h2>مساحة الطالب</h2><small>طلباتك ومكافآتك وخيارات الطلب الجماعي</small></div></div><div class="v99-hub-grid"><article class="v99-hub-card"><h3>آخر الطلبات</h3>${student?(orders.map(order=>`<div class="v99-order-row"><div><b>${esc(order.title||order.order_number||order.id)}</b><small>${esc(order.status||'جديد')}${order.ready_eta?` • جاهز تقريباً ${esc(order.ready_eta)}`:''}</small></div><button type="button" onclick="window.AlinStudentAuth?.track?.('${encodeURIComponent(String(order.order_number||order.id||''))}')">تتبع</button></div>`).join('')||'<p>لا توجد طلبات سابقة.</p>'):'<p>سجل دخول الطالب لرؤية طلباتك.</p>'}</article><article class="v99-hub-card"><h3>نقاط آلين</h3>${loyalty?`<div class="v99-price">${fmt(loyalty.points_balance)} نقطة</div><p>يُحتسب الرصيد من النظام الآمن فقط.</p>`:'<div class="v99-notice">لا يوجد رصيد نقاط متاح. تظهر النقاط هنا بعد تفعيل نظام النقاط وربط الحساب.</div>'}</article><article class="v99-hub-card"><h3>طلب جماعي</h3><p>اجمع طلبات زملائك في مجموعة واحدة عندما تكون الخدمة مفعلة.</p><button data-v99-action="groupOrder">إنشاء أو انضمام</button></article></div>`;
   }
 
   function groupOrder(){
@@ -77,6 +77,9 @@
       return data||[];
     }catch(_){state.schema[name]=false;return null}
   }
+
+  document.addEventListener('alin:student-orders',renderStudentHub);
+  document.addEventListener('alin:storage-scope-changed',renderStudentHub);
 
   async function loadGrowthData(){
     const names=['bundles','bundle_items','product_reviews'];

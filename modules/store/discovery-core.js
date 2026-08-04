@@ -4,7 +4,10 @@
   'use strict';
   if(window.AlinStoreDiscovery)return;
 
-  const FAV_KEY='alin_v99_favorites';
+  const FAV_BASE='alin_v99_favorites';
+  const PROFILE_BASE='alin_v99_student_profile';
+  const favoriteStorageKey=()=>window.AlinStudentIsolation?.key?.(FAV_BASE)||FAV_BASE;
+  const profileStorageKey=()=>window.AlinStudentIsolation?.key?.(PROFILE_BASE)||PROFILE_BASE;
   const state={
     filters:{kind:'',grade:'',subject:'',teacher:'',min:'',max:'',available:'',badge:'',sort:'recommended'},
     tables:{},schema:{},timer:null,modalReturnFocus:null,catalogSignature:''
@@ -73,17 +76,15 @@
   }
 
   function favoriteKeys(){
-    let rows=[];
-    for(const key of [FAV_KEY,'alin_v98_favorites','alin_v85_favorites','ALIN_FAVORITES']){
-      try{
-        const parsed=JSON.parse(localStorage.getItem(key)||'[]');
-        if(Array.isArray(parsed))rows.push(...parsed.map(value=>typeof value==='string'?value:stableKey(value.kind,value.id)));
-      }catch(_){/* ignore malformed legacy storage */}
-    }
-    rows=[...new Set(rows.map(String).filter(Boolean))];
-    localStorage.setItem(FAV_KEY,JSON.stringify(rows));
-    try{localStorage.setItem('alin_v98_favorites',JSON.stringify(rows))}catch(_){/* ignore */}
-    return rows;
+    try{
+      const parsed=JSON.parse(localStorage.getItem(favoriteStorageKey())||'[]');
+      return Array.isArray(parsed)?[...new Set(parsed.map(String).filter(Boolean))]:[];
+    }catch(_){return []}
+  }
+  function saveFavoriteKeys(rows){
+    const clean=[...new Set((Array.isArray(rows)?rows:[]).map(String).filter(Boolean))];
+    try{localStorage.setItem(favoriteStorageKey(),JSON.stringify(clean))}catch(_){}
+    return clean;
   }
   const favoriteItems=()=>favoriteKeys().map(key=>{const [kind,...id]=key.split(':');return findItem(kind,id.join(':'))}).filter(Boolean);
   const isFavorite=item=>favoriteKeys().includes(stableKey(item.kind,item.id));
@@ -113,7 +114,7 @@
   }
 
   function studentProfile(){
-    try{return JSON.parse(localStorage.getItem('alin_v99_student_profile')||'{}')}catch(_){return{}}
+    try{return JSON.parse(localStorage.getItem(profileStorageKey())||'{}')}catch(_){return{}}
   }
 
   function updateDesktopHeader(){
@@ -146,20 +147,21 @@
     if(status)status.textContent=student?`مرحباً ${student.name}`:'التسجيل اختياري';
   }
 
-  const api={FAV_KEY,state,$,$$,esc,num,fmt,now,imageUrl,teacherBy,statusVisible,hasSb,isDesktop,isMobile,stableKey,canonicalItems,activeDeal,effectivePrice,badges,findItem,favoriteKeys,favoriteItems,isFavorite,openModal,closeModal,studentProfile,updateDesktopHeader,updateMobileHeader};
+  const api={get FAV_KEY(){return favoriteStorageKey()},favoriteStorageKey,profileStorageKey,saveFavoriteKeys,state,$,$$,esc,num,fmt,now,imageUrl,teacherBy,statusVisible,hasSb,isDesktop,isMobile,stableKey,canonicalItems,activeDeal,effectivePrice,badges,findItem,favoriteKeys,favoriteItems,isFavorite,openModal,closeModal,studentProfile,updateDesktopHeader,updateMobileHeader};
   window.AlinStoreDiscovery=api;
 
   window.v99ToggleFavorite=(kind,id)=>{
     const key=stableKey(kind,id);
     let rows=favoriteKeys();
     rows=rows.includes(key)?rows.filter(row=>row!==key):[...rows,key];
-    localStorage.setItem(FAV_KEY,JSON.stringify(rows));
-    try{localStorage.setItem('alin_v98_favorites',JSON.stringify(rows))}catch(_){/* ignore */}
+    saveFavoriteKeys(rows);
     api.renderEffectiveStore?.();
     updateDesktopHeader();
     updateMobileHeader();
     if(typeof window.toast==='function')window.toast(rows.includes(key)?'تمت الإضافة إلى المفضلة':'تمت الإزالة من المفضلة');
   };
+
+  document.addEventListener('alin:storage-scope-changed',()=>{api.renderEffectiveStore?.();updateDesktopHeader();updateMobileHeader()});
 
   window.v99ShowFavorites=()=>{
     const rows=favoriteItems();

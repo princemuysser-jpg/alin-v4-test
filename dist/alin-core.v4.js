@@ -2928,6 +2928,52 @@ window.Alin.helpers={
 
 ;
 
+/* modules/store/student-isolation.js */
+// === store/student-isolation.js ===
+/* ALIN v4.1.5 — per-student and per-guest browser storage isolation. */
+(function(){
+  'use strict';
+  if(window.AlinStudentIsolation)return;
+  const STUDENT_SESSION_KEY='alin_student_secure_session_v3';
+  const GUEST_SCOPE_KEY='alin_guest_scope_v1';
+  const safe=value=>String(value??'').replace(/[^a-zA-Z0-9_-]/g,'_').slice(0,120)||'unknown';
+  function randomId(){
+    try{return crypto.randomUUID?.()||`${Date.now()}-${Math.random().toString(36).slice(2)}`}catch(_){return `${Date.now()}-${Math.random().toString(36).slice(2)}`}
+  }
+  function studentId(){
+    try{
+      const state=JSON.parse(sessionStorage.getItem(STUDENT_SESSION_KEY)||'null');
+      return state?.student?.id?String(state.student.id):'';
+    }catch(_){return ''}
+  }
+  function guestId(){
+    try{
+      let value=sessionStorage.getItem(GUEST_SCOPE_KEY);
+      if(!value){value=randomId();sessionStorage.setItem(GUEST_SCOPE_KEY,value)}
+      return value;
+    }catch(_){return'guest-session'}
+  }
+  function scope(){const id=studentId();return id?`student_${safe(id)}`:`guest_${safe(guestId())}`}
+  function key(base){return `${String(base||'ALIN_DATA')}__${scope()}`}
+  let active=scope();
+  function refresh(reason='session'){
+    const previous=active,next=scope();active=next;
+    if(previous!==next)document.dispatchEvent(new CustomEvent('alin:storage-scope-changed',{detail:{previous,next,reason}}));
+    return next;
+  }
+  function rotateGuest(reason='logout'){
+    try{sessionStorage.setItem(GUEST_SCOPE_KEY,randomId())}catch(_){}
+    return refresh(reason);
+  }
+  function readJson(base,fallback=[],storage=localStorage){try{const value=JSON.parse(storage.getItem(key(base))||'null');return value??fallback}catch(_){return fallback}}
+  function writeJson(base,value,storage=localStorage){try{storage.setItem(key(base),JSON.stringify(value));return true}catch(_){return false}}
+  function remove(base,storage=localStorage){try{storage.removeItem(key(base));return true}catch(_){return false}}
+  document.addEventListener('alin:student-session',()=>queueMicrotask(()=>refresh('student-session')));
+  window.AlinStudentIsolation=Object.freeze({scope,key,studentId,guestId,refresh,rotateGuest,readJson,writeJson,remove});
+})();
+
+;
+
 /* modules/store/discovery-core.js */
 // === store/discovery-core.js ===
 // Shared storefront state, data normalization, modal, favorites and header counters.
@@ -2935,7 +2981,10 @@ window.Alin.helpers={
   'use strict';
   if(window.AlinStoreDiscovery)return;
 
-  const FAV_KEY='alin_v99_favorites';
+  const FAV_BASE='alin_v99_favorites';
+  const PROFILE_BASE='alin_v99_student_profile';
+  const favoriteStorageKey=()=>window.AlinStudentIsolation?.key?.(FAV_BASE)||FAV_BASE;
+  const profileStorageKey=()=>window.AlinStudentIsolation?.key?.(PROFILE_BASE)||PROFILE_BASE;
   const state={
     filters:{kind:'',grade:'',subject:'',teacher:'',min:'',max:'',available:'',badge:'',sort:'recommended'},
     tables:{},schema:{},timer:null,modalReturnFocus:null,catalogSignature:''
@@ -3004,17 +3053,15 @@ window.Alin.helpers={
   }
 
   function favoriteKeys(){
-    let rows=[];
-    for(const key of [FAV_KEY,'alin_v98_favorites','alin_v85_favorites','ALIN_FAVORITES']){
-      try{
-        const parsed=JSON.parse(localStorage.getItem(key)||'[]');
-        if(Array.isArray(parsed))rows.push(...parsed.map(value=>typeof value==='string'?value:stableKey(value.kind,value.id)));
-      }catch(_){/* ignore malformed legacy storage */}
-    }
-    rows=[...new Set(rows.map(String).filter(Boolean))];
-    localStorage.setItem(FAV_KEY,JSON.stringify(rows));
-    try{localStorage.setItem('alin_v98_favorites',JSON.stringify(rows))}catch(_){/* ignore */}
-    return rows;
+    try{
+      const parsed=JSON.parse(localStorage.getItem(favoriteStorageKey())||'[]');
+      return Array.isArray(parsed)?[...new Set(parsed.map(String).filter(Boolean))]:[];
+    }catch(_){return []}
+  }
+  function saveFavoriteKeys(rows){
+    const clean=[...new Set((Array.isArray(rows)?rows:[]).map(String).filter(Boolean))];
+    try{localStorage.setItem(favoriteStorageKey(),JSON.stringify(clean))}catch(_){}
+    return clean;
   }
   const favoriteItems=()=>favoriteKeys().map(key=>{const [kind,...id]=key.split(':');return findItem(kind,id.join(':'))}).filter(Boolean);
   const isFavorite=item=>favoriteKeys().includes(stableKey(item.kind,item.id));
@@ -3044,7 +3091,7 @@ window.Alin.helpers={
   }
 
   function studentProfile(){
-    try{return JSON.parse(localStorage.getItem('alin_v99_student_profile')||'{}')}catch(_){return{}}
+    try{return JSON.parse(localStorage.getItem(profileStorageKey())||'{}')}catch(_){return{}}
   }
 
   function updateDesktopHeader(){
@@ -3077,20 +3124,21 @@ window.Alin.helpers={
     if(status)status.textContent=student?`مرحباً ${student.name}`:'التسجيل اختياري';
   }
 
-  const api={FAV_KEY,state,$,$$,esc,num,fmt,now,imageUrl,teacherBy,statusVisible,hasSb,isDesktop,isMobile,stableKey,canonicalItems,activeDeal,effectivePrice,badges,findItem,favoriteKeys,favoriteItems,isFavorite,openModal,closeModal,studentProfile,updateDesktopHeader,updateMobileHeader};
+  const api={get FAV_KEY(){return favoriteStorageKey()},favoriteStorageKey,profileStorageKey,saveFavoriteKeys,state,$,$$,esc,num,fmt,now,imageUrl,teacherBy,statusVisible,hasSb,isDesktop,isMobile,stableKey,canonicalItems,activeDeal,effectivePrice,badges,findItem,favoriteKeys,favoriteItems,isFavorite,openModal,closeModal,studentProfile,updateDesktopHeader,updateMobileHeader};
   window.AlinStoreDiscovery=api;
 
   window.v99ToggleFavorite=(kind,id)=>{
     const key=stableKey(kind,id);
     let rows=favoriteKeys();
     rows=rows.includes(key)?rows.filter(row=>row!==key):[...rows,key];
-    localStorage.setItem(FAV_KEY,JSON.stringify(rows));
-    try{localStorage.setItem('alin_v98_favorites',JSON.stringify(rows))}catch(_){/* ignore */}
+    saveFavoriteKeys(rows);
     api.renderEffectiveStore?.();
     updateDesktopHeader();
     updateMobileHeader();
     if(typeof window.toast==='function')window.toast(rows.includes(key)?'تمت الإضافة إلى المفضلة':'تمت الإزالة من المفضلة');
   };
+
+  document.addEventListener('alin:storage-scope-changed',()=>{api.renderEffectiveStore?.();updateDesktopHeader();updateMobileHeader()});
 
   window.v99ShowFavorites=()=>{
     const rows=favoriteItems();
@@ -3490,7 +3538,7 @@ window.Alin.helpers={
       const student=typeof window.currentStudent==='function'?window.currentStudent():null;
       if(student){profile.phone=student.phone;profile.name=student.name}
     }catch(_){/* ignore */}
-    localStorage.setItem('alin_v99_student_profile',JSON.stringify(profile));
+    localStorage.setItem(ctx.profileStorageKey?ctx.profileStorageKey():'alin_v99_student_profile',JSON.stringify(profile));
     ctx.renderStage?.();
     ctx.renderEffectiveStore?.();
     if(profile.phone&&state.schema.student_profiles&&hasSb()){
@@ -3510,14 +3558,14 @@ window.Alin.helpers={
     if(!root)return;
     let student=null;
     try{student=typeof window.currentStudent==='function'?window.currentStudent():null}catch(_){/* ignore */}
-    const orders=student?(window.db?.orders||[]).filter(order=>order.student_phone===student.phone).slice(0,5):[];
+    const orders=student?(window.AlinStudentAuth?.orders?.()||[]).slice(0,5):[];
     if(ctx.isDesktop()||ctx.isMobile()){
       if(!student){root.innerHTML='';return}
-      root.innerHTML=`<div class="v99-section-head"><div><h2>طلباتي الأخيرة</h2><small>إعادة الطلب أو متابعة حالته بسهولة</small></div></div><article class="v99-hub-card desktop-orders-card">${orders.map(order=>`<div class="v99-order-row"><div><b>${esc(order.title||order.order_number||order.id)}</b><small>${esc(order.status||'جديد')}${order.ready_eta?` • جاهز تقريباً ${esc(order.ready_eta)}`:''}</small></div><button data-v99-action="reorder" data-id="${esc(order.id)}">أعد الطلب</button></div>`).join('')||'<p>لا توجد طلبات سابقة.</p>'}</article>`;
+      root.innerHTML=`<div class="v99-section-head"><div><h2>طلباتي الأخيرة</h2><small>إعادة الطلب أو متابعة حالته بسهولة</small></div></div><article class="v99-hub-card desktop-orders-card">${orders.map(order=>`<div class="v99-order-row"><div><b>${esc(order.title||order.order_number||order.id)}</b><small>${esc(order.status||'جديد')}${order.ready_eta?` • جاهز تقريباً ${esc(order.ready_eta)}`:''}</small></div><button type="button" onclick="window.AlinStudentAuth?.track?.('${encodeURIComponent(String(order.order_number||order.id||''))}')">تتبع</button></div>`).join('')||'<p>لا توجد طلبات سابقة.</p>'}</article>`;
       return;
     }
     const loyalty=(state.tables.loyalty_accounts||[]).find(row=>student&&row.phone===student.phone);
-    root.innerHTML=`<div class="v99-section-head"><div><h2>مساحة الطالب</h2><small>طلباتك ومكافآتك وخيارات الطلب الجماعي</small></div></div><div class="v99-hub-grid"><article class="v99-hub-card"><h3>آخر الطلبات</h3>${student?(orders.map(order=>`<div class="v99-order-row"><div><b>${esc(order.title||order.order_number||order.id)}</b><small>${esc(order.status||'جديد')}${order.ready_eta?` • جاهز تقريباً ${esc(order.ready_eta)}`:''}</small></div><button data-v99-action="reorder" data-id="${esc(order.id)}">أعد الطلب</button></div>`).join('')||'<p>لا توجد طلبات سابقة.</p>'):'<p>سجل دخول الطالب لرؤية طلباتك.</p>'}</article><article class="v99-hub-card"><h3>نقاط آلين</h3>${loyalty?`<div class="v99-price">${fmt(loyalty.points_balance)} نقطة</div><p>يُحتسب الرصيد من النظام الآمن فقط.</p>`:'<div class="v99-notice">لا يوجد رصيد نقاط متاح. تظهر النقاط هنا بعد تفعيل نظام النقاط وربط الحساب.</div>'}</article><article class="v99-hub-card"><h3>طلب جماعي</h3><p>اجمع طلبات زملائك في مجموعة واحدة عندما تكون الخدمة مفعلة.</p><button data-v99-action="groupOrder">إنشاء أو انضمام</button></article></div>`;
+    root.innerHTML=`<div class="v99-section-head"><div><h2>مساحة الطالب</h2><small>طلباتك ومكافآتك وخيارات الطلب الجماعي</small></div></div><div class="v99-hub-grid"><article class="v99-hub-card"><h3>آخر الطلبات</h3>${student?(orders.map(order=>`<div class="v99-order-row"><div><b>${esc(order.title||order.order_number||order.id)}</b><small>${esc(order.status||'جديد')}${order.ready_eta?` • جاهز تقريباً ${esc(order.ready_eta)}`:''}</small></div><button type="button" onclick="window.AlinStudentAuth?.track?.('${encodeURIComponent(String(order.order_number||order.id||''))}')">تتبع</button></div>`).join('')||'<p>لا توجد طلبات سابقة.</p>'):'<p>سجل دخول الطالب لرؤية طلباتك.</p>'}</article><article class="v99-hub-card"><h3>نقاط آلين</h3>${loyalty?`<div class="v99-price">${fmt(loyalty.points_balance)} نقطة</div><p>يُحتسب الرصيد من النظام الآمن فقط.</p>`:'<div class="v99-notice">لا يوجد رصيد نقاط متاح. تظهر النقاط هنا بعد تفعيل نظام النقاط وربط الحساب.</div>'}</article><article class="v99-hub-card"><h3>طلب جماعي</h3><p>اجمع طلبات زملائك في مجموعة واحدة عندما تكون الخدمة مفعلة.</p><button data-v99-action="groupOrder">إنشاء أو انضمام</button></article></div>`;
   }
 
   function groupOrder(){
@@ -3555,6 +3603,9 @@ window.Alin.helpers={
       return data||[];
     }catch(_){state.schema[name]=false;return null}
   }
+
+  document.addEventListener('alin:student-orders',renderStudentHub);
+  document.addEventListener('alin:storage-scope-changed',renderStudentHub);
 
   async function loadGrowthData(){
     const names=['bundles','bundle_items','product_reviews'];
@@ -3852,7 +3903,8 @@ window.Alin.helpers={
 (function(){
   'use strict';
 
-  const STORAGE_KEY='ALIN_CART';
+  const STORAGE_BASE='ALIN_CART';
+  const storageKey=()=>window.AlinStudentIsolation?.key?.(STORAGE_BASE)||STORAGE_BASE;
   const aliases={booklet:'booklet',booklets:'booklet','ملزمة':'booklet','ملازم':'booklet',product:'product',products:'product',stationery:'product',stationary:'product',gift:'product',gifts:'product',deal:'product',booklet_product:'product'};
   const $=id=>document.getElementById(id);
   const num=value=>Number(value||0);
@@ -3862,7 +3914,7 @@ window.Alin.helpers={
 
   function readStoredCart(){
     try{
-      const rows=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');
+      const rows=JSON.parse(localStorage.getItem(storageKey())||'[]');
       return Array.isArray(rows)?rows:[];
     }catch(_){return []}
   }
@@ -3959,7 +4011,7 @@ window.Alin.helpers={
 
   function cartSave(){
     normalizeCart();
-    localStorage.setItem(STORAGE_KEY,JSON.stringify(rows()));
+    localStorage.setItem(storageKey(),JSON.stringify(rows()));
     if(!rows().length&&window.AlinCoupons?.getAppliedCode?.())window.AlinCoupons.clear();
     renderCartBadge();
   }
@@ -4080,6 +4132,16 @@ window.Alin.helpers={
 
   function updateTotal(){return renderCartPricing().total}
 
+  function switchCartScope(){
+    window.cart=readStoredCart().map(normalizeLine).filter(Boolean);
+    try{window.AlinCoupons?.clear?.()}catch(_){}
+    const modal=document.getElementById('checkoutModal');
+    if(modal&&!modal.classList.contains('hidden')){try{closeCheckout()}catch(_){modal.classList.add('hidden')}}
+    renderCartBadge();
+    document.dispatchEvent(new CustomEvent('alin:cart-scope-changed',{detail:{items:rows().map(item=>({...item}))}}));
+  }
+  document.addEventListener('alin:storage-scope-changed',switchCartScope);
+
   Object.assign(window,{cartSave,renderCartBadge,renderCartPricing,cartPricing,addToCart,cartQty,cartRemove,openCart,openCheckout,closeCheckout,showLibInfo,toggleDeliveryFields,updateTotal,alinCartQty:cartQty,alinCartRemove:cartRemove,alinApplyCoupon:()=>window.checkCoupon?.()});
 
   document.addEventListener('alin:coupon-changed',()=>renderCartPricing());
@@ -4168,13 +4230,15 @@ window.Alin.helpers={
   const moneyv=value=>typeof window.money==='function'?window.money(value):String(Number(value)||0);
   const client=()=>window.sb||window.AlinCloud?.client?.()||null;
   const cleanPhone=value=>String(value||'').trim().replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[^0-9+]/g,'');
+  let secureOrders=[];
   function deviceId(){try{let v=localStorage.getItem(DEVICE_KEY);if(!v){v=crypto.randomUUID?.()||`${Date.now()}-${Math.random()}`;localStorage.setItem(DEVICE_KEY,v)}return v}catch(_){return'browser-session'}}
   function readSession(){try{return JSON.parse(sessionStorage.getItem(SESSION_KEY)||'null')}catch(_){return null}}
   function writeSession(value){try{if(value)sessionStorage.setItem(SESSION_KEY,JSON.stringify(value));else sessionStorage.removeItem(SESSION_KEY)}catch(_){}}
   function currentStudent(){return readSession()?.student||null}
   function token(){return readSession()?.token||''}
+  function orders(){return secureOrders.slice()}
   function setCurrentStudent(student,sessionToken=token()){
-    if(student&&sessionToken)writeSession({student,token:sessionToken});else writeSession(null);
+    if(student&&sessionToken)writeSession({student,token:sessionToken});else{writeSession(null);secureOrders=[]}
     updateStudentAuthBar();window.dispatchEvent(new CustomEvent('alin:student-session',{detail:{student:student||null}}));
   }
   async function rpc(name,args){
@@ -4206,13 +4270,13 @@ window.Alin.helpers={
     const name=document.getElementById('studentAuthName')?.value.trim()||'',phone=cleanPhone(document.getElementById('studentAuthPhone')?.value),pin=document.getElementById('studentAuthPass')?.value||'';
     if(!name||!phone||!pin)throw new Error('أكمل الاسم ورقم الهاتف والرمز السري');if(pin.length<6)throw new Error('الرمز السري يجب أن يكون 6 أحرف أو أرقام على الأقل');
     const result=await rpc('alin_student_register',{p_name:name,p_phone:phone,p_pin:pin,p_device:deviceId()});
-    setCurrentStudent(result?.student,result?.token);window.toast?.('تم إنشاء الحساب');openStudentAuth();
+    setCurrentStudent(result?.student,result?.token);secureOrders=[];window.toast?.('تم إنشاء الحساب');openStudentAuth();
   }catch(error){message(error.message||'تعذر إنشاء الحساب')}}
   async function studentLogin(){try{
     const phone=cleanPhone(document.getElementById('studentAuthPhone')?.value),pin=document.getElementById('studentAuthPass')?.value||'';
     if(!phone||!pin)throw new Error('اكتب رقم الهاتف والرمز السري');
     const result=await rpc('alin_student_login',{p_phone:phone,p_pin:pin,p_device:deviceId()});
-    setCurrentStudent(result?.student,result?.token);closeStudentAuth();window.toast?.('تم تسجيل الدخول');
+    setCurrentStudent(result?.student,result?.token);secureOrders=[];closeStudentAuth();window.toast?.('تم تسجيل الدخول');
   }catch(error){message(error.message||'تعذر تسجيل الدخول')}}
   async function saveStudentEdit(){try{
     if(!token())throw new Error('سجل دخول أولاً');const name=document.getElementById('studentAuthName')?.value.trim()||'',phone=cleanPhone(document.getElementById('studentAuthPhone')?.value),pin=document.getElementById('studentAuthPass')?.value||'';
@@ -4220,24 +4284,24 @@ window.Alin.helpers={
     setCurrentStudent(student,token());window.toast?.('تم حفظ التعديل');openStudentAuth();
   }catch(error){message(error.message||'تعذر حفظ التعديل')}}
   async function studentLogout(){
-    const currentToken=token();writeSession(null);updateStudentAuthBar();closeStudentAuth();
+    const currentToken=token();writeSession(null);secureOrders=[];window.AlinStudentIsolation?.rotateGuest?.('student-logout');updateStudentAuthBar();closeStudentAuth();window.AlinCoupons?.clear?.();
     if(currentToken)rpc('alin_student_logout',{p_token:currentToken,p_device:deviceId()}).catch(()=>{});
     window.dispatchEvent(new CustomEvent('alin:student-session',{detail:{student:null}}));window.toast?.('تم تسجيل الخروج');
   }
   async function showStudentOrders(){
     const box=document.getElementById('studentOrdersBox');if(!box||!token())return;box.innerHTML='<p class="muted">جارٍ تحميل الطلبات...</p>';
-    try{const orders=await rpc('alin_student_orders',{p_token:token(),p_device:deviceId()})||[];
-      box.innerHTML='<h3>طلباتي</h3>'+(orders.length?orders.map(order=>`<div class="row"><div><b>${escv(order.order_number||order.id)}</b><small>${escv(order.item_name||'طلب')} — ${moneyv(order.total)} د.ع — ${escv(order.status||'')}</small></div><button onclick="closeStudentAuth();document.getElementById('trackOrderInput').value='${escv(order.order_number||order.id)}';trackOrder()">تتبع</button></div>`).join(''):window.emptyState?.('لا توجد طلبات بهذا الرقم')||'<div class="empty">لا توجد طلبات.</div>');
+    try{const loaded=await rpc('alin_student_orders',{p_token:token(),p_device:deviceId()})||[];secureOrders=Array.isArray(loaded)?loaded:[];window.dispatchEvent(new CustomEvent('alin:student-orders',{detail:{orders:secureOrders.slice()}}));
+      box.innerHTML='<h3>طلباتي</h3>'+(secureOrders.length?secureOrders.map(order=>`<div class="row"><div><b>${escv(order.order_number||order.id)}</b><small>${escv(order.item_name||'طلب')} — ${moneyv(order.total)} د.ع — ${escv(order.status||'')}</small></div><button type="button" onclick="AlinStudentAuth.track('${encodeURIComponent(String(order.order_number||order.id||''))}')">تتبع</button></div>`).join(''):window.emptyState?.('لا توجد طلبات بهذا الرقم')||'<div class="empty">لا توجد طلبات.</div>');
     }catch(error){box.innerHTML=`<div class="empty">${escv(error.message||'تعذر تحميل الطلبات')}</div>`}
   }
   async function restoreStudent(){
     const state=readSession();if(!state?.token)return updateStudentAuthBar();
-    try{const student=await rpc('alin_student_profile',{p_token:state.token,p_device:deviceId()});if(student)setCurrentStudent(student,state.token);else setCurrentStudent(null,'')}catch(_){setCurrentStudent(null,'')}
+    try{const student=await rpc('alin_student_profile',{p_token:state.token,p_device:deviceId()});if(student){setCurrentStudent(student,state.token);rpc('alin_student_orders',{p_token:state.token,p_device:deviceId()}).then(rows=>{secureOrders=Array.isArray(rows)?rows:[];window.dispatchEvent(new CustomEvent('alin:student-orders',{detail:{orders:secureOrders.slice()}}))}).catch(()=>{})}else setCurrentStudent(null,'')}catch(_){setCurrentStudent(null,'')}
   }
   Object.assign(window,{currentStudent,setCurrentStudent,updateStudentAuthBar,openStudentAuth,closeStudentAuth,showStudentAuthForm,studentCreate,studentLogin,saveStudentEdit,studentLogout,showStudentOrders});
-  document.addEventListener('alin:cart-rendered',()=>{const student=currentStudent();if(!student)return;const name=document.getElementById('studentName'),phone=document.getElementById('studentPhone');if(name&&!name.value)name.value=student.name||'';if(phone&&!phone.value)phone.value=student.phone||''});
+  document.addEventListener('alin:cart-rendered',()=>{const student=currentStudent();if(!student)return;const name=document.getElementById('studentName'),phone=document.getElementById('studentPhone');if(name){name.value=student.name||'';name.readOnly=true;name.dataset.studentLocked='1'}if(phone){phone.value=student.phone||'';phone.readOnly=true;phone.dataset.studentLocked='1'}});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',restoreStudent,{once:true});else restoreStudent();
-  window.AlinStudentAuth=Object.freeze({current:currentStudent,set:setCurrentStudent,open:openStudentAuth,close:closeStudentAuth,restore:restoreStudent});
+  window.AlinStudentAuth=Object.freeze({current:currentStudent,set:setCurrentStudent,open:openStudentAuth,close:closeStudentAuth,restore:restoreStudent,token,deviceId,orders,track:encoded=>{const code=decodeURIComponent(String(encoded||''));closeStudentAuth();if(document.body.classList.contains('store-desktop')){window.AlinTrack415Safe?.open?.();setTimeout(()=>{const input=document.getElementById('alinTrack415Input');if(input){input.value=code;input.focus()}},30)}else{const input=document.getElementById('alinMobileTrackingInput');if(input)input.value=code;window.alinOpenTrackingSheet?.()}}});
 })();
 
 ;

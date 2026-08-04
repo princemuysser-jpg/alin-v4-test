@@ -8,13 +8,15 @@
   const moneyv=value=>typeof window.money==='function'?window.money(value):String(Number(value)||0);
   const client=()=>window.sb||window.AlinCloud?.client?.()||null;
   const cleanPhone=value=>String(value||'').trim().replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[^0-9+]/g,'');
+  let secureOrders=[];
   function deviceId(){try{let v=localStorage.getItem(DEVICE_KEY);if(!v){v=crypto.randomUUID?.()||`${Date.now()}-${Math.random()}`;localStorage.setItem(DEVICE_KEY,v)}return v}catch(_){return'browser-session'}}
   function readSession(){try{return JSON.parse(sessionStorage.getItem(SESSION_KEY)||'null')}catch(_){return null}}
   function writeSession(value){try{if(value)sessionStorage.setItem(SESSION_KEY,JSON.stringify(value));else sessionStorage.removeItem(SESSION_KEY)}catch(_){}}
   function currentStudent(){return readSession()?.student||null}
   function token(){return readSession()?.token||''}
+  function orders(){return secureOrders.slice()}
   function setCurrentStudent(student,sessionToken=token()){
-    if(student&&sessionToken)writeSession({student,token:sessionToken});else writeSession(null);
+    if(student&&sessionToken)writeSession({student,token:sessionToken});else{writeSession(null);secureOrders=[]}
     updateStudentAuthBar();window.dispatchEvent(new CustomEvent('alin:student-session',{detail:{student:student||null}}));
   }
   async function rpc(name,args){
@@ -46,13 +48,13 @@
     const name=document.getElementById('studentAuthName')?.value.trim()||'',phone=cleanPhone(document.getElementById('studentAuthPhone')?.value),pin=document.getElementById('studentAuthPass')?.value||'';
     if(!name||!phone||!pin)throw new Error('أكمل الاسم ورقم الهاتف والرمز السري');if(pin.length<6)throw new Error('الرمز السري يجب أن يكون 6 أحرف أو أرقام على الأقل');
     const result=await rpc('alin_student_register',{p_name:name,p_phone:phone,p_pin:pin,p_device:deviceId()});
-    setCurrentStudent(result?.student,result?.token);window.toast?.('تم إنشاء الحساب');openStudentAuth();
+    setCurrentStudent(result?.student,result?.token);secureOrders=[];window.toast?.('تم إنشاء الحساب');openStudentAuth();
   }catch(error){message(error.message||'تعذر إنشاء الحساب')}}
   async function studentLogin(){try{
     const phone=cleanPhone(document.getElementById('studentAuthPhone')?.value),pin=document.getElementById('studentAuthPass')?.value||'';
     if(!phone||!pin)throw new Error('اكتب رقم الهاتف والرمز السري');
     const result=await rpc('alin_student_login',{p_phone:phone,p_pin:pin,p_device:deviceId()});
-    setCurrentStudent(result?.student,result?.token);closeStudentAuth();window.toast?.('تم تسجيل الدخول');
+    setCurrentStudent(result?.student,result?.token);secureOrders=[];closeStudentAuth();window.toast?.('تم تسجيل الدخول');
   }catch(error){message(error.message||'تعذر تسجيل الدخول')}}
   async function saveStudentEdit(){try{
     if(!token())throw new Error('سجل دخول أولاً');const name=document.getElementById('studentAuthName')?.value.trim()||'',phone=cleanPhone(document.getElementById('studentAuthPhone')?.value),pin=document.getElementById('studentAuthPass')?.value||'';
@@ -60,24 +62,24 @@
     setCurrentStudent(student,token());window.toast?.('تم حفظ التعديل');openStudentAuth();
   }catch(error){message(error.message||'تعذر حفظ التعديل')}}
   async function studentLogout(){
-    const currentToken=token();writeSession(null);updateStudentAuthBar();closeStudentAuth();
+    const currentToken=token();writeSession(null);secureOrders=[];window.AlinStudentIsolation?.rotateGuest?.('student-logout');updateStudentAuthBar();closeStudentAuth();window.AlinCoupons?.clear?.();
     if(currentToken)rpc('alin_student_logout',{p_token:currentToken,p_device:deviceId()}).catch(()=>{});
     window.dispatchEvent(new CustomEvent('alin:student-session',{detail:{student:null}}));window.toast?.('تم تسجيل الخروج');
   }
   async function showStudentOrders(){
     const box=document.getElementById('studentOrdersBox');if(!box||!token())return;box.innerHTML='<p class="muted">جارٍ تحميل الطلبات...</p>';
-    try{const orders=await rpc('alin_student_orders',{p_token:token(),p_device:deviceId()})||[];
-      box.innerHTML='<h3>طلباتي</h3>'+(orders.length?orders.map(order=>`<div class="row"><div><b>${escv(order.order_number||order.id)}</b><small>${escv(order.item_name||'طلب')} — ${moneyv(order.total)} د.ع — ${escv(order.status||'')}</small></div><button onclick="closeStudentAuth();document.getElementById('trackOrderInput').value='${escv(order.order_number||order.id)}';trackOrder()">تتبع</button></div>`).join(''):window.emptyState?.('لا توجد طلبات بهذا الرقم')||'<div class="empty">لا توجد طلبات.</div>');
+    try{const loaded=await rpc('alin_student_orders',{p_token:token(),p_device:deviceId()})||[];secureOrders=Array.isArray(loaded)?loaded:[];window.dispatchEvent(new CustomEvent('alin:student-orders',{detail:{orders:secureOrders.slice()}}));
+      box.innerHTML='<h3>طلباتي</h3>'+(secureOrders.length?secureOrders.map(order=>`<div class="row"><div><b>${escv(order.order_number||order.id)}</b><small>${escv(order.item_name||'طلب')} — ${moneyv(order.total)} د.ع — ${escv(order.status||'')}</small></div><button type="button" onclick="AlinStudentAuth.track('${encodeURIComponent(String(order.order_number||order.id||''))}')">تتبع</button></div>`).join(''):window.emptyState?.('لا توجد طلبات بهذا الرقم')||'<div class="empty">لا توجد طلبات.</div>');
     }catch(error){box.innerHTML=`<div class="empty">${escv(error.message||'تعذر تحميل الطلبات')}</div>`}
   }
   async function restoreStudent(){
     const state=readSession();if(!state?.token)return updateStudentAuthBar();
-    try{const student=await rpc('alin_student_profile',{p_token:state.token,p_device:deviceId()});if(student)setCurrentStudent(student,state.token);else setCurrentStudent(null,'')}catch(_){setCurrentStudent(null,'')}
+    try{const student=await rpc('alin_student_profile',{p_token:state.token,p_device:deviceId()});if(student){setCurrentStudent(student,state.token);rpc('alin_student_orders',{p_token:state.token,p_device:deviceId()}).then(rows=>{secureOrders=Array.isArray(rows)?rows:[];window.dispatchEvent(new CustomEvent('alin:student-orders',{detail:{orders:secureOrders.slice()}}))}).catch(()=>{})}else setCurrentStudent(null,'')}catch(_){setCurrentStudent(null,'')}
   }
   Object.assign(window,{currentStudent,setCurrentStudent,updateStudentAuthBar,openStudentAuth,closeStudentAuth,showStudentAuthForm,studentCreate,studentLogin,saveStudentEdit,studentLogout,showStudentOrders});
-  document.addEventListener('alin:cart-rendered',()=>{const student=currentStudent();if(!student)return;const name=document.getElementById('studentName'),phone=document.getElementById('studentPhone');if(name&&!name.value)name.value=student.name||'';if(phone&&!phone.value)phone.value=student.phone||''});
+  document.addEventListener('alin:cart-rendered',()=>{const student=currentStudent();if(!student)return;const name=document.getElementById('studentName'),phone=document.getElementById('studentPhone');if(name){name.value=student.name||'';name.readOnly=true;name.dataset.studentLocked='1'}if(phone){phone.value=student.phone||'';phone.readOnly=true;phone.dataset.studentLocked='1'}});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',restoreStudent,{once:true});else restoreStudent();
-  window.AlinStudentAuth=Object.freeze({current:currentStudent,set:setCurrentStudent,open:openStudentAuth,close:closeStudentAuth,restore:restoreStudent});
+  window.AlinStudentAuth=Object.freeze({current:currentStudent,set:setCurrentStudent,open:openStudentAuth,close:closeStudentAuth,restore:restoreStudent,token,deviceId,orders,track:encoded=>{const code=decodeURIComponent(String(encoded||''));closeStudentAuth();if(document.body.classList.contains('store-desktop')){window.AlinTrack415Safe?.open?.();setTimeout(()=>{const input=document.getElementById('alinTrack415Input');if(input){input.value=code;input.focus()}},30)}else{const input=document.getElementById('alinMobileTrackingInput');if(input)input.value=code;window.alinOpenTrackingSheet?.()}}});
 })();
 
 ;

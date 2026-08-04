@@ -93,29 +93,33 @@
       if(button){button.disabled=true;button.setAttribute('aria-busy','true');button.dataset.originalText=button.textContent;button.textContent='جارٍ إرسال الطلب...'}
       const c=client();if(!c?.rpc)throw new Error('تعذر الاتصال بالخدمة. تحقق من الإنترنت وحاول مجدداً');
       if(typeof cart==='undefined'||!Array.isArray(cart)||!cart.length)throw new Error('السلة فارغة');
-      const name=(document.getElementById('studentName')?.value||'').trim();
-      const phone=(document.getElementById('studentPhone')?.value||'').trim().replace(/\s+/g,'');
+      const signedStudent=window.AlinStudentAuth?.current?.()||null;
+      const name=(signedStudent?.name||document.getElementById('studentName')?.value||'').trim();
+      const phone=(signedStudent?.phone||document.getElementById('studentPhone')?.value||'').trim().replace(/\s+/g,'');
       if(name.length<2)throw new Error('اكتب اسم الطالب بصورة صحيحة');
       if(!/^\+?[0-9٠-٩]{7,15}$/.test(phone))throw new Error('اكتب رقم هاتف صحيح');
       const fulfillment=normalizeFulfillment(typeof alinOrderExtra==='function'?alinOrderExtra():{});
       const coupon=(window.AlinCoupons?.getAppliedCode?.()||document.getElementById('couponInput')?.value||'').trim();
       const cartSnapshot=cart.map(item=>({...item}));
       const items=normalizeCheckoutItems(cart);
-      const fingerprint=JSON.stringify({items,customer:{name,phone},fulfillment,coupon:coupon.toLowerCase()});
+      const fingerprint=JSON.stringify({items,customer:{name,phone},student:signedStudent?.id||null,fulfillment,coupon:coupon.toLowerCase()});
       const attempt=checkoutAttempt(fingerprint);
       if(typeof cartSave==='function')cartSave();
       const {data,error}=await c.rpc('alin_create_store_orders_guarded',{
         p_items:items,p_customer:{name,phone},p_fulfillment:fulfillment,p_coupon_code:coupon||null,
-        p_request_key:attempt.requestKey,p_device_id:deviceId()
+        p_request_key:attempt.requestKey,p_device_id:deviceId(),
+        p_student_token:signedStudent?window.AlinStudentAuth?.token?.()||null:null,
+        p_student_device:signedStudent?window.AlinStudentAuth?.deviceId?.()||null:null
       });
       if(error){
         const message=String(error.message||'');
-        if(/PGRST202|Could not find the function|schema cache/i.test(message))throw new Error('خدمة إنشاء الطلب غير مهيأة في مشروع Supabase الجديد. نفّذ ملف ALIN_V4_CLEAN_PROJECT_MASTER.sql مرة واحدة.');
+        if(/PGRST202|Could not find the function|schema cache/i.test(message))throw new Error('خدمة عزل طلبات الطلاب غير مهيأة. نفّذ ملف ALIN_V4_CLEAN_PROJECT_MASTER.sql المرفق مرة واحدة.');
         throw error;
       }
       const numbers=Array.isArray(data)?data.map(x=>String(x.order_number||'')).filter(Boolean):[];
       if(!numbers.length)throw new Error('لم يرجع الخادم رقم تتبع للطلب');
       clearCheckoutAttempt();
+      document.dispatchEvent(new CustomEvent('alin:order-created',{detail:{orderNumbers:numbers,studentId:signedStudent?.id||null}}));
       cart=[];if(typeof cartSave==='function')cartSave();
       if(typeof load==='function')await load();
       const box=window.checkoutBox||document.getElementById('checkoutBox');

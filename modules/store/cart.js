@@ -3,7 +3,8 @@
 (function(){
   'use strict';
 
-  const STORAGE_KEY='ALIN_CART';
+  const STORAGE_BASE='ALIN_CART';
+  const storageKey=()=>window.AlinStudentIsolation?.key?.(STORAGE_BASE)||STORAGE_BASE;
   const aliases={booklet:'booklet',booklets:'booklet','ملزمة':'booklet','ملازم':'booklet',product:'product',products:'product',stationery:'product',stationary:'product',gift:'product',gifts:'product',deal:'product',booklet_product:'product'};
   const $=id=>document.getElementById(id);
   const num=value=>Number(value||0);
@@ -13,7 +14,7 @@
 
   function readStoredCart(){
     try{
-      const rows=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');
+      const rows=JSON.parse(localStorage.getItem(storageKey())||'[]');
       return Array.isArray(rows)?rows:[];
     }catch(_){return []}
   }
@@ -110,7 +111,7 @@
 
   function cartSave(){
     normalizeCart();
-    localStorage.setItem(STORAGE_KEY,JSON.stringify(rows()));
+    localStorage.setItem(storageKey(),JSON.stringify(rows()));
     if(!rows().length&&window.AlinCoupons?.getAppliedCode?.())window.AlinCoupons.clear();
     renderCartBadge();
   }
@@ -230,6 +231,16 @@
   }
 
   function updateTotal(){return renderCartPricing().total}
+
+  function switchCartScope(){
+    window.cart=readStoredCart().map(normalizeLine).filter(Boolean);
+    try{window.AlinCoupons?.clear?.()}catch(_){}
+    const modal=document.getElementById('checkoutModal');
+    if(modal&&!modal.classList.contains('hidden')){try{closeCheckout()}catch(_){modal.classList.add('hidden')}}
+    renderCartBadge();
+    document.dispatchEvent(new CustomEvent('alin:cart-scope-changed',{detail:{items:rows().map(item=>({...item}))}}));
+  }
+  document.addEventListener('alin:storage-scope-changed',switchCartScope);
 
   Object.assign(window,{cartSave,renderCartBadge,renderCartPricing,cartPricing,addToCart,cartQty,cartRemove,openCart,openCheckout,closeCheckout,showLibInfo,toggleDeliveryFields,updateTotal,alinCartQty:cartQty,alinCartRemove:cartRemove,alinApplyCoupon:()=>window.checkCoupon?.()});
 
