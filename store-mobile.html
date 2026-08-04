@@ -21,15 +21,15 @@
 <link href="assets/icons/icon-192.png" rel="apple-touch-icon"/>
 <link href="./dist/css/mobile.bundle.css?v=4.1.5" rel="stylesheet"/>
 <link href="./styles/alin-tokens.css?v=4.1.5" rel="stylesheet"/>
-<link href="./styles/alin-shared.css?v=4.1.5" rel="stylesheet"/>
+<link href="./styles/alin-shared.css?v=4.1.5-receipts4-mobile-tablet1" rel="stylesheet"/>
 <link href="./styles/alin-branding.css?v=4.1.5" rel="stylesheet"/>
 <link href="./styles/alin-i18n.css?v=4.1.5" rel="stylesheet"/>
-<link href="./styles/alin-mobile.css?v=4.1.5" rel="stylesheet"/>
+<link href="./styles/alin-mobile.css?v=4.1.5-receipts4-mobile-tablet1" rel="stylesheet"/>
 <link href="./store/mobile-navigation.css?v=4.1.5" rel="stylesheet"/>
-<link rel="preload" href="./alin-app-mobile.v4.1.5.js?v=4.1.5-receipts3-student-isolation1" as="script">
+<link rel="preload" href="./alin-app-mobile.v4.1.5.js?v=4.1.5-receipts4-mobile-tablet1" as="script">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7" defer onerror="window.__ALIN_CDN_ERROR__=true;console.error('تعذر تحميل Supabase')"></script>
 <script src="./alin-config.js?v=4.1.5"></script>
-<script src="./dist/alin-core.v4.js?v=4.1.5-receipts3-student-isolation1" defer></script>
+<script src="./dist/alin-core.v4.js?v=4.1.5-receipts4-mobile-tablet1" defer></script>
 
 
 
@@ -483,6 +483,7 @@ html[data-alin-theme="dark"] body.store-mobile #alinAccountSheet .alin-choice{
 <button onclick="teacherTab('booklets')">ملازمي</button>
 <button onclick="teacherTab('orders')">الطلبات</button>
 <button onclick="teacherTab('finance')">الأرباح</button>
+<button data-teacher-tab="receipts" onclick="teacherTab('receipts')" type="button">الوصولات</button>
 <button data-teacher-tab="notifications" id="teacherNotificationsTabV160" onclick="teacherTab('notifications')" type="button"><span aria-hidden="true">🔔</span> الإشعارات <span class="teacher-v160-badge" hidden="" id="teacherNotificationsBadgeV160">0</span></button>
 <button onclick="teacherTab('requests')">رفع ملزمة</button>
 <button onclick="teacherTab('review')">طلبات النشر</button>
@@ -502,6 +503,7 @@ html[data-alin-theme="dark"] body.store-mobile #alinAccountSheet .alin-choice{
 <button class="active" data-library-tab="home" type="button">الرئيسية</button>
 <button data-library-tab="orders" type="button">الطلبات <span hidden="" id="libraryV116OrdersBadge">0</span></button>
 <button data-library-tab="finance" type="button">الحسابات</button>
+<button data-alin415-receipts-role="library" type="button">الوصولات</button>
 <button data-library-tab="notifications" type="button">الإشعارات <span hidden="" id="libraryV116NotifyBadge">0</span></button>
 <button data-library-tab="settings" type="button">الإعدادات</button>
 </nav>
@@ -510,7 +512,7 @@ html[data-alin-theme="dark"] body.store-mobile #alinAccountSheet .alin-choice{
 </section>
 <section class="page hidden courier-v161-page" id="courierPage">
 <header class="courier-v161-hero"><div><small>صفحة المندوب</small><h1 id="courierV161Name">المندوب</h1><p>مناطق العمل: <span id="courierV161Areas">—</span></p></div><span>منصة آلين للتوصيل</span></header>
-<nav class="courier-v161-tabs"><button class="active" data-courier-tab="home" onclick="renderCourierDashboard('home')">الرئيسية</button><button data-courier-tab="current" onclick="renderCourierDashboard('current')">طلبات التوصيل</button><button data-courier-tab="completed" onclick="renderCourierDashboard('completed')">المكتملة</button><button data-courier-tab="finance" onclick="renderCourierDashboard('finance')">الحسابات</button><button data-courier-tab="notifications" onclick="renderCourierDashboard('notifications')">الإشعارات</button><button data-courier-tab="profile" onclick="renderCourierDashboard('profile')">حسابي</button></nav>
+<nav class="courier-v161-tabs"><button class="active" data-courier-tab="home" onclick="renderCourierDashboard('home')">الرئيسية</button><button data-courier-tab="current" onclick="renderCourierDashboard('current')">طلبات التوصيل</button><button data-courier-tab="completed" onclick="renderCourierDashboard('completed')">المكتملة</button><button data-courier-tab="finance" onclick="renderCourierDashboard('finance')">الحسابات</button><button data-alin415-receipts-role="courier" type="button">الوصولات</button><button data-courier-tab="notifications" onclick="renderCourierDashboard('notifications')">الإشعارات</button><button data-courier-tab="profile" onclick="renderCourierDashboard('profile')">حسابي</button></nav>
 <main id="courierV161Content"></main>
 </section>
 <section class="page hidden" id="adminPage">
@@ -529,6 +531,7 @@ html[data-alin-theme="dark"] body.store-mobile #alinAccountSheet .alin-choice{
 <button onclick="adminTab('deliveryOrders')">طلبات التوصيل</button>
 <button onclick="adminTab('courierSettlements')">تسويات المندوبين</button>
 <button onclick="adminTab('finance')">الأرباح</button>
+<button data-admin-tab="receipts" onclick="adminTab('receipts')" type="button">الوصولات</button>
 <button onclick="adminTab('ads')">الإعلانات</button>
 <button onclick="adminTab('coupons')">الكوبونات</button>
 <button onclick="adminTab('notifications')">مركز الإشعارات</button>
@@ -614,7 +617,7 @@ html[data-alin-theme="dark"] body.store-mobile #alinAccountSheet .alin-choice{
 <script src="./core/pwa-register.js?v=4.1.5" defer></script>
 <script src="./core/boot-recovery.js?v=4.1.5" defer></script>
 <script src="./modules/core/navigation.js?v=4.1.5" defer></script>
-<script src="./alin-app-mobile.v4.1.5.js?v=4.1.5-receipts3-student-isolation1" defer onload="alinAppBundleLoaded()" onerror="alinAppBundleFailed()"></script>
+<script src="./alin-app-mobile.v4.1.5.js?v=4.1.5-receipts4-mobile-tablet1" defer onload="alinAppBundleLoaded()" onerror="alinAppBundleFailed()"></script>
 <script src="./modules/core/account-admin-service.js?v=4.1.5" defer></script>
 <script src="./modules/teacher/admin-word-download.js?v=4.1.5" defer></script>
 </body>
