@@ -22,15 +22,15 @@
 <link href="assets/icons/icon-192.png" rel="apple-touch-icon"/>
 <link href="./dist/css/mobile.bundle.css?v=4.1.5" rel="stylesheet"/>
 <link href="./styles/alin-tokens.css?v=4.1.5" rel="stylesheet"/>
-<link href="./styles/alin-shared.css?v=4.1.5-receipts5-mobile-tablet2" rel="stylesheet"/>
+<link href="./styles/alin-shared.css?v=4.1.5-receipts5-mobile-tablet3" rel="stylesheet"/>
 <link href="./styles/alin-branding.css?v=4.1.5" rel="stylesheet"/>
 <link href="./styles/alin-i18n.css?v=4.1.5" rel="stylesheet"/>
-<link href="./styles/alin-mobile.css?v=4.1.5-receipts5-mobile-tablet2" rel="stylesheet"/>
-<link href="./store/mobile-navigation.css?v=4.1.5" rel="stylesheet"/>
-<link rel="preload" href="./alin-app-mobile.v4.1.5.js?v=4.1.5-receipts5-mobile-tablet2" as="script">
+<link href="./styles/alin-mobile.css?v=4.1.5-receipts5-mobile-tablet3" rel="stylesheet"/>
+<link href="./store/mobile-navigation.css?v=4.1.5-tablet-sheet3" rel="stylesheet"/>
+<link rel="preload" href="./alin-app-mobile.v4.1.5.js?v=4.1.5-receipts5-mobile-tablet3" as="script">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7" defer onerror="window.__ALIN_CDN_ERROR__=true;console.error('تعذر تحميل Supabase')"></script>
 <script src="./alin-config.js?v=4.1.5"></script>
-<script src="./dist/alin-core.v4.js?v=4.1.5-receipts5-mobile-tablet2" defer></script>
+<script src="./dist/alin-core.v4.js?v=4.1.5-receipts5-mobile-tablet3" defer></script>
 
 
 
@@ -496,6 +496,15 @@ html[data-alin-device="tablet"] body.store-mobile .alin415r-row{grid-template-co
 html[data-alin-device="tablet"] body.store-mobile .alin415r-actions{grid-column:1/-1!important;display:flex!important;justify-content:stretch!important}
 html[data-alin-device="tablet"] body.store-mobile .alin415r-actions button{flex:1 1 0!important}
 html[data-alin-device="tablet"] body.store-mobile .alin415r-modal-dialog{width:min(940px,calc(100vw - 34px))!important;max-height:calc(100dvh - 34px)!important}
+html[data-alin-device="tablet"] body.store-mobile .alin-mobile-sheet{
+  left:max(16px,calc((100vw - 760px)/2))!important;
+  right:max(16px,calc((100vw - 760px)/2))!important;
+  width:auto!important;max-width:none!important;transform:none!important;
+  animation:alinSheetFade .18s ease-out!important;overflow-x:hidden!important;box-sizing:border-box!important;
+}
+html[data-alin-device="tablet"] body.store-mobile #alinTrackingSheet .alin-tracking-form{
+  grid-template-columns:minmax(0,1fr) auto!important;width:100%!important;min-width:0!important;
+}
 @media (min-width:960px){
   html[data-alin-device="tablet"] body.store-mobile #adminPage .admin-tabs,
   html[data-alin-device="tablet"] body.store-mobile #teacherPage .teacher-tabs{grid-template-columns:repeat(4,minmax(0,1fr))!important}
@@ -728,7 +737,7 @@ html[data-alin-device="tablet"] body.store-mobile .alin415r-modal-dialog{width:m
 <script src="./core/pwa-register.js?v=4.1.5" defer></script>
 <script src="./core/boot-recovery.js?v=4.1.5" defer></script>
 <script src="./modules/core/navigation.js?v=4.1.5" defer></script>
-<script src="./alin-app-mobile.v4.1.5.js?v=4.1.5-receipts5-mobile-tablet2" defer onload="alinAppBundleLoaded()" onerror="alinAppBundleFailed()"></script>
+<script src="./alin-app-mobile.v4.1.5.js?v=4.1.5-receipts5-mobile-tablet3" defer onload="alinAppBundleLoaded()" onerror="alinAppBundleFailed()"></script>
 <script src="./modules/core/account-admin-service.js?v=4.1.5" defer></script>
 <script src="./modules/teacher/admin-word-download.js?v=4.1.5" defer></script>
 </body>

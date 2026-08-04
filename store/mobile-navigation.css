@@ -41,4 +41,36 @@ body.store-mobile .mobile-track-icon:after{content:"";position:absolute;width:5p
 .alin-tracking-form{display:grid;grid-template-columns:1fr auto;gap:9px}.alin-tracking-form input{height:52px;border:1px solid #dfe6ef;border-radius:16px;padding:0 14px}.alin-tracking-form button{height:52px;border-radius:16px;background:#0c315f;color:#fff}.alin-mobile-tracking-result{margin-top:12px}
 @media(max-width:599px){body.store-mobile .alin-mobile-premium-header{grid-template-columns:1fr auto;grid-template-areas:"brand actions" "search search";padding:12px!important}body.store-mobile .mobile-search-premium{margin-top:2px!important}body.store-mobile .mobile-header-actions{justify-self:start}body.store-mobile .alin-mobile-brand{justify-self:end}body.store-mobile .alin-mobile-bottom-v103{right:6px!important;left:6px!important;padding:6px 3px!important}body.store-mobile .alin-mobile-bottom-v103 .mobile-center-action{width:70px;min-height:70px!important}body.store-mobile .alin-mobile-bottom-v103 button small{font-size:8px!important}}
 @media(max-width:360px){body.store-mobile .alin-mobile-brand strong{font-size:16px!important}body.store-mobile .alin-mobile-brand small{font-size:8px!important}body.store-mobile .mobile-header-icon-btn{width:46px;height:50px}body.store-mobile .alin-mobile-bottom-v103 button small{font-size:7px!important}}
-@media(min-width:600px) and (max-width:899px){body.store-mobile .alin-mobile-premium-header{grid-template-columns:auto minmax(320px,1fr) auto;padding:16px 24px!important}body.store-mobile .alin-mobile-bottom-v103{right:50%;left:auto;transform:translateX(50%);width:min(680px,calc(100% - 40px))!important}.alin-mobile-sheet{right:50%;left:auto;transform:translateX(50%);width:min(620px,calc(100% - 32px))}}
+@keyframes alinSheetFade{from{opacity:0}to{opacity:1}}
+/* Keep mobile sheets inside the viewport. The former tablet centering transform
+   moved the full-width sheet by half of its own width and clipped its content. */
+body.store-mobile .alin-mobile-sheet{
+  transform:none!important;
+  animation:alinSheetFade .18s ease-out!important;
+  overflow-x:hidden!important;
+  box-sizing:border-box!important;
+}
+@media(min-width:600px) and (max-width:899px){
+  body.store-mobile .alin-mobile-premium-header{grid-template-columns:auto minmax(320px,1fr) auto;padding:16px 24px!important}
+  body.store-mobile .alin-mobile-bottom-v103{right:50%;left:auto;transform:translateX(50%);width:min(680px,calc(100% - 40px))!important}
+}
+@media(min-width:600px){
+  body.store-mobile .alin-mobile-sheet{
+    left:max(16px,calc((100vw - 760px)/2))!important;
+    right:max(16px,calc((100vw - 760px)/2))!important;
+    width:auto!important;
+    max-width:none!important;
+    bottom:max(12px,env(safe-area-inset-bottom))!important;
+    max-height:calc(100dvh - 24px)!important;
+  }
+  body.store-mobile #alinTrackingSheet .alin-tracking-form{
+    grid-template-columns:minmax(0,1fr) auto!important;
+    width:100%!important;
+    min-width:0!important;
+  }
+}
+@media(max-width:480px){
+  body.store-mobile #alinTrackingSheet .alin-tracking-form{grid-template-columns:1fr!important}
+  body.store-mobile #alinTrackingSheet .alin-tracking-form button{width:100%!important}
+}
+
