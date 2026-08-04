@@ -5495,3 +5495,51 @@ window.AlinCourierModules['recordCourierSettlementForOrder']=typeof recordCourie
   window.Alin415Receipts=api;
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
 })();
+
+/* ALIN v4.1.5 — all-interface receipts parity and reliable tablet detection. */
+(function(){
+  'use strict';
+  function detectTablet(){
+    try{
+      const sw=Number(screen?.width)||innerWidth||0,sh=Number(screen?.height)||innerHeight||0;
+      const vw=Number(innerWidth)||sw,vh=Number(innerHeight)||sh;
+      const minEdge=Math.min(sw,sh,vw,vh),maxEdge=Math.max(sw,sh,vw,vh);
+      return (navigator.maxTouchPoints||0)>0&&minEdge>=540&&maxEdge>=800;
+    }catch(_){return false}
+  }
+  function applyDevice(){document.documentElement.dataset.alinDevice=detectTablet()?'tablet':'mobile'}
+  function findByTab(root,tab){return [...(root?.querySelectorAll('button')||[])].find(button=>button.dataset.adminTab===tab||button.dataset.teacherTab===tab||(button.getAttribute('onclick')||'').includes(`'${tab}'`))}
+  function insertBeforeNamed(root,button,names){
+    const before=[...(root?.querySelectorAll('button')||[])].find(item=>names.some(name=>(item.dataset.adminTab===name)||(item.dataset.teacherTab===name)||(item.getAttribute('onclick')||'').includes(`'${name}'`)));
+    before?root.insertBefore(button,before):root?.appendChild(button);
+  }
+  function ensureAdmin(){
+    const root=document.querySelector('#adminPage .admin-tabs');if(!root)return;
+    let button=findByTab(root,'receipts');
+    if(!button){button=document.createElement('button');button.type='button';button.id='adminReceiptsTab';button.textContent='الوصولات';button.dataset.adminTab='receipts';button.setAttribute('onclick',"adminTab('receipts')");insertBeforeNamed(root,button,['ads','coupons','notifications'])}
+    button.id='adminReceiptsTab';button.dataset.adminTab='receipts';button.hidden=false;button.style.removeProperty('display');
+  }
+  function ensureTeacher(){
+    const root=document.querySelector('#teacherPage .teacher-tabs');if(!root)return;
+    let button=findByTab(root,'receipts');
+    if(!button){button=document.createElement('button');button.type='button';button.id='teacherReceiptsTab';button.textContent='الوصولات';button.dataset.teacherTab='receipts';button.setAttribute('onclick',"teacherTab('receipts')");insertBeforeNamed(root,button,['notifications','requests','review'])}
+    button.id='teacherReceiptsTab';button.dataset.teacherTab='receipts';button.hidden=false;button.style.removeProperty('display');
+  }
+  function ensurePartner(role,selector,beforeSelector){
+    const root=document.querySelector(selector);if(!root)return;
+    let button=root.querySelector(`[data-alin415-receipts-role="${role}"]`);
+    if(!button){button=document.createElement('button');button.type='button';button.textContent='الوصولات';button.dataset.alin415ReceiptsRole=role;const before=root.querySelector(beforeSelector);before?root.insertBefore(button,before):root.appendChild(button)}
+    button.id=role==='library'?'libraryReceiptsTab':'courierReceiptsTab';button.hidden=false;button.style.removeProperty('display');
+  }
+  function ensureAll(){
+    applyDevice();ensureAdmin();ensureTeacher();
+    ensurePartner('library','#libraryPage .library-v116-tabs','[data-library-tab="notifications"]');
+    ensurePartner('courier','#courierPage .courier-v161-tabs','[data-courier-tab="notifications"]');
+  }
+  function boot(){ensureAll();[180,650,1400,2800].forEach(delay=>setTimeout(ensureAll,delay))}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
+  addEventListener('resize',applyDevice,{passive:true});addEventListener('orientationchange',()=>setTimeout(ensureAll,120),{passive:true});
+  addEventListener('alin:data-refreshed',ensureAll);addEventListener('alin:admin-tab',ensureAll);
+  window.AlinInterfaceParity=Object.freeze({refresh:ensureAll,isTablet:detectTablet});
+})();
+

@@ -8,6 +8,7 @@
 <meta charset="utf-8"/>
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' blob: https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; worker-src 'self' blob: https://cdn.jsdelivr.net; frame-src 'self' blob:;">
 <script>(function(){try{var mode=localStorage.getItem('alin_theme_v234')==='dark'?'dark':'light';document.documentElement.dataset.alinTheme=mode;document.documentElement.dataset.alinThemeMode=mode}catch(_){document.documentElement.dataset.alinTheme='light';document.documentElement.dataset.alinThemeMode='light'}})();</script>
+<script id="alinDeviceClassBootstrap">(function(){function apply(){try{var sw=Number(screen&&screen.width)||innerWidth||0,sh=Number(screen&&screen.height)||innerHeight||0,vw=Number(innerWidth)||sw,vh=Number(innerHeight)||sh,minEdge=Math.min(sw,sh,vw,vh),maxEdge=Math.max(sw,sh,vw,vh),touch=(navigator.maxTouchPoints||0)>0,tablet=touch&&minEdge>=540&&maxEdge>=800;document.documentElement.dataset.alinDevice=tablet?'tablet':'mobile'}catch(_){document.documentElement.dataset.alinDevice='mobile'}}apply();addEventListener('resize',apply,{passive:true});addEventListener('orientationchange',apply,{passive:true})})();</script>
 <meta content="width=device-width,initial-scale=1" name="viewport"/>
 <title>منصة آلين v4.1.5 - موبايل وتابلت</title>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
@@ -21,15 +22,15 @@
 <link href="assets/icons/icon-192.png" rel="apple-touch-icon"/>
 <link href="./dist/css/mobile.bundle.css?v=4.1.5" rel="stylesheet"/>
 <link href="./styles/alin-tokens.css?v=4.1.5" rel="stylesheet"/>
-<link href="./styles/alin-shared.css?v=4.1.5-receipts4-mobile-tablet1" rel="stylesheet"/>
+<link href="./styles/alin-shared.css?v=4.1.5-receipts5-mobile-tablet2" rel="stylesheet"/>
 <link href="./styles/alin-branding.css?v=4.1.5" rel="stylesheet"/>
 <link href="./styles/alin-i18n.css?v=4.1.5" rel="stylesheet"/>
-<link href="./styles/alin-mobile.css?v=4.1.5-receipts4-mobile-tablet1" rel="stylesheet"/>
+<link href="./styles/alin-mobile.css?v=4.1.5-receipts5-mobile-tablet2" rel="stylesheet"/>
 <link href="./store/mobile-navigation.css?v=4.1.5" rel="stylesheet"/>
-<link rel="preload" href="./alin-app-mobile.v4.1.5.js?v=4.1.5-receipts4-mobile-tablet1" as="script">
+<link rel="preload" href="./alin-app-mobile.v4.1.5.js?v=4.1.5-receipts5-mobile-tablet2" as="script">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7" defer onerror="window.__ALIN_CDN_ERROR__=true;console.error('تعذر تحميل Supabase')"></script>
 <script src="./alin-config.js?v=4.1.5"></script>
-<script src="./dist/alin-core.v4.js?v=4.1.5-receipts4-mobile-tablet1" defer></script>
+<script src="./dist/alin-core.v4.js?v=4.1.5-receipts5-mobile-tablet2" defer></script>
 
 
 
@@ -399,6 +400,116 @@ html[data-alin-theme="dark"] body.store-mobile #alinAccountSheet .alin-choice{
 }
 
 </style>
+
+<style id="alin-tablet-interface-fix-v2">
+/* ALIN v4.1.5 — authoritative tablet/iPad layout and receipts parity. */
+html[data-alin-device="tablet"] body.store-mobile{
+  --alin-tablet-max:1120px;
+  background:#f7f9fc!important;
+}
+html[data-alin-device="tablet"] body.store-mobile #app>main{
+  width:100%!important;max-width:var(--alin-tablet-max)!important;margin-inline:auto!important;
+  padding:20px clamp(18px,3vw,34px) 120px!important;box-sizing:border-box!important;
+}
+html[data-alin-device="tablet"] body.store-mobile #storePage,
+html[data-alin-device="tablet"] body.store-mobile #adminPage,
+html[data-alin-device="tablet"] body.store-mobile #teacherPage,
+html[data-alin-device="tablet"] body.store-mobile #libraryPage,
+html[data-alin-device="tablet"] body.store-mobile #courierPage{
+  width:100%!important;max-width:none!important;margin:0!important;min-width:0!important;
+}
+html[data-alin-device="tablet"] body.store-mobile .alin-mobile-premium-header{
+  display:grid!important;grid-template-columns:minmax(190px,230px) minmax(0,1fr) auto!important;
+  align-items:center!important;gap:14px!important;width:100%!important;max-width:none!important;
+  margin:0 0 20px!important;padding:14px 16px!important;border-radius:22px!important;
+}
+html[data-alin-device="tablet"] body.store-mobile .mobile-search-premium{min-width:0!important;width:100%!important}
+html[data-alin-device="tablet"] body.store-mobile .mobile-search-premium label{height:52px!important}
+html[data-alin-device="tablet"] body.store-mobile .alin98-cats{
+  display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:14px!important;
+  width:100%!important;margin:18px 0 24px!important;overflow:visible!important;
+}
+html[data-alin-device="tablet"] body.store-mobile .alin98-cats>button{
+  width:100%!important;min-width:0!important;min-height:132px!important;padding:18px 12px!important;
+}
+html[data-alin-device="tablet"] body.store-mobile .alin-store-banners,
+html[data-alin-device="tablet"] body.store-mobile .store-shell{width:100%!important;max-width:none!important;margin-inline:auto!important}
+html[data-alin-device="tablet"] body.store-mobile #storeGrid{
+  display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:16px!important;
+  width:100%!important;align-items:stretch!important;
+}
+html[data-alin-device="tablet"] body.store-mobile #storeGrid>*{min-width:0!important;width:100%!important;max-width:none!important}
+html[data-alin-device="tablet"] body.store-mobile #storeGrid>.v99-product-card:last-child:nth-child(odd){
+  grid-column:auto!important;justify-self:stretch!important;width:100%!important;
+}
+html[data-alin-device="tablet"] body.store-mobile #storeGrid .v99-product-media{height:220px!important}
+html[data-alin-device="tablet"] body.store-mobile #storeGrid .v99-product-body{padding:15px!important}
+html[data-alin-device="tablet"] body.store-mobile .alin98-bottom{
+  left:50%!important;right:auto!important;transform:translateX(-50%)!important;
+  width:min(620px,calc(100vw - 36px))!important;border-radius:24px 24px 0 0!important;
+}
+html[data-alin-device="tablet"] body.store-mobile #adminPage .admin-heading{
+  display:flex!important;align-items:center!important;justify-content:space-between!important;
+  min-height:138px!important;padding:24px 28px!important;border-radius:26px!important;
+}
+html[data-alin-device="tablet"] body.store-mobile #adminPage .admin-heading h2{font-size:30px!important}
+html[data-alin-device="tablet"] body.store-mobile #adminPage .admin-tabs,
+html[data-alin-device="tablet"] body.store-mobile #teacherPage .teacher-tabs{
+  position:static!important;display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:10px!important;width:100%!important;margin:16px 0 20px!important;padding:12px!important;
+  overflow:visible!important;white-space:normal!important;border:1px solid #e1e7ef!important;
+  border-radius:22px!important;background:#fff!important;box-shadow:0 12px 32px rgba(7,31,62,.07)!important;
+}
+html[data-alin-device="tablet"] body.store-mobile #adminPage .admin-tabs button,
+html[data-alin-device="tablet"] body.store-mobile #teacherPage .teacher-tabs button{
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  width:100%!important;min-width:0!important;min-height:54px!important;margin:0!important;padding:10px 8px!important;
+  white-space:normal!important;text-align:center!important;font-size:14px!important;line-height:1.35!important;
+  border-radius:14px!important;
+}
+html[data-alin-device="tablet"] body.store-mobile #adminPage #adminStats,
+html[data-alin-device="tablet"] body.store-mobile #teacherPage #teacherStats{
+  display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:12px!important;
+}
+html[data-alin-device="tablet"] body.store-mobile #adminPage #adminContent,
+html[data-alin-device="tablet"] body.store-mobile #teacherPage #teacherContent,
+html[data-alin-device="tablet"] body.store-mobile #libraryPage #libraryV116Content,
+html[data-alin-device="tablet"] body.store-mobile #courierPage #courierV161Content{
+  width:100%!important;min-width:0!important;overflow:visible!important;box-sizing:border-box!important;
+}
+html[data-alin-device="tablet"] body.store-mobile .library-v116-tabs,
+html[data-alin-device="tablet"] body.store-mobile .courier-v161-tabs{
+  display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:10px!important;
+  overflow:visible!important;padding:11px!important;border-radius:20px!important;
+}
+html[data-alin-device="tablet"] body.store-mobile .library-v116-tabs button,
+html[data-alin-device="tablet"] body.store-mobile .courier-v161-tabs button{
+  min-width:0!important;min-height:50px!important;white-space:normal!important;line-height:1.3!important;
+}
+html[data-alin-device="tablet"] body.store-mobile .alin415r-center{padding:0!important;gap:14px!important}
+html[data-alin-device="tablet"] body.store-mobile .alin415r-heading{padding:20px 22px!important;border-radius:22px!important}
+html[data-alin-device="tablet"] body.store-mobile .alin415r-metrics{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+html[data-alin-device="tablet"] body.store-mobile .alin415r-filters{grid-template-columns:minmax(0,1fr) minmax(180px,.45fr)!important}
+html[data-alin-device="tablet"] body.store-mobile .alin415r-filters .alin415r-tabs{grid-column:1/-1!important}
+html[data-alin-device="tablet"] body.store-mobile .alin415r-table-head{display:none!important}
+html[data-alin-device="tablet"] body.store-mobile .alin415r-row{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:10px!important;padding:14px!important}
+html[data-alin-device="tablet"] body.store-mobile .alin415r-actions{grid-column:1/-1!important;display:flex!important;justify-content:stretch!important}
+html[data-alin-device="tablet"] body.store-mobile .alin415r-actions button{flex:1 1 0!important}
+html[data-alin-device="tablet"] body.store-mobile .alin415r-modal-dialog{width:min(940px,calc(100vw - 34px))!important;max-height:calc(100dvh - 34px)!important}
+@media (min-width:960px){
+  html[data-alin-device="tablet"] body.store-mobile #adminPage .admin-tabs,
+  html[data-alin-device="tablet"] body.store-mobile #teacherPage .teacher-tabs{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+  html[data-alin-device="tablet"] body.store-mobile #storeGrid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+}
+@media (max-width:650px){
+  html[data-alin-device="tablet"] body.store-mobile .alin-mobile-premium-header{grid-template-columns:1fr auto!important}
+  html[data-alin-device="tablet"] body.store-mobile .mobile-search-premium{grid-column:1/-1!important;grid-row:2!important}
+  html[data-alin-device="tablet"] body.store-mobile #adminPage .admin-tabs,
+  html[data-alin-device="tablet"] body.store-mobile #teacherPage .teacher-tabs{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  html[data-alin-device="tablet"] body.store-mobile .library-v116-tabs,
+  html[data-alin-device="tablet"] body.store-mobile .courier-v161-tabs{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+}
+</style>
 </head>
 <body class="store-mobile">
 <section class="login" id="login">
@@ -483,7 +594,7 @@ html[data-alin-theme="dark"] body.store-mobile #alinAccountSheet .alin-choice{
 <button onclick="teacherTab('booklets')">ملازمي</button>
 <button onclick="teacherTab('orders')">الطلبات</button>
 <button onclick="teacherTab('finance')">الأرباح</button>
-<button data-teacher-tab="receipts" onclick="teacherTab('receipts')" type="button">الوصولات</button>
+<button id="teacherReceiptsTab" data-teacher-tab="receipts" onclick="teacherTab('receipts')" type="button">الوصولات</button>
 <button data-teacher-tab="notifications" id="teacherNotificationsTabV160" onclick="teacherTab('notifications')" type="button"><span aria-hidden="true">🔔</span> الإشعارات <span class="teacher-v160-badge" hidden="" id="teacherNotificationsBadgeV160">0</span></button>
 <button onclick="teacherTab('requests')">رفع ملزمة</button>
 <button onclick="teacherTab('review')">طلبات النشر</button>
@@ -503,7 +614,7 @@ html[data-alin-theme="dark"] body.store-mobile #alinAccountSheet .alin-choice{
 <button class="active" data-library-tab="home" type="button">الرئيسية</button>
 <button data-library-tab="orders" type="button">الطلبات <span hidden="" id="libraryV116OrdersBadge">0</span></button>
 <button data-library-tab="finance" type="button">الحسابات</button>
-<button data-alin415-receipts-role="library" type="button">الوصولات</button>
+<button id="libraryReceiptsTab" data-alin415-receipts-role="library" type="button">الوصولات</button>
 <button data-library-tab="notifications" type="button">الإشعارات <span hidden="" id="libraryV116NotifyBadge">0</span></button>
 <button data-library-tab="settings" type="button">الإعدادات</button>
 </nav>
@@ -512,7 +623,7 @@ html[data-alin-theme="dark"] body.store-mobile #alinAccountSheet .alin-choice{
 </section>
 <section class="page hidden courier-v161-page" id="courierPage">
 <header class="courier-v161-hero"><div><small>صفحة المندوب</small><h1 id="courierV161Name">المندوب</h1><p>مناطق العمل: <span id="courierV161Areas">—</span></p></div><span>منصة آلين للتوصيل</span></header>
-<nav class="courier-v161-tabs"><button class="active" data-courier-tab="home" onclick="renderCourierDashboard('home')">الرئيسية</button><button data-courier-tab="current" onclick="renderCourierDashboard('current')">طلبات التوصيل</button><button data-courier-tab="completed" onclick="renderCourierDashboard('completed')">المكتملة</button><button data-courier-tab="finance" onclick="renderCourierDashboard('finance')">الحسابات</button><button data-alin415-receipts-role="courier" type="button">الوصولات</button><button data-courier-tab="notifications" onclick="renderCourierDashboard('notifications')">الإشعارات</button><button data-courier-tab="profile" onclick="renderCourierDashboard('profile')">حسابي</button></nav>
+<nav class="courier-v161-tabs"><button class="active" data-courier-tab="home" onclick="renderCourierDashboard('home')">الرئيسية</button><button data-courier-tab="current" onclick="renderCourierDashboard('current')">طلبات التوصيل</button><button data-courier-tab="completed" onclick="renderCourierDashboard('completed')">المكتملة</button><button data-courier-tab="finance" onclick="renderCourierDashboard('finance')">الحسابات</button><button id="courierReceiptsTab" data-alin415-receipts-role="courier" type="button">الوصولات</button><button data-courier-tab="notifications" onclick="renderCourierDashboard('notifications')">الإشعارات</button><button data-courier-tab="profile" onclick="renderCourierDashboard('profile')">حسابي</button></nav>
 <main id="courierV161Content"></main>
 </section>
 <section class="page hidden" id="adminPage">
@@ -531,7 +642,7 @@ html[data-alin-theme="dark"] body.store-mobile #alinAccountSheet .alin-choice{
 <button onclick="adminTab('deliveryOrders')">طلبات التوصيل</button>
 <button onclick="adminTab('courierSettlements')">تسويات المندوبين</button>
 <button onclick="adminTab('finance')">الأرباح</button>
-<button data-admin-tab="receipts" onclick="adminTab('receipts')" type="button">الوصولات</button>
+<button id="adminReceiptsTab" data-admin-tab="receipts" onclick="adminTab('receipts')" type="button">الوصولات</button>
 <button onclick="adminTab('ads')">الإعلانات</button>
 <button onclick="adminTab('coupons')">الكوبونات</button>
 <button onclick="adminTab('notifications')">مركز الإشعارات</button>
@@ -617,7 +728,7 @@ html[data-alin-theme="dark"] body.store-mobile #alinAccountSheet .alin-choice{
 <script src="./core/pwa-register.js?v=4.1.5" defer></script>
 <script src="./core/boot-recovery.js?v=4.1.5" defer></script>
 <script src="./modules/core/navigation.js?v=4.1.5" defer></script>
-<script src="./alin-app-mobile.v4.1.5.js?v=4.1.5-receipts4-mobile-tablet1" defer onload="alinAppBundleLoaded()" onerror="alinAppBundleFailed()"></script>
+<script src="./alin-app-mobile.v4.1.5.js?v=4.1.5-receipts5-mobile-tablet2" defer onload="alinAppBundleLoaded()" onerror="alinAppBundleFailed()"></script>
 <script src="./modules/core/account-admin-service.js?v=4.1.5" defer></script>
 <script src="./modules/teacher/admin-word-download.js?v=4.1.5" defer></script>
 </body>
