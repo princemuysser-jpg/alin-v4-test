@@ -1,4 +1,4 @@
-const VERSION='alin-v4.1.5-receipts5-student-isolation-mobile-tablet3';
+const VERSION='alin-v4.1.5-receipts6-navigation-lifecycle-all-interfaces';
 const STATIC_CACHE=`${VERSION}-static`;
 const RUNTIME_CACHE=`${VERSION}-runtime`;
 
