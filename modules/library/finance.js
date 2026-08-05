@@ -21,7 +21,7 @@
     return finance()?.librarySummary?.(libraryId)||{rows:[],settlements:[],gross:0,profit:0,libraryProfit:0,debtTotal:0,settled:0,remaining:0,debtRemaining:0,monthProfit:0};
   }
 
-  function libraryName(id){return arr(database().accounts?.libraries).find(row=>same(row.id,id))?.name||window.current?.name||'المكتبة'}
+  function libraryName(id){const row=arr(database().accounts?.libraries).find(item=>same(item.id,id));return row?.name||row?.library_name||row?.display_name||row?.title||window.current?.name||'المكتبة'}
 
   function statementRows(id){
     return summary(id).rows.map(row=>`<tr><td>${escv(row.order?.order_number||row.order_number||row.order_id)}</td><td>${escv(String(row.at||'').slice(0,10)||'-')}</td><td>${moneyv(row.gross)} د.ع</td><td>${moneyv(row.profit)} د.ع</td><td>${moneyv(row.debt)} د.ع</td></tr>`).join('')||'<tr><td colspan="5">لا توجد حركات مالية.</td></tr>';

@@ -1,4 +1,4 @@
-const VERSION='alin-v4.1.5-receipts6-navigation-lifecycle-all-interfaces';
+const VERSION='alin-4.1.5-stable-checkout-library-name1';
 const STATIC_CACHE=`${VERSION}-static`;
 const RUNTIME_CACHE=`${VERSION}-runtime`;
 

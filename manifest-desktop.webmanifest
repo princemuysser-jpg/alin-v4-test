@@ -4,7 +4,7 @@
   "description": "متجر آلين للملازم والقرطاسية والهدايا",
   "lang": "ar",
   "dir": "rtl",
-  "start_url": "./?view=desktop",
+  "start_url": "./?v=4.1.5-stable-checkout-compat1",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",

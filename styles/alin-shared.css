@@ -165,3 +165,63 @@ body.alin415r-modal-open{overflow:hidden!important}
 .alin415r-modal-paper-wrap{width:min(760px,100%);margin:0 auto}
 .alin415r-modal .alin415r-paper{width:100%}
 @media(max-width:700px){.alin415r-modal{padding:10px}.alin415r-modal-dialog{width:calc(100vw - 20px);max-height:calc(100vh - 20px);border-radius:18px}.alin415r-modal-body{padding:10px}.alin415r-preview-toolbar{align-items:stretch;flex-direction:column}.alin415r-preview-toolbar button{width:100%}}
+
+/* ALIN v4.1.5 stable checkout — prevent horizontal overflow on desktop, mobile and tablet. */
+#checkoutModal,
+#checkoutModal .modal-card,
+#checkoutBox,
+#checkoutBox .alin-cart-shell,
+#checkoutBox .alin-cart-main,
+#checkoutBox .alin-cart-side,
+#checkoutBox .alin-cart-side-content,
+#checkoutBox .alin-summary-card,
+#checkoutBox .alin-cart-form,
+#checkoutBox .alin-fulfillment,
+#checkoutBox .alin-pickup-fields,
+#checkoutBox .alin-delivery-fields,
+#checkoutBox .form-grid{
+  min-width:0!important;
+  max-width:100%!important;
+}
+#checkoutModal .modal-card,
+#checkoutBox,
+#checkoutBox .alin-cart-main,
+#checkoutBox .alin-cart-side,
+#checkoutBox .alin-cart-side-content{
+  overflow-x:hidden!important;
+}
+#checkoutBox .form-grid>* ,
+#checkoutBox input,
+#checkoutBox select,
+#checkoutBox textarea,
+#checkoutBox button{
+  min-width:0;
+  max-width:100%;
+}
+#checkoutBox .alin-pickup-fields select,
+#checkoutBox .alin-delivery-fields select,
+#checkoutBox .alin-delivery-fields input{
+  width:100%!important;
+  box-sizing:border-box!important;
+}
+#checkoutBox #libInfo:empty{display:none!important}
+#checkoutBox #libInfo:not(:empty){display:block!important;width:100%!important}
+#checkoutBox #libInfo .alin-library-status{width:100%!important;visibility:visible!important;opacity:1!important}
+#checkoutBox #libInfo .alin-library-status b{display:block!important;visibility:visible!important;opacity:1!important;color:#102a4d!important;font-weight:900!important}
+#checkoutBox .alin-order-success__pickup{margin:4px 0 12px;padding:9px 12px;border-radius:12px;background:#f7f1df;color:#755312;font-weight:900}
+#checkoutBox .alin-cart-error{
+  flex:0 0 auto;
+  margin:0 0 10px!important;
+  padding:10px 12px!important;
+  border:1px solid #f0b7b0!important;
+  border-radius:12px!important;
+  background:#fff3f1!important;
+  color:#9f241a!important;
+  line-height:1.55!important;
+  font-weight:800!important;
+  overflow-wrap:anywhere;
+}
+@media (max-width:1180px){
+  #checkoutBox .alin-cart-shell{grid-template-columns:minmax(0,1fr)!important}
+  #checkoutBox .alin-cart-side{position:relative!important;top:auto!important}
+}

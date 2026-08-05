@@ -41,7 +41,7 @@
     if(!target)return couriers().filter(c=>String(c.status||'active')!=='inactive');
     return couriers().filter(c=>String(c.status||'active')!=='inactive'&&courierAreas(c).some(a=>normalizeArea(a)===target));
   }
-  function libraryName(id){return libraries().find(x=>String(x.id)===String(id))?.name||'غير محددة'}
+  function libraryName(id){const row=libraries().find(x=>String(x.id)===String(id));return row?.name||row?.library_name||row?.display_name||row?.title||'غير محددة'}
   function courierName(id){return couriers().find(x=>String(x.id)===String(id))?.name||'غير معيّن'}
   function statusOf(o){return String(o?.status||o?.payment_status||'new')}
   function labelOf(value){const s=typeof value==='object'?statusOf(value):String(value||'new');return statusLabels[s]||s}

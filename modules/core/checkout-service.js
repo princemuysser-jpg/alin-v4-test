@@ -36,7 +36,8 @@
     if(['pickup','library'].includes(type)){
       const libraryId=String(raw?.library_id||raw?.pickup_library_id||'').trim();
       if(!libraryId)throw new Error('اختر مكتبة الاستلام');
-      return {fulfillment_type:'pickup',library_id:libraryId,pickup_library_id:libraryId};
+      const libraryName=String(raw?.library_name||raw?.pickup_library_name||'').trim();
+      return {fulfillment_type:'pickup',library_id:libraryId,pickup_library_id:libraryId,library_name:libraryName,pickup_library_name:libraryName};
     }
     if(['home_delivery','courier','delivery'].includes(type)){
       const area=String(raw?.delivery_area||'').trim();
@@ -105,15 +106,28 @@
       const fingerprint=JSON.stringify({items,customer:{name,phone},student:signedStudent?.id||null,fulfillment,coupon:coupon.toLowerCase()});
       const attempt=checkoutAttempt(fingerprint);
       if(typeof cartSave==='function')cartSave();
-      const {data,error}=await c.rpc('alin_create_store_orders_guarded',{
+      const guestArgs={
         p_items:items,p_customer:{name,phone},p_fulfillment:fulfillment,p_coupon_code:coupon||null,
-        p_request_key:attempt.requestKey,p_device_id:deviceId(),
+        p_request_key:attempt.requestKey,p_device_id:deviceId()
+      };
+      const studentArgs={
+        ...guestArgs,
         p_student_token:signedStudent?window.AlinStudentAuth?.token?.()||null:null,
         p_student_device:signedStudent?window.AlinStudentAuth?.deviceId?.()||null:null
-      });
+      };
+      const signatureMissing=error=>/PGRST202|Could not find the function|schema cache|function .* does not exist/i.test(`${error?.message||''} ${error?.code||''}`);
+      let response=await c.rpc('alin_create_store_orders_guarded',signedStudent?studentArgs:guestArgs);
+      // توافق آمن مع قاعدة البيانات الحالية والنسخة المحدثة:
+      // الزائر يستخدم التوقيع القديم، والطالب يستخدم التوقيع المعزول عند توفره.
+      if(response?.error&&signatureMissing(response.error)){
+        response=await c.rpc('alin_create_store_orders_guarded',signedStudent?guestArgs:studentArgs);
+        if(!response?.error&&signedStudent){
+          document.dispatchEvent(new CustomEvent('alin:student-order-link-deferred',{detail:{studentId:signedStudent.id||null}}));
+        }
+      }
+      const {data,error}=response||{};
       if(error){
-        const message=String(error.message||'');
-        if(/PGRST202|Could not find the function|schema cache/i.test(message))throw new Error('خدمة عزل طلبات الطلاب غير مهيأة. نفّذ ملف ALIN_V4_CLEAN_PROJECT_MASTER.sql المرفق مرة واحدة.');
+        if(signatureMissing(error))throw new Error('خدمة تأكيد الطلب غير جاهزة على الخادم. أعد تحميل الصفحة، وإن استمرت المشكلة راجع إعدادات قاعدة البيانات.');
         throw error;
       }
       const numbers=Array.isArray(data)?data.map(x=>String(x.order_number||'')).filter(Boolean):[];
@@ -148,6 +162,8 @@
         const icon=document.createElement('div');icon.className='alin-order-success__icon';icon.setAttribute('aria-hidden','true');icon.textContent='✓';
         const h=document.createElement('h2');h.textContent='تم استلام طلبك';
         const note=document.createElement('p');note.textContent='احتفظ برقم التتبع لمتابعة حالة طلبك.';
+        const pickup=document.createElement('p');pickup.className='alin-order-success__pickup';
+        if(fulfillment.fulfillment_type==='pickup'&&fulfillment.library_name){pickup.textContent=`مكتبة الاستلام: ${fulfillment.library_name}`}
         const codes=document.createElement('div');codes.className='alin-order-success__codes';
         numbers.forEach(number=>{
           const row=document.createElement('div');row.className='alin-tracking-code';
@@ -160,10 +176,10 @@
           row.append(code,copy);codes.append(row);
         });
         const close=document.createElement('button');close.type='button';close.className='alin-order-success__close';close.textContent='إغلاق';close.addEventListener('click',()=>window.closeCheckout?.());
-        success.append(icon,h,note,codes,close);box.append(success);
+        success.append(icon,h,note);if(pickup.textContent)success.append(pickup);success.append(codes,close);box.append(success);
         document.dispatchEvent(new CustomEvent('alin:order-created',{detail:{numbers,fulfillment:fulfillment.fulfillment_type||fulfillment.delivery_type||'',items:cartSnapshot}}));
       }
-    }catch(e){alert(e?.message||'تعذر إنشاء الطلب')}
+    }catch(e){throw e}
     finally{checkoutPending=false;if(button){button.disabled=false;button.removeAttribute('aria-busy');button.textContent=button.dataset.originalText||'تأكيد الطلب'}}
   }
   window.ALINAuth=Object.assign(window.ALINAuth||{},{secureCheckout});

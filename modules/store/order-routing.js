@@ -24,7 +24,11 @@
       const libraryId=value('libSelect');
       if(!libraryId)throw new Error('اختر مكتبة الاستلام');
       if(!libraryOpen(libraryId))throw new Error('المكتبة المختارة مغلقة حالياً');
-      return {fulfillment_type:'pickup',library_id:libraryId,pickup_library_id:libraryId};
+      const library=(activeLibraries()||[]).find(item=>same(item.id,libraryId))||null;
+      const selected=document.getElementById('libSelect');
+      const option=selected?.options?.[selected.selectedIndex]||null;
+      const libraryName=String(library?.name||library?.library_name||library?.display_name||library?.title||selected?.dataset?.selectedLibraryName||option?.dataset?.libraryName||option?.textContent||'مكتبة').split(' — ')[0].trim()||'مكتبة';
+      return {fulfillment_type:'pickup',library_id:libraryId,pickup_library_id:libraryId,library_name:libraryName,pickup_library_name:libraryName};
     }
     const area=value('deliveryArea'),landmark=value('deliveryLandmark');
     const latitude=value('deliveryLatitude'),longitude=value('deliveryLongitude'),accuracy=value('deliveryLocationAccuracy');
@@ -55,7 +59,12 @@
       if(typeof window.ALINAuth?.secureCheckout!=='function')return await createFallback();
       return await window.ALINAuth.secureCheckout();
     }catch(error){
-      const box=$('alinCartError')||document.createElement('div');box.id='alinCartError';box.className='notice';box.textContent=error?.message||'تعذر إنشاء الطلب';document.querySelector('#checkoutBox .alin-cart-side')?.prepend(box);throw error;
+      const box=$('alinCartError')||document.createElement('div');
+      box.id='alinCartError';box.className='notice alin-cart-error';box.textContent=error?.message||'تعذر إنشاء الطلب';
+      const side=document.querySelector('#checkoutBox .alin-cart-side');
+      if(side&&!box.isConnected)side.prepend(box);
+      box.scrollIntoView?.({block:'nearest',behavior:'smooth'});
+      return null;
     }finally{pending=false;if(button){button.disabled=false;button.textContent=oldText||'تأكيد الطلب الآن'}}
   }
 

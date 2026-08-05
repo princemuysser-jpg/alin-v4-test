@@ -3976,11 +3976,18 @@ window.Alin.helpers={
   }
   function hasProducts(){return rows().some(line=>line.kind!=='booklet')}
   function activeLibraries(){return (window.db?.accounts?.libraries||[]).filter(item=>item.status==='active')}
+  function libraryDisplayName(library,fallback='مكتبة'){
+    const value=library?.name??library?.library_name??library?.display_name??library?.title??library?.shop_name??library?.username??fallback;
+    return String(value||fallback).trim()||fallback;
+  }
   function libraryOpen(library){
     try{return typeof window.libIsOpen==='function'?!!window.libIsOpen(library):!(library?.is_open===false||String(library?.is_open)==='false'||library?.open_status==='closed')}catch(_){return true}
   }
   function libraryOptions(){
-    return activeLibraries().map(library=>`<option value="${escText(library.id)}" ${libraryOpen(library)?'':'disabled'}>${escText(library.name||'مكتبة')} — ${libraryOpen(library)?'مفتوح':'مغلق'}${library.area?` — ${escText(library.area)}`:''}</option>`).join('');
+    return activeLibraries().map(library=>{
+      const name=libraryDisplayName(library);
+      return `<option value="${escText(library.id)}" data-library-name="${escText(name)}" ${libraryOpen(library)?'':'disabled'}>${escText(name)} — ${libraryOpen(library)?'مفتوح':'مغلق'}${library.area?` — ${escText(library.area)}`:''}</option>`;
+    }).join('');
   }
   function courierOptions(){
     try{
@@ -4056,9 +4063,18 @@ window.Alin.helpers={
 
   function showLibInfo(){
     const select=$('libSelect'),box=$('libInfo');if(!select||!box)return;
-    const library=activeLibraries().find(item=>same(item.id,select.value));
-    if(!library){box.replaceChildren();return}
-    box.innerHTML=`<div class="alin-library-status"><div><b>${escText(library.name||'مكتبة')}</b><small>${escText([library.area,library.landmark].filter(Boolean).join(' — '))}</small></div><span class="${libraryOpen(library)?'is-open':'is-closed'}">${libraryOpen(library)?'مفتوح':'مغلق'}</span></div>`;
+    const selectedId=String(select.value||'').trim();
+    if(!selectedId){box.replaceChildren();delete select.dataset.selectedLibraryName;return}
+    const allLibraries=window.db?.accounts?.libraries||[];
+    const library=allLibraries.find(item=>same(item.id,selectedId))||null;
+    const option=select.options?.[select.selectedIndex]||null;
+    const optionName=String(option?.dataset?.libraryName||option?.textContent||'').split(' — ')[0].trim();
+    const name=libraryDisplayName(library,optionName||'مكتبة');
+    const details=[library?.area,library?.landmark].filter(Boolean).join(' — ')||'مكتبة الاستلام المختارة';
+    const open=library?libraryOpen(library):!option?.disabled;
+    select.dataset.selectedLibraryName=name;
+    box.dataset.libraryName=name;
+    box.innerHTML=`<div class="alin-library-status"><div><b>${escText(name)}</b><small>${escText(details)}</small></div><span class="${open?'is-open':'is-closed'}">${open?'مفتوح':'مغلق'}</span></div>`;
   }
 
   function toggleDeliveryFields(){
@@ -4141,6 +4157,8 @@ window.Alin.helpers={
     document.dispatchEvent(new CustomEvent('alin:cart-scope-changed',{detail:{items:rows().map(item=>({...item}))}}));
   }
   document.addEventListener('alin:storage-scope-changed',switchCartScope);
+  document.addEventListener('change',event=>{if(event.target?.id==='libSelect')showLibInfo()});
+  document.addEventListener('alin:data-refreshed',()=>{if(document.getElementById('libSelect'))showLibInfo()});
 
   Object.assign(window,{cartSave,renderCartBadge,renderCartPricing,cartPricing,addToCart,cartQty,cartRemove,openCart,openCheckout,closeCheckout,showLibInfo,toggleDeliveryFields,updateTotal,alinCartQty:cartQty,alinCartRemove:cartRemove,alinApplyCoupon:()=>window.checkCoupon?.()});
 
@@ -4179,7 +4197,11 @@ window.Alin.helpers={
       const libraryId=value('libSelect');
       if(!libraryId)throw new Error('اختر مكتبة الاستلام');
       if(!libraryOpen(libraryId))throw new Error('المكتبة المختارة مغلقة حالياً');
-      return {fulfillment_type:'pickup',library_id:libraryId,pickup_library_id:libraryId};
+      const library=(activeLibraries()||[]).find(item=>same(item.id,libraryId))||null;
+      const selected=document.getElementById('libSelect');
+      const option=selected?.options?.[selected.selectedIndex]||null;
+      const libraryName=String(library?.name||library?.library_name||library?.display_name||library?.title||selected?.dataset?.selectedLibraryName||option?.dataset?.libraryName||option?.textContent||'مكتبة').split(' — ')[0].trim()||'مكتبة';
+      return {fulfillment_type:'pickup',library_id:libraryId,pickup_library_id:libraryId,library_name:libraryName,pickup_library_name:libraryName};
     }
     const area=value('deliveryArea'),landmark=value('deliveryLandmark');
     const latitude=value('deliveryLatitude'),longitude=value('deliveryLongitude'),accuracy=value('deliveryLocationAccuracy');
@@ -4210,7 +4232,12 @@ window.Alin.helpers={
       if(typeof window.ALINAuth?.secureCheckout!=='function')return await createFallback();
       return await window.ALINAuth.secureCheckout();
     }catch(error){
-      const box=$('alinCartError')||document.createElement('div');box.id='alinCartError';box.className='notice';box.textContent=error?.message||'تعذر إنشاء الطلب';document.querySelector('#checkoutBox .alin-cart-side')?.prepend(box);throw error;
+      const box=$('alinCartError')||document.createElement('div');
+      box.id='alinCartError';box.className='notice alin-cart-error';box.textContent=error?.message||'تعذر إنشاء الطلب';
+      const side=document.querySelector('#checkoutBox .alin-cart-side');
+      if(side&&!box.isConnected)side.prepend(box);
+      box.scrollIntoView?.({block:'nearest',behavior:'smooth'});
+      return null;
     }finally{pending=false;if(button){button.disabled=false;button.textContent=oldText||'تأكيد الطلب الآن'}}
   }
 
