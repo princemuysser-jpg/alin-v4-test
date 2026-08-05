@@ -1,5 +1,5 @@
 فحص إصلاح ظهور اسم مكتبة الاستلام
-الإصدار: 4.1.5-stable-checkout-library-name1
+الإصدار: 4.1.5-stable-checkout-library-name2
 
 نتائج الفحص المحلي:
 - فحص صياغة 83 ملف JavaScript: ناجح.

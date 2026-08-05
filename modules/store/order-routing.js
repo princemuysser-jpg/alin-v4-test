@@ -11,9 +11,13 @@
   function cartRows(){return Array.isArray(window.cart)?window.cart:[]}
   function hasProducts(){return cartRows().some(line=>line.kind!=='booklet')}
   function activeLibraries(){return window.db?.accounts?.libraries||[]}
+  function findLibrary(id){
+    const wanted=String(id||'').trim();
+    return activeLibraries().find(item=>[item?.id,item?.library_id,item?.account_id,item?.user_id,item?.username].some(value=>same(value,wanted)))||null;
+  }
   function libraryOpen(id){
-    const library=activeLibraries().find(item=>same(item.id,id));if(!library)return false;
-    try{return typeof window.libIsOpen==='function'?!!window.libIsOpen(library):!(library.is_open===false||String(library.is_open)==='false'||library.open_status==='closed')}catch(_){return true}
+    const library=findLibrary(id);if(!library)return false;
+    try{return typeof window.libIsOpen==='function'?!!window.libIsOpen(library):!(library.is_open===false||String(library.is_open)==='false'||String(library.open_status||'').toLowerCase()==='closed')}catch(_){return true}
   }
   function fulfillmentType(){return document.querySelector('#checkoutBox input[name="fulfillment"]:checked')?.value||(hasProducts()?'home_delivery':'pickup')}
 
@@ -24,10 +28,11 @@
       const libraryId=value('libSelect');
       if(!libraryId)throw new Error('اختر مكتبة الاستلام');
       if(!libraryOpen(libraryId))throw new Error('المكتبة المختارة مغلقة حالياً');
-      const library=(activeLibraries()||[]).find(item=>same(item.id,libraryId))||null;
+      const library=findLibrary(libraryId);
       const selected=document.getElementById('libSelect');
       const option=selected?.options?.[selected.selectedIndex]||null;
-      const libraryName=String(library?.name||library?.library_name||library?.display_name||library?.title||selected?.dataset?.selectedLibraryName||option?.dataset?.libraryName||option?.textContent||'مكتبة').split(' — ')[0].trim()||'مكتبة';
+      const rawOptionName=String(option?.dataset?.libraryName||option?.label||option?.textContent||'').replace(/\s*(?:—|-)\s*(?:مفتوح|مغلق).*$/u,'').trim();
+      const libraryName=String(rawOptionName||selected?.dataset?.selectedLibraryName||library?.name||library?.library_name||library?.display_name||library?.full_name||library?.business_name||library?.store_name||library?.shop_name||library?.title||library?.account_name||library?.public_name||library?.username||'مكتبة الاستلام').trim();
       return {fulfillment_type:'pickup',library_id:libraryId,pickup_library_id:libraryId,library_name:libraryName,pickup_library_name:libraryName};
     }
     const area=value('deliveryArea'),landmark=value('deliveryLandmark');

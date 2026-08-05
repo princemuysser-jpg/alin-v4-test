@@ -75,18 +75,37 @@
     return {subtotal,discount:Math.min(subtotal,Math.max(0,num(discount))),total:Math.max(0,subtotal-Math.max(0,num(discount))),coupon};
   }
   function hasProducts(){return rows().some(line=>line.kind!=='booklet')}
-  function activeLibraries(){return (window.db?.accounts?.libraries||[]).filter(item=>item.status==='active')}
+  function activeLibraries(){
+    return (window.db?.accounts?.libraries||[]).filter(item=>{
+      const status=String(item?.status||'active').toLowerCase();
+      return !item?.deleted_at&&!['inactive','disabled','rejected','deleted'].includes(status);
+    });
+  }
+  function libraryKey(library){
+    return String(library?.id||library?.library_id||library?.account_id||library?.user_id||library?.username||'').trim();
+  }
   function libraryDisplayName(library,fallback='مكتبة'){
-    const value=library?.name??library?.library_name??library?.display_name??library?.title??library?.shop_name??library?.username??fallback;
+    const candidates=[library?.name,library?.library_name,library?.display_name,library?.full_name,library?.business_name,library?.store_name,library?.shop_name,library?.title,library?.account_name,library?.public_name,library?.username,fallback];
+    const value=candidates.find(item=>String(item??'').trim());
     return String(value||fallback).trim()||fallback;
   }
+  function libraryByKey(value){
+    const wanted=String(value||'').trim();
+    return activeLibraries().find(item=>[item?.id,item?.library_id,item?.account_id,item?.user_id,item?.username].some(candidate=>same(candidate,wanted)))||null;
+  }
+  function selectedOptionLibraryName(option){
+    const raw=String(option?.dataset?.libraryName||option?.label||option?.textContent||'').trim();
+    return raw.replace(/\s*(?:—|-)\s*(?:مفتوح|مغلق).*$/u,'').trim();
+  }
   function libraryOpen(library){
-    try{return typeof window.libIsOpen==='function'?!!window.libIsOpen(library):!(library?.is_open===false||String(library?.is_open)==='false'||library?.open_status==='closed')}catch(_){return true}
+    try{return typeof window.libIsOpen==='function'?!!window.libIsOpen(library):!(library?.is_open===false||String(library?.is_open)==='false'||String(library?.open_status||'').toLowerCase()==='closed')}catch(_){return true}
   }
   function libraryOptions(){
     return activeLibraries().map(library=>{
-      const name=libraryDisplayName(library);
-      return `<option value="${escText(library.id)}" data-library-name="${escText(name)}" ${libraryOpen(library)?'':'disabled'}>${escText(name)} — ${libraryOpen(library)?'مفتوح':'مغلق'}${library.area?` — ${escText(library.area)}`:''}</option>`;
+      const id=libraryKey(library),name=libraryDisplayName(library);
+      if(!id)return '';
+      const open=libraryOpen(library);
+      return `<option value="${escText(id)}" data-library-name="${escText(name)}" ${open?'':'disabled'}>${escText(name)} — ${open?'مفتوح':'مغلق'}${library.area?` — ${escText(library.area)}`:''}</option>`;
     }).join('');
   }
   function courierOptions(){
@@ -161,20 +180,38 @@
     return `<section class="alin-fulfillment"><h4>طريقة الاستلام والدفع</h4><div class="alin-delivery-options"><label class="selected"><input type="radio" name="fulfillment" value="pickup" checked onchange="toggleDeliveryFields()"><span><b>استلام من المكتبة</b><small>الدفع عند الاستلام</small></span></label><label><input type="radio" name="fulfillment" value="home_delivery" onchange="toggleDeliveryFields()"><span><b>توصيل للبيت</b><small>الدفع للمندوب</small></span></label></div><div id="pickupFields" class="alin-pickup-fields"><select id="libSelect" onchange="showLibInfo()"><option value="">اختر مكتبة الاستلام</option>${libraryOptions()}</select><div id="libInfo"></div></div><div id="deliveryFields" class="alin-delivery-fields hidden"><div class="form-grid"><select id="deliveryArea" required>${deliveryAreaOptions()}</select><input id="deliveryLandmark" placeholder="أقرب نقطة دالة" required><select id="courierSelect"><option value="">تحديد المندوب من الإدارة</option>${courierOptions()}</select></div></div></section>`;
   }
 
+  function ensureCartLibrarySummary(){
+    const rowsBox=document.querySelector('#checkoutBox .alin-summary-rows');
+    if(!rowsBox)return null;
+    let row=document.getElementById('cartPickupLibraryRow');
+    if(!row){
+      row=document.createElement('div');
+      row.id='cartPickupLibraryRow';
+      row.className='alin-cart-library-summary';
+      row.innerHTML='<span>مكتبة الاستلام</span><b id="cartPickupLibraryName">غير محددة</b>';
+      rowsBox.appendChild(row);
+    }
+    return row;
+  }
+
   function showLibInfo(){
-    const select=$('libSelect'),box=$('libInfo');if(!select||!box)return;
+    const select=$('libSelect'),box=$('libInfo');
+    const summaryRow=ensureCartLibrarySummary();
+    const summaryName=document.getElementById('cartPickupLibraryName');
+    if(!select||!box){if(summaryRow)summaryRow.hidden=true;return}
+    if(summaryRow)summaryRow.hidden=false;
     const selectedId=String(select.value||'').trim();
-    if(!selectedId){box.replaceChildren();delete select.dataset.selectedLibraryName;return}
-    const allLibraries=window.db?.accounts?.libraries||[];
-    const library=allLibraries.find(item=>same(item.id,selectedId))||null;
+    if(!selectedId){box.replaceChildren();delete select.dataset.selectedLibraryName;if(summaryName)summaryName.textContent='غير محددة';return}
     const option=select.options?.[select.selectedIndex]||null;
-    const optionName=String(option?.dataset?.libraryName||option?.textContent||'').split(' — ')[0].trim();
-    const name=libraryDisplayName(library,optionName||'مكتبة');
-    const details=[library?.area,library?.landmark].filter(Boolean).join(' — ')||'مكتبة الاستلام المختارة';
+    const library=libraryByKey(selectedId);
+    const optionName=selectedOptionLibraryName(option);
+    const name=optionName||libraryDisplayName(library,'مكتبة الاستلام');
+    const details=[library?.area,library?.landmark].map(value=>String(value||'').trim()).filter(Boolean).join(' — ')||'مكتبة الاستلام المختارة';
     const open=library?libraryOpen(library):!option?.disabled;
     select.dataset.selectedLibraryName=name;
     box.dataset.libraryName=name;
-    box.innerHTML=`<div class="alin-library-status"><div><b>${escText(name)}</b><small>${escText(details)}</small></div><span class="${open?'is-open':'is-closed'}">${open?'مفتوح':'مغلق'}</span></div>`;
+    box.innerHTML=`<div class="alin-library-status" role="status" aria-live="polite"><div><small>المكتبة المختارة</small><b>${escText(name)}</b><small>${escText(details)}</small></div><span class="${open?'is-open':'is-closed'}">${open?'مفتوح':'مغلق'}</span></div>`;
+    if(summaryName)summaryName.textContent=name;
   }
 
   function toggleDeliveryFields(){
@@ -226,7 +263,7 @@
     modal.classList.remove('hidden');
     document.body?.classList.add('alin-cart-open');
     const close=modal.querySelector('.x');if(close){close.textContent='إغلاق';close.setAttribute('aria-label','إغلاق السلة')}
-    setTimeout(()=>{toggleDeliveryFields();showLibInfo();renderCartPricing();dispatch('alin:cart-rendered',{kind:context.kind||'',id:context.id||'',count,subtotal:pricing.subtotal,discount:pricing.discount,total:pricing.total})},0);
+    setTimeout(()=>{toggleDeliveryFields();showLibInfo();window.setTimeout(showLibInfo,120);renderCartPricing();dispatch('alin:cart-rendered',{kind:context.kind||'',id:context.id||'',count,subtotal:pricing.subtotal,discount:pricing.discount,total:pricing.total})},0);
   }
 
   function openCheckout(kind,id){
@@ -258,6 +295,7 @@
   }
   document.addEventListener('alin:storage-scope-changed',switchCartScope);
   document.addEventListener('change',event=>{if(event.target?.id==='libSelect')showLibInfo()});
+  document.addEventListener('input',event=>{if(event.target?.id==='libSelect')showLibInfo()});
   document.addEventListener('alin:data-refreshed',()=>{if(document.getElementById('libSelect'))showLibInfo()});
 
   Object.assign(window,{cartSave,renderCartBadge,renderCartPricing,cartPricing,addToCart,cartQty,cartRemove,openCart,openCheckout,closeCheckout,showLibInfo,toggleDeliveryFields,updateTotal,alinCartQty:cartQty,alinCartRemove:cartRemove,alinApplyCoupon:()=>window.checkCoupon?.()});

@@ -1,6 +1,6 @@
 // منصة آلين v4 — مشروع Alin Platform التجريبي.
 window.ALIN_CONFIG=Object.freeze({
-  version:'4.1.5-stable-checkout-compat1',
+  version:'4.1.5-stable-checkout-library-name2',
   desktopPage:'./store-desktop.html',
   mobilePage:'./store-mobile.html',
   currency:'د.ع',

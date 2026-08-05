@@ -1,4 +1,4 @@
-const VERSION='alin-4.1.5-stable-checkout-library-name1';
+const VERSION='alin-4.1.5-stable-checkout-library-name2';
 const STATIC_CACHE=`${VERSION}-static`;
 const RUNTIME_CACHE=`${VERSION}-runtime`;
 

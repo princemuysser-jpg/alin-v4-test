@@ -225,3 +225,12 @@ body.alin415r-modal-open{overflow:hidden!important}
   #checkoutBox .alin-cart-shell{grid-template-columns:minmax(0,1fr)!important}
   #checkoutBox .alin-cart-side{position:relative!important;top:auto!important}
 }
+
+
+/* ALIN v4.1.5 — final visible pickup-library name in cart on every interface. */
+#checkoutBox .alin-cart-library-summary{display:flex!important;align-items:flex-start!important;justify-content:space-between!important;gap:12px!important}
+#checkoutBox .alin-cart-library-summary[hidden]{display:none!important}
+#checkoutBox #cartPickupLibraryName{max-width:65%!important;overflow-wrap:anywhere!important;text-align:left!important;color:#102a4d!important;font-weight:900!important}
+#checkoutBox #libInfo .alin-library-status{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:10px!important;padding:10px 12px!important;border:1px solid #dfe7f1!important;border-radius:12px!important;background:#f8fbff!important}
+#checkoutBox #libInfo .alin-library-status>div{display:grid!important;gap:3px!important;min-width:0!important}
+#checkoutBox #libInfo .alin-library-status small{display:block!important;color:#667085!important;white-space:normal!important}
