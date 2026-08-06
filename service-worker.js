@@ -1,4 +1,4 @@
-const VERSION='alin-4.1.5-stable-checkout-library-name2';
+const VERSION='alin-4.1.6-prepublish-1o';
 const STATIC_CACHE=`${VERSION}-static`;
 const RUNTIME_CACHE=`${VERSION}-runtime`;
 
@@ -7,7 +7,7 @@ const CORE=[
   './','./index.html','./store-desktop.html','./store-mobile.html','./alin-config.js',
   './manifest-desktop.webmanifest','./manifest-mobile.webmanifest',
   './dist/alin-core.v4.js','./alin-app-desktop.v4.1.5.js','./alin-app-mobile.v4.1.5.js',
-  './modules/core/navigation.js','./modules/core/account-admin-service.js',
+  './modules/core/navigation.js','./modules/core/account-admin-service.js','./modules/core/order-bell.js',
   './modules/teacher/admin-word-download.js','./core/boot-recovery.js','./core/pwa-register.js',
   './core/device-router.js','./core/runtime-guard.js','./core/splash.js',
   './dist/css/desktop.bundle.css','./dist/css/mobile.bundle.css',

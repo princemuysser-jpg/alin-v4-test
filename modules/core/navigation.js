@@ -3,6 +3,12 @@
 (function(){
   'use strict';
   const labels={store:'المتجر',teacher:'المدرس',library:'المكتبة',courier:'المندوب',admin:'الإدارة'};
+  const loginLabels={
+    teacher:{title:'دخول المدرس',username:'اسم دخول المدرس',password:'الرمز السري للمدرس'},
+    library:{title:'دخول المكتبة',username:'اسم دخول المكتبة',password:'الرمز السري للمكتبة'},
+    courier:{title:'دخول المندوب',username:'اسم دخول المندوب',password:'الرمز السري للمندوب'},
+    admin:{title:'دخول لوحة آلين',username:'اسم دخول الإدارة',password:'الرمز السري للإدارة'}
+  };
   const allowed={
     admin:new Set(['admin','store']),accountant:new Set(['admin','store']),teacher:new Set(['teacher','store']),
     library:new Set(['library','store']),courier:new Set(['courier','store']),student:new Set(['store']),store:new Set(['store'])
@@ -19,10 +25,22 @@
     try{window.applyBrandV28?.()}catch(error){console.warn('[ALIN navigation brand]',error)}
   }
   function showLogin(role){
-    window.pendingRole=String(role||'');
+    const selected=String(role||'').toLowerCase();
+    const copy=loginLabels[selected]||{title:'تسجيل الدخول',username:'اسم الدخول',password:'الرمز السري'};
+    window.pendingRole=selected;
     el('loginForm')?.classList.remove('hidden');
-    const message=el('loginMsg');if(message)message.textContent='';
-    const username=el('loginU'),password=el('loginPass');if(username)username.value='';if(password)password.value='';
+    const message=el('loginMsg');
+    const username=el('loginU');
+    const password=el('loginPass');
+    if(message){message.textContent=copy.title;message.dataset.role=selected}
+    if(username){username.value='';username.placeholder=copy.username;username.setAttribute('aria-label',copy.username)}
+    if(password){password.value='';password.placeholder=copy.password;password.setAttribute('aria-label',copy.password)}
+    document.querySelectorAll('.login-actions button').forEach(button=>{
+      const action=String(button.getAttribute('onclick')||'');
+      const active=action.includes(`'${selected}'`)||action.includes(`"${selected}"`)||(selected==='library'&&action.includes('openLibraryJoinPortal'));
+      button.classList.toggle('active-login-role',active);
+      button.setAttribute('aria-pressed',active?'true':'false');
+    });
     username?.focus?.();
   }
   async function doLogin(){

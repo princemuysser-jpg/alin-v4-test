@@ -14,7 +14,7 @@
   }
   function gpsMarkup(){
     return `<section class="v162-gps-box" id="v162GpsBox">
-      <div class="v162-gps-head"><div><b>نقطة موقع التوصيل GPS</b><small>تساعد المدير والمندوب على الوصول لنقطة التسليم بدقة.</small></div><span id="v162GpsStatus" class="v162-gps-status">غير محدد</span></div>
+      <div class="v162-gps-head"><div><b>نقطة موقع التوصيل GPS</b><small>تساعد الإدارة والمندوب على الوصول لنقطة التسليم بدقة.</small></div><span id="v162GpsStatus" class="v162-gps-status">غير محدد</span></div>
       <div class="v162-gps-actions">
         <button type="button" class="v162-gps-primary" onclick="alinV162UseCurrentLocation()"><span aria-hidden="true">⌖</span> استخدام موقعي الحالي</button>
         <button type="button" id="v162OpenMapBtn" class="secondary" onclick="alinV162OpenSelectedMap()" disabled>فتح الموقع على الخريطة</button>
@@ -22,7 +22,7 @@
       </div>
       <div id="v162GpsDetails" class="v162-gps-details" hidden></div>
       <input type="hidden" id="deliveryLatitude"><input type="hidden" id="deliveryLongitude"><input type="hidden" id="deliveryLocationUrl"><input type="hidden" id="deliveryLocationAccuracy">
-      <p class="v162-gps-note">يمكن تحديد الموقع من المتصفح، وأقرب نقطة دالة تكفي عند عدم استخدام GPS.</p>
+      <p class="v162-gps-note">حدد موقع التوصيل أو اكتب أقرب نقطة دالة، وبعد تأكيد الطلب تتولى الإدارة تعيين المندوب.</p>
     </section>`;
   }
   function enhanceDeliveryFields(){

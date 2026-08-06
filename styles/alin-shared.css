@@ -234,3 +234,140 @@ body.alin415r-modal-open{overflow:hidden!important}
 #checkoutBox #libInfo .alin-library-status{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:10px!important;padding:10px 12px!important;border:1px solid #dfe7f1!important;border-radius:12px!important;background:#f8fbff!important}
 #checkoutBox #libInfo .alin-library-status>div{display:grid!important;gap:3px!important;min-width:0!important}
 #checkoutBox #libInfo .alin-library-status small{display:block!important;color:#667085!important;white-space:normal!important}
+
+
+/* ALIN v4.1.5 prepublish 1g — include the existing library and courier page headers. */
+#libraryPage > .library-v116-header,
+#courierPage > .courier-v161-hero{
+  color:#fff!important;
+}
+#libraryPage > .library-v116-header h1,
+#libraryPage > .library-v116-header h2,
+#libraryPage > .library-v116-header h3,
+#courierPage > .courier-v161-hero h1,
+#courierPage > .courier-v161-hero h2,
+#courierPage > .courier-v161-hero h3{
+  color:#fff!important;
+}
+#libraryPage > .library-v116-header p,
+#courierPage > .courier-v161-hero p{
+  color:rgba(255,255,255,.94)!important;
+}
+#libraryPage > .library-v116-header small,
+#courierPage > .courier-v161-hero small{
+  color:#f1c85a!important;
+}
+
+/* ALIN v4.1.5 prepublish 1f — modify the original section header; no extra white/blue bar. */
+.alin-existing-section-header{
+  position:relative;
+  overflow:hidden;
+  border:0!important;
+  border-radius:22px!important;
+  padding:22px 26px!important;
+  background:linear-gradient(135deg,#0a2b57 0%,#114b84 100%)!important;
+  color:#fff!important;
+  box-shadow:0 18px 40px rgba(7,42,78,.18)!important;
+}
+.alin-existing-section-header::before,
+.alin-existing-section-header::after{
+  content:'';
+  position:absolute;
+  border-radius:50%;
+  pointer-events:none;
+}
+.alin-existing-section-header::before{
+  width:220px;height:220px;left:-95px;bottom:-125px;
+  border:1px solid rgba(255,255,255,.16);
+}
+.alin-existing-section-header::after{
+  width:160px;height:160px;left:18px;top:-95px;
+  background:radial-gradient(circle,rgba(255,255,255,.10),transparent 68%);
+}
+.alin-existing-section-header > *{position:relative;z-index:1}
+.alin-existing-section-header h1,
+.alin-existing-section-header h2,
+.alin-existing-section-header h3,
+.alin-existing-section-header strong{color:#fff!important}
+.alin-existing-section-header p{color:rgba(255,255,255,.94)!important}
+.alin-existing-section-header small,
+.alin-existing-section-header [class*="eyebrow"]{color:#f1c85a!important}
+.alin-existing-section-header button{position:relative;z-index:2}
+.alin-section-titlebar{display:none!important}
+#adminPage .admin-tabs button.alin-section-tab-active,
+#teacherPage .teacher-tabs button.alin-section-tab-active,
+#libraryPage .library-v116-tabs button.alin-section-tab-active,
+#courierPage .courier-v161-tabs button.alin-section-tab-active{
+  background:revert-layer!important;
+  color:inherit!important;
+  border-color:inherit!important;
+  box-shadow:inherit!important;
+}
+.teacher-statement-fallback{display:grid;gap:14px;min-width:0}
+.teacher-statement-fallback-head h2{margin:0;color:#0b3159}
+.teacher-statement-fallback-head p{margin:5px 0 0;color:#718096}
+@media(max-width:700px){
+  .alin-existing-section-header{border-radius:18px!important;padding:17px 16px!important}
+  .alin-existing-section-header h1,.alin-existing-section-header h2{font-size:28px!important}
+  .alin-existing-section-header p{font-size:14px!important;line-height:1.65!important}
+}
+@media(min-width:701px) and (max-width:1180px){
+  .alin-existing-section-header{border-radius:20px!important;padding:20px 22px!important}
+  .alin-existing-section-header h1,.alin-existing-section-header h2{font-size:34px!important}
+}
+
+/* ALIN v4.1.6 prepublish 1i — force white header titles for library and receipts. */
+#libraryPage .alin-existing-section-header,
+#courierPage .alin-existing-section-header,
+#libraryPage > .library-v116-header,
+#courierPage > .courier-v161-hero,
+.alin415r-heading{color:#fff!important}
+#libraryPage .alin-existing-section-header h1,
+#libraryPage .alin-existing-section-header h2,
+#libraryPage .alin-existing-section-header h3,
+#libraryPage .alin-existing-section-header strong,
+#courierPage .alin-existing-section-header h1,
+#courierPage .alin-existing-section-header h2,
+#courierPage .alin-existing-section-header h3,
+#courierPage .alin-existing-section-header strong,
+#libraryPage > .library-v116-header h1,
+#libraryPage > .library-v116-header h2,
+#libraryPage > .library-v116-header h3,
+#libraryPage > .library-v116-header strong,
+#courierPage > .courier-v161-hero h1,
+#courierPage > .courier-v161-hero h2,
+#courierPage > .courier-v161-hero h3,
+#courierPage > .courier-v161-hero strong,
+.alin415r-heading h1,
+.alin415r-heading h2,
+.alin415r-heading h3,
+.alin415r-heading strong{color:#fff!important}
+#libraryPage .alin-existing-section-header p,
+#courierPage .alin-existing-section-header p,
+#libraryPage > .library-v116-header p,
+#courierPage > .courier-v161-hero p,
+.alin415r-heading p{color:rgba(255,255,255,.95)!important}
+#libraryPage .alin-existing-section-header small,
+#courierPage .alin-existing-section-header small,
+#libraryPage > .library-v116-header small,
+#courierPage > .courier-v161-hero small,
+.alin415r-heading small{color:#f1c85a!important}
+
+/* ALIN v4.1.6 prepublish 1o — new order bell toast for admin, library and courier. */
+.alin-order-bell-toast{
+  position:fixed;z-index:2147483200;inset-inline-start:20px;top:20px;
+  display:grid;grid-template-columns:48px minmax(0,1fr) 34px;align-items:center;gap:12px;
+  width:min(430px,calc(100vw - 28px));padding:14px 14px 14px 16px;
+  border:1px solid rgba(241,200,90,.72);border-radius:18px;
+  background:linear-gradient(135deg,#082e56,#0b5f98);color:#fff;
+  box-shadow:0 22px 60px rgba(4,30,58,.32);direction:rtl;
+  opacity:0;transform:translateY(-16px) scale(.98);pointer-events:none;
+  transition:opacity .2s ease,transform .2s ease;
+}
+.alin-order-bell-toast.show{opacity:1;transform:translateY(0) scale(1);pointer-events:auto}
+.alin-order-bell-icon{display:grid;place-items:center;width:48px;height:48px;border-radius:15px;background:#fff4cf;color:#9d6c00;font-size:25px;animation:alinBellShake .8s ease-in-out 2}
+.alin-order-bell-toast strong{display:block;font-size:17px;color:#fff!important}
+.alin-order-bell-toast p{margin:4px 0 0;color:rgba(255,255,255,.94)!important;font-size:13px;line-height:1.65}
+.alin-order-bell-toast button{display:grid!important;place-items:center;width:34px!important;height:34px!important;min-width:34px!important;padding:0!important;border:1px solid rgba(255,255,255,.36)!important;border-radius:11px!important;background:rgba(255,255,255,.12)!important;color:#fff!important;font-size:22px!important;box-shadow:none!important}
+@keyframes alinBellShake{0%,100%{transform:rotate(0)}20%{transform:rotate(13deg)}40%{transform:rotate(-11deg)}60%{transform:rotate(8deg)}80%{transform:rotate(-5deg)}}
+@media(max-width:700px){.alin-order-bell-toast{inset-inline-start:14px;top:12px;width:calc(100vw - 28px);grid-template-columns:44px minmax(0,1fr) 32px;padding:12px;border-radius:16px}.alin-order-bell-icon{width:44px;height:44px}.alin-order-bell-toast strong{font-size:16px}}

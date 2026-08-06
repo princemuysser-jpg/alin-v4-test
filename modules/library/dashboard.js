@@ -13,11 +13,7 @@
       document.getElementById('app')?.classList.add('hidden');
       document.getElementById('loginForm')?.classList.remove('hidden');
       const user=document.getElementById('loginU');
-      const pass=document.getElementById('loginPass');
-      const msg=document.getElementById('loginMsg');
-      if(user){user.placeholder='اسم دخول المكتبة';setTimeout(()=>user.focus(),0)}
-      if(pass)pass.placeholder='الرمز السري للمكتبة';
-      if(msg){msg.textContent='دخول المكتبة';msg.dataset.role='library'}
+      if(user)setTimeout(()=>user.focus(),0);
     }catch(error){
       console.error('[ALIN library entry]',error);
       alert('تعذر فتح دخول المكتبة. حدّث الصفحة وحاول مرة أخرى.');

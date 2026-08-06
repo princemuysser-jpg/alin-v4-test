@@ -173,11 +173,25 @@
     rows().splice(index,1);cartSave();openCart();
   }
 
+  function checkoutGpsHtml(){
+    return `<section class="v162-gps-box" id="v162GpsBox">
+      <div class="v162-gps-head"><div><b>نقطة موقع التوصيل GPS</b><small>تساعد الإدارة والمندوب على الوصول لنقطة التسليم بدقة.</small></div><span id="v162GpsStatus" class="v162-gps-status">غير محدد</span></div>
+      <div class="v162-gps-actions">
+        <button type="button" class="v162-gps-primary" onclick="alinV162UseCurrentLocation()"><span aria-hidden="true">⌖</span> استخدام موقعي الحالي</button>
+        <button type="button" id="v162OpenMapBtn" class="secondary" onclick="alinV162OpenSelectedMap()" disabled>فتح الموقع على الخريطة</button>
+        <button type="button" id="v162ClearGpsBtn" class="secondary" onclick="alinV162ClearGps()" hidden>مسح الموقع</button>
+      </div>
+      <div id="v162GpsDetails" class="v162-gps-details" hidden></div>
+      <input type="hidden" id="deliveryLatitude"><input type="hidden" id="deliveryLongitude"><input type="hidden" id="deliveryLocationUrl"><input type="hidden" id="deliveryLocationAccuracy">
+      <p class="v162-gps-note">حدد موقع التوصيل أو اكتب أقرب نقطة دالة، وبعد تأكيد الطلب تتولى الإدارة تعيين المندوب.</p>
+    </section>`;
+  }
+
   function fulfillmentHtml(){
     if(hasProducts()){
-      return `<section class="alin-fulfillment"><h4>طريقة الاستلام والدفع</h4><div class="alin-delivery-options"><label class="selected"><input type="radio" name="fulfillment" value="home_delivery" checked><span><b>توصيل للبيت</b><small>القرطاسية والهدايا تُسلّم عن طريق المندوب</small></span></label></div><div id="deliveryFields" class="alin-delivery-fields"><div class="form-grid"><select id="deliveryArea" required>${deliveryAreaOptions()}</select><input id="deliveryLandmark" placeholder="أقرب نقطة دالة" required><select id="courierSelect"><option value="">تحديد المندوب من الإدارة</option>${courierOptions()}</select></div></div></section>`;
+      return `<section class="alin-fulfillment"><h4>طريقة الاستلام والدفع</h4><div class="alin-delivery-options"><label class="selected"><input type="radio" name="fulfillment" value="home_delivery" checked><span><b>توصيل للبيت</b><small>القرطاسية والهدايا تُسلّم عن طريق المندوب</small></span></label></div><div id="deliveryFields" class="alin-delivery-fields"><div class="form-grid"><select id="deliveryArea" required>${deliveryAreaOptions()}</select><input id="deliveryLandmark" placeholder="أقرب نقطة دالة" required></div>${checkoutGpsHtml()}</div></section>`;
     }
-    return `<section class="alin-fulfillment"><h4>طريقة الاستلام والدفع</h4><div class="alin-delivery-options"><label class="selected"><input type="radio" name="fulfillment" value="pickup" checked onchange="toggleDeliveryFields()"><span><b>استلام من المكتبة</b><small>الدفع عند الاستلام</small></span></label><label><input type="radio" name="fulfillment" value="home_delivery" onchange="toggleDeliveryFields()"><span><b>توصيل للبيت</b><small>الدفع للمندوب</small></span></label></div><div id="pickupFields" class="alin-pickup-fields"><select id="libSelect" onchange="showLibInfo()"><option value="">اختر مكتبة الاستلام</option>${libraryOptions()}</select><div id="libInfo"></div></div><div id="deliveryFields" class="alin-delivery-fields hidden"><div class="form-grid"><select id="deliveryArea" required>${deliveryAreaOptions()}</select><input id="deliveryLandmark" placeholder="أقرب نقطة دالة" required><select id="courierSelect"><option value="">تحديد المندوب من الإدارة</option>${courierOptions()}</select></div></div></section>`;
+    return `<section class="alin-fulfillment"><h4>طريقة الاستلام والدفع</h4><div class="alin-delivery-options"><label class="selected"><input type="radio" name="fulfillment" value="pickup" checked onchange="toggleDeliveryFields()"><span><b>استلام من المكتبة</b><small>الدفع عند الاستلام</small></span></label><label><input type="radio" name="fulfillment" value="home_delivery" onchange="toggleDeliveryFields()"><span><b>توصيل للبيت</b><small>الدفع للمندوب</small></span></label></div><div id="pickupFields" class="alin-pickup-fields"><select id="libSelect" onchange="showLibInfo()"><option value="">اختر مكتبة الاستلام</option>${libraryOptions()}</select><div id="libInfo"></div></div><div id="deliveryFields" class="alin-delivery-fields hidden"><div class="form-grid"><select id="deliveryArea" required>${deliveryAreaOptions()}</select><input id="deliveryLandmark" placeholder="أقرب نقطة دالة" required></div>${checkoutGpsHtml()}</div></section>`;
   }
 
   function ensureCartLibrarySummary(){

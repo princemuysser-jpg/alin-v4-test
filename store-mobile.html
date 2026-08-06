@@ -10,7 +10,7 @@
 <script>(function(){try{var mode=localStorage.getItem('alin_theme_v234')==='dark'?'dark':'light';document.documentElement.dataset.alinTheme=mode;document.documentElement.dataset.alinThemeMode=mode}catch(_){document.documentElement.dataset.alinTheme='light';document.documentElement.dataset.alinThemeMode='light'}})();</script>
 <script id="alinDeviceClassBootstrap">(function(){function apply(){try{var sw=Number(screen&&screen.width)||innerWidth||0,sh=Number(screen&&screen.height)||innerHeight||0,vw=Number(innerWidth)||sw,vh=Number(innerHeight)||sh,minEdge=Math.min(sw,sh,vw,vh),maxEdge=Math.max(sw,sh,vw,vh),touch=(navigator.maxTouchPoints||0)>0,tablet=touch&&minEdge>=540&&maxEdge>=800;document.documentElement.dataset.alinDevice=tablet?'tablet':'mobile'}catch(_){document.documentElement.dataset.alinDevice='mobile'}}apply();addEventListener('resize',apply,{passive:true});addEventListener('orientationchange',apply,{passive:true})})();</script>
 <meta content="width=device-width,initial-scale=1" name="viewport"/>
-<title>منصة آلين v4.1.5 - موبايل وتابلت</title>
+<title>منصة آلين v4.1.6 - موبايل وتابلت</title>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
 <meta content="#f8f3e8" name="theme-color"/>
@@ -20,17 +20,17 @@
 <link href="./manifest-mobile.webmanifest" rel="manifest"/>
 <link href="assets/icons/icon-192.png" rel="icon" sizes="192x192" type="image/png"/>
 <link href="assets/icons/icon-192.png" rel="apple-touch-icon"/>
-<link href="./dist/css/mobile.bundle.css?v=4.1.5-stable-checkout-library-name2" rel="stylesheet"/>
-<link href="./styles/alin-tokens.css?v=4.1.5-stable-checkout-library-name2" rel="stylesheet"/>
-<link href="./styles/alin-shared.css?v=4.1.5-stable-checkout-library-name2" rel="stylesheet"/>
-<link href="./styles/alin-branding.css?v=4.1.5-stable-checkout-library-name2" rel="stylesheet"/>
-<link href="./styles/alin-i18n.css?v=4.1.5-stable-checkout-library-name2" rel="stylesheet"/>
-<link href="./styles/alin-mobile.css?v=4.1.5-stable-checkout-library-name2" rel="stylesheet"/>
-<link href="./store/mobile-navigation.css?v=4.1.5-stable-checkout-library-name2" rel="stylesheet"/>
-<link rel="preload" href="./alin-app-mobile.v4.1.5.js?v=4.1.5-stable-checkout-library-name2" as="script">
+<link href="./dist/css/mobile.bundle.css?v=4.1.6-prepublish-1o" rel="stylesheet"/>
+<link href="./styles/alin-tokens.css?v=4.1.6-prepublish-1o" rel="stylesheet"/>
+<link href="./styles/alin-shared.css?v=4.1.6-prepublish-1o" rel="stylesheet"/>
+<link href="./styles/alin-branding.css?v=4.1.6-prepublish-1o" rel="stylesheet"/>
+<link href="./styles/alin-i18n.css?v=4.1.6-prepublish-1o" rel="stylesheet"/>
+<link href="./styles/alin-mobile.css?v=4.1.6-prepublish-1o" rel="stylesheet"/>
+<link href="./store/mobile-navigation.css?v=4.1.6-prepublish-1o" rel="stylesheet"/>
+<link rel="preload" href="./alin-app-mobile.v4.1.5.js?v=4.1.6-prepublish-1o" as="script">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7" defer onerror="window.__ALIN_CDN_ERROR__=true;console.error('تعذر تحميل Supabase')"></script>
-<script src="./alin-config.js?v=4.1.5-stable-checkout-library-name2"></script>
-<script src="./dist/alin-core.v4.js?v=4.1.5-stable-checkout-library-name2" defer></script>
+<script src="./alin-config.js?v=4.1.6-prepublish-1o"></script>
+<script src="./dist/alin-core.v4.js?v=4.1.6-prepublish-1o" defer></script>
 
 
 
@@ -75,7 +75,7 @@
 
 
 
-  <link rel="stylesheet" href="./store/banners.css?v=4.1.5-stable-checkout-library-name2">
+  <link rel="stylesheet" href="./store/banners.css?v=4.1.6-prepublish-1o">
 <style id="alinAuthBootStyle">html[data-alin-auth-boot="1"] body>*{visibility:hidden!important}html[data-alin-auth-boot="1"] body::before{content:"جارٍ فتح منصة آلين...";visibility:visible;position:fixed;inset:0;display:grid;place-items:center;background:#f7f9fc;color:#102342;font:800 18px system-ui;z-index:2147483647}</style>
 <script>setTimeout(()=>document.documentElement.removeAttribute('data-alin-auth-boot'),3500)</script>
 
@@ -518,6 +518,9 @@ html[data-alin-device="tablet"] body.store-mobile #alinTrackingSheet .alin-track
   html[data-alin-device="tablet"] body.store-mobile .library-v116-tabs,
   html[data-alin-device="tablet"] body.store-mobile .courier-v161-tabs{grid-template-columns:repeat(3,minmax(0,1fr))!important}
 }
+
+.login-actions button.active-login-role{outline:3px solid rgba(20,109,180,.24);box-shadow:0 0 0 2px rgba(255,255,255,.85) inset;transform:translateY(-1px)}
+#loginMsg[data-role]{min-height:24px;margin-top:10px;font-weight:800;color:#0b3158;text-align:center}
 </style>
 </head>
 <body class="store-mobile">
@@ -575,7 +578,6 @@ html[data-alin-device="tablet"] body.store-mobile #alinTrackingSheet .alin-track
 <div id="bannerBox" class="alin-legacy-banner-sink" hidden aria-hidden="true"></div>
 <section aria-live="polite" class="v99-rail-root" id="v99DailyDeals"></section>
 <div class="v99-curated-rails">
-<section class="v99-rail-root" id="v99BestSellers"></section>
 <section aria-hidden="true" class="v99-rail-root" hidden="" id="v99TeacherRail"></section>
 <section class="v99-rail-root" id="v99Bundles"></section>
 </div>
@@ -632,11 +634,11 @@ html[data-alin-device="tablet"] body.store-mobile #alinTrackingSheet .alin-track
 </section>
 <section class="page hidden courier-v161-page" id="courierPage">
 <header class="courier-v161-hero"><div><small>صفحة المندوب</small><h1 id="courierV161Name">المندوب</h1><p>مناطق العمل: <span id="courierV161Areas">—</span></p></div><span>منصة آلين للتوصيل</span></header>
-<nav class="courier-v161-tabs"><button class="active" data-courier-tab="home" onclick="renderCourierDashboard('home')">الرئيسية</button><button data-courier-tab="current" onclick="renderCourierDashboard('current')">طلبات التوصيل</button><button data-courier-tab="completed" onclick="renderCourierDashboard('completed')">المكتملة</button><button data-courier-tab="finance" onclick="renderCourierDashboard('finance')">الحسابات</button><button id="courierReceiptsTab" data-alin415-receipts-role="courier" type="button">الوصولات</button><button data-courier-tab="notifications" onclick="renderCourierDashboard('notifications')">الإشعارات</button><button data-courier-tab="profile" onclick="renderCourierDashboard('profile')">حسابي</button></nav>
+<nav class="courier-v161-tabs"><button class="active" data-courier-tab="home" onclick="renderCourierDashboard('home')">الرئيسية</button><button data-courier-tab="current" onclick="renderCourierDashboard('current')">طلبات التوصيل</button><button data-courier-tab="completed" onclick="renderCourierDashboard('completed')">المكتملة</button><button data-courier-tab="finance" onclick="renderCourierDashboard('finance')">الحسابات</button><button id="courierReceiptsTab" data-courier-tab="receipts" data-alin415-receipts-role="courier" type="button">الوصولات</button><button data-courier-tab="notifications" onclick="renderCourierDashboard('notifications')">الإشعارات</button><button data-courier-tab="profile" onclick="renderCourierDashboard('profile')">حسابي</button></nav>
 <main id="courierV161Content"></main>
 </section>
 <section class="page hidden" id="adminPage">
-<div class="admin-heading"><div><h2>لوحة إدارة آلين</h2><p>إدارة المنصة من مكان واحد</p></div><span class="version-badge">v4.1.5</span></div>
+<div class="admin-heading"><div><h2>لوحة إدارة آلين</h2><p>إدارة المنصة من مكان واحد</p></div><span class="version-badge">v4.1.6</span></div>
 <div class="stats" id="adminStats"></div>
 <div class="admin-tabs">
 <button onclick="adminTab('dashboard')">الرئيسية</button>
@@ -658,7 +660,6 @@ html[data-alin-device="tablet"] body.store-mobile #alinTrackingSheet .alin-track
 <button onclick="adminTab('audit')">السجل</button>
 <button onclick="adminTab('brandIdentity')">الهوية البصرية</button>
 <button onclick="adminTab('backup')">النسخ الاحتياطي</button>
-<button onclick="adminTab('systemHealth')">صحة النظام</button>
 <button onclick="adminTab('settings')">الإعدادات</button>
 </div>
 <div class="panel" id="adminContent"></div>
@@ -734,11 +735,12 @@ html[data-alin-device="tablet"] body.store-mobile #alinTrackingSheet .alin-track
   
 
 
-<script src="./core/pwa-register.js?v=4.1.5-stable-checkout-library-name2" defer></script>
-<script src="./core/boot-recovery.js?v=4.1.5-stable-checkout-library-name2" defer></script>
-<script src="./modules/core/navigation.js?v=4.1.5-stable-checkout-library-name2" defer></script>
-<script src="./alin-app-mobile.v4.1.5.js?v=4.1.5-stable-checkout-library-name2" defer onload="alinAppBundleLoaded()" onerror="alinAppBundleFailed()"></script>
-<script src="./modules/core/account-admin-service.js?v=4.1.5-stable-checkout-library-name2" defer></script>
-<script src="./modules/teacher/admin-word-download.js?v=4.1.5-stable-checkout-library-name2" defer></script>
+<script src="./core/pwa-register.js?v=4.1.6-prepublish-1o" defer></script>
+<script src="./core/boot-recovery.js?v=4.1.6-prepublish-1o" defer></script>
+<script src="./modules/core/navigation.js?v=4.1.6-prepublish-1o" defer></script>
+<script src="./alin-app-mobile.v4.1.5.js?v=4.1.6-prepublish-1o" defer onload="alinAppBundleLoaded()" onerror="alinAppBundleFailed()"></script>
+<script src="./modules/core/account-admin-service.js?v=4.1.6-prepublish-1o" defer></script>
+<script src="./modules/core/order-bell.js?v=4.1.6-prepublish-1o" defer></script>
+<script src="./modules/teacher/admin-word-download.js?v=4.1.6-prepublish-1o" defer></script>
 </body>
 </html>

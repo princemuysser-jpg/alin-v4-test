@@ -253,9 +253,34 @@ window.AlinTeacherModules.unpublishTeacherBooklet=unpublishTeacherBooklet;
 
   function printTeacherStatement(){
     const d=data(),summary=teacherSummary(d.id);
-    if(!window.checkoutBox||!window.checkoutModal)return false;
-    window.checkoutBox.innerHTML=`<div class="receipt"><h2>كشف حساب المدرس</h2><p>${escv(d.teacher.name||window.current?.name||'المدرس')}</p><table><thead><tr><th>الطلب</th><th>التاريخ</th><th>الربح</th></tr></thead><tbody>${summary.rows.map(row=>`<tr><td>${escv(row.order_number||row.order_id)}</td><td>${dateOnly(row.settled_at||row.created_at)}</td><td>${moneyv(row.teacher||row.teacher_amount)} د.ع</td></tr>`).join('')||'<tr><td colspan="3">لا توجد حركات</td></tr>'}</tbody></table><h3>الإجمالي: ${moneyv(summary.earned)} د.ع</h3><h3>المدفوع: ${moneyv(summary.paid)} د.ع</h3><h3>المتبقي: ${moneyv(summary.remaining)} د.ع</h3></div><div class="row-actions no-print"><button onclick="window.print()">طباعة</button><button class="secondary" onclick="closeCheckout()">إغلاق</button></div>`;
-    window.checkoutModal.classList.remove('hidden');return true;
+    const teacherName=escv(d.teacher?.name||window.current?.name||'المدرس');
+    const generatedAt=new Date().toLocaleString('ar-IQ');
+    const rows=summary.rows.slice().sort((a,b)=>String(b.settled_at||b.created_at||'').localeCompare(String(a.settled_at||a.created_at||'')));
+    const orderTitle=row=>{
+      const order=(d.orders||[]).find(item=>same(item.id,row.order_id)||same(item.order_number,row.order_number||row.order_id));
+      return escv(order?.title||order?.item_title||order?.booklet_title||'-');
+    };
+    const rowsHtml=rows.map((row,index)=>`<tr><td>${index+1}</td><td dir="ltr">${escv(row.order_number||row.order_id||'-')}</td><td>${orderTitle(row)}</td><td>${dateOnly(row.settled_at||row.created_at)}</td><td>${moneyv(row.teacher||row.teacher_amount)} د.ع</td></tr>`).join('')||'<tr><td colspan="5" class="empty">لا توجد حركات مالية مسجلة.</td></tr>';
+    const payoutsHtml=summary.payouts.slice().sort((a,b)=>String(b.created_at||'').localeCompare(String(a.created_at||''))).map((row,index)=>`<tr><td>${index+1}</td><td>${dateOnly(row.created_at)}</td><td>${escv(row.note||'تسوية أرباح')}</td><td>${moneyv(row.amount)} د.ع</td><td>${String(row.status||'').toLowerCase()==='paid'?'مدفوعة':'قيد الانتظار'}</td></tr>`).join('')||'<tr><td colspan="5" class="empty">لا توجد تسويات سابقة.</td></tr>';
+    const documentHtml=`<!doctype html><html dir="rtl" lang="ar"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>كشف حساب المدرس</title><style>
+      @page{size:A4;margin:11mm}*{box-sizing:border-box}html,body{margin:0;padding:0;background:#fff;color:#102b4e;font-family:Tahoma,"Segoe UI",Arial,sans-serif}.sheet{width:100%;max-width:190mm;margin:0 auto;border:1px solid #dce5ef;background:#fff}.head{display:flex;justify-content:space-between;gap:18px;align-items:center;padding:20px 22px;border-top:9px solid #0b3f70;border-bottom:2px solid #d8b35e}.brand{display:flex;align-items:center;gap:12px}.mark{display:grid;place-items:center;width:54px;height:54px;border-radius:15px;background:#0b3f70;color:#f0c86e;font-size:25px;font-weight:900}.head h1{margin:0;font-size:24px}.head p{margin:5px 0 0;color:#69798c}.meta{text-align:left}.meta b,.meta small{display:block}.meta small{color:#9b741d}.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:16px 22px}.summary div{padding:13px;border:1px solid #e0e7ef;border-radius:10px;background:#f8fbfe}.summary small,.summary b{display:block}.summary small{color:#68798d}.summary b{margin-top:6px;font-size:19px}.summary .balance{background:#fff7e6;border-color:#d8b35e}.section{padding:0 22px 16px}.section h2{margin:5px 0 10px;font-size:17px}.table-wrap{overflow:visible}table{width:100%;border-collapse:collapse;font-size:12px}th,td{border:1px solid #dfe6ee;padding:8px;text-align:right;vertical-align:top}th{background:#edf3f8;color:#0b3f70}.empty{text-align:center;color:#78879a;padding:18px}.footer{display:flex;justify-content:space-between;gap:15px;padding:13px 22px;background:#0b3f70;color:#fff;font-size:11px}.footer span:last-child{text-align:left}@media(max-width:700px){.head{align-items:flex-start;flex-direction:column}.meta{text-align:right}.summary{grid-template-columns:1fr}.table-wrap{overflow:auto}.sheet{border:0}}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}.sheet{border:0}.head{break-inside:avoid}.summary{break-inside:avoid}thead{display:table-header-group}tr{break-inside:avoid;page-break-inside:avoid}.footer{break-inside:avoid}}
+    </style></head><body><main class="sheet"><header class="head"><div class="brand"><span class="mark">آ</span><div><h1>كشف حساب المدرس</h1><p>${teacherName}</p></div></div><div class="meta"><small>تاريخ الإصدار</small><b>${escv(generatedAt)}</b></div></header><section class="summary"><div><small>إجمالي الأرباح</small><b>${moneyv(summary.earned)} د.ع</b></div><div><small>المبلغ المدفوع</small><b>${moneyv(summary.paid)} د.ع</b></div><div class="balance"><small>الرصيد الحالي</small><b>${moneyv(summary.remaining)} د.ع</b></div></section><section class="section"><h2>تفاصيل الأرباح</h2><div class="table-wrap"><table><thead><tr><th>#</th><th>رقم الطلب</th><th>الملزمة</th><th>التاريخ</th><th>ربح المدرس</th></tr></thead><tbody>${rowsHtml}</tbody></table></div></section><section class="section"><h2>التسويات السابقة</h2><div class="table-wrap"><table><thead><tr><th>#</th><th>التاريخ</th><th>البيان</th><th>المبلغ</th><th>الحالة</th></tr></thead><tbody>${payoutsHtml}</tbody></table></div></section><footer class="footer"><span>منصة آلين</span><span>كشف مالي مُنشأ من بيانات الحساب المسجلة في المنصة</span></footer></main></body></html>`;
+
+    const popup=window.open('','_blank','width=980,height=760');
+    if(popup){
+      try{popup.opener=null}catch(_){ }
+      popup.document.open();popup.document.write(documentHtml);popup.document.close();
+      const doPrint=()=>setTimeout(()=>{try{popup.focus();popup.print()}catch(error){console.warn('[ALIN teacher statement] print',error)}},260);
+      if(popup.document.readyState==='complete')doPrint();else popup.addEventListener('load',doPrint,{once:true});
+      return true;
+    }
+
+    if(window.checkoutBox&&window.checkoutModal){
+      window.checkoutBox.innerHTML=`<section class="teacher-statement-fallback"><div class="teacher-statement-fallback-head"><div><h2>كشف حساب المدرس</h2><p>تعذّر فتح نافذة الطباعة الجديدة؛ استخدم الزر أدناه.</p></div></div><iframe id="teacherStatementFrame" title="معاينة كشف حساب المدرس" style="width:100%;height:min(70vh,760px);border:1px solid #dce5ef;border-radius:14px;background:#fff"></iframe><div class="row-actions no-print"><button type="button" onclick="document.getElementById('teacherStatementFrame')?.contentWindow?.print()">طباعة الكشف</button><button type="button" class="secondary" onclick="closeCheckout()">إغلاق</button></div></section>`;
+      const frame=document.getElementById('teacherStatementFrame');if(frame)frame.srcdoc=documentHtml;
+      window.checkoutModal.classList.remove('hidden');
+    }
+    return false;
   }
 
   function teacherV154ExportFinance(){
@@ -2072,7 +2097,7 @@ window.AlinTeacherModules.unpublishTeacherBooklet=unpublishTeacherBooklet;
   function renderEditor(x){
     const host=document.getElementById('v132AccountEditorHost');if(!host)return;
     const os=ordersFor(x),ss=settlementsFor(x),perms=permsFor(x),role=x.role||'teacher',linked=Boolean(x.auth_user_id);
-    host.innerHTML=`<section class="v132-account-editor"><header class="v132-editor-head"><div><h3>تعديل حساب ${escx(x.name||'')}</h3><p>${linked?'الحساب مربوط بخدمة الدخول ويمكن تحديث بياناته وكلمة مروره.':'الحساب قديم وغير مربوط؛ تعيين كلمة مرور جديدة يربطه تلقائياً.'}</p></div><span class="v131-status ${linked?'active':'pending'}">${linked?'مربوط':'يحتاج ربط'}</span><button class="v132-editor-close" onclick="v132CloseAccountEditor()">إغلاق</button></header><div class="v132-account-form"><label>نوع الحساب<select id="v132Role" onchange="v132SyncRoleFields()"><option value="teacher" ${role==='teacher'?'selected':''}>مدرس</option><option value="library" ${role==='library'?'selected':''}>مكتبة</option><option value="courier" ${role==='courier'?'selected':''}>مندوب</option></select></label><label class="span-2">الاسم الكامل<input id="v132Name" value="${escx(x.name||'')}"></label><label>الحالة<select id="v132Status"><option value="active" ${String(x.status||'active')==='active'?'selected':''}>فعال</option><option value="inactive" ${String(x.status||'')==='inactive'?'selected':''}>موقوف</option><option value="pending" ${String(x.status||'')==='pending'?'selected':''}>قيد المراجعة</option></select></label><label>اسم الدخول<input id="v132Username" value="${escx(x.username||'')}"></label><label>رقم الهاتف<input id="v132Phone" value="${escx(x.phone||x.mobile||'')}"></label><label id="v132AreaLabel">المنطقة<input id="v132Area" value="${escx(x.area||'')}"></label><label id="v132LandmarkLabel">أقرب نقطة دالة<input id="v132Landmark" value="${escx(x.landmark||'')}"></label>${areaPicker(x)}<label class="span-4">ملاحظات الحساب<textarea id="v132Notes">${escx(x.notes||'')}</textarea></label><section class="v132-password-box"><h4>${linked?'إعادة تعيين كلمة المرور':'ربط الحساب وتعيين كلمة المرور'}</h4><div class="v132-password-row"><input id="v132NewPassword" type="password" placeholder="اكتب كلمة مرور من 12 حرفاً تتضمن حروفاً وأرقاماً"><button onclick="v132ResetPassword()">${linked?'تغيير كلمة المرور':'ربط وحفظ'}</button></div></section><section class="v132-permissions"><h4>الصلاحيات</h4><div class="v132-permission-grid">${Object.entries(permissionLabels).map(([k,v])=>`<label><input type="checkbox" data-v132-permission="${k}" ${perms.includes(k)?'checked':''} ${canEditPermissions()?'':'disabled'}>${v}</label>`).join('')}</div></section><section class="v132-link-summary"><article><small>الطلبات المرتبطة</small><b>${os.length}</b></article><article><small>التسويات المرتبطة</small><b>${ss.length}</b></article><article><small>سجل النشاط</small><b>${history(x.id).length}</b></article></section><div class="v132-form-actions"><button class="secondary" onclick="v132OpenActivity('${escx(x.id)}')">سجل النشاط</button><button class="v132-save" onclick="v132SaveAccount()">حفظ التعديلات</button></div></div></section>`;
+    host.innerHTML=`<section class="v132-account-editor"><header class="v132-editor-head"><div><h3>تعديل حساب ${escx(x.name||'')}</h3><p>${linked?'الحساب مربوط بخدمة الدخول ويمكن تحديث بياناته وكلمة مروره.':'الحساب قديم وغير مربوط؛ تعيين كلمة مرور جديدة يربطه تلقائياً.'}</p></div><span class="v131-status ${linked?'active':'pending'}">${linked?'مربوط':'يحتاج ربط'}</span><button type="button" class="v132-editor-close" onclick="v132CloseAccountEditor()">إغلاق</button></header><div class="v132-account-form"><label>نوع الحساب<select id="v132Role" onchange="v132SyncRoleFields()"><option value="teacher" ${role==='teacher'?'selected':''}>مدرس</option><option value="library" ${role==='library'?'selected':''}>مكتبة</option><option value="courier" ${role==='courier'?'selected':''}>مندوب</option></select></label><label class="span-2">الاسم الكامل<input id="v132Name" value="${escx(x.name||'')}"></label><label>الحالة<select id="v132Status"><option value="active" ${String(x.status||'active')==='active'?'selected':''}>فعال</option><option value="inactive" ${String(x.status||'')==='inactive'?'selected':''}>موقوف</option><option value="pending" ${String(x.status||'')==='pending'?'selected':''}>قيد المراجعة</option></select></label><label>اسم الدخول<input id="v132Username" value="${escx(x.username||'')}"></label><label>رقم الهاتف<input id="v132Phone" value="${escx(x.phone||x.mobile||'')}"></label><label id="v132AreaLabel">المنطقة<input id="v132Area" value="${escx(x.area||'')}"></label><label id="v132LandmarkLabel">أقرب نقطة دالة<input id="v132Landmark" value="${escx(x.landmark||'')}"></label>${areaPicker(x)}<label class="span-4">ملاحظات الحساب<textarea id="v132Notes">${escx(x.notes||'')}</textarea></label><section class="v132-password-box"><h4>${linked?'إعادة تعيين كلمة المرور':'ربط الحساب وتعيين كلمة المرور'}</h4><div class="v132-password-row"><input id="v132NewPassword" type="password" placeholder="اكتب كلمة مرور من 12 حرفاً تتضمن حروفاً وأرقاماً"><button onclick="v132ResetPassword()">${linked?'تغيير كلمة المرور':'ربط وحفظ'}</button></div></section><section class="v132-permissions"><h4>الصلاحيات</h4><div class="v132-permission-grid">${Object.entries(permissionLabels).map(([k,v])=>`<label><input type="checkbox" data-v132-permission="${k}" ${perms.includes(k)?'checked':''} ${canEditPermissions()?'':'disabled'}>${v}</label>`).join('')}</div></section><section class="v132-link-summary"><article><small>الطلبات المرتبطة</small><b>${os.length}</b></article><article><small>التسويات المرتبطة</small><b>${ss.length}</b></article><article><small>سجل النشاط</small><b>${history(x.id).length}</b></article></section><div class="v132-form-actions"><button type="button" class="secondary" onclick="v132OpenActivity('${escx(x.id)}')">سجل النشاط</button><button type="button" class="v132-save" onclick="v132SaveAccount()">حفظ التعديلات</button></div></div></section>`;
     window.v132SyncRoleFields();
     host.scrollIntoView({behavior:'smooth',block:'start'});
   }
@@ -2090,7 +2115,10 @@ window.AlinTeacherModules.unpublishTeacherBooklet=unpublishTeacherBooklet;
   window.v132OpenAccountEditor=id=>{const x=account(id);if(!x)return alert('تعذر العثور على الحساب');editingId=id;renderEditor(x)};
   window.v132CloseAccountEditor=()=>{editingId=null;const h=document.getElementById('v132AccountEditorHost');if(h)h.innerHTML=''};
   window.v132SaveAccount=async()=>{
-    const x=account(editingId);if(!x)return;
+    const x=account(editingId);if(!x)return alert('تعذر العثور على الحساب');
+    const button=document.querySelector('#v132AccountEditorHost .v132-save');
+    if(button?.disabled)return;
+    const originalLabel=button?.textContent||'حفظ التعديلات';
     const role=document.getElementById('v132Role')?.value||x.role;
     const typedPassword=document.getElementById('v132NewPassword')?.value.trim()||'';
     const selectedAreas=[...document.querySelectorAll('#v132CourierAreaPicker input:checked')].map(el=>String(el.value||'').trim()).filter(Boolean);
@@ -2100,23 +2128,38 @@ window.AlinTeacherModules.unpublishTeacherBooklet=unpublishTeacherBooklet;
     if(role==='courier'&&!payload.phone)return alert('أدخل رقم هاتف المندوب');
     if(typedPassword&&!strongPassword(typedPassword))return alert('كلمة المرور يجب أن تكون 12 حرفاً على الأقل وتتضمن حروفاً وأرقاماً');
     try{
+      if(button){button.disabled=true;button.textContent='جارٍ الحفظ...'}
       if(!window.ALINAuth?.updateAccountFromAdmin)throw new Error('خدمة تعديل الحساب الآمن غير جاهزة');
-      await window.ALINAuth.updateAccountFromAdmin(payload);
+      const saved=await window.ALINAuth.updateAccountFromAdmin(payload);
+      if(!saved)throw new Error('لم ترجع خدمة الحسابات نتيجة الحفظ');
+      let permissionWarning='';
       if(canEditPermissions()){
-        const perms=[...document.querySelectorAll('[data-v132-permission]:checked')].map(el=>el.dataset.v132Permission);
-        const client=window.sb||window.AlinCloud?.client?.();if(!client?.rpc)throw new Error('خدمة الصلاحيات غير متاحة');const {error:permError}=await client.rpc('alin_admin_set_account_permissions',{p_account_id:String(x.id),p_permissions:perms});if(permError)throw permError;
+        try{
+          const perms=[...document.querySelectorAll('[data-v132-permission]:checked')].map(el=>el.dataset.v132Permission);
+          const client=window.sb||window.AlinCloud?.client?.();
+          if(client?.rpc){const {error:permError}=await client.rpc('alin_admin_set_account_permissions',{p_account_id:String(x.id),p_permissions:perms});if(permError)throw permError}
+          else permissionWarning='تعذر تحديث الصلاحيات فقط';
+        }catch(permissionError){
+          permissionWarning='تم حفظ بيانات الحساب، لكن تعذر تحديث الصلاحيات';
+          console.warn('[ALIN account permissions]',permissionError);
+        }
       }
-      log(x.id,'تعديل الحساب',role==='courier'?`تم تحديث البيانات ومناطق العمل: ${selectedAreas.join('، ')}`:'تم تحديث البيانات والصلاحيات');
-      if(typeof audit==='function')await audit('account','تعديل آمن لحساب '+x.id);
-      if(typeof load==='function')await load();
+      log(x.id,'تعديل الحساب',role==='courier'?`تم تحديث البيانات ومناطق العمل: ${selectedAreas.join('، ')}`:'تم تحديث بيانات الحساب');
+      try{if(typeof audit==='function')await audit('account','تعديل آمن لحساب '+x.id)}catch(auditError){console.warn('[ALIN account audit]',auditError)}
+      try{if(typeof load==='function')await load()}catch(loadError){console.warn('[ALIN account refresh]',loadError)}
+      editingId=null;
       if(typeof renderAccountsAdmin==='function')renderAccountsAdmin();
-      if(typeof toast==='function')toast(role==='courier'?'تم حفظ حساب المندوب ومناطق عمله':'تم حفظ تعديلات الحساب');
-    }catch(e){alert('تعذر حفظ الحساب: '+e.message)}
+      const saveWarning=String(saved?.warning||'').trim();
+      const warnings=[saveWarning,permissionWarning].filter(Boolean);
+      const message=warnings.length?warnings.join(' — '):(role==='courier'?'تم حفظ حساب المندوب ومناطق عمله':'تم حفظ تعديلات الحساب');
+      if(typeof toast==='function')toast(message);else alert(message);
+    }catch(e){alert('تعذر حفظ الحساب: '+(e?.message||'خطأ غير معروف'))}
+    finally{if(button){button.disabled=false;button.textContent=originalLabel}}
   };
   window.v132ResetPassword=async()=>{const x=account(editingId),pass=document.getElementById('v132NewPassword')?.value.trim();if(!x||!pass)return alert('اكتب كلمة المرور الجديدة');if(!strongPassword(pass))return alert('كلمة المرور يجب أن تكون 12 حرفاً على الأقل وتتضمن حروفاً وأرقاماً');try{if(!window.ALINAuth?.resetPasswordFromAdmin)throw new Error('خدمة تغيير كلمة المرور غير متاحة');await window.ALINAuth.resetPasswordFromAdmin(x.id,pass);log(x.id,x.auth_user_id?'إعادة تعيين كلمة المرور':'ربط الحساب الموجود وتعيين كلمة المرور');if(typeof audit==='function')await audit('account','تحديث كلمة مرور '+x.id);if(typeof load==='function')await load();if(typeof renderAccountsAdmin==='function')renderAccountsAdmin();if(typeof toast==='function')toast('تم تغيير كلمة المرور وربط الحساب بنجاح')}catch(e){alert('تعذر تغيير كلمة المرور: '+e.message)}};
   window.v132ToggleAccount=async(id,status)=>{const x=account(id);if(!x)return;try{if(!window.ALINAuth?.updateAccountFromAdmin)throw new Error('خدمة تحديث الحساب الآمنة غير جاهزة');await window.ALINAuth.updateAccountFromAdmin({account_id:id,status});log(id,status==='active'?'تفعيل الحساب':'إيقاف الحساب');if(typeof audit==='function')await audit('account',(status==='active'?'تفعيل ':'إيقاف ')+id);if(typeof load==='function')await load();if(typeof renderAccountsAdmin==='function')renderAccountsAdmin();if(typeof toast==='function')toast(status==='active'?'تم تفعيل الحساب':'تم إيقاف الحساب')}catch(e){alert('تعذر تحديث الحالة: '+e.message)}};
   window.v132SafeDeleteAccount=async id=>{const x=account(id);if(!x)return;const os=ordersFor(x),ss=settlementsFor(x);const details=os.length||ss.length?`\nسيبقى مرتبطاً بـ ${os.length} طلب و${ss.length} تسوية محفوظة.`:'';if(!confirm(`أرشفة الحساب وإيقاف دخوله؟${details}\nلن تُحذف طلباته أو حساباته القديمة.`))return;try{if(!window.ALINAuth?.deleteAccountFromAdmin)throw new Error('خدمة أرشفة الحساب الآمنة غير جاهزة');await window.ALINAuth.deleteAccountFromAdmin(id);log(id,'أرشفة الحساب');if(typeof audit==='function')await audit('account','أرشفة حساب '+id);if(typeof load==='function')await load();if(typeof renderAccountsAdmin==='function')renderAccountsAdmin();if(typeof toast==='function')toast('تمت أرشفة الحساب وإيقاف دخوله')}catch(e){alert('تعذر أرشفة الحساب: '+e.message)}};
-  window.v132OpenActivity=id=>{const x=account(id);if(!x)return;const rows=history(id);const host=document.getElementById('v132AccountEditorHost');if(!host)return;host.innerHTML=`<section class="v132-account-editor"><header class="v132-editor-head"><div><h3>سجل نشاط ${escx(x.name||'')}</h3><p>آخر التعديلات والإجراءات المسجلة على الحساب.</p></div><button class="v132-editor-close" onclick="v132CloseAccountEditor()">إغلاق</button></header><div class="v132-activity">${rows.map(r=>`<article><b>${escx(r.action)}</b><small>${new Date(r.at).toLocaleString(window.AlinI18n?.locale?.()||'ar-IQ')} — ${escx(r.by||'المدير')}${r.details?' — '+escx(r.details):''}</small></article>`).join('')||'<div class="v132-warning">لا يوجد نشاط مسجل لهذا الحساب بعد.</div>'}</div></section>`;host.scrollIntoView({behavior:'smooth',block:'start'})};
+  window.v132OpenActivity=id=>{const x=account(id);if(!x)return;const rows=history(id);const host=document.getElementById('v132AccountEditorHost');if(!host)return;host.innerHTML=`<section class="v132-account-editor"><header class="v132-editor-head"><div><h3>سجل نشاط ${escx(x.name||'')}</h3><p>آخر التعديلات والإجراءات المسجلة على الحساب.</p></div><button type="button" class="v132-editor-close" onclick="v132CloseAccountEditor()">إغلاق</button></header><div class="v132-activity">${rows.map(r=>`<article><b>${escx(r.action)}</b><small>${new Date(r.at).toLocaleString(window.AlinI18n?.locale?.()||'ar-IQ')} — ${escx(r.by||'المدير')}${r.details?' — '+escx(r.details):''}</small></article>`).join('')||'<div class="v132-warning">لا يوجد نشاط مسجل لهذا الحساب بعد.</div>'}</div></section>`;host.scrollIntoView({behavior:'smooth',block:'start'})};
 })();
 
 ;
@@ -3438,7 +3481,7 @@ window.deleteCoupon = deleteCoupon;
   const {$,$$,arr,escv,moneyv,now,notify,currentAccount,dbx,areasOf,statusOf,statusLabel,resolveCourier,allOrders,myOrders,done,active,today,financials,orderState,friendlyOrderError,mapLink,phoneLink,waLink,fmtDate,transitionOrder,refreshCourierData,resetRefresh}=core;
   let renderSerial=0;
   const pendingOrders=new Set();
-  function ensureTabs(){const nav=$('.courier-v161-tabs');if(!nav)return;const wanted=[['home','الرئيسية'],['current','طلبات التوصيل'],['completed','المكتملة'],['finance','الحسابات'],['notifications','الإشعارات'],['profile','حسابي']];nav.innerHTML=wanted.map(([key,label])=>`<button type="button" data-courier-tab="${key}" onclick="renderCourierDashboard('${key}')">${label}${key==='current'?'<span id="courierCurrentBadge" hidden>0</span>':''}${key==='notifications'?'<span id="courierNotifyBadge" hidden>0</span>':''}</button>`).join('')}
+  function ensureTabs(){const nav=$('.courier-v161-tabs');if(!nav)return;const wanted=[['home','الرئيسية'],['current','طلبات التوصيل'],['completed','المكتملة'],['finance','الحسابات'],['receipts','الوصولات'],['notifications','الإشعارات'],['profile','حسابي']];nav.innerHTML=wanted.map(([key,label])=>key==='receipts'?`<button type="button" id="courierReceiptsTab" data-courier-tab="receipts" data-alin415-receipts-role="courier">${label}</button>`:`<button type="button" data-courier-tab="${key}" onclick="renderCourierDashboard('${key}')">${label}${key==='current'?'<span id="courierCurrentBadge" hidden>0</span>':''}${key==='notifications'?'<span id="courierNotifyBadge" hidden>0</span>':''}</button>`).join('')}
   function notificationsFor(c){return window.AlinNotifications?.visible?.({role:'courier',id:String(c?.id||'')})||arr(dbx().notifications).filter(n=>String(n.courier_id||n.user_id||n.recipient_id||n.target_id||'')===String(c?.id)||['courier','delegate','all'].includes(String(n.target_role||n.role||n.audience||''))).sort((a,b)=>String(b.created_at||'').localeCompare(String(a.created_at||'')))}
   function setHeader(c,tab){const name=$('#courierV161Name'),areas=$('#courierV161Areas');if(name)name.textContent=c?.name||currentAccount()?.name||'المندوب';if(areas)areas.textContent=areasOf(c).join('، ')||'غير محددة';$$('.courier-v161-tabs [data-courier-tab]').forEach(b=>b.classList.toggle('active',b.dataset.courierTab===tab));const cb=$('#courierCurrentBadge'),nb=$('#courierNotifyBadge'),activeCount=myOrders(c).filter(active).length,unread=window.AlinNotifications?.unreadCount?.({role:'courier',id:String(c?.id||'')})??notificationsFor(c).filter(n=>!(n.read_at||n.is_read)).length;if(cb){cb.textContent=activeCount;cb.hidden=!activeCount}if(nb){nb.textContent=unread;nb.hidden=!unread}}
   function summary(c,rows){const f=financials(c);return `<section class="v174-metrics"><article><small>طلبات جديدة</small><strong>${rows.filter(o=>['assigned','new','pending_admin'].includes(String(o.status||''))).length}</strong></article><article><small>قيد التوصيل</small><strong>${rows.filter(o=>['accepted','picked_up','out_for_delivery','processing'].includes(String(o.status||''))).length}</strong></article><article><small>تم التسليم اليوم</small><strong>${rows.filter(o=>done(o)&&today(o)).length}</strong></article><article><small>كل المكتملة</small><strong>${rows.filter(done).length}</strong></article><article><small>أرباح التوصيل</small><strong>${moneyv(f.earnings)} د.ع</strong></article><article class="debt"><small>ذمتك للإدارة</small><strong>${moneyv(f.debt)} د.ع</strong></article></section>`}
@@ -4208,77 +4251,7 @@ window.AlinCourierModules['recordCourierSettlementForOrder']=typeof recordCourie
 
 ;
 
-/* modules/admin/system-health.js */
-// === admin/system-health.js ===
-/* ===== admin/js/admin-system-health-rc2.js ===== */
-(function(){
-  'use strict';
-  const VERSION='RC2';
-  const ERR_KEY='alin_system_errors_rc2';
-  const SUPABASE_URL=window.ALIN_CONFIG?.supabaseUrl||'';
-  const ANON_KEY=window.ALIN_CONFIG?.supabaseAnonKey||'';
-  let lastReport=null,checking=false;
-  const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-  const dbv=()=>window.db||{};
-  const arr=(v)=>Array.isArray(v)?v:[];
-  const readErrors=()=>{try{return JSON.parse(localStorage.getItem(ERR_KEY)||'[]')}catch(_){return[]}};
-  function logError(type,message,page){const a=readErrors();a.unshift({at:new Date().toISOString(),type,message:String(message||''),page:page||location.pathname});localStorage.setItem(ERR_KEY,JSON.stringify(a.slice(0,50)))}
-  window.addEventListener('error',e=>logError('JavaScript',e.message,e.filename||location.pathname));
-  window.addEventListener('unhandledrejection',e=>logError('Promise',e.reason?.message||e.reason,location.pathname));
-  async function timed(name,fn){const t=performance.now();try{const value=await fn();return{name,status:'ok',ms:Math.round(performance.now()-t),value}}catch(e){return{name,status:'bad',ms:Math.round(performance.now()-t),error:e.message||String(e)}}}
-  async function pingDatabase(){const r=await fetch(`${SUPABASE_URL}/rest/v1/accounts?select=id&limit=1`,{headers:{apikey:ANON_KEY,Authorization:`Bearer ${ANON_KEY}`},cache:'no-store'});if(!r.ok){const text=await r.text();if(r.status===401||r.status===403)return {restricted:true,detail:'متصل لكن الصلاحية مقيدة'};throw new Error(text.slice(0,140)||`HTTP ${r.status}`)}return {detail:'الاتصال متاح'}}
-  async function pingStorage(){const r=await fetch(`${SUPABASE_URL}/storage/v1/bucket`,{headers:{apikey:ANON_KEY,Authorization:`Bearer ${ANON_KEY}`},cache:'no-store'});if(!r.ok){if(r.status===401||r.status===403)return {restricted:true,detail:'متصل لكن الصلاحية مقيدة'};throw new Error(`HTTP ${r.status}`)}const x=await r.json();return {detail:`${Array.isArray(x)?x.length:0} حاوية ظاهرة`}}
-  function localStats(){const d=dbv(),accounts=d.accounts||{};return {orders:arr(d.orders).length,booklets:arr(d.booklets).length,products:arr(d.products).length,teachers:arr(accounts.teachers).length,libraries:arr(accounts.libraries).length,couriers:arr(d.couriers).length||arr(accounts.couriers).length,notifications:arr(d.notifications).length,ledger:arr(d.ledger).length}}
-  function backupInfo(){let logs=[];try{logs=JSON.parse(localStorage.getItem('alin_backup_log_v227')||'[]')}catch(_){}return {count:logs.length,last:logs[0]?.created_at||null}}
-  async function runChecks(){if(checking)return lastReport;checking=true;renderLoading();const started=new Date().toISOString();const checks=await Promise.all([
-    timed('database',pingDatabase),timed('storage',pingStorage),timed('internet',async()=>{if(!navigator.onLine)throw new Error('الجهاز غير متصل بالإنترنت');return {detail:'متصل'}}),timed('localData',async()=>({detail:'البيانات المحلية جاهزة'}))
-  ]);const stats=localStats(),backup=backupInfo();const errors=readErrors();lastReport={version:'ALIN RC2',started,finished:new Date().toISOString(),checks,stats,backup,error_count:errors.length,url:location.href,user_agent:navigator.userAgent};checking=false;render();return lastReport}
-  function statusOf(c){if(c.status==='bad')return['bad','غير متصل'];if(c.value?.restricted)return['warn','متصل بصلاحية مقيدة'];return['ok','يعمل']}
-  function card(title,c,detail){const [cls,label]=statusOf(c);return `<article class="admin-health-card ${cls}"><small>${esc(title)}</small><strong><i class="health-dot"></i>${esc(label)}</strong><span>${esc(detail||c.value?.detail||c.error||'')} • ${c.ms||0}ms</span></article>`}
-  function renderLoading(){const root=document.getElementById('adminContent');if(root)root.innerHTML='<section class="admin-health-rc2"><div class="admin-health-empty">جاري فحص صحة النظام...</div></section>'}
-  function render(){const root=document.getElementById('adminContent');if(!root)return;const r=lastReport,checks=Object.fromEntries((r?.checks||[]).map(x=>[x.name,x]));const stats=r?.stats||localStats(),backup=r?.backup||backupInfo(),errs=readErrors();const bad=(r?.checks||[]).filter(x=>x.status==='bad').length,warn=(r?.checks||[]).filter(x=>x.value?.restricted).length;const overall=!r?'warn':bad?'bad':warn?'warn':'ok';const overallText=!r?'لم يتم الفحص بعد':bad?'توجد خدمات تحتاج متابعة':warn?'النظام يعمل مع قيود صلاحيات':'جميع الخدمات الأساسية تعمل';root.dataset.adminModule='systemHealth';root.innerHTML=`<section class="admin-health-rc2"><header class="admin-health-head"><div><h2>صحة النظام</h2><p>مراقبة الاتصال والخدمات والبيانات الأساسية لمنصة آلين.</p></div><span class="admin-health-status ${overall}">${esc(overallText)}</span></header><div class="admin-health-actions"><button type="button" onclick="alinRunSystemHealth()">فحص النظام الآن</button><button type="button" class="secondary" onclick="alinRefreshSystemHealth()">تحديث الحالة</button><button type="button" class="secondary" onclick="alinExportSystemHealth()" ${r?'':'disabled'}>تصدير التقرير</button></div><section class="admin-health-grid">${card('قاعدة البيانات',checks.database||{status:'bad',error:'لم يتم الفحص'},'')}${card('التخزين',checks.storage||{status:'bad',error:'لم يتم الفحص'},'')}${card('اتصال الإنترنت',checks.internet||{status:navigator.onLine?'ok':'bad',value:{detail:navigator.onLine?'متصل':'غير متصل'},ms:0},'')}${card('النسخ الاحتياطي',{status:backup.count?'ok':'warn',value:{restricted:!backup.count,detail:backup.count?`${backup.count} نسخة مسجلة`:'لا توجد نسخة مسجلة'},ms:0},'')}</section><section class="admin-health-panels"><article class="admin-health-panel"><h3>إحصائيات النظام الحالية</h3><div class="admin-health-list"><div class="admin-health-row"><span>الطلبات</span><b>${stats.orders}</b></div><div class="admin-health-row"><span>الملازم والمنتجات</span><b>${stats.booklets+stats.products}</b></div><div class="admin-health-row"><span>المدرسون</span><b>${stats.teachers}</b></div><div class="admin-health-row"><span>المكتبات</span><b>${stats.libraries}</b></div><div class="admin-health-row"><span>المندوبون</span><b>${stats.couriers}</b></div><div class="admin-health-row"><span>الحركات المالية</span><b>${stats.ledger}</b></div></div></article><article class="admin-health-panel"><h3>معلومات الإصدار</h3><div class="admin-health-list"><div class="admin-health-row"><span>الإصدار</span><b>RC2</b></div><div class="admin-health-row"><span>آخر فحص</span><b>${r?new Date(r.finished).toLocaleString(window.AlinI18n?.locale?.()||'ar-IQ'):'—'}</b></div><div class="admin-health-row"><span>آخر نسخة احتياطية</span><b>${backup.last?new Date(backup.last).toLocaleString(window.AlinI18n?.locale?.()||'ar-IQ'):'لا توجد'}</b></div><div class="admin-health-row"><span>حالة الإنترنت</span><b>${navigator.onLine?'متصل':'غير متصل'}</b></div></div></article></section><article class="admin-health-panel"><h3>آخر الأخطاء المسجلة</h3><div class="admin-health-errors">${errs.length?errs.slice(0,10).map(e=>`<div class="admin-health-error"><b>${esc(e.type)}</b><div>${esc(e.message)}</div><small>${new Date(e.at).toLocaleString(window.AlinI18n?.locale?.()||'ar-IQ')} — ${esc(e.page)}</small></div>`).join(''):'<div class="admin-health-empty">لا توجد أخطاء مسجلة في هذه الجلسات.</div>'}</div></article>${r?`<details class="admin-health-panel"><summary>عرض التقرير التقني</summary><pre class="admin-health-report">${esc(JSON.stringify(r,null,2))}</pre></details>`:''}</section>`}
-  window.alinRunSystemHealth=runChecks;window.alinRefreshSystemHealth=runChecks;window.alinExportSystemHealth=function(){if(!lastReport)return;const blob=new Blob([JSON.stringify(lastReport,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`Alin_System_Health_${new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};
-  function addButton(){document.querySelectorAll('#adminPage .admin-tabs').forEach(tabs=>{let b=tabs.querySelector('[data-admin-tab="systemHealth"],button[onclick*="systemHealth"]');if(!b){b=document.createElement('button');b.textContent='صحة النظام';b.dataset.adminTab='systemHealth';b.className='admin-health-tab-rc2';b.setAttribute('onclick',"adminTab('systemHealth')");const settings=[...tabs.querySelectorAll('button')].find(x=>(x.getAttribute('onclick')||'').includes("'settings'"));settings?tabs.insertBefore(b,settings):tabs.appendChild(b)}})}
-  function install(){addButton();window.AlinAdminModules?.register?.('systemHealth',render)}
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install);else install();
-})();
-
-/* ===== admin/js/admin-supabase-readiness-rc5-4.js ===== */
-(function(){
-  'use strict';
-  const VERSION='RC5.4';
-  const REQUIRED=['settings','accounts','orders','booklets','products','notifications','couriers','delivery_areas','financial_entries'];
-  let report=null,running=false;
-  const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-  const client=()=>window.supabaseClient||window.sb||window.supabase?.client||window.AlinRepository?.client?.();
-  const now=()=>new Date().toISOString();
-  const text=e=>e?.message||e?.error_description||String(e||'خطأ غير معروف');
-  async function timed(name,fn){const t=performance.now();try{return{name,status:'ok',ms:Math.round(performance.now()-t),value:await fn()}}catch(e){return{name,status:'bad',ms:Math.round(performance.now()-t),error:text(e)}}}
-  async function checkClient(){const c=client();if(!c)throw new Error('Supabase client غير متوفر في الصفحة');return {detail:'عميل Supabase محمل'}}
-  async function checkDatabaseVersion(){const c=client();if(!c)throw new Error('Supabase غير متصل');const {data,error}=await c.from('settings').select('key,value,id,version').or('key.eq.alin_db_version,key.eq.__main__,id.eq.main').limit(5);if(error)throw error;const row=(data||[]).find(x=>x.key==='alin_db_version')||(data||[]).find(x=>x.id==='main'||x.key==='__main__');return {detail:row?.value||row?.version||'غير محدد',rows:data||[]}}
-  async function checkTables(){const c=client();if(!c)throw new Error('Supabase غير متصل');const out=[];for(const table of REQUIRED){const {count,error}=await c.from(table).select('*',{count:'exact',head:true});out.push({table,ok:!error,count:count??0,error:error?text(error):''})}return {detail:`${out.filter(x=>x.ok).length}/${out.length} جداول جاهزة`,tables:out}}
-  async function checkStorage(){const c=client();if(!c)throw new Error('Supabase غير متصل');const {data,error}=await c.storage.listBuckets();if(error)throw error;const names=(data||[]).map(x=>x.name);return {detail:`${names.length} حاويات`,buckets:names}}
-  async function checkRealtime(){const c=client();if(!c)throw new Error('Supabase غير متصل');return await new Promise((resolve,reject)=>{let done=false;const channel=c.channel('alin_rc54_probe_'+Date.now());const timer=setTimeout(()=>{if(done)return;done=true;try{c.removeChannel(channel)}catch(_){}reject(new Error('انتهت مهلة اتصال Realtime'))},7000);channel.subscribe(status=>{if(done)return;if(status==='SUBSCRIBED'){done=true;clearTimeout(timer);try{c.removeChannel(channel)}catch(_){}resolve({detail:'Realtime متصل'})}else if(status==='CHANNEL_ERROR'||status==='TIMED_OUT'||status==='CLOSED'){done=true;clearTimeout(timer);try{c.removeChannel(channel)}catch(_){}reject(new Error('Realtime: '+status))}})})}
-  async function checkRepository(){if(!window.AlinRepository)throw new Error('طبقة AlinRepository غير محملة');const r=await window.AlinRepository.verify();if(!r?.ok)throw new Error(r?.error||'فحص المستودع لم ينجح');return {detail:'طبقة الربط تعمل',report:r}}
-  async function safeWriteTest(){const c=client();if(!c)throw new Error('Supabase غير متصل');const id='health_'+Date.now()+'_'+Math.random().toString(36).slice(2,8),payload={id,status:'probe',details:{source:'RC5.4',safe_test:true},created_at:now()};const ins=await c.from('system_health_logs').insert(payload).select('id').single();if(ins.error)throw ins.error;const del=await c.from('system_health_logs').delete().eq('id',id);if(del.error)throw del.error;return {detail:'الكتابة والحذف يعملان بأمان',id}}
-  function cls(c){if(!c)return'warn';if(c.status==='bad')return'bad';return'ok'}
-  function card(title,c){return `<article class="admin-readiness-card ${cls(c)}"><small>${esc(title)}</small><strong><i class="admin-readiness-dot"></i>${esc(c?.status==='bad'?'فشل':'جاهز')}</strong><span>${esc(c?.value?.detail||c?.error||'لم يتم الفحص')} ${c?.ms!=null?'• '+c.ms+'ms':''}</span></article>`}
-  function tableRows(){const x=report?.checks?.find(c=>c.name==='tables')?.value?.tables||[];return x.map(r=>`<tr><td><code>${esc(r.table)}</code></td><td><span class="admin-readiness-chip ${r.ok?'ok':'bad'}">${r.ok?'جاهز':'خطأ'}</span></td><td>${r.ok?esc(r.count):esc(r.error)}</td></tr>`).join('')||'<tr><td colspan="3">لم يتم فحص الجداول بعد.</td></tr>'}
-  function renderLoading(){const root=document.getElementById('adminContent');if(root)root.innerHTML='<section class="admin-readiness"><div class="admin-readiness-empty">جاري فحص الربط النهائي مع Supabase...</div></section>'}
-  function render(){const root=document.getElementById('adminContent');if(!root)return;const map=Object.fromEntries((report?.checks||[]).map(x=>[x.name,x]));const bad=(report?.checks||[]).filter(x=>x.status==='bad').length;const overall=!report?'warn':bad?'bad':'ok';const label=!report?'لم يتم الفحص':bad?`توجد ${bad} مشكلة`:'الربط جاهز';root.dataset.adminModule='supabaseReadiness';root.innerHTML=`<section class="admin-readiness"><header class="admin-readiness-head"><div><h2>جاهزية الربط مع Supabase</h2><p>فحص قاعدة البيانات والتخزين وRealtime وطبقة المزامنة قبل بدء الاختبار العملي.</p></div><span class="admin-readiness-state ${overall}">${esc(label)}</span></header><div class="admin-readiness-actions"><button type="button" onclick="alinRunSupabaseReadiness()">فحص الربط الآن</button><button type="button" class="secondary" onclick="alinRunSafeWriteTest()">اختبار كتابة آمن</button><button type="button" class="secondary" onclick="alinExportReadiness()" ${report?'':'disabled'}>تصدير التقرير</button></div><div class="admin-readiness-grid">${card('عميل Supabase',map.client)}${card('إصدار قاعدة البيانات',map.version)}${card('الجداول الأساسية',map.tables)}${card('Storage',map.storage)}${card('Realtime',map.realtime)}${card('طبقة المزامنة',map.repository)}${card('اختبار الكتابة',map.write)}${card('اتصال الإنترنت',{status:navigator.onLine?'ok':'bad',value:{detail:navigator.onLine?'متصل':'غير متصل'},ms:0})}</div><article class="admin-readiness-panel"><h3>تفاصيل الجداول</h3><table class="admin-readiness-table"><thead><tr><th>الجدول</th><th>الحالة</th><th>النتيجة</th></tr></thead><tbody>${tableRows()}</tbody></table></article>${report?`<details class="admin-readiness-panel"><summary>التقرير التقني</summary><pre class="admin-readiness-log">${esc(JSON.stringify(report,null,2))}</pre></details>`:''}</section>`}
-  async function run(includeWrite=false){if(running)return report;running=true;renderLoading();const checks=await Promise.all([timed('client',checkClient),timed('version',checkDatabaseVersion),timed('tables',checkTables),timed('storage',checkStorage),timed('realtime',checkRealtime),timed('repository',checkRepository)]);if(includeWrite)checks.push(await timed('write',safeWriteTest));report={version:VERSION,at:now(),url:location.href,online:navigator.onLine,checks};running=false;render();return report}
-  window.alinRunSupabaseReadiness=()=>run(false);
-  window.alinRunSafeWriteTest=()=>run(true);
-  window.alinExportReadiness=function(){if(!report)return;const blob=new Blob([JSON.stringify(report,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`Alin_RC5_4_Readiness_${new Date().toISOString().replace(/[:.]/g,'-')}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};
-  function addTab(){document.querySelectorAll('#adminPage .admin-tabs').forEach(tabs=>{let b=tabs.querySelector('[data-admin-tab="supabaseReadiness"]');if(!b){b=document.createElement('button');b.textContent='فحص الربط';b.dataset.adminTab='supabaseReadiness';b.setAttribute('onclick',"adminTab('supabaseReadiness')");const health=tabs.querySelector('[data-admin-tab="systemHealth"],button[onclick*="systemHealth"]');health?tabs.insertBefore(b,health.nextSibling):tabs.appendChild(b)}})}
-  function install(){addTab();window.AlinAdminModules?.register?.('supabaseReadiness',render)}
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install);else install();
-})();
-
-
-;
-
-;
+/* Admin system health and connection check removed from UI in prepublish 1n. */
 
 /* modules/core/supabase-ui.js */
 // === core/supabase-ui.js ===
@@ -4564,7 +4537,7 @@ window.AlinCourierModules['recordCourierSettlementForOrder']=typeof recordCourie
 
 /* modules/core/account-admin-service.js */
 // === core/account-admin-service.js ===
-/* ALIN v2.4.2 — secure account administration adapter. */
+/* ALIN v4.1.6 prepublish 1n — account administration with direct database fallback for profile edits. */
 (function(){
   'use strict';
   const runtime=()=>window.ALINAuthRuntime||{};
@@ -4575,16 +4548,96 @@ window.AlinCourierModules['recordCourierSettlementForOrder']=typeof recordCourie
     if(typeof invoke!=='function')throw new Error('خدمة إدارة الحسابات غير جاهزة');
     return invoke(name,body);
   };
+  const edgeUnavailable=error=>/failed to send a request to the edge function|edge function|failed to fetch|networkerror|load failed|network request failed|خدمة الإدارة الآمنة غير متاحة/i.test(String(error?.message||error||''));
+  const compact=object=>Object.fromEntries(Object.entries(object||{}).filter(([,value])=>value!==undefined));
+  function missingColumn(error){
+    const text=String(error?.message||error||'');
+    return text.match(/Could not find the '([^']+)' column/i)?.[1]
+      ||text.match(/column\s+"?([a-zA-Z0-9_]+)"?\s+.*does not exist/i)?.[1]
+      ||text.match(/column\s+([a-zA-Z0-9_]+)\s+of relation/i)?.[1]
+      ||'';
+  }
+  async function updateCompat(table,id,values,select='*'){
+    const c=client();if(!c?.from)throw new Error('الاتصال بقاعدة البيانات غير متاح');
+    const payload=compact(values);
+    for(let attempt=0;attempt<10;attempt++){
+      const {data,error}=await c.from(table).update(payload).eq('id',String(id)).select(select).maybeSingle();
+      if(!error)return data||null;
+      const column=missingColumn(error);
+      if(column&&Object.prototype.hasOwnProperty.call(payload,column)){delete payload[column];continue}
+      throw error;
+    }
+    throw new Error('تعذر توافق حقول الحساب مع قاعدة البيانات');
+  }
+  async function directUpdateAccount(payload){
+    const c=client();if(!c?.from)throw new Error('الاتصال بقاعدة البيانات غير متاح');
+    const accountId=String(payload?.account_id||'').trim();
+    if(!accountId)throw new Error('معرّف الحساب غير موجود');
+    const {data:before,error:readError}=await c.from('accounts').select('*').eq('id',accountId).maybeSingle();
+    if(readError)throw readError;
+    if(!before)throw new Error('الحساب غير موجود');
+
+    const requestedRole=String(payload.role||before.role||'');
+    const requestedUsername=String(payload.username||before.username||'').trim();
+    const warnings=[];
+    if(requestedRole&&requestedRole!==String(before.role||''))warnings.push('تم حفظ البيانات الأساسية فقط؛ تغيير نوع الحساب يحتاج خدمة الحسابات الآمنة');
+    if(requestedUsername&&requestedUsername!==String(before.username||''))warnings.push('تم حفظ البيانات الأساسية فقط؛ تغيير اسم الدخول يحتاج خدمة الحسابات الآمنة');
+    if(payload.password)warnings.push('تم حفظ البيانات الأساسية، لكن كلمة المرور لم تتغير لأن خدمة الحسابات الآمنة غير متصلة');
+
+    const account=await updateCompat('accounts',accountId,{
+      name:String(payload.name??before.name??'').trim(),
+      status:payload.status===undefined?undefined:String(payload.status||'active'),
+      phone:payload.phone===undefined?undefined:String(payload.phone||'').trim(),
+      area:payload.area===undefined?undefined:String(payload.area||'').trim(),
+      landmark:payload.landmark===undefined?undefined:String(payload.landmark||'').trim(),
+      notes:payload.notes===undefined?undefined:String(payload.notes||'').trim(),
+      deleted_at:String(payload.status||'')==='active'?null:undefined,
+      updated_at:new Date().toISOString()
+    },'id,role,name,username,status,auth_user_id,phone,area,landmark,notes,admin_level,deleted_at');
+
+    if(String(before.role||'')==='courier'){
+      const areas=Array.isArray(payload.areas)?[...new Set(payload.areas.map(x=>String(x||'').trim()).filter(Boolean))]:undefined;
+      const courierValues=compact({
+        name:String(payload.name??before.name??'').trim(),
+        username:String(before.username||''),
+        phone:payload.phone===undefined?undefined:String(payload.phone||'').trim(),
+        area:payload.area===undefined?(areas?.[0]||undefined):String(payload.area||'').trim(),
+        areas,
+        availability:payload.availability===undefined?undefined:String(payload.availability||'available'),
+        status:payload.status===undefined?undefined:(String(payload.status)==='active'?'active':'inactive'),
+        updated_at:new Date().toISOString()
+      });
+      const {data:existing,error:existsError}=await c.from('couriers').select('id').eq('id',accountId).maybeSingle();
+      if(existsError)throw existsError;
+      if(existing)await updateCompat('couriers',accountId,courierValues,'id,name,username,phone,area,areas,availability,status');
+      else{
+        const {error:insertError}=await c.from('couriers').insert({id:accountId,...courierValues,created_at:new Date().toISOString()});
+        if(insertError)throw insertError;
+      }
+    }
+    if(typeof load==='function')try{await load()}catch(error){console.warn('[ALIN account refresh after direct save]',error)}
+    return Object.assign({},account||before,{warning:warnings.join(' — '),saved_directly:true});
+  }
+
   async function createAccount(payload){
     if(!payload?.name||!payload?.username||!payload?.password)throw new Error('أكمل الاسم واسم الدخول وكلمة المرور');
     if(!strongPassword(payload.password))throw new Error('كلمة المرور يجب أن تكون 12 حرفاً على الأقل وتتضمن حروفاً وأرقاماً');
-    const data=await invokeAdmin('admin-create-account',payload);
-    if(typeof load==='function')await load();
-    return data.account;
+    try{
+      const data=await invokeAdmin('admin-create-account',payload);
+      if(typeof load==='function')await load();
+      return data.account;
+    }catch(error){
+      if(edgeUnavailable(error))throw new Error('تعذر إنشاء حساب جديد لأن خدمة إنشاء الحسابات في Supabase غير منشورة. تعديل بيانات الحسابات الحالية يعمل مباشرة.');
+      throw error;
+    }
   }
 
   async function createAccountFromAdmin(){
+    const button=document.getElementById('v131SaveAccountButton');
+    if(button?.disabled)return null;
+    const originalLabel=button?.textContent||'حفظ الحساب';
     try{
+      if(button){button.disabled=true;button.textContent='جارٍ الحفظ...'}
       const role=document.getElementById('aRole')?.value||'';
       const selectedAreas=[...document.querySelectorAll('#v163CourierAreaPicker input:checked')].map(x=>String(x.value||'').trim()).filter(Boolean);
       const payload={
@@ -4592,21 +4645,30 @@ window.AlinCourierModules['recordCourierSettlementForOrder']=typeof recordCourie
         name:document.getElementById('aName')?.value?.trim()||'',
         username:document.getElementById('aUser')?.value?.trim()||'',
         password:document.getElementById('aPass')?.value||'',
+        phone:document.getElementById('aPhone')?.value?.trim()||document.getElementById('v163CourierPhone')?.value?.trim()||'',
         area:role==='courier'?(selectedAreas[0]||''):(document.getElementById('aArea')?.value?.trim()||''),
         landmark:role==='courier'?'':(document.getElementById('aLandmark')?.value?.trim()||''),
-        phone:document.getElementById('v163CourierPhone')?.value?.trim()||'',
         availability:document.getElementById('v163CourierAvailability')?.value||'available',
         areas:selectedAreas,
         status:'active'
       };
+      if(!['teacher','library','courier','accountant'].includes(role))throw new Error('اختر نوع الحساب');
       if(role==='courier'&&!payload.areas.length)throw new Error('اختر منطقة عمل واحدة على الأقل');
       if(role==='courier'&&!payload.phone)throw new Error('أدخل رقم هاتف المندوب');
       const account=await createAccount(payload);
-      const pass=document.getElementById('aPass');if(pass)pass.value='';
+      ['aName','aUser','aPass','aPhone','aArea','aLandmark'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
+      document.querySelectorAll('#v163CourierAreaPicker input').forEach(el=>{el.checked=false});
+      window.v131CourierAreaCount?.();
+      window.v131ToggleAccountForm?.(false);
       if(typeof renderAccountsAdmin==='function')renderAccountsAdmin();
       if(typeof toast==='function')toast(`تم إنشاء الحساب: ${account.username}`);else alert(`تم إنشاء الحساب بنجاح: ${account.username}`);
       return account;
-    }catch(e){alert(e.message||'تعذر إنشاء الحساب');throw e}
+    }catch(e){
+      alert(e?.message||'تعذر إنشاء الحساب');
+      return null;
+    }finally{
+      if(button){button.disabled=false;button.textContent=originalLabel}
+    }
   }
 
   async function repairAuthLink(accountId){
@@ -4620,20 +4682,32 @@ window.AlinCourierModules['recordCourierSettlementForOrder']=typeof recordCourie
     return Number(data||0);
   }
   async function updateAccountFromAdmin(payload){
-    if(payload?.password&&payload?.account_id)await repairAuthLink(payload.account_id);
-    const data=await invokeAdmin('admin-update-account',payload);
-    if(typeof load==='function')await load();
-    return data.account;
+    try{
+      const data=await invokeAdmin('admin-update-account',payload);
+      if(typeof load==='function')await load();
+      return data.account;
+    }catch(error){
+      if(!edgeUnavailable(error))throw error;
+      console.warn('[ALIN account direct update fallback]',error?.message||error);
+      return directUpdateAccount(payload);
+    }
   }
   async function resetPasswordFromAdmin(accountId,password){
     if(!strongPassword(password))throw new Error('كلمة المرور يجب أن تكون 12 حرفاً على الأقل وتتضمن حروفاً وأرقاماً');
-    await repairAuthLink(accountId);
-    return invokeAdmin('admin-reset-password',{account_id:accountId,password});
+    try{
+      await repairAuthLink(accountId);
+      return await invokeAdmin('admin-reset-password',{account_id:accountId,password});
+    }catch(error){
+      if(edgeUnavailable(error))throw new Error('تعذر تغيير كلمة المرور لأن خدمة الحسابات الآمنة غير متصلة. بقية بيانات الحساب يمكن حفظها بصورة طبيعية.');
+      throw error;
+    }
   }
   async function deleteAccountFromAdmin(accountId){return invokeAdmin('admin-delete-account',{account_id:accountId})}
   window.ALINAuth=Object.assign(window.ALINAuth||{},
     {createAccount,createAccountFromAdmin,updateAccountFromAdmin,resetPasswordFromAdmin,repairAuthLink,deleteAccountFromAdmin});
+  window.addAccount=createAccountFromAdmin;
   window.ALINAccountAdmin=Object.freeze({createAccount,createAccountFromAdmin,updateAccountFromAdmin,resetPasswordFromAdmin,repairAuthLink,deleteAccountFromAdmin});
+  window.dispatchEvent(new CustomEvent('alin:account-admin-ready'));
 })();
 
 ;
@@ -5569,3 +5643,100 @@ window.AlinCourierModules['recordCourierSettlementForOrder']=typeof recordCourie
   window.AlinReceiptsNavigationGuard=Object.freeze({leave:leaveReceipts,verify,isActive:receiptCenterIsActive});
 })();
 
+
+/* ALIN v4.1.5 prepublish 1f — style the existing section header only; never insert a second header. */
+(()=>{
+  'use strict';
+  if(window.__ALIN_EXISTING_SECTION_HEADER__)return;
+  window.__ALIN_EXISTING_SECTION_HEADER__=true;
+
+  const roles={
+    admin:{page:'adminPage',host:'adminContent',nav:'.admin-tabs'},
+    teacher:{page:'teacherPage',host:'teacherContent',nav:'.teacher-tabs'},
+    library:{page:'libraryPage',host:'libraryV116Content',nav:'.library-v116-tabs',pageHeader:'.library-v116-header'},
+    courier:{page:'courierPage',host:'courierV161Content',nav:'.courier-v161-tabs',pageHeader:'.courier-v161-hero'}
+  };
+
+  function findExistingHeader(host){
+    if(!host)return null;
+    const selectors=[
+      ':scope > .alin415r-heading',
+      ':scope > section:first-child > .alin415r-heading:first-child',
+      ':scope > header:first-child',
+      ':scope > section:first-child > header:first-child',
+      ':scope > [class*="-head"]:first-child',
+      ':scope > section:first-child > [class*="-head"]:first-child',
+      ':scope > *:first-child > [class*="-head"]:first-child',
+      ':scope > [class*="-hero"]:first-child',
+      ':scope > section:first-child > [class*="-hero"]:first-child',
+      ':scope > [class*="-welcome"]:first-child',
+      ':scope > section:first-child > [class*="-welcome"]:first-child'
+    ];
+    for(const selector of selectors){
+      try{const node=host.querySelector(selector);if(node)return node}catch(_){ }
+    }
+    return null;
+  }
+
+  function decorate(role){
+    const cfg=roles[role],page=document.getElementById(cfg?.page),host=document.getElementById(cfg?.host);
+    if(!cfg||!page||!host)return;
+    page.querySelectorAll('.alin-existing-section-header').forEach(node=>node.classList.remove('alin-existing-section-header'));
+    const fixedHeader=cfg.pageHeader?page.querySelector(cfg.pageHeader):null;
+    const header=fixedHeader||findExistingHeader(host);
+    if(header)header.classList.add('alin-existing-section-header');
+  }
+
+  function decorateAll(){Object.keys(roles).forEach(decorate)}
+
+  function wrapNavigation(name,role){
+    const original=window[name];
+    if(typeof original!=='function'||original.__alinExistingHeaderWrapped)return;
+    function wrapped(tab,...args){
+      if(String(tab||'')!=='receipts')try{window.AlinReceiptsNavigationGuard?.leave?.()}catch(_){ }
+      const result=original.call(this,tab,...args);
+      requestAnimationFrame(()=>decorate(role));
+      setTimeout(()=>decorate(role),80);
+      return result;
+    }
+    Object.defineProperty(wrapped,'__alinExistingHeaderWrapped',{value:true});
+    Object.defineProperty(wrapped,'__alinReceiptsGuarded',{value:true});
+    window[name]=wrapped;
+  }
+
+  function install(){
+    wrapNavigation('adminTab','admin');
+    wrapNavigation('teacherTab','teacher');
+    wrapNavigation('renderCourierDashboard','courier');
+    decorateAll();
+  }
+
+  document.addEventListener('click',event=>{
+    const button=event.target.closest?.('#adminPage .admin-tabs button,#teacherPage .teacher-tabs button,#libraryPage .library-v116-tabs button,#courierPage .courier-v161-tabs button');
+    if(!button)return;
+    const role=button.closest('#adminPage')?'admin':button.closest('#teacherPage')?'teacher':button.closest('#libraryPage')?'library':button.closest('#courierPage')?'courier':'';
+    if(role){requestAnimationFrame(()=>decorate(role));setTimeout(()=>decorate(role),100)}
+  },true);
+
+  const start=()=>{
+    install();
+    [120,500,1100,2200].forEach(delay=>setTimeout(install,delay));
+    const observer=new MutationObserver(records=>{
+      if(records.some(record=>record.type==='childList'))requestAnimationFrame(decorateAll);
+    });
+    observer.observe(document.body,{subtree:true,childList:true});
+  };
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+  window.AlinExistingSectionHeader=Object.freeze({refresh:decorateAll});
+})();
+
+/* ALIN v4.1.6 prepublish 1n — permanently hide removed admin diagnostic tabs. */
+(()=>{
+  'use strict';
+  const remove=()=>document.querySelectorAll('#adminPage .admin-tabs button').forEach(button=>{
+    const code=String(button.getAttribute('onclick')||'');
+    const key=String(button.dataset.adminTab||'');
+    if(code.includes("systemHealth")||code.includes("supabaseReadiness")||key==='systemHealth'||key==='supabaseReadiness')button.remove();
+  });
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',remove,{once:true});else remove();
+})();
