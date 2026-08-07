@@ -1,7 +1,7 @@
 /* ALIN v4.0.0 Clean Project — fast cached boot with server-side attempt protection. */
 (function(){
   'use strict';
-  const ATTEMPT_KEY='alin_auth_attempts_v141',MAX_ATTEMPTS=5,LOCK_MS=10*60*1000;
+  const ATTEMPT_KEY='alin_auth_attempts_v146_1u',MAX_ATTEMPTS=5,LOCK_MS=10*60*1000;
   const cfg=()=>window.ALIN_CONFIG||{};
   const enabled=()=>cfg().authEnabled===true;
   const client=()=>window.sb||(window.AlinCloud&&window.AlinCloud.client?.())||null;
@@ -19,15 +19,28 @@
     try{let value=localStorage.getItem(DEVICE_KEY);if(!value){value=crypto.randomUUID?.()||`${Date.now()}-${Math.random()}`;localStorage.setItem(DEVICE_KEY,value)}return value}
     catch(_){return 'browser-session'}
   }
+  function legacyEmailKey(value){
+    const raw=String(value||'').trim().normalize?.('NFKC')?.toLocaleLowerCase('en-US')||String(value||'').trim().toLocaleLowerCase('en-US');
+    const normalized=raw.replace(/\s+/g,'-');
+    const ascii=normalized.replace(/[^a-z0-9._-]/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'')||'user';
+    let hash=2166136261;for(const byte of new TextEncoder().encode(normalized))hash=Math.imul(hash^byte,16777619);
+    return `${ascii.slice(0,38)}-${(hash>>>0).toString(36)}`;
+  }
   function loginEmailCandidates(username){
-    const raw=String(username||'').trim().toLocaleLowerCase('en-US').replace(/\s+/g,'-');
+    const source=String(username||'').trim();
+    const raw=(source.normalize?.('NFKC')||source).toLocaleLowerCase('en-US').replace(/\s+/g,'-');
     const domain=cfg().authEmailDomain||'users.alin.local';
-    const out=[emailFor(raw)];
+    const simple=raw.replace(/[^a-z0-9._-]/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'');
+    const hashed=legacyEmailKey(raw);
+    const looksLikeRealEmail=/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(raw);
+    const out=[];
+    // Usernames such as moh@kik are login names, not necessarily real email addresses.
+    // Try ALIN's internal/legacy aliases as well as the literal value.
+    if(looksLikeRealEmail)out.push(raw);
+    out.push(`${hashed}@${domain}`);
+    if(simple){out.push(`${simple}@${domain}`);out.push(`${simple}@alin.local`)}
     if(raw.includes('@'))out.push(raw);
-    else{
-      const simple=raw.replace(/[^a-z0-9._-]/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'');
-      if(simple){out.push(`${simple}@${domain}`);out.push(`${simple}@alin.local`)}
-    }
+    else out.unshift(emailFor(raw));
     return [...new Set(out.filter(Boolean))];
   }
   async function directSignIn(username,password){

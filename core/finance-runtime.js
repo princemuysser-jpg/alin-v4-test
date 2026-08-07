@@ -161,17 +161,28 @@
   function teacherSummary(teacherId){const rows=canonicalLedger().filter(row=>same(row.teacher_id,teacherId)),summary=balance('teacher',teacherId),month=new Date().toISOString().slice(0,7),monthEarn=rows.filter(row=>String(row.settled_at||row.created_at||'').slice(0,7)===month).reduce((sum,row)=>sum+Math.max(0,num(row.teacher||row.teacher_amount)),0);return {...summary,rows,payouts:payoutRows().filter(row=>payoutRole(row)==='teacher'&&same(payoutParty(row),teacherId)),monthEarn}}
   function delegateSummary(delegateId){
     const aliases=delegateAliases(delegateId);
-    const sourceRows=canonicalLedger().filter(row=>aliases.has(String(row.delegate_id||row.courier_id||row.collector_id||''))&&String(row.collector_role||row.delivery_type||'delegate')==='delegate');
-    const rows=sourceRows.map(row=>{
-      const order=orderFor(row)||{};
+    // Use delivered orders as the primary source for courier cash debt. Ledger rows can be stale/partial on older installs.
+    const deliveredOrders=arr(db().orders).filter(order=>delivered(order?.status)&&!cancelled(order?.status)&&deliveryType(order)==='delegate'&&[
+      order?.delegate_id,order?.courier_id,order?.courier_account_id,order?.assigned_courier_id,order?.assigned_delegate_id
+    ].filter(Boolean).some(value=>aliases.has(String(value))));
+    const rows=deliveredOrders.map(order=>{
       const split=shares(order);
+      const gross=Math.max(0,num(order?.delegate_cash_collected)||num(order?.courier_cash_collected)||num(order?.cash_collected)||num(order?.amount_collected)||num(order?.total)||num(order?.grand_total)||num(order?.final_total));
+      const persistedProfit=Math.max(0,num(order?.delegate_profit)||num(order?.courier_profit));
+      const profit=persistedProfit>0?persistedProfit:Math.max(0,num(split.delegate));
+      return {...syntheticLedgerRow(order),order,total:gross,delegate:profit,courier:profit,collector_debt:Math.max(0,gross-profit)};
+    });
+    const covered=new Set(rows.map(row=>String(row.order_id||row.order_number||'')));
+    // Preserve legacy completed finance entries only when their order is no longer present in the local order cache.
+    for(const row of canonicalLedger()){
+      if(!aliases.has(String(row.delegate_id||row.courier_id||row.collector_id||''))||String(row.collector_role||row.delivery_type||'delegate')!=='delegate')continue;
+      const key=String(row.order_id||row.order_number||'');if(key&&covered.has(key))continue;
+      const order=orderFor(row)||{};
       const gross=Math.max(0,num(row.total)||num(order.total));
       const persistedProfit=Math.max(0,num(row.delegate||row.courier||row.courier_amount)||num(order.delegate_profit)||num(order.courier_profit));
-      const profit=persistedProfit>0?persistedProfit:Math.max(0,num(split.delegate));
-      const explicit=num(row.collector_debt);
-      const debt=Math.max(0,explicit>0?explicit:gross-profit);
-      return {...row,order,total:gross,delegate:profit,courier:profit,collector_debt:debt};
-    });
+      const profit=persistedProfit>0?persistedProfit:Math.max(0,num(shares(order).delegate));
+      rows.push({...row,order,total:gross,delegate:profit,courier:profit,collector_debt:Math.max(0,gross-profit)});if(key)covered.add(key);
+    }
     const collected=rows.reduce((sum,row)=>sum+Math.max(0,num(row.total)),0),earnings=rows.reduce((sum,row)=>sum+Math.max(0,num(row.delegate||row.courier||row.courier_amount)),0),debtTotal=rows.reduce((sum,row)=>sum+Math.max(0,num(row.collector_debt)),0),settlements=delegateSettlementRows(delegateId),settled=Math.max(0,settlements.reduce((sum,row)=>sum+settlementValue(row),0));
     return {earned:earnings,earnings,collected,debtTotal,paid:settled,settled,remaining:Math.max(0,debtTotal-settled),debt:Math.max(0,debtTotal-settled),rows,settlements,payouts:payoutRows().filter(row=>payoutRole(row)==='delegate'&&aliases.has(String(payoutParty(row))))};
   }

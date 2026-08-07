@@ -1,4 +1,4 @@
-const VERSION='alin-4.1.6-prepublish-1t';
+const VERSION='alin-4.1.6-prepublish-1v';
 const STATIC_CACHE=`${VERSION}-static`;
 const RUNTIME_CACHE=`${VERSION}-runtime`;
 

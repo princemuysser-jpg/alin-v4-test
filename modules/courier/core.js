@@ -109,25 +109,22 @@
     return Math.max(0,Number(window.AlinFinance?.shares?.(o)?.delegate||0));
   }
   function financials(c){
-    if(!c)return{collected:0,earnings:0,paid:0,debt:0,balance:0};
-    const rows=myOrders(c).filter(done);
-    const localCollected=rows.reduce((a,o)=>a+orderCollectedAmount(o),0);
-    const localEarnings=rows.reduce((a,o)=>a+orderCourierProfit(o),0);
-    const localDebtTotal=rows.reduce((a,o)=>a+Math.max(0,orderCollectedAmount(o)-orderCourierProfit(o)),0);
+    if(!c)return{collected:0,earnings:0,paid:0,debt:0,balance:0,debtTotal:0,rows:[]};
     const ids=courierAliases(c);
-    const localPaid=settlements().filter(s=>[s.courier_id,s.delegate_id,s.party_id,s.account_id].filter(Boolean).map(String).some(id=>ids.has(id))&&!['cancelled','canceled','rejected','reversed','pending'].includes(String(s.status||'paid').toLowerCase())).reduce((a,s)=>a+(+s.amount||0),0);
-    const summaries=[...ids].map(id=>window.AlinFinance?.delegateSummary?.(id)||{});
-    const serverMax=key=>Math.max(0,...summaries.map(row=>Number(row?.[key]||0)).filter(Number.isFinite));
-    const serverCollected=serverMax('collected');
-    const serverEarnings=Math.max(serverMax('earnings'),serverMax('earned'));
-    const serverPaid=Math.max(serverMax('settled'),serverMax('paid'));
-    const serverDebt=Math.max(serverMax('debt'),serverMax('remaining'),Math.max(0,serverMax('debtTotal')-serverPaid));
-    const collected=Math.max(serverCollected,localCollected);
-    const earnings=Math.max(serverEarnings,localEarnings);
-    const paid=Math.max(serverPaid,localPaid);
-    const calculatedDebt=Math.max(0,Math.max(localDebtTotal,collected-earnings)-paid);
-    const debt=Math.max(calculatedDebt,serverDebt);
-    return{collected,earnings,paid,debt,balance:earnings,debtTotal:Math.max(localDebtTotal,serverMax('debtTotal'))};
+    // Courier debt is authoritative from delivered orders themselves, not from a possibly stale ledger summary.
+    const rows=allOrders().filter(o=>done(o)&&orderCourierIds(o).some(id=>ids.has(String(id))));
+    const details=rows.map(o=>{
+      const collected=Math.max(0,orderCollectedAmount(o));
+      const profit=Math.max(0,orderCourierProfit(o));
+      return {order:o,collected,profit,debt:Math.max(0,collected-profit)};
+    });
+    const collected=details.reduce((sum,row)=>sum+row.collected,0);
+    const earnings=details.reduce((sum,row)=>sum+row.profit,0);
+    const debtTotal=details.reduce((sum,row)=>sum+row.debt,0);
+    const paid=settlements().filter(s=>[s.courier_id,s.delegate_id,s.party_id,s.account_id].filter(Boolean).map(String).some(id=>ids.has(id)))
+      .reduce((sum,s)=>sum+Math.max(0,Number(s.amount)||0),0);
+    const debt=Math.max(0,debtTotal-paid);
+    return{collected,earnings,paid,debt,balance:earnings,debtTotal,rows:details};
   }
   function orderState(st){return({pending:'جديد',pending_admin:'بانتظار التعيين',assigned:'بانتظار القبول',new:'طلب جديد',accepted:'مقبول',picked_up:'تم استلام الطلب',out_for_delivery:'في الطريق',out_delivery:'في الطريق',processing:'قيد التنفيذ',printing:'قيد الطباعة',ready:'جاهز',completed:'تم التسليم',delivered:'تم التسليم',cancelled:'ملغي',rejected:'مرفوض'})[st]||st||'جديد'}
   function messageText(error){
@@ -263,24 +260,31 @@
   }
   async function refreshCourierData(force=false){
     const me=currentAccount();if(!me||me.role!=='courier')return null;
-    if(!force&&Date.now()-lastRefresh<2500)return resolveCourier();
+    if(!force&&Date.now()-lastRefresh<1500)return resolveCourier();
     if(refreshPromise)return refreshPromise;
     refreshPromise=(async()=>{
       const c=client();if(!c)return resolveCourier();
-      const [courierResult,ordersResult]=await Promise.all([
-        c.from('couriers').select('*').eq('id',me.id).maybeSingle(),
-        c.from('orders').select('*').or(`courier_id.eq.${me.id},delegate_id.eq.${me.id}`).order('created_at',{ascending:false})
-      ]);
-      if(courierResult.error)console.warn('[ALIN courier row]',courierResult.error);
-      if(ordersResult.error)console.warn('[ALIN courier orders]',ordersResult.error);
-      mergeOwnRows(courierResult.data||null,ordersResult.error?null:(ordersResult.data||[]));lastRefresh=Date.now();return resolveCourier();
+      let courierRow=null;
+      const primary=await c.from('couriers').select('*').eq('id',me.id).maybeSingle();
+      if(!primary.error&&primary.data)courierRow=primary.data;else if(primary.error)console.warn('[ALIN courier row]',primary.error);
+      // Build every known alias before querying orders. Old orders may store courier-row id while login uses account id.
+      const local=normalizeCourier(courierRow)||resolveCourier()||me;
+      const aliases=[...courierAliases(local)];
+      if(!aliases.includes(String(me.id)))aliases.push(String(me.id));
+      const results=await Promise.all(aliases.map(id=>c.from('orders').select('*').or(`courier_id.eq.${id},delegate_id.eq.${id}`).order('created_at',{ascending:false})));
+      const map=new Map();
+      for(const result of results){
+        if(result.error){console.warn('[ALIN courier orders alias]',result.error);continue}
+        for(const row of (result.data||[])){const key=String(row.id||row.order_number||'');if(key)map.set(key,{...(map.get(key)||{}),...row})}
+      }
+      mergeOwnRows(courierRow,[...map.values()]);lastRefresh=Date.now();return resolveCourier();
     })().catch(error=>{console.error('[ALIN courier refresh]',error);return resolveCourier()}).finally(()=>{refreshPromise=null});
     return refreshPromise;
   }
   function resetRefresh(){lastRefresh=0}
 
   window.AlinCourierCore=Object.freeze({
-    version:'4.1.6-1t',$, $$, arr, escv, moneyv, now, notify, currentAccount, dbx,
+    version:'4.1.6-1v',$, $$, arr, escv, moneyv, now, notify, currentAccount, dbx,
     allCouriers, areasOf, areaRows, statusOf, statusLabel, resolveCourier,
     allOrders, courierAliases, orderCourierIds, myOrders, settlements, done, cancelled, active, activeLoad, today, todayDone, financials,
     orderState, friendlyOrderError, mapLink, phoneLink, waLink, fmtDate,
