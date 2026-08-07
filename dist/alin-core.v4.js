@@ -2341,8 +2341,46 @@ window.Alin.helpers={
 
   function orderFor(row){return arr(db().orders).find(order=>same(order.id,row?.order_id)||same(order.order_number,row?.order_number||row?.order_id))||null}
 
+  function delegateAliases(id){
+    const set=new Set([String(id??'')].filter(Boolean));
+    const sources=[...arr(db().delegates),...arr(db().accounts?.couriers),...arr(db().couriers)];
+    let changed=true;
+    while(changed){
+      changed=false;
+      for(const row of sources){
+        const values=[row?.id,row?.account_id,row?.accountId,row?.user_id,row?.courier_row_id,row?.auth_user_id].filter(Boolean).map(String);
+        if(values.some(value=>set.has(value))){for(const value of values)if(!set.has(value)){set.add(value);changed=true}}
+      }
+    }
+    return set;
+  }
+  const matchesDelegate=(value,id)=>delegateAliases(id).has(String(value??''));
+
+  function syntheticLedgerRow(order){
+    const split=shares(order),book=booklet(order),delivery=split.delivery;
+    const delegateId=order?.delegate_id||order?.courier_id||order?.courier_account_id||'';
+    const libraryId=order?.library_id||order?.pickup_library_id||order?.assigned_library_id||'';
+    const teacherId=book?.teacher_id||order?.teacher_id||'';
+    const delegateProfit=Math.max(0,num(order?.delegate_profit||order?.courier_profit||split.delegate));
+    const libraryProfit=Math.max(0,num(order?.library_profit||split.library));
+    const teacherProfit=Math.max(0,num(order?.teacher_profit||split.teacher));
+    const adminProfit=Math.max(0,num(order?.platform_profit||order?.admin_profit||split.admin));
+    const total=Math.max(0,num(order?.total));
+    const collectorProfit=delivery==='delegate'?delegateProfit:libraryProfit;
+    return {
+      id:`virtual-${order?.id||order?.order_number||Date.now()}`,order_id:order?.id,order_number:order?.order_number,title:order?.title,
+      total,merchandise_total:split.merchandise,delivery_fee:split.deliveryFee,
+      alin:adminProfit,admin:adminProfit,teacher:teacherProfit,teacher_id:teacherId,
+      library:libraryProfit,library_id:libraryId,delegate:delegateProfit,courier:delegateProfit,
+      delegate_id:delegateId,courier_id:delegateId,collector_role:delivery,collector_id:delivery==='delegate'?delegateId:libraryId,
+      collector_debt:Math.max(0,total-collectorProfit),delivery_type:delivery,status:'pending',settlement_status:'pending',
+      settled_at:order?.settlement_at||order?.completed_at||order?.delivered_at||order?.updated_at||order?.created_at||'',
+      created_at:order?.completed_at||order?.delivered_at||order?.created_at||'',is_current:true,is_virtual:true,finance_version:'4.1.6-fallback'
+    };
+  }
+
   function canonicalLedger(){
-    const rows=new Map();
+    const rows=new Map(),coveredOrders=new Set();
     for(const row of arr(db().ledger)){
       if(row?.is_current===false)continue;
       const order=orderFor(row);
@@ -2351,6 +2389,15 @@ window.Alin.helpers={
       const key=String(row?.order_id||row?.order_number||row?.id||'');if(!key)continue;
       const previous=rows.get(key),currentAt=String(row?.settled_at||row?.updated_at||row?.created_at||''),previousAt=String(previous?.settled_at||previous?.updated_at||previous?.created_at||'');
       if(!previous||currentAt>=previousAt)rows.set(key,row);
+      if(row?.order_id)coveredOrders.add(String(row.order_id));
+      if(row?.order_number)coveredOrders.add(String(row.order_number));
+    }
+    for(const order of arr(db().orders)){
+      if(!order||cancelled(order.status)||order.settlement_cancelled||!delivered(order.status))continue;
+      const id=String(order.id||''),number=String(order.order_number||'');
+      if((id&&coveredOrders.has(id))||(number&&coveredOrders.has(number)))continue;
+      const virtual=syntheticLedgerRow(order),key=String(virtual.order_id||virtual.order_number||virtual.id);
+      rows.set(key,virtual);if(id)coveredOrders.add(id);if(number)coveredOrders.add(number);
     }
     return [...rows.values()];
   }
@@ -2367,10 +2414,19 @@ window.Alin.helpers={
   function librarySettlementRows(id){
     const seen=new Set();return [...arr(db().library_settlements),...arr(db().librarySettlements)].filter(row=>{if(!same(row.library_id,id))return false;const key=String(row.id||row.receipt_number||`${id}-${row.created_at}-${row.amount}`);if(!key||seen.has(key))return false;seen.add(key);return true});
   }
-  function delegateSettlementRows(id){
-    const seen=new Set();return [...arr(db().delegate_settlements),...arr(db().courierSettlements),...arr(window.courierSettlements)].filter(row=>{if(!same(row.delegate_id||row.courier_id||row.party_id,id))return false;const key=String(row.id||row.receipt_number||`${id}-${row.created_at}-${row.amount}`);if(!key||seen.has(key))return false;seen.add(key);return true});
+  function isConfirmedDelegateSettlement(row){
+    if(!row)return false;
+    const status=String(row.status||'').toLowerCase();
+    if(!['received','paid'].includes(status))return false;
+    const receipt=String(row.receipt_number||row.voucher_number||'').trim();
+    const id=String(row.id||'').trim();
+    const note=String(row.note||row.notes||'').trim();
+    return (/^STL/i.test(id)&&/^RC-/i.test(receipt))||/تسوية\s*(ذمة\s*)?(مندوب|المندوب)|تسديد\s*(ذمة\s*)?(مندوب|المندوب)|delegate\s+settlement|courier\s+settlement/i.test(note);
   }
-  function settlementValue(row){const status=String(row.status||'received').toLowerCase();if(['cancelled','canceled','rejected','reversed','pending'].includes(status))return 0;return status==='reversal'?-Math.abs(num(row.amount)):Math.max(0,num(row.amount))}
+  function delegateSettlementRows(id){
+    const aliases=delegateAliases(id),seen=new Set();return [...arr(db().delegate_settlements),...arr(db().courierSettlements),...arr(window.courierSettlements)].filter(row=>{if(!aliases.has(String(row.delegate_id||row.courier_id||row.party_id||''))||!isConfirmedDelegateSettlement(row))return false;const key=String(row.id||row.receipt_number||`${id}-${row.created_at}-${row.amount}`);if(!key||seen.has(key))return false;seen.add(key);return true});
+  }
+  function settlementValue(row){const status=String(row.status||'').toLowerCase();if(!['received','paid'].includes(status))return 0;return Math.max(0,num(row.amount))}
 
   function earned(role,id){
     const key=String(role||'').toLowerCase().replace('courier','delegate');
@@ -2378,7 +2434,7 @@ window.Alin.helpers={
       if(key==='admin')return sum+Math.max(0,num(row.admin||row.alin));
       if(key==='teacher'&&same(row.teacher_id,id))return sum+Math.max(0,num(row.teacher||row.teacher_amount));
       if(key==='library'&&same(row.library_id,id))return sum+Math.max(0,num(row.library||row.library_amount));
-      if(key==='delegate'&&same(row.delegate_id||row.courier_id,id))return sum+Math.max(0,num(row.delegate||row.courier||row.courier_amount));
+      if(key==='delegate'&&matchesDelegate(row.delegate_id||row.courier_id||row.collector_id,id))return sum+Math.max(0,num(row.delegate||row.courier||row.courier_amount));
       return sum;
     },0);
   }
@@ -2392,9 +2448,10 @@ window.Alin.helpers={
   }
   function teacherSummary(teacherId){const rows=canonicalLedger().filter(row=>same(row.teacher_id,teacherId)),summary=balance('teacher',teacherId),month=new Date().toISOString().slice(0,7),monthEarn=rows.filter(row=>String(row.settled_at||row.created_at||'').slice(0,7)===month).reduce((sum,row)=>sum+Math.max(0,num(row.teacher||row.teacher_amount)),0);return {...summary,rows,payouts:payoutRows().filter(row=>payoutRole(row)==='teacher'&&same(payoutParty(row),teacherId)),monthEarn}}
   function delegateSummary(delegateId){
-    const rows=canonicalLedger().filter(row=>same(row.delegate_id||row.courier_id,delegateId)&&String(row.collector_role||row.delivery_type)==='delegate');
-    const collected=rows.reduce((sum,row)=>sum+Math.max(0,num(row.total)),0),earnings=rows.reduce((sum,row)=>sum+Math.max(0,num(row.delegate||row.courier_amount)),0),debtTotal=rows.reduce((sum,row)=>sum+Math.max(0,num(row.collector_debt)||num(row.total)-num(row.delegate)),0),settlements=delegateSettlementRows(delegateId),settled=Math.max(0,settlements.reduce((sum,row)=>sum+settlementValue(row),0));
-    return {earned:earnings,earnings,collected,debtTotal,paid:settled,settled,remaining:Math.max(0,debtTotal-settled),debt:Math.max(0,debtTotal-settled),rows,settlements,payouts:payoutRows().filter(row=>payoutRole(row)==='delegate'&&same(payoutParty(row),delegateId))};
+    const aliases=delegateAliases(delegateId);
+    const rows=canonicalLedger().filter(row=>aliases.has(String(row.delegate_id||row.courier_id||row.collector_id||''))&&String(row.collector_role||row.delivery_type||'delegate')==='delegate');
+    const collected=rows.reduce((sum,row)=>sum+Math.max(0,num(row.total)),0),earnings=rows.reduce((sum,row)=>sum+Math.max(0,num(row.delegate||row.courier||row.courier_amount)),0),debtTotal=rows.reduce((sum,row)=>{const explicit=num(row.collector_debt);return sum+Math.max(0,explicit>0?explicit:num(row.total)-num(row.delegate||row.courier||row.courier_amount))},0),settlements=delegateSettlementRows(delegateId),settled=Math.max(0,settlements.reduce((sum,row)=>sum+settlementValue(row),0));
+    return {earned:earnings,earnings,collected,debtTotal,paid:settled,settled,remaining:Math.max(0,debtTotal-settled),debt:Math.max(0,debtTotal-settled),rows,settlements,payouts:payoutRows().filter(row=>payoutRole(row)==='delegate'&&aliases.has(String(payoutParty(row))))};
   }
   function partySummary(role,id){if(String(role).toLowerCase()==='library'){const profit=balance('library',id);return {...profit,debt:librarySummary(id)}}if(['courier','delegate'].includes(String(role).toLowerCase()))return delegateSummary(id);return balance(role,id)}
 

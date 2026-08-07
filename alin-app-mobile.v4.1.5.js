@@ -3156,7 +3156,16 @@ window.deleteCoupon = deleteCoupon;
     return allOrders().filter(o=>ids.has(String(o.courier_id||o.delegate_id||o.courier_account_id||'')))
       .sort((a,b)=>String(b.created_at||b.updated_at||'').localeCompare(String(a.created_at||a.updated_at||'')));
   }
-  function settlements(){return arr(window.courierSettlements).length?arr(window.courierSettlements):arr(dbx().courierSettlements||dbx().delegate_settlements)}
+  function confirmedSettlement(row){
+    if(!row)return false;
+    const status=String(row.status||'').toLowerCase();if(!['received','paid'].includes(status))return false;
+    const receipt=String(row.receipt_number||row.voucher_number||'').trim(),id=String(row.id||'').trim(),note=String(row.note||row.notes||'').trim();
+    return (/^STL/i.test(id)&&/^RC-/i.test(receipt))||/تسوية\s*(ذمة\s*)?(مندوب|المندوب)|تسديد\s*(ذمة\s*)?(مندوب|المندوب)|delegate\s+settlement|courier\s+settlement/i.test(note);
+  }
+  function settlements(){
+    const seen=new Set(),rows=[...arr(window.courierSettlements),...arr(dbx().courierSettlements),...arr(dbx().delegate_settlements)];
+    return rows.filter(row=>{if(!confirmedSettlement(row))return false;const key=String(row?.id||row?.receipt_number||`${row?.party_id||row?.courier_id||row?.delegate_id}-${row?.created_at}-${row?.amount}`);if(!key||seen.has(key))return false;seen.add(key);return true});
+  }
   function done(o){return ['completed','delivered'].includes(String(o.status||''))}
   function cancelled(o){return ['cancelled','rejected','assignment_expired'].includes(String(o.status||''))}
   function active(o){return !done(o)&&!cancelled(o)}
@@ -3164,10 +3173,13 @@ window.deleteCoupon = deleteCoupon;
   function today(o){const x=o.delivered_at||o.completed_at||o.updated_at||o.created_at||'';return String(x).slice(0,10)===new Date().toISOString().slice(0,10)}
   function todayDone(c){return myOrders(c).filter(o=>done(o)&&today(o)).length}
   function financials(c){
+    if(!c)return{collected:0,earnings:0,paid:0,debt:0,balance:0};
     const serverSummary=window.AlinFinance?.delegateSummary?.(c?.id);
-    if(serverSummary)return{collected:+serverSummary.collected||0,earnings:+serverSummary.earnings||+serverSummary.earned||0,paid:+serverSummary.settled||+serverSummary.paid||0,debt:+serverSummary.debt||+serverSummary.remaining||0,balance:+serverSummary.earned||0};
-    const rows=myOrders(c).filter(done),collected=rows.reduce((a,o)=>a+(+o.total||0),0),earnings=rows.reduce((a,o)=>a+(+o.delegate_profit||+o.courier_profit||0),0);
-    const paid=settlements().filter(s=>String(s.courier_id||s.delegate_id||s.party_id||'')===String(c.id)&&String(s.status||'paid')!=='cancelled').reduce((a,s)=>a+(+s.amount||0),0);
+    const serverHasData=serverSummary&&(arr(serverSummary.rows).length>0||+serverSummary.collected>0||+serverSummary.earnings>0||+serverSummary.earned>0||+serverSummary.debt>0||+serverSummary.remaining>0||+serverSummary.settled>0||+serverSummary.paid>0);
+    if(serverHasData)return{collected:+serverSummary.collected||0,earnings:+serverSummary.earnings||+serverSummary.earned||0,paid:+serverSummary.settled||+serverSummary.paid||0,debt:+serverSummary.debt||+serverSummary.remaining||0,balance:+serverSummary.earnings||+serverSummary.earned||0};
+    const rows=myOrders(c).filter(done),collected=rows.reduce((a,o)=>a+(+o.delegate_cash_collected||+o.total||0),0),earnings=rows.reduce((a,o)=>{const persisted=+o.delegate_profit||+o.courier_profit||0;return a+(persisted>0?persisted:(+window.AlinFinance?.shares?.(o)?.delegate||0))},0);
+    const ids=new Set([c.id,c.account_id,c.courier_row_id,currentAccount()?.id].filter(Boolean).map(String));
+    const paid=settlements().filter(s=>ids.has(String(s.courier_id||s.delegate_id||s.party_id||''))&&!['cancelled','canceled','rejected','reversed','pending'].includes(String(s.status||'paid').toLowerCase())).reduce((a,s)=>a+(+s.amount||0),0);
     return{collected,earnings,paid,debt:Math.max(0,collected-earnings-paid),balance:earnings};
   }
   function orderState(st){return({pending:'جديد',pending_admin:'بانتظار التعيين',assigned:'بانتظار القبول',new:'طلب جديد',accepted:'مقبول',picked_up:'تم استلام الطلب',out_for_delivery:'في الطريق',out_delivery:'في الطريق',processing:'قيد التنفيذ',printing:'قيد الطباعة',ready:'جاهز',completed:'تم التسليم',delivered:'تم التسليم',cancelled:'ملغي',rejected:'مرفوض'})[st]||st||'جديد'}

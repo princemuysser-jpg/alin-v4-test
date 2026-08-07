@@ -1,4 +1,4 @@
-const VERSION='alin-4.1.6-prepublish-1o';
+const VERSION='alin-4.1.6-prepublish-1r';
 const STATIC_CACHE=`${VERSION}-static`;
 const RUNTIME_CACHE=`${VERSION}-runtime`;
 
@@ -15,6 +15,7 @@ const CORE=[
   './styles/alin-i18n.css','./styles/alin-desktop.css','./styles/alin-mobile.css','./styles/alin-splash.css',
   './store/banners.css','./store/mobile-navigation.css',
   './assets/images/alin-splash-desktop.webp','./assets/images/alin-splash-mobile.webp',
+  './assets/audio/alin-order-chime.wav',
   './assets/icons/icon-192.png','./assets/icons/icon-512.png'
 ];
 

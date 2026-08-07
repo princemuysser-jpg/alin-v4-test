@@ -19,9 +19,11 @@
     if(chosen){
       try{sessionStorage.setItem(STORAGE_KEY,chosen)}catch(_){ }
     }else{
+      // Touch phones/tablets are detected fresh on each load so landscape rotation never pins them to desktop.
       try{
         const saved=sessionStorage.getItem(STORAGE_KEY);
-        if(saved==='mobile'||saved==='desktop')chosen=saved;
+        const touchNow=(navigator.maxTouchPoints||0)>0;
+        if(!touchNow&&(saved==='mobile'||saved==='desktop'))chosen=saved;
       }catch(_){ }
     }
     if(!chosen){
@@ -38,7 +40,7 @@
       const hintedMobile=!!(navigator.userAgentData&&navigator.userAgentData.mobile===true);
       const phone=hintedMobile||/iPhone|iPod|Android.+Mobile|Windows Phone|Mobile/i.test(ua)||(width<800&&coarse);
       const tablet=/iPad|Tablet|Kindle|Silk|Android(?!.*Mobile)/i.test(ua)||(/Macintosh/i.test(ua)&&touch)||((coarse||hoverNone)&&touch&&width>=800&&width<=1180);
-      chosen=phone?'mobile':tablet&&(portrait||width<1000)?'mobile':'desktop';
+      chosen=(phone||tablet)?'mobile':'desktop';
       try{sessionStorage.setItem(STORAGE_KEY,chosen)}catch(_){ }
     }
     cleanQuery(current);
