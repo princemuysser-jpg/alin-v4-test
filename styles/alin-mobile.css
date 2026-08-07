@@ -382,7 +382,7 @@ html[data-alin-orientation="landscape"] body.store-mobile .alin98-bottom{max-wid
 }
 
 /* iPad/tablet landscape gets a true wide layout and remains scrollable. */
-@media (orientation:landscape) and (min-width:900px) and (pointer:coarse){
+@media (orientation:landscape) and (min-width:900px){
   html[data-alin-device="tablet"] body.store-mobile #app>main{max-width:none!important;padding:14px 20px 110px!important}
   html[data-alin-device="tablet"] body.store-mobile .alin-mobile-premium-header{grid-template-columns:minmax(180px,230px) minmax(260px,1fr) auto!important;margin-bottom:12px!important}
   html[data-alin-device="tablet"] body.store-mobile .alin-store-banner__media{aspect-ratio:16/5!important;max-height:320px!important}
@@ -391,4 +391,18 @@ html[data-alin-orientation="landscape"] body.store-mobile .alin98-bottom{max-wid
   html[data-alin-device="tablet"] body.store-mobile #teacherPage .teacher-tabs{grid-template-columns:repeat(4,minmax(0,1fr))!important}
   html[data-alin-device="tablet"] body.store-mobile .library-v116-tabs,
   html[data-alin-device="tablet"] body.store-mobile .courier-v161-tabs{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+}
+
+
+/* ALIN v4.1.6 prepublish 1t — installed iPad PWA landscape recovery. */
+@media (orientation:landscape) and (min-width:768px){
+  html[data-alin-device="tablet"] body.store-mobile,
+  html[data-alin-device="tablet"] body.store-mobile #app,
+  html[data-alin-device="tablet"] body.store-mobile #app>main,
+  html[data-alin-device="tablet"] body.store-mobile .page{
+    width:100%!important;max-width:100%!important;min-width:0!important;height:auto!important;min-height:100dvh!important;
+  }
+  html[data-alin-device="tablet"] body.store-mobile #app>main{overflow-x:hidden!important;overflow-y:visible!important}
+  html[data-alin-device="tablet"] body.store-mobile .alin-mobile-premium-header{width:100%!important;max-width:none!important}
+  html[data-alin-device="tablet"] body.store-mobile .alin-store-banners{width:100%!important;max-width:none!important}
 }

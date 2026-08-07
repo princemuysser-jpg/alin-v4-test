@@ -53,7 +53,7 @@
 
   function delegateAliases(id){
     const set=new Set([String(id??'')].filter(Boolean));
-    const sources=[...arr(db().delegates),...arr(db().accounts?.couriers),...arr(db().couriers)];
+    const sources=[...arr(db().delegates),...arr(db().accounts?.delegates),...arr(db().accounts?.couriers),...arr(db().accounts?.all).filter(row=>['courier','delegate'].includes(String(row?.role||'').toLowerCase())),...arr(db().couriers)];
     let changed=true;
     while(changed){
       changed=false;

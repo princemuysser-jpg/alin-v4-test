@@ -1,7 +1,7 @@
 /* ALIN v4.0.0 Clean Project — fast cached boot with server-side attempt protection. */
 (function(){
   'use strict';
-  const ATTEMPT_KEY='alin_auth_attempts_v140',MAX_ATTEMPTS=5,LOCK_MS=10*60*1000;
+  const ATTEMPT_KEY='alin_auth_attempts_v141',MAX_ATTEMPTS=5,LOCK_MS=10*60*1000;
   const cfg=()=>window.ALIN_CONFIG||{};
   const enabled=()=>cfg().authEnabled===true;
   const client=()=>window.sb||(window.AlinCloud&&window.AlinCloud.client?.())||null;
@@ -19,16 +19,32 @@
     try{let value=localStorage.getItem(DEVICE_KEY);if(!value){value=crypto.randomUUID?.()||`${Date.now()}-${Math.random()}`;localStorage.setItem(DEVICE_KEY,value)}return value}
     catch(_){return 'browser-session'}
   }
+  function loginEmailCandidates(username){
+    const raw=String(username||'').trim().toLocaleLowerCase('en-US').replace(/\s+/g,'-');
+    const domain=cfg().authEmailDomain||'users.alin.local';
+    const out=[emailFor(raw)];
+    if(raw.includes('@'))out.push(raw);
+    else{
+      const simple=raw.replace(/[^a-z0-9._-]/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'');
+      if(simple){out.push(`${simple}@${domain}`);out.push(`${simple}@alin.local`)}
+    }
+    return [...new Set(out.filter(Boolean))];
+  }
   async function directSignIn(username,password){
     const c=client();if(!c?.auth)throw new Error('خدمة تسجيل الدخول غير متاحة');
-    const result=await c.auth.signInWithPassword({email:emailFor(username),password:String(password||'')});
-    if(result?.error){
+    let invalid=false;
+    for(const email of loginEmailCandidates(username)){
+      const result=await c.auth.signInWithPassword({email,password:String(password||'')});
+      if(!result?.error){
+        if(!result?.data?.session||!result?.data?.user)throw new Error('تعذر تثبيت جلسة الدخول');
+        return result.data;
+      }
       const text=String(result.error.message||'');
-      if(/invalid login credentials|email not confirmed|invalid credentials/i.test(text))throw new Error('بيانات الدخول غير صحيحة');
+      if(/invalid login credentials|email not confirmed|invalid credentials/i.test(text)){invalid=true;continue}
       throw new Error('تعذر تسجيل الدخول حالياً');
     }
-    if(!result?.data?.session||!result?.data?.user)throw new Error('تعذر تثبيت جلسة الدخول');
-    return result.data;
+    if(invalid)throw new Error('بيانات الدخول غير صحيحة');
+    throw new Error('تعذر تسجيل الدخول حالياً');
   }
   async function edgeErrorInfo(error){
     let message=String(error?.message||'');

@@ -30,7 +30,8 @@
   }
   function allCouriers(){
     const database=dbx(),accounts=database.accounts||{};
-    const sources=[...arr(accounts.couriers),...arr(accounts.all).filter(x=>x.role==='courier'),...arr(database.couriers),...arr(window.couriers)];
+    const roleOk=x=>['courier','delegate'].includes(String(x?.role||'').toLowerCase());
+    const sources=[...arr(accounts.couriers),...arr(accounts.delegates),...arr(accounts.all).filter(roleOk),...arr(database.couriers),...arr(database.delegates),...arr(window.couriers)];
     const map=new Map();
     for(const raw of sources){const row=normalizeCourier(raw),key=keyOf(row);if(key)map.set(key,{...(map.get(key)||{}),...row,id:key,account_id:key,role:'courier'})}
     return [...map.values()];
@@ -61,10 +62,24 @@
     return merged;
   }
   function allOrders(){return arr(dbx().orders)}
+  function courierAliases(c=resolveCourier()){
+    const ids=new Set([c?.id,c?.account_id,c?.courier_row_id,c?.auth_user_id,currentAccount()?.id,currentAccount()?.auth_user_id].filter(Boolean).map(String));
+    let changed=true;
+    const sources=allCouriers();
+    while(changed){
+      changed=false;
+      for(const row of sources){
+        const values=[row?.id,row?.account_id,row?.courier_row_id,row?.auth_user_id,row?.user_id].filter(Boolean).map(String);
+        if(values.some(value=>ids.has(value)))for(const value of values)if(!ids.has(value)){ids.add(value);changed=true}
+      }
+    }
+    return ids;
+  }
+  function orderCourierIds(o){return [o?.courier_id,o?.delegate_id,o?.courier_account_id,o?.assigned_courier_id,o?.assigned_delegate_id].filter(Boolean).map(String)}
   function myOrders(c=resolveCourier()){
     if(!c)return[];
-    const ids=new Set([c.id,c.account_id,c.courier_row_id,currentAccount()?.id].filter(Boolean).map(String));
-    return allOrders().filter(o=>ids.has(String(o.courier_id||o.delegate_id||o.courier_account_id||'')))
+    const ids=courierAliases(c);
+    return allOrders().filter(o=>orderCourierIds(o).some(id=>ids.has(id)))
       .sort((a,b)=>String(b.created_at||b.updated_at||'').localeCompare(String(a.created_at||a.updated_at||'')));
   }
   function confirmedSettlement(row){
@@ -83,21 +98,36 @@
   function activeLoad(c){return myOrders(c).filter(active).length}
   function today(o){const x=o.delivered_at||o.completed_at||o.updated_at||o.created_at||'';return String(x).slice(0,10)===new Date().toISOString().slice(0,10)}
   function todayDone(c){return myOrders(c).filter(o=>done(o)&&today(o)).length}
+  function orderCollectedAmount(o){
+    const values=[o?.delegate_cash_collected,o?.courier_cash_collected,o?.cash_collected,o?.amount_collected,o?.total,o?.grand_total,o?.final_total,o?.amount_due,o?.payable_total];
+    for(const value of values){const n=Number(value);if(Number.isFinite(n)&&n>0)return n}
+    return 0;
+  }
+  function orderCourierProfit(o){
+    const persisted=Number(o?.delegate_profit||o?.courier_profit||0);
+    if(Number.isFinite(persisted)&&persisted>0)return persisted;
+    return Math.max(0,Number(window.AlinFinance?.shares?.(o)?.delegate||0));
+  }
   function financials(c){
     if(!c)return{collected:0,earnings:0,paid:0,debt:0,balance:0};
     const rows=myOrders(c).filter(done);
-    const localCollected=rows.reduce((a,o)=>a+(+o.delegate_cash_collected||+o.total||0),0);
-    const localEarnings=rows.reduce((a,o)=>{const persisted=+o.delegate_profit||+o.courier_profit||0;return a+(persisted>0?persisted:(+window.AlinFinance?.shares?.(o)?.delegate||0))},0);
-    const ids=new Set([c.id,c.account_id,c.courier_row_id,currentAccount()?.id].filter(Boolean).map(String));
-    const localPaid=settlements().filter(s=>ids.has(String(s.courier_id||s.delegate_id||s.party_id||''))&&!['cancelled','canceled','rejected','reversed','pending'].includes(String(s.status||'paid').toLowerCase())).reduce((a,s)=>a+(+s.amount||0),0);
-    const server=window.AlinFinance?.delegateSummary?.(c?.id)||{};
-    const collected=Math.max(+server.collected||0,localCollected);
-    const earnings=Math.max(+server.earnings||+server.earned||0,localEarnings);
-    const paid=Math.max(+server.settled||+server.paid||0,localPaid);
-    const calculatedDebt=Math.max(0,collected-earnings-paid);
-    const serverDebt=Math.max(+server.debt||+server.remaining||0,+server.debtTotal-(+server.settled||+server.paid||0)||0);
+    const localCollected=rows.reduce((a,o)=>a+orderCollectedAmount(o),0);
+    const localEarnings=rows.reduce((a,o)=>a+orderCourierProfit(o),0);
+    const localDebtTotal=rows.reduce((a,o)=>a+Math.max(0,orderCollectedAmount(o)-orderCourierProfit(o)),0);
+    const ids=courierAliases(c);
+    const localPaid=settlements().filter(s=>[s.courier_id,s.delegate_id,s.party_id,s.account_id].filter(Boolean).map(String).some(id=>ids.has(id))&&!['cancelled','canceled','rejected','reversed','pending'].includes(String(s.status||'paid').toLowerCase())).reduce((a,s)=>a+(+s.amount||0),0);
+    const summaries=[...ids].map(id=>window.AlinFinance?.delegateSummary?.(id)||{});
+    const serverMax=key=>Math.max(0,...summaries.map(row=>Number(row?.[key]||0)).filter(Number.isFinite));
+    const serverCollected=serverMax('collected');
+    const serverEarnings=Math.max(serverMax('earnings'),serverMax('earned'));
+    const serverPaid=Math.max(serverMax('settled'),serverMax('paid'));
+    const serverDebt=Math.max(serverMax('debt'),serverMax('remaining'),Math.max(0,serverMax('debtTotal')-serverPaid));
+    const collected=Math.max(serverCollected,localCollected);
+    const earnings=Math.max(serverEarnings,localEarnings);
+    const paid=Math.max(serverPaid,localPaid);
+    const calculatedDebt=Math.max(0,Math.max(localDebtTotal,collected-earnings)-paid);
     const debt=Math.max(calculatedDebt,serverDebt);
-    return{collected,earnings,paid,debt,balance:earnings};
+    return{collected,earnings,paid,debt,balance:earnings,debtTotal:Math.max(localDebtTotal,serverMax('debtTotal'))};
   }
   function orderState(st){return({pending:'جديد',pending_admin:'بانتظار التعيين',assigned:'بانتظار القبول',new:'طلب جديد',accepted:'مقبول',picked_up:'تم استلام الطلب',out_for_delivery:'في الطريق',out_delivery:'في الطريق',processing:'قيد التنفيذ',printing:'قيد الطباعة',ready:'جاهز',completed:'تم التسليم',delivered:'تم التسليم',cancelled:'ملغي',rejected:'مرفوض'})[st]||st||'جديد'}
   function messageText(error){
@@ -226,8 +256,8 @@
       try{window.couriers=rows}catch(_){ }
     }
     if(Array.isArray(orderRows)){
-      const ownId=String(currentAccount()?.id||''),freshIds=new Set(orderRows.map(x=>String(x.id)));
-      const retained=allOrders().filter(x=>!freshIds.has(String(x.id))&&String(x.courier_id||x.delegate_id||'')!==ownId);
+      const ids=courierAliases(resolveCourier()),freshIds=new Set(orderRows.map(x=>String(x.id)));
+      const retained=allOrders().filter(x=>!freshIds.has(String(x.id))&&!orderCourierIds(x).some(id=>ids.has(id)));
       database.orders=[...orderRows,...retained];
     }
   }
@@ -250,9 +280,9 @@
   function resetRefresh(){lastRefresh=0}
 
   window.AlinCourierCore=Object.freeze({
-    version:'4.1.2',$, $$, arr, escv, moneyv, now, notify, currentAccount, dbx,
+    version:'4.1.6-1t',$, $$, arr, escv, moneyv, now, notify, currentAccount, dbx,
     allCouriers, areasOf, areaRows, statusOf, statusLabel, resolveCourier,
-    allOrders, myOrders, settlements, done, cancelled, active, activeLoad, today, todayDone, financials,
+    allOrders, courierAliases, orderCourierIds, myOrders, settlements, done, cancelled, active, activeLoad, today, todayDone, financials,
     orderState, friendlyOrderError, mapLink, phoneLink, waLink, fmtDate,
     matchingCouriers, activeCouriers, alinCouriersOptions, assignOrder, transitionOrder,
     refreshCourierData, resetRefresh
