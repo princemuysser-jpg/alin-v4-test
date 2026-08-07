@@ -85,13 +85,19 @@
   function todayDone(c){return myOrders(c).filter(o=>done(o)&&today(o)).length}
   function financials(c){
     if(!c)return{collected:0,earnings:0,paid:0,debt:0,balance:0};
-    const serverSummary=window.AlinFinance?.delegateSummary?.(c?.id);
-    const serverHasData=serverSummary&&(arr(serverSummary.rows).length>0||+serverSummary.collected>0||+serverSummary.earnings>0||+serverSummary.earned>0||+serverSummary.debt>0||+serverSummary.remaining>0||+serverSummary.settled>0||+serverSummary.paid>0);
-    if(serverHasData)return{collected:+serverSummary.collected||0,earnings:+serverSummary.earnings||+serverSummary.earned||0,paid:+serverSummary.settled||+serverSummary.paid||0,debt:+serverSummary.debt||+serverSummary.remaining||0,balance:+serverSummary.earnings||+serverSummary.earned||0};
-    const rows=myOrders(c).filter(done),collected=rows.reduce((a,o)=>a+(+o.delegate_cash_collected||+o.total||0),0),earnings=rows.reduce((a,o)=>{const persisted=+o.delegate_profit||+o.courier_profit||0;return a+(persisted>0?persisted:(+window.AlinFinance?.shares?.(o)?.delegate||0))},0);
+    const rows=myOrders(c).filter(done);
+    const localCollected=rows.reduce((a,o)=>a+(+o.delegate_cash_collected||+o.total||0),0);
+    const localEarnings=rows.reduce((a,o)=>{const persisted=+o.delegate_profit||+o.courier_profit||0;return a+(persisted>0?persisted:(+window.AlinFinance?.shares?.(o)?.delegate||0))},0);
     const ids=new Set([c.id,c.account_id,c.courier_row_id,currentAccount()?.id].filter(Boolean).map(String));
-    const paid=settlements().filter(s=>ids.has(String(s.courier_id||s.delegate_id||s.party_id||''))&&!['cancelled','canceled','rejected','reversed','pending'].includes(String(s.status||'paid').toLowerCase())).reduce((a,s)=>a+(+s.amount||0),0);
-    return{collected,earnings,paid,debt:Math.max(0,collected-earnings-paid),balance:earnings};
+    const localPaid=settlements().filter(s=>ids.has(String(s.courier_id||s.delegate_id||s.party_id||''))&&!['cancelled','canceled','rejected','reversed','pending'].includes(String(s.status||'paid').toLowerCase())).reduce((a,s)=>a+(+s.amount||0),0);
+    const server=window.AlinFinance?.delegateSummary?.(c?.id)||{};
+    const collected=Math.max(+server.collected||0,localCollected);
+    const earnings=Math.max(+server.earnings||+server.earned||0,localEarnings);
+    const paid=Math.max(+server.settled||+server.paid||0,localPaid);
+    const calculatedDebt=Math.max(0,collected-earnings-paid);
+    const serverDebt=Math.max(+server.debt||+server.remaining||0,+server.debtTotal-(+server.settled||+server.paid||0)||0);
+    const debt=Math.max(calculatedDebt,serverDebt);
+    return{collected,earnings,paid,debt,balance:earnings};
   }
   function orderState(st){return({pending:'جديد',pending_admin:'بانتظار التعيين',assigned:'بانتظار القبول',new:'طلب جديد',accepted:'مقبول',picked_up:'تم استلام الطلب',out_for_delivery:'في الطريق',out_delivery:'في الطريق',processing:'قيد التنفيذ',printing:'قيد الطباعة',ready:'جاهز',completed:'تم التسليم',delivered:'تم التسليم',cancelled:'ملغي',rejected:'مرفوض'})[st]||st||'جديد'}
   function messageText(error){

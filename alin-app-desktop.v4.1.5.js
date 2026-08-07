@@ -2198,7 +2198,7 @@ window.AlinTeacherModules.unpublishTeacherBooklet=unpublishTeacherBooklet;
     return parties().map(p=>{
       const summary=finance()?.partySummary?.(p.role,p.id)||{earned:0,paid:0,remaining:0};
       const libraryDebt=p.role==='library'?(summary.debt||finance()?.librarySummary?.(p.id)):null;
-      const delegateDebt=p.role==='delegate'?(finance()?.delegateSummary?.(p.id)||summary):null;
+      const delegateDebt=['delegate','courier'].includes(String(p.role||'').toLowerCase())?(finance()?.delegateSummary?.(p.id)||summary):null;
       const payoutRole=['admin','teacher'].includes(p.role);
       return `<article class="admin-v137-party-card" data-role="${escv(p.role)}" data-search="${escv(`${p.name||''} ${p.label}`.toLowerCase())}">
         <div><b>${escv(p.name||p.label)}</b><small>${escv(p.label)} — الإجمالي ${moneyv(summary.earned||summary.earnings)} د.ع</small></div>
@@ -3174,13 +3174,19 @@ window.deleteCoupon = deleteCoupon;
   function todayDone(c){return myOrders(c).filter(o=>done(o)&&today(o)).length}
   function financials(c){
     if(!c)return{collected:0,earnings:0,paid:0,debt:0,balance:0};
-    const serverSummary=window.AlinFinance?.delegateSummary?.(c?.id);
-    const serverHasData=serverSummary&&(arr(serverSummary.rows).length>0||+serverSummary.collected>0||+serverSummary.earnings>0||+serverSummary.earned>0||+serverSummary.debt>0||+serverSummary.remaining>0||+serverSummary.settled>0||+serverSummary.paid>0);
-    if(serverHasData)return{collected:+serverSummary.collected||0,earnings:+serverSummary.earnings||+serverSummary.earned||0,paid:+serverSummary.settled||+serverSummary.paid||0,debt:+serverSummary.debt||+serverSummary.remaining||0,balance:+serverSummary.earnings||+serverSummary.earned||0};
-    const rows=myOrders(c).filter(done),collected=rows.reduce((a,o)=>a+(+o.delegate_cash_collected||+o.total||0),0),earnings=rows.reduce((a,o)=>{const persisted=+o.delegate_profit||+o.courier_profit||0;return a+(persisted>0?persisted:(+window.AlinFinance?.shares?.(o)?.delegate||0))},0);
+    const rows=myOrders(c).filter(done);
+    const localCollected=rows.reduce((a,o)=>a+(+o.delegate_cash_collected||+o.total||0),0);
+    const localEarnings=rows.reduce((a,o)=>{const persisted=+o.delegate_profit||+o.courier_profit||0;return a+(persisted>0?persisted:(+window.AlinFinance?.shares?.(o)?.delegate||0))},0);
     const ids=new Set([c.id,c.account_id,c.courier_row_id,currentAccount()?.id].filter(Boolean).map(String));
-    const paid=settlements().filter(s=>ids.has(String(s.courier_id||s.delegate_id||s.party_id||''))&&!['cancelled','canceled','rejected','reversed','pending'].includes(String(s.status||'paid').toLowerCase())).reduce((a,s)=>a+(+s.amount||0),0);
-    return{collected,earnings,paid,debt:Math.max(0,collected-earnings-paid),balance:earnings};
+    const localPaid=settlements().filter(s=>ids.has(String(s.courier_id||s.delegate_id||s.party_id||''))&&!['cancelled','canceled','rejected','reversed','pending'].includes(String(s.status||'paid').toLowerCase())).reduce((a,s)=>a+(+s.amount||0),0);
+    const server=window.AlinFinance?.delegateSummary?.(c?.id)||{};
+    const collected=Math.max(+server.collected||0,localCollected);
+    const earnings=Math.max(+server.earnings||+server.earned||0,localEarnings);
+    const paid=Math.max(+server.settled||+server.paid||0,localPaid);
+    const calculatedDebt=Math.max(0,collected-earnings-paid);
+    const serverDebt=Math.max(+server.debt||+server.remaining||0,+server.debtTotal-(+server.settled||+server.paid||0)||0);
+    const debt=Math.max(calculatedDebt,serverDebt);
+    return{collected,earnings,paid,debt,balance:earnings};
   }
   function orderState(st){return({pending:'جديد',pending_admin:'بانتظار التعيين',assigned:'بانتظار القبول',new:'طلب جديد',accepted:'مقبول',picked_up:'تم استلام الطلب',out_for_delivery:'في الطريق',out_delivery:'في الطريق',processing:'قيد التنفيذ',printing:'قيد الطباعة',ready:'جاهز',completed:'تم التسليم',delivered:'تم التسليم',cancelled:'ملغي',rejected:'مرفوض'})[st]||st||'جديد'}
   function messageText(error){
@@ -4330,7 +4336,7 @@ window.AlinCourierModules['recordCourierSettlementForOrder']=typeof recordCourie
 /* ALIN v4.0.0 Clean Project — fast cached boot with server-side attempt protection. */
 (function(){
   'use strict';
-  const ATTEMPT_KEY='alin_auth_attempts_v139',MAX_ATTEMPTS=5,LOCK_MS=10*60*1000;
+  const ATTEMPT_KEY='alin_auth_attempts_v140',MAX_ATTEMPTS=5,LOCK_MS=10*60*1000;
   const cfg=()=>window.ALIN_CONFIG||{};
   const enabled=()=>cfg().authEnabled===true;
   const client=()=>window.sb||(window.AlinCloud&&window.AlinCloud.client?.())||null;
@@ -4369,23 +4375,8 @@ window.AlinCourierModules['recordCourierSettlementForOrder']=typeof recordCourie
     return {message,status};
   }
   async function secureSignIn(username,password){
-    const c=client();if(!c?.auth)throw new Error('خدمة تسجيل الدخول غير متاحة');
-    if(c?.functions){
-      const {data,error}=await c.functions.invoke('secure-login',{body:{username:String(username||''),password:String(password||''),device_id:deviceId()}});
-      if(!error&&data?.ok&&data?.session?.access_token&&data?.session?.refresh_token){
-        const applied=await c.auth.setSession({access_token:data.session.access_token,refresh_token:data.session.refresh_token});
-        if(applied?.error||!applied?.data?.user)throw applied?.error||new Error('تعذر تثبيت جلسة الدخول');
-        return applied.data;
-      }
-      if(error){
-        const info=await edgeErrorInfo(error);
-        const hardFailure=[401,403,429].includes(info.status)||/بيانات الدخول غير صحيحة|المحاولات المتبقية|تم إيقاف المحاولات/i.test(info.message);
-        if(hardFailure)throw new Error(info.message||'بيانات الدخول غير صحيحة');
-        console.warn('[ALIN secure-login fallback]',info.status||'network',info.message||'edge unavailable');
-      }else if(data?.error){
-        throw new Error(String(data.error));
-      }
-    }
+    // Edge Functions are optional in the current production flow. Login must not fail
+    // just because secure-login is missing, stale, or returns an old 401 response.
     return directSignIn(username,password);
   }
   const readAttempts=()=>{try{return JSON.parse(localStorage.getItem(ATTEMPT_KEY)||'{}')}catch(_){return{}}};
@@ -4444,13 +4435,14 @@ window.AlinCourierModules['recordCourierSettlementForOrder']=typeof recordCourie
     if(!account||account.status!=='active'){
       await c.auth.signOut();failAttempt(requested,username);throw new Error('الحساب غير مربوط أو غير فعال');
     }
-    if(requested&&requested!=='store'&&account.role!==requested&&account.role!=='admin'){
+    const accountRole=String(account.role||'').toLowerCase()==='delegate'?'courier':String(account.role||'').toLowerCase();
+    if(requested&&requested!=='store'&&accountRole!==requested&&accountRole!=='admin'){
       await c.auth.signOut();failAttempt(requested,username);throw new Error('نوع الحساب لا يطابق البوابة المختارة');
     }
     clearAttempts(requested,username);
-    window.current={role:account.role,id:account.id,name:account.name,username:account.username,auth_user_id:data.user.id,area:account.area||'',phone:account.phone||'',landmark:account.landmark||'',admin_level:account.admin_level||'operator'};
+    window.current={role:accountRole,id:account.id,name:account.name,username:account.username,auth_user_id:data.user.id,area:account.area||'',phone:account.phone||'',landmark:account.landmark||'',admin_level:account.admin_level||'operator'};
     if(typeof window.load==='function')await window.load();
-    const targetPage=account.role==='accountant'?'admin':account.role;
+    const targetPage=accountRole==='accountant'?'admin':accountRole;
     if(typeof window.openPage==='function')window.openPage(targetPage,{render:false});
     const passEl=window.loginPass||document.getElementById('loginPass');if(passEl)passEl.value='';
     window.dispatchEvent(new CustomEvent('alin:auth-login',{detail:{account}}));
@@ -4469,7 +4461,7 @@ window.AlinCourierModules['recordCourierSettlementForOrder']=typeof recordCourie
     document.getElementById('login')?.classList.remove('hidden');
   }
   function accountState(account,user){
-    return {role:account.role,id:account.id,name:account.name,username:account.username,auth_user_id:user.id,area:account.area||'',phone:account.phone||'',landmark:account.landmark||'',admin_level:account.admin_level||'operator'};
+    return {role:String(account.role||'').toLowerCase()==='delegate'?'courier':String(account.role||'').toLowerCase(),id:account.id,name:account.name,username:account.username,auth_user_id:user.id,area:account.area||'',phone:account.phone||'',landmark:account.landmark||'',admin_level:account.admin_level||'operator'};
   }
   async function openPublicStore(){
     try{window.AlinCloud?.loadCachedSnapshot?.()}catch(_){}

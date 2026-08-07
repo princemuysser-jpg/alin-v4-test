@@ -1,12 +1,12 @@
 // === core/order-bell.js ===
-/* ALIN v4.1.6 prepublish 1r — high quality bell + immediate assignment alerts + resilient realtime. */
+/* ALIN v4.1.6 prepublish 1s — high quality bell + immediate assignment alerts + resilient realtime. */
 (function(){
   'use strict';
   if(window.__ALIN_ORDER_BELL__)return;
   window.__ALIN_ORDER_BELL__=true;
 
-  const VERSION='4.1.6-prepublish-1r';
-  const SOUND_URL='./assets/audio/alin-order-chime.wav?v=4.1.6-prepublish-1r';
+  const VERSION='4.1.6-prepublish-1s';
+  const SOUND_URL='./assets/audio/alin-order-chime.wav?v=4.1.6-prepublish-1s';
   const ROLE_PAGES={admin:'adminPage',library:'libraryPage',courier:'courierPage'};
   const roleState=new Map();
   const sessionSeen=new Set();

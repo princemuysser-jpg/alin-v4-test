@@ -9,8 +9,9 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' blob: https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; worker-src 'self' blob: https://cdn.jsdelivr.net; frame-src 'self' blob:;">
 <script>(function(){try{var mode=localStorage.getItem('alin_theme_v234')==='dark'?'dark':'light';document.documentElement.dataset.alinTheme=mode;document.documentElement.dataset.alinThemeMode=mode}catch(_){document.documentElement.dataset.alinTheme='light';document.documentElement.dataset.alinThemeMode='light'}})();</script>
 <script id="alinOrientationBootstrap">(function(){function unlock(){try{screen.orientation&&screen.orientation.unlock&&screen.orientation.unlock()}catch(_){}}unlock();addEventListener('pageshow',unlock,{passive:true});addEventListener('orientationchange',function(){setTimeout(unlock,50)},{passive:true})})();</script>
+<script id="alinOrientationClassBootstrap">(function(){function apply(){var landscape=false;try{landscape=matchMedia('(orientation: landscape)').matches}catch(_){landscape=innerWidth>innerHeight}document.documentElement.dataset.alinOrientation=landscape?'landscape':'portrait';document.documentElement.style.setProperty('--alin-vw',(window.visualViewport?.width||innerWidth||0)+'px');document.documentElement.style.setProperty('--alin-vh',(window.visualViewport?.height||innerHeight||0)+'px');try{document.body&&void document.body.offsetWidth}catch(_){}}apply();addEventListener('resize',function(){requestAnimationFrame(apply)},{passive:true});addEventListener('orientationchange',function(){setTimeout(apply,80);setTimeout(apply,350)},{passive:true});window.visualViewport&&visualViewport.addEventListener('resize',function(){requestAnimationFrame(apply)},{passive:true})})();</script>
 <script id="alinDeviceClassBootstrap">(function(){function apply(){try{var sw=Number(screen&&screen.width)||innerWidth||0,sh=Number(screen&&screen.height)||innerHeight||0,vw=Number(innerWidth)||sw,vh=Number(innerHeight)||sh,minEdge=Math.min(sw,sh,vw,vh),maxEdge=Math.max(sw,sh,vw,vh),touch=(navigator.maxTouchPoints||0)>0,tablet=touch&&minEdge>=540&&maxEdge>=800;document.documentElement.dataset.alinDevice=tablet?'tablet':'mobile'}catch(_){document.documentElement.dataset.alinDevice='mobile'}}apply();addEventListener('resize',apply,{passive:true});addEventListener('orientationchange',apply,{passive:true})})();</script>
-<meta content="width=device-width,initial-scale=1" name="viewport"/>
+<meta content="width=device-width,initial-scale=1,viewport-fit=cover" name="viewport"/>
 <title>منصة آلين v4.1.6 - موبايل وتابلت</title>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
@@ -18,20 +19,20 @@
 <meta content="yes" name="mobile-web-app-capable"/>
 <meta content="yes" name="apple-mobile-web-app-capable"/>
 <meta content="منصة آلين" name="apple-mobile-web-app-title"/>
-<link href="./manifest-mobile.webmanifest?v=4.1.6-prepublish-1r" rel="manifest"/>
+<link href="./manifest-mobile.webmanifest?v=4.1.6-prepublish-1s" rel="manifest"/>
 <link href="assets/icons/icon-192.png" rel="icon" sizes="192x192" type="image/png"/>
 <link href="assets/icons/icon-192.png" rel="apple-touch-icon"/>
-<link href="./dist/css/mobile.bundle.css?v=4.1.6-prepublish-1r" rel="stylesheet"/>
-<link href="./styles/alin-tokens.css?v=4.1.6-prepublish-1r" rel="stylesheet"/>
-<link href="./styles/alin-shared.css?v=4.1.6-prepublish-1r" rel="stylesheet"/>
-<link href="./styles/alin-branding.css?v=4.1.6-prepublish-1r" rel="stylesheet"/>
-<link href="./styles/alin-i18n.css?v=4.1.6-prepublish-1r" rel="stylesheet"/>
-<link href="./styles/alin-mobile.css?v=4.1.6-prepublish-1r" rel="stylesheet"/>
-<link href="./store/mobile-navigation.css?v=4.1.6-prepublish-1r" rel="stylesheet"/>
-<link rel="preload" href="./alin-app-mobile.v4.1.5.js?v=4.1.6-prepublish-1r" as="script">
+<link href="./dist/css/mobile.bundle.css?v=4.1.6-prepublish-1s" rel="stylesheet"/>
+<link href="./styles/alin-tokens.css?v=4.1.6-prepublish-1s" rel="stylesheet"/>
+<link href="./styles/alin-shared.css?v=4.1.6-prepublish-1s" rel="stylesheet"/>
+<link href="./styles/alin-branding.css?v=4.1.6-prepublish-1s" rel="stylesheet"/>
+<link href="./styles/alin-i18n.css?v=4.1.6-prepublish-1s" rel="stylesheet"/>
+<link href="./styles/alin-mobile.css?v=4.1.6-prepublish-1s" rel="stylesheet"/>
+<link href="./store/mobile-navigation.css?v=4.1.6-prepublish-1s" rel="stylesheet"/>
+<link rel="preload" href="./alin-app-mobile.v4.1.5.js?v=4.1.6-prepublish-1s" as="script">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7" defer onerror="window.__ALIN_CDN_ERROR__=true;console.error('تعذر تحميل Supabase')"></script>
-<script src="./alin-config.js?v=4.1.6-prepublish-1r"></script>
-<script src="./dist/alin-core.v4.js?v=4.1.6-prepublish-1r" defer></script>
+<script src="./alin-config.js?v=4.1.6-prepublish-1s"></script>
+<script src="./dist/alin-core.v4.js?v=4.1.6-prepublish-1s" defer></script>
 
 
 
@@ -76,7 +77,7 @@
 
 
 
-  <link rel="stylesheet" href="./store/banners.css?v=4.1.6-prepublish-1r">
+  <link rel="stylesheet" href="./store/banners.css?v=4.1.6-prepublish-1s">
 <style id="alinAuthBootStyle">html[data-alin-auth-boot="1"] body>*{visibility:hidden!important}html[data-alin-auth-boot="1"] body::before{content:"جارٍ فتح منصة آلين...";visibility:visible;position:fixed;inset:0;display:grid;place-items:center;background:#f7f9fc;color:#102342;font:800 18px system-ui;z-index:2147483647}</style>
 <script>setTimeout(()=>document.documentElement.removeAttribute('data-alin-auth-boot'),3500)</script>
 
@@ -736,12 +737,12 @@ html[data-alin-device="tablet"] body.store-mobile #alinTrackingSheet .alin-track
   
 
 
-<script src="./core/pwa-register.js?v=4.1.6-prepublish-1r" defer></script>
-<script src="./core/boot-recovery.js?v=4.1.6-prepublish-1r" defer></script>
-<script src="./modules/core/navigation.js?v=4.1.6-prepublish-1r" defer></script>
-<script src="./alin-app-mobile.v4.1.5.js?v=4.1.6-prepublish-1r" defer onload="alinAppBundleLoaded()" onerror="alinAppBundleFailed()"></script>
-<script src="./modules/core/account-admin-service.js?v=4.1.6-prepublish-1r" defer></script>
-<script src="./modules/core/order-bell.js?v=4.1.6-prepublish-1r" defer></script>
-<script src="./modules/teacher/admin-word-download.js?v=4.1.6-prepublish-1r" defer></script>
+<script src="./core/pwa-register.js?v=4.1.6-prepublish-1s" defer></script>
+<script src="./core/boot-recovery.js?v=4.1.6-prepublish-1s" defer></script>
+<script src="./modules/core/navigation.js?v=4.1.6-prepublish-1s" defer></script>
+<script src="./alin-app-mobile.v4.1.5.js?v=4.1.6-prepublish-1s" defer onload="alinAppBundleLoaded()" onerror="alinAppBundleFailed()"></script>
+<script src="./modules/core/account-admin-service.js?v=4.1.6-prepublish-1s" defer></script>
+<script src="./modules/core/order-bell.js?v=4.1.6-prepublish-1s" defer></script>
+<script src="./modules/teacher/admin-word-download.js?v=4.1.6-prepublish-1s" defer></script>
 </body>
 </html>

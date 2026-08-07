@@ -308,7 +308,7 @@ body.store-mobile .alin-mobile-bottom-v103 [data-mobile-control="account"] .mobi
 }
 
 
-/* ALIN v4.1.6 prepublish 1r — mobile/tablet rotation support. */
+/* ALIN v4.1.6 prepublish 1s — mobile/tablet rotation support. */
 @media (orientation:landscape) and (pointer:coarse){
   html,body{min-height:100%;height:auto!important}
   body.store-mobile{min-height:100dvh!important;overflow-x:hidden!important}
@@ -330,4 +330,65 @@ body.store-mobile .alin-mobile-bottom-v103 [data-mobile-control="account"] .mobi
   body.store-mobile .library-v116-tabs button,
   body.store-mobile .courier-v161-tabs button{min-height:44px!important;padding:8px 7px!important;font-size:13px!important}
   body.store-mobile .alin415r-heading{padding:14px 17px!important}
+}
+
+
+/* ALIN v4.1.6 prepublish 1s — stable iPhone/iPad rotation layout. */
+html[data-alin-orientation="landscape"] body.store-mobile,
+html[data-alin-orientation="landscape"] body.store-mobile #app,
+html[data-alin-orientation="landscape"] body.store-mobile #app>main,
+html[data-alin-orientation="landscape"] body.store-mobile #storePage,
+html[data-alin-orientation="landscape"] body.store-mobile .store-shell,
+html[data-alin-orientation="landscape"] body.store-mobile #adminPage,
+html[data-alin-orientation="landscape"] body.store-mobile #teacherPage,
+html[data-alin-orientation="landscape"] body.store-mobile #libraryPage,
+html[data-alin-orientation="landscape"] body.store-mobile #courierPage{
+  width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box!important;
+}
+html[data-alin-orientation="landscape"] body.store-mobile{overflow-x:hidden!important;padding-left:env(safe-area-inset-left)!important;padding-right:env(safe-area-inset-right)!important}
+html[data-alin-orientation="landscape"] body.store-mobile .alin-mobile-premium-header{width:100%!important;max-width:100%!important;box-sizing:border-box!important}
+html[data-alin-orientation="landscape"] body.store-mobile .alin-store-banners{width:100%!important;max-width:100%!important;margin-inline:0!important;box-sizing:border-box!important}
+html[data-alin-orientation="landscape"] body.store-mobile .alin98-bottom{max-width:calc(100vw - env(safe-area-inset-left) - env(safe-area-inset-right) - 16px)!important}
+
+/* Phones in landscape must stay compact instead of receiving the tablet layout merely because width > 700px. */
+@media (orientation:landscape) and (max-height:620px){
+  html[data-alin-device="mobile"] body.store-mobile #app>main{padding:8px 10px calc(86px + env(safe-area-inset-bottom))!important}
+  html[data-alin-device="mobile"] body.store-mobile .alin-mobile-premium-header{
+    grid-template-columns:auto minmax(0,1fr) auto!important;grid-template-areas:none!important;
+    gap:8px!important;margin:0 0 8px!important;padding:8px 10px!important;border-radius:16px!important;
+  }
+  html[data-alin-device="mobile"] body.store-mobile .alin-mobile-brand{min-width:0!important}
+  html[data-alin-device="mobile"] body.store-mobile .alin-mobile-brand strong{font-size:17px!important}
+  html[data-alin-device="mobile"] body.store-mobile .alin-mobile-brand small{font-size:8px!important}
+  html[data-alin-device="mobile"] body.store-mobile .mobile-search-premium{grid-column:auto!important;grid-row:auto!important;margin:0!important;min-width:0!important}
+  html[data-alin-device="mobile"] body.store-mobile .mobile-search-premium label{height:44px!important}
+  html[data-alin-device="mobile"] body.store-mobile .mobile-header-actions>.mobile-header-icon-btn{height:44px!important;min-height:44px!important}
+  html[data-alin-device="mobile"] body.store-mobile .alin-store-banners{margin:6px 0 10px!important;padding-inline:0!important}
+  html[data-alin-device="mobile"] body.store-mobile .alin-store-banner{border-radius:15px!important}
+  html[data-alin-device="mobile"] body.store-mobile .alin-store-banner__media{aspect-ratio:auto!important;height:min(42vh,230px)!important;min-height:150px!important}
+  html[data-alin-device="mobile"] body.store-mobile .alin-store-banner__image{object-fit:cover!important}
+  html[data-alin-device="mobile"] body.store-mobile .alin-store-banner__content{padding:9px 12px!important;gap:7px!important}
+  html[data-alin-device="mobile"] body.store-mobile .alin98-cats{display:flex!important;overflow-x:auto!important;gap:8px!important;margin:8px 0 10px!important;padding-bottom:3px!important}
+  html[data-alin-device="mobile"] body.store-mobile .alin98-cats>button{min-width:132px!important;min-height:82px!important;padding:10px!important}
+  html[data-alin-device="mobile"] body.store-mobile #storeGrid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important}
+  html[data-alin-device="mobile"] body.store-mobile #storeGrid>.v99-product-card:last-child:nth-child(odd){grid-column:auto!important;width:100%!important}
+  html[data-alin-device="mobile"] body.store-mobile .alin-mobile-bottom-v103{
+    right:max(6px,env(safe-area-inset-right))!important;left:max(6px,env(safe-area-inset-left))!important;
+    width:auto!important;transform:none!important;bottom:max(4px,env(safe-area-inset-bottom))!important;padding:4px!important;border-radius:18px!important;
+  }
+  html[data-alin-device="mobile"] body.store-mobile .alin-mobile-bottom-v103 button{min-height:48px!important}
+  html[data-alin-device="mobile"] body.store-mobile .alin-mobile-bottom-v103 .mobile-center-action{width:62px!important;min-height:62px!important;margin-top:-16px!important}
+  html[data-alin-device="mobile"] body.store-mobile .alin-mobile-sheet{top:8px!important;bottom:8px!important;max-height:none!important}
+}
+
+/* iPad/tablet landscape gets a true wide layout and remains scrollable. */
+@media (orientation:landscape) and (min-width:900px) and (pointer:coarse){
+  html[data-alin-device="tablet"] body.store-mobile #app>main{max-width:none!important;padding:14px 20px 110px!important}
+  html[data-alin-device="tablet"] body.store-mobile .alin-mobile-premium-header{grid-template-columns:minmax(180px,230px) minmax(260px,1fr) auto!important;margin-bottom:12px!important}
+  html[data-alin-device="tablet"] body.store-mobile .alin-store-banner__media{aspect-ratio:16/5!important;max-height:320px!important}
+  html[data-alin-device="tablet"] body.store-mobile #storeGrid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  html[data-alin-device="tablet"] body.store-mobile #adminPage .admin-tabs,
+  html[data-alin-device="tablet"] body.store-mobile #teacherPage .teacher-tabs{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+  html[data-alin-device="tablet"] body.store-mobile .library-v116-tabs,
+  html[data-alin-device="tablet"] body.store-mobile .courier-v161-tabs{grid-template-columns:repeat(4,minmax(0,1fr))!important}
 }

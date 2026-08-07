@@ -47,3 +47,9 @@
  .alin-store-banner__placeholder{width:64px;height:64px;border-radius:18px;font-size:36px}
  .alin-banner-admin__heading{align-items:flex-start}.alin-banner-form{grid-template-columns:1fr}.alin-banner-file{grid-column:auto}.alin-banner-row{grid-template-columns:1fr}.alin-banner-preview{height:145px}.alin-banner-actions{justify-content:stretch}.alin-banner-actions button{flex:1}
 }
+
+/* ALIN 1s landscape banner correction. */
+@media (orientation:landscape) and (max-height:620px){
+ body.store-mobile .alin-store-banner__media{aspect-ratio:auto!important;height:min(42vh,230px)!important;min-height:150px!important}
+ body.store-mobile .alin-store-banner__image{object-fit:cover!important}
+}

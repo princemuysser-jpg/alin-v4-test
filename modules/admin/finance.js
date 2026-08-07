@@ -29,7 +29,7 @@
     return parties().map(p=>{
       const summary=finance()?.partySummary?.(p.role,p.id)||{earned:0,paid:0,remaining:0};
       const libraryDebt=p.role==='library'?(summary.debt||finance()?.librarySummary?.(p.id)):null;
-      const delegateDebt=p.role==='delegate'?(finance()?.delegateSummary?.(p.id)||summary):null;
+      const delegateDebt=['delegate','courier'].includes(String(p.role||'').toLowerCase())?(finance()?.delegateSummary?.(p.id)||summary):null;
       const payoutRole=['admin','teacher'].includes(p.role);
       return `<article class="admin-v137-party-card" data-role="${escv(p.role)}" data-search="${escv(`${p.name||''} ${p.label}`.toLowerCase())}">
         <div><b>${escv(p.name||p.label)}</b><small>${escv(p.label)} — الإجمالي ${moneyv(summary.earned||summary.earnings)} د.ع</small></div>

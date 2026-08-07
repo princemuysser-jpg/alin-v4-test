@@ -161,8 +161,18 @@
   function teacherSummary(teacherId){const rows=canonicalLedger().filter(row=>same(row.teacher_id,teacherId)),summary=balance('teacher',teacherId),month=new Date().toISOString().slice(0,7),monthEarn=rows.filter(row=>String(row.settled_at||row.created_at||'').slice(0,7)===month).reduce((sum,row)=>sum+Math.max(0,num(row.teacher||row.teacher_amount)),0);return {...summary,rows,payouts:payoutRows().filter(row=>payoutRole(row)==='teacher'&&same(payoutParty(row),teacherId)),monthEarn}}
   function delegateSummary(delegateId){
     const aliases=delegateAliases(delegateId);
-    const rows=canonicalLedger().filter(row=>aliases.has(String(row.delegate_id||row.courier_id||row.collector_id||''))&&String(row.collector_role||row.delivery_type||'delegate')==='delegate');
-    const collected=rows.reduce((sum,row)=>sum+Math.max(0,num(row.total)),0),earnings=rows.reduce((sum,row)=>sum+Math.max(0,num(row.delegate||row.courier||row.courier_amount)),0),debtTotal=rows.reduce((sum,row)=>{const explicit=num(row.collector_debt);return sum+Math.max(0,explicit>0?explicit:num(row.total)-num(row.delegate||row.courier||row.courier_amount))},0),settlements=delegateSettlementRows(delegateId),settled=Math.max(0,settlements.reduce((sum,row)=>sum+settlementValue(row),0));
+    const sourceRows=canonicalLedger().filter(row=>aliases.has(String(row.delegate_id||row.courier_id||row.collector_id||''))&&String(row.collector_role||row.delivery_type||'delegate')==='delegate');
+    const rows=sourceRows.map(row=>{
+      const order=orderFor(row)||{};
+      const split=shares(order);
+      const gross=Math.max(0,num(row.total)||num(order.total));
+      const persistedProfit=Math.max(0,num(row.delegate||row.courier||row.courier_amount)||num(order.delegate_profit)||num(order.courier_profit));
+      const profit=persistedProfit>0?persistedProfit:Math.max(0,num(split.delegate));
+      const explicit=num(row.collector_debt);
+      const debt=Math.max(0,explicit>0?explicit:gross-profit);
+      return {...row,order,total:gross,delegate:profit,courier:profit,collector_debt:debt};
+    });
+    const collected=rows.reduce((sum,row)=>sum+Math.max(0,num(row.total)),0),earnings=rows.reduce((sum,row)=>sum+Math.max(0,num(row.delegate||row.courier||row.courier_amount)),0),debtTotal=rows.reduce((sum,row)=>sum+Math.max(0,num(row.collector_debt)),0),settlements=delegateSettlementRows(delegateId),settled=Math.max(0,settlements.reduce((sum,row)=>sum+settlementValue(row),0));
     return {earned:earnings,earnings,collected,debtTotal,paid:settled,settled,remaining:Math.max(0,debtTotal-settled),debt:Math.max(0,debtTotal-settled),rows,settlements,payouts:payoutRows().filter(row=>payoutRole(row)==='delegate'&&aliases.has(String(payoutParty(row))))};
   }
   function partySummary(role,id){if(String(role).toLowerCase()==='library'){const profit=balance('library',id);return {...profit,debt:librarySummary(id)}}if(['courier','delegate'].includes(String(role).toLowerCase()))return delegateSummary(id);return balance(role,id)}
