@@ -371,3 +371,248 @@ body.alin415r-modal-open{overflow:hidden!important}
 .alin-order-bell-toast button{display:grid!important;place-items:center;width:34px!important;height:34px!important;min-width:34px!important;padding:0!important;border:1px solid rgba(255,255,255,.36)!important;border-radius:11px!important;background:rgba(255,255,255,.12)!important;color:#fff!important;font-size:22px!important;box-shadow:none!important}
 @keyframes alinBellShake{0%,100%{transform:rotate(0)}20%{transform:rotate(13deg)}40%{transform:rotate(-11deg)}60%{transform:rotate(8deg)}80%{transform:rotate(-5deg)}}
 @media(max-width:700px){.alin-order-bell-toast{inset-inline-start:14px;top:12px;width:calc(100vw - 28px);grid-template-columns:44px minmax(0,1fr) 32px;padding:12px;border-radius:16px}.alin-order-bell-icon{width:44px;height:44px}.alin-order-bell-toast strong{font-size:16px}}
+
+/* ALIN v4.1.6 prepublish 1w — New Arrivals full-cover media.
+   Show the complete uploaded cover instead of cropping it, on desktop/mobile/tablet. */
+#v99NewArrivals .v99-mini-media{
+  width:100%;
+  height:auto!important;
+  min-height:260px;
+  aspect-ratio:4/5;
+  padding:8px;
+  box-sizing:border-box;
+  background:linear-gradient(145deg,#f8fafc,#fffaf0);
+  border-bottom:1px solid var(--store-line);
+}
+#v99NewArrivals .v99-mini-media img{
+  width:100%;
+  height:100%;
+  display:block;
+  object-fit:contain!important;
+  object-position:center center;
+}
+@media(max-width:650px){
+  #v99NewArrivals .v99-mini-media{min-height:280px;aspect-ratio:4/5}
+}
+@media(min-width:651px) and (max-width:1100px){
+  #v99NewArrivals .v99-mini-media{min-height:300px}
+}
+
+/* ALIN v4.1.6 prepublish 1x — storefront home rails + managed category pages. */
+#alinStoreHomeView[hidden],#alinStoreCatalogView[hidden]{display:none!important}
+.alin-store-home-view{max-width:1480px;margin:0 auto}
+#alinStoreCategories .cat-icon.cat-image{overflow:hidden;padding:0!important;background:#fff!important}
+#alinStoreCategories .cat-icon.cat-image img{width:100%;height:100%;object-fit:contain;display:block;border-radius:inherit}
+#alinStoreCategories .cat-icon.cat-custom{font-size:22px;font-weight:900;background:linear-gradient(145deg,#fff4d6,#f2ddb0)!important;color:#7a5310!important}
+#v99Featured,#v99TopTen{margin-top:28px}
+#v99TopTen{margin-bottom:30px}
+.alin-store-catalog-view{max-width:1480px;margin:8px auto 30px;padding:0}
+.alin-catalog-page-head{display:flex;align-items:center;justify-content:space-between;gap:18px;margin:0 0 22px;padding:20px 22px;border:1px solid rgba(14,62,110,.11);border-radius:20px;background:linear-gradient(135deg,#fff,#f8fbff);box-shadow:0 12px 32px rgba(7,42,78,.07)}
+.alin-catalog-page-head>div{min-width:0}
+.alin-catalog-page-head small{display:block;margin-bottom:5px;color:#8c6a22;font-weight:800}
+.alin-catalog-page-head h2{margin:0;color:#0b3159;font-size:30px;line-height:1.3}
+.alin-catalog-back{display:inline-flex!important;align-items:center;justify-content:center;gap:8px;min-width:118px;background:#0d4478!important;color:#fff!important;border:1px solid #0d4478!important;border-radius:13px!important;box-shadow:none!important}
+.alin-catalog-back span{font-size:18px}
+body.alin-store-catalog-mode .store-product-grid{margin-top:10px}
+
+/* Admin: categories that also drive storefront sections/icons. */
+.admin-store-sections-v1{display:grid;gap:16px}
+.admin-store-sections-v1>header{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+.admin-store-sections-v1>header h2{margin:0 0 6px;color:#0b3159}
+.admin-store-sections-v1>header p{margin:0;color:#667085;line-height:1.7}
+.admin-category-create{align-items:end;padding:16px;border:1px solid #dfe7f0;border-radius:18px;background:#f8fbff}
+.admin-category-file{display:grid;gap:6px;font-weight:700;color:#344054}
+.admin-category-note{padding:11px 14px;border-radius:13px;background:#fff7df;color:#79540f;border:1px solid #efd79a;font-size:13px;line-height:1.7}
+.admin-category-list{display:grid;gap:10px}
+.admin-category-card{display:grid;grid-template-columns:64px minmax(0,1fr) auto;align-items:center;gap:14px;padding:13px 14px;border:1px solid #dfe7f0;border-radius:16px;background:#fff;box-shadow:0 6px 18px rgba(15,42,70,.04)}
+.admin-category-card.is-hidden{opacity:.62;background:#f8fafc}
+.admin-category-icon{width:58px;height:58px;border-radius:15px;display:grid;place-items:center;overflow:hidden;background:#f4f7fb;border:1px solid #e1e8f0;font-size:25px;font-weight:900;color:#0d4478}
+.admin-category-icon img{width:100%;height:100%;object-fit:contain;display:block;background:#fff}
+.admin-category-copy{min-width:0;display:grid;gap:4px}
+.admin-category-copy b{color:#0b3159;font-size:16px}
+.admin-category-copy small{color:#667085;line-height:1.5}
+.admin-category-locked{display:grid;gap:4px;padding:11px 12px;border-radius:12px;background:#f5f7fa;border:1px solid #e4e7ec}
+.admin-category-locked small,.admin-category-current-icon small{color:#667085}
+.admin-category-current-icon{display:flex;align-items:center;gap:10px}
+
+@media(max-width:700px){
+  .alin-store-home-view{width:100%;max-width:none}
+  .alin-catalog-page-head{align-items:flex-start;padding:15px 14px;border-radius:16px;margin-bottom:14px}
+  .alin-catalog-page-head h2{font-size:23px}
+  .alin-catalog-back{min-width:auto!important;padding:10px 12px!important;font-size:12px!important}
+  .admin-category-card{grid-template-columns:52px minmax(0,1fr);gap:10px}
+  .admin-category-card .row-actions{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));width:100%}
+  .admin-category-icon{width:50px;height:50px;border-radius:13px}
+}
+
+/* ALIN v4.1.6 prepublish 1z — dynamic category showcase carousel. */
+.alin-category-showcase{
+  --alin-cat-card-w:210px;
+  --alin-cat-card-h:238px;
+  max-width:1480px;
+  margin:18px auto 34px;
+  padding:24px 22px 18px;
+  border:1px solid rgba(220,226,234,.86);
+  border-radius:28px;
+  background:linear-gradient(180deg,#fffdfa 0%,#fff 100%);
+  box-shadow:0 10px 34px rgba(25,45,73,.05);
+  box-sizing:border-box;
+  overflow:hidden;
+}
+.alin-category-heading{display:flex;align-items:end;justify-content:center;text-align:center;margin:0 0 19px;padding:0 62px;position:relative}
+.alin-category-heading>div{display:grid;gap:3px;justify-items:center}
+.alin-category-heading span{font-size:11px;font-weight:800;letter-spacing:.02em;color:#b07a55}
+.alin-category-heading h2{margin:0;color:#19395b;font-size:26px;line-height:1.35;font-weight:900}
+.alin-category-heading h2::after{content:"";display:block;width:72px;height:3px;margin:9px auto 0;border-radius:999px;background:linear-gradient(90deg,#f5c7bd,#eab58f)}
+.alin-category-slider{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:center;gap:10px;min-width:0}
+.alin-category-track-slot{min-width:0;overflow:hidden}
+.alin-category-showcase #alinStoreCategories,
+html[data-alin-device="tablet"] body.store-mobile .alin-category-showcase #alinStoreCategories,
+html[data-alin-device="mobile"] body.store-mobile .alin-category-showcase #alinStoreCategories{
+  display:flex!important;
+  flex-wrap:nowrap!important;
+  align-items:stretch!important;
+  gap:16px!important;
+  width:100%!important;
+  max-width:none!important;
+  margin:0!important;
+  padding:3px 2px 9px!important;
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+  scroll-snap-type:x mandatory;
+  scroll-behavior:smooth;
+  overscroll-behavior-inline:contain;
+  scrollbar-width:none;
+  -ms-overflow-style:none;
+}
+.alin-category-showcase #alinStoreCategories::-webkit-scrollbar{display:none}
+.alin-category-showcase #alinStoreCategories>button[data-v99-category],
+body.store-desktop .alin-category-showcase #alinStoreCategories>button[data-v99-category],
+body.store-mobile .alin-category-showcase #alinStoreCategories>button[data-v99-category],
+html[data-alin-device="tablet"] body.store-mobile .alin-category-showcase #alinStoreCategories>button[data-v99-category],
+html[data-alin-device="mobile"] body.store-mobile .alin-category-showcase #alinStoreCategories>button[data-v99-category]{
+  position:relative!important;
+  display:grid!important;
+  grid-template-columns:1fr!important;
+  grid-template-rows:minmax(0,1fr) auto!important;
+  align-items:stretch!important;
+  justify-items:stretch!important;
+  gap:0!important;
+  flex:0 0 var(--alin-cat-card-w)!important;
+  width:var(--alin-cat-card-w)!important;
+  min-width:var(--alin-cat-card-w)!important;
+  min-height:var(--alin-cat-card-h)!important;
+  height:var(--alin-cat-card-h)!important;
+  padding:10px!important;
+  border:1px solid rgba(235,201,187,.78)!important;
+  border-radius:25px!important;
+  background:linear-gradient(145deg,#fff6f2 0%,#ffebe6 54%,#fff7e8 100%)!important;
+  color:#263c55!important;
+  box-shadow:0 9px 24px rgba(78,61,56,.08)!important;
+  transform:none!important;
+  text-align:center!important;
+  scroll-snap-align:center;
+  overflow:hidden!important;
+  box-sizing:border-box!important;
+}
+.alin-category-showcase #alinStoreCategories>button[data-v99-category]:nth-child(4n+2){background:linear-gradient(145deg,#fff8ee,#ffeeda 58%,#fff8f3)!important}
+.alin-category-showcase #alinStoreCategories>button[data-v99-category]:nth-child(4n+3){background:linear-gradient(145deg,#fff4f5,#ffe5e9 58%,#fff8ec)!important}
+.alin-category-showcase #alinStoreCategories>button[data-v99-category]:nth-child(4n+4){background:linear-gradient(145deg,#fff7ed,#ffe8d9 58%,#fff3eb)!important}
+.alin-category-showcase #alinStoreCategories>button[data-v99-category]:hover,
+.alin-category-showcase #alinStoreCategories>button[data-v99-category]:focus-visible,
+.alin-category-showcase #alinStoreCategories>button[data-v99-category][aria-pressed="true"]{
+  border-color:#e5a98e!important;
+  box-shadow:0 13px 30px rgba(93,61,48,.13)!important;
+  transform:translateY(-2px)!important;
+  outline:none!important;
+}
+.alin-category-showcase #alinStoreCategories .cat-icon,
+body.store-mobile .alin-category-showcase #alinStoreCategories .cat-icon,
+html[data-alin-device="tablet"] body.store-mobile .alin-category-showcase #alinStoreCategories .cat-icon{
+  position:relative!important;
+  width:100%!important;
+  height:100%!important;
+  min-width:0!important;
+  min-height:0!important;
+  max-height:162px!important;
+  display:grid!important;
+  place-items:center!important;
+  margin:0!important;
+  padding:8px!important;
+  border:0!important;
+  border-radius:19px!important;
+  background:rgba(255,255,255,.40)!important;
+  color:#b96855!important;
+  overflow:hidden!important;
+  box-sizing:border-box!important;
+}
+.alin-category-showcase #alinStoreCategories .cat-icon::before,
+.alin-category-showcase #alinStoreCategories .cat-icon::after{content:none!important;display:none!important}
+.alin-category-showcase #alinStoreCategories .cat-icon svg{width:min(112px,76%);height:min(112px,76%);display:block;filter:drop-shadow(0 8px 8px rgba(118,73,57,.10))}
+.alin-category-showcase #alinStoreCategories .cat-image{background:rgba(255,255,255,.55)!important;padding:4px!important}
+.alin-category-showcase #alinStoreCategories .cat-image img{width:100%!important;height:100%!important;object-fit:contain!important;border-radius:17px!important;background:transparent!important}
+.alin-category-showcase .cat-svg-fill-1{fill:#f29c8a}
+.alin-category-showcase .cat-svg-fill-2{fill:#ffd3c2}
+.alin-category-showcase .cat-svg-ribbon{fill:#df725f;stroke:#b75a4c;stroke-width:3;stroke-linejoin:round}
+.alin-category-showcase .cat-svg-pencil{fill:none;stroke:#d17762;stroke-width:8;stroke-linecap:round;stroke-linejoin:round}
+.alin-category-showcase .cat-svg-line{fill:none;stroke:#934e43;stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
+.alin-category-showcase .cat-svg-line.soft{stroke:#fff4ee;stroke-width:3}
+.alin-category-showcase .cat-svg-dot{fill:#fff0d6;stroke:#b76555;stroke-width:3}
+.alin-category-showcase #alinStoreCategories .cat-copy,
+body.store-mobile .alin-category-showcase #alinStoreCategories .cat-copy,
+html[data-alin-device="tablet"] body.store-mobile .alin-category-showcase #alinStoreCategories .cat-copy{
+  position:relative!important;
+  display:grid!important;
+  place-items:center!important;
+  align-content:center!important;
+  min-width:0!important;
+  width:100%!important;
+  min-height:50px!important;
+  height:auto!important;
+  margin-top:9px!important;
+  padding:8px 34px 8px 10px!important;
+  border:1px solid rgba(238,190,174,.72)!important;
+  border-radius:16px!important;
+  background:rgba(255,255,255,.78)!important;
+  color:#4b2d2a!important;
+  text-align:center!important;
+  box-sizing:border-box!important;
+}
+.alin-category-showcase #alinStoreCategories .cat-copy::after{content:"‹";position:absolute;right:10px;top:50%;translate:0 -50%;width:24px;height:24px;display:grid;place-items:center;border-radius:50%;background:#fff4ef;color:#de8d76;border:1px solid #f0c3b4;font-size:19px;font-weight:900;line-height:1}
+.alin-category-showcase #alinStoreCategories .cat-copy strong,
+body.store-mobile .alin-category-showcase #alinStoreCategories .cat-copy strong,
+body.store-desktop .alin-category-showcase #alinStoreCategories .cat-copy strong{color:#4b2d2a!important;font-size:16px!important;line-height:1.35!important;font-weight:900!important;text-shadow:none!important;overflow-wrap:anywhere!important}
+.alin-category-showcase #alinStoreCategories .cat-copy small{display:none!important}
+.alin-category-slide{
+  width:42px;height:42px;display:grid;place-items:center;padding:0;border:1px solid #efc3b5;border-radius:50%;background:#fff8f4;color:#c97561;box-shadow:0 5px 14px rgba(91,57,45,.08);cursor:pointer;transition:.18s ease;z-index:2
+}
+.alin-category-slide span{font-size:29px;line-height:1;translate:0 -1px}
+.alin-category-slide:hover,.alin-category-slide:focus-visible{background:#f9ded5;color:#81473c;border-color:#e5a48f;transform:translateY(-1px);outline:2px solid rgba(222,141,118,.18);outline-offset:2px}
+html[data-alin-theme="dark"] .alin-category-showcase{background:linear-gradient(180deg,#17283a,#112235);border-color:#2a4056}
+html[data-alin-theme="dark"] .alin-category-heading h2{color:#f7efe9}
+html[data-alin-theme="dark"] .alin-category-heading span{color:#efb79f}
+html[data-alin-theme="dark"] .alin-category-showcase #alinStoreCategories>button[data-v99-category]{border-color:#4a4650!important;background:linear-gradient(145deg,#2b313d,#382f35)!important}
+html[data-alin-theme="dark"] .alin-category-showcase #alinStoreCategories .cat-copy{background:rgba(18,31,45,.86)!important;border-color:#59464a!important}
+html[data-alin-theme="dark"] .alin-category-showcase #alinStoreCategories .cat-copy strong{color:#f8eee8!important}
+html[data-alin-theme="dark"] .alin-category-slide{background:#203448;color:#f0b29d;border-color:#4d5966}
+@media(max-width:1100px){
+  .alin-category-showcase{--alin-cat-card-w:190px;--alin-cat-card-h:220px;margin:14px 0 28px;padding:20px 14px 15px;border-radius:24px}
+  .alin-category-heading h2{font-size:23px}
+  .alin-category-showcase #alinStoreCategories .cat-icon{max-height:145px!important}
+}
+@media(max-width:650px){
+  .alin-category-showcase{--alin-cat-card-w:150px;--alin-cat-card-h:184px;margin:10px 0 22px;padding:16px 8px 12px;border-radius:22px}
+  .alin-category-heading{margin-bottom:13px;padding:0 46px}
+  .alin-category-heading span{font-size:9px}
+  .alin-category-heading h2{font-size:19px}
+  .alin-category-slider{grid-template-columns:34px minmax(0,1fr) 34px;gap:5px}
+  .alin-category-slide{width:32px;height:32px}
+  .alin-category-slide span{font-size:23px}
+  .alin-category-showcase #alinStoreCategories{gap:10px!important;padding-bottom:5px!important}
+  .alin-category-showcase #alinStoreCategories>button[data-v99-category]{padding:7px!important;border-radius:20px!important}
+  .alin-category-showcase #alinStoreCategories .cat-icon{max-height:118px!important;border-radius:15px!important;padding:5px!important}
+  .alin-category-showcase #alinStoreCategories .cat-icon svg{width:min(82px,72%);height:min(82px,72%)}
+  .alin-category-showcase #alinStoreCategories .cat-copy{min-height:42px!important;margin-top:6px!important;padding:6px 28px 6px 8px!important;border-radius:13px!important}
+  .alin-category-showcase #alinStoreCategories .cat-copy::after{right:7px;width:21px;height:21px;font-size:17px}
+  .alin-category-showcase #alinStoreCategories .cat-copy strong{font-size:14px!important}
+}

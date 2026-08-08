@@ -19,16 +19,16 @@
 <link href="./manifest-desktop.webmanifest" rel="manifest"/>
 <link href="assets/icons/icon-192.png" rel="icon" sizes="192x192" type="image/png"/>
 <link href="assets/icons/icon-192.png" rel="apple-touch-icon"/>
-<link href="./dist/css/desktop.bundle.css?v=4.1.6-prepublish-1v" rel="stylesheet"/>
-<link href="./styles/alin-tokens.css?v=4.1.6-prepublish-1v" rel="stylesheet"/>
-<link href="./styles/alin-shared.css?v=4.1.6-prepublish-1v" rel="stylesheet"/>
-<link href="./styles/alin-branding.css?v=4.1.6-prepublish-1v" rel="stylesheet"/>
-<link href="./styles/alin-i18n.css?v=4.1.6-prepublish-1v" rel="stylesheet"/>
-<link href="./styles/alin-desktop.css?v=4.1.6-prepublish-1v" rel="stylesheet"/>
-<link rel="preload" href="./alin-app-desktop.v4.1.5.js?v=4.1.6-prepublish-1v" as="script">
+<link href="./dist/css/desktop.bundle.css?v=4.1.6-prepublish-1z2" rel="stylesheet"/>
+<link href="./styles/alin-tokens.css?v=4.1.6-prepublish-1z2" rel="stylesheet"/>
+<link href="./styles/alin-shared.css?v=4.1.6-prepublish-1z2" rel="stylesheet"/>
+<link href="./styles/alin-branding.css?v=4.1.6-prepublish-1z2" rel="stylesheet"/>
+<link href="./styles/alin-i18n.css?v=4.1.6-prepublish-1z2" rel="stylesheet"/>
+<link href="./styles/alin-desktop.css?v=4.1.6-prepublish-1z2" rel="stylesheet"/>
+<link rel="preload" href="./alin-app-desktop.v4.1.5.js?v=4.1.6-prepublish-1z2" as="script">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7" defer onerror="window.__ALIN_CDN_ERROR__=true;console.error('تعذر تحميل Supabase')"></script>
-<script src="./alin-config.js?v=4.1.6-prepublish-1v"></script>
-<script src="./dist/alin-core.v4.js?v=4.1.6-prepublish-1v" defer></script>
+<script src="./alin-config.js?v=4.1.6-prepublish-1z2"></script>
+<script src="./dist/alin-core.v4.js?v=4.1.6-prepublish-1z2" defer></script>
 
 
 
@@ -73,7 +73,7 @@
 
 
 
-  <link rel="stylesheet" href="./store/banners.css?v=4.1.6-prepublish-1v">
+  <link rel="stylesheet" href="./store/banners.css?v=4.1.6-prepublish-1z2">
 <style id="alinAuthBootStyle">html[data-alin-auth-boot="1"] body>*{visibility:hidden!important}html[data-alin-auth-boot="1"] body::before{content:"جارٍ فتح منصة آلين...";visibility:visible;position:fixed;inset:0;display:grid;place-items:center;background:#f7f9fc;color:#102342;font:800 18px system-ui;z-index:2147483647}</style>
 <script>setTimeout(()=>document.documentElement.removeAttribute('data-alin-auth-boot'),3500)</script>
 
@@ -178,27 +178,22 @@ body.store-desktop .alin-track415-button:hover .alin-track415-mark,body.store-de
 </div>
 </header>
 <section id="alinStoreBanners" class="alin-store-banners" aria-label="إعلانات منصة آلين" hidden></section>
-<section class="alin98-cats">
-<button aria-pressed="false" data-v99-category="booklet" type="button"><span class="cat-icon cat-book"></span><span class="cat-copy"><strong>ملازم</strong><small>جميع المواد والمراحل</small></span></button>
-<button aria-pressed="false" data-v99-category="stationery" type="button"><span class="cat-icon cat-pen"></span><span class="cat-copy"><strong>قرطاسية</strong><small>أدوات الدراسة والكتب</small></span></button>
-<button aria-pressed="false" data-v99-category="gift" type="button"><span class="cat-icon cat-gift"></span><span class="cat-copy"><strong>هدايا</strong><small>هدايا راقية ومميزة</small></span></button>
-<button aria-pressed="false" data-v99-category="deal" type="button"><span class="cat-icon cat-deal">%</span><span class="cat-copy"><strong>عروض</strong><small>خصومات وعروض حصرية</small></span></button>
-</section>
+<section class="alin-store-home-view" id="alinStoreHomeView">
+<section class="alin98-cats" id="alinStoreCategories" aria-label="أقسام متجر آلين"></section>
 <section class="v99-rail-root" id="v99NewArrivals"></section>
+<section class="v99-rail-root" id="v99Featured"></section>
+<section class="v99-rail-root" id="v99TopTen"></section>
+</section>
 <div class="store-shell">
 <div id="bannerBox" class="alin-legacy-banner-sink" hidden aria-hidden="true"></div>
-<section aria-live="polite" class="v99-rail-root" id="v99DailyDeals"></section>
-<div class="v99-curated-rails">
-<section aria-hidden="true" class="v99-rail-root" hidden="" id="v99TeacherRail"></section>
-<section class="v99-rail-root" id="v99Bundles"></section>
-</div>
-<div class="alin98-title">
+<section class="alin-store-catalog-view" id="alinStoreCatalogView" hidden>
+<header class="alin-catalog-page-head">
+<button class="alin-catalog-back" data-v99-action="storeHome" type="button"><span aria-hidden="true">→</span> الرئيسية</button>
 <div id="v99CatalogHeading" tabindex="-1"><small id="v99CatalogKicker">الكتالوج الكامل</small><h2 id="v99CatalogTitle">كل المنتجات</h2></div>
-<button data-v99-action="clearDesktopCategory" type="button">عرض الكل</button>
-</div>
+</header>
 <div class="store-products-head compact-store-head" id="storeProducts"></div>
 <div class="grid store-product-grid" id="storeGrid"></div>
-<section class="v99-student-hub" id="v99StudentHub"></section>
+</section>
 <section class="store-real-stats" id="storeAbout"><div><span id="alinStatBooklets">0</span><small>ملزمة متاحة</small></div><div><span id="alinStatTeachers">0</span><small>مدرس</small></div><div><span id="alinStatLibraries">0</span><small>مكتبة</small></div></section>
 <div class="store-success">آلين... نرافقك في طريق النجاح ♡</div>
 </div>
@@ -320,13 +315,13 @@ body.store-desktop .alin-track415-button:hover .alin-track415-mark,body.store-de
   
 
 
-<script src="./core/pwa-register.js?v=4.1.6-prepublish-1v" defer></script>
-<script src="./core/boot-recovery.js?v=4.1.6-prepublish-1v" defer></script>
-<script src="./modules/core/navigation.js?v=4.1.6-prepublish-1v" defer></script>
-<script src="./alin-app-desktop.v4.1.5.js?v=4.1.6-prepublish-1v" defer onload="alinAppBundleLoaded()" onerror="alinAppBundleFailed()"></script>
-<script src="./modules/core/account-admin-service.js?v=4.1.6-prepublish-1v" defer></script>
-<script src="./modules/core/order-bell.js?v=4.1.6-prepublish-1v" defer></script>
-<script src="./modules/teacher/admin-word-download.js?v=4.1.6-prepublish-1v" defer></script>
+<script src="./core/pwa-register.js?v=4.1.6-prepublish-1z2" defer></script>
+<script src="./core/boot-recovery.js?v=4.1.6-prepublish-1z2" defer></script>
+<script src="./modules/core/navigation.js?v=4.1.6-prepublish-1z2" defer></script>
+<script src="./alin-app-desktop.v4.1.5.js?v=4.1.6-prepublish-1z2" defer onload="alinAppBundleLoaded()" onerror="alinAppBundleFailed()"></script>
+<script src="./modules/core/account-admin-service.js?v=4.1.6-prepublish-1z2" defer></script>
+<script src="./modules/core/order-bell.js?v=4.1.6-prepublish-1z2" defer></script>
+<script src="./modules/teacher/admin-word-download.js?v=4.1.6-prepublish-1z2" defer></script>
 
 <div id="alinTrack415Layer" hidden aria-hidden="true">
   <section id="alinTrack415Panel" role="dialog" aria-modal="true" aria-labelledby="alinTrack415Title">

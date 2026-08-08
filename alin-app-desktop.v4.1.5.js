@@ -1781,6 +1781,37 @@ window.AlinTeacherModules.unpublishTeacherBooklet=unpublishTeacherBooklet;
     if(typeof uploader!=='function')throw new Error('خدمة رفع الصور غير متاحة');
     return uploader('products',file,{type:'image'});
   };
+
+  const CATEGORY_ICON_PREFIX='store_category_icon_';
+  const SECTION_VISIBLE_PREFIX='store_section_visible_';
+  const builtinCategoryKey=item=>{
+    const type=normalizeType(item?.type);
+    const name=String(item?.name||'').trim();
+    if(type==='booklet'&&name==='ملازم')return 'booklet';
+    if(type==='stationery'&&name==='قرطاسية')return 'stationery';
+    if(type==='gift'&&name==='هدايا')return 'gift';
+    return '';
+  };
+  const categorySectionKey=item=>String(item?.id||'')==='__deal__'?'deal':(builtinCategoryKey(item)||`category:${item?.id||''}`);
+  const categoryIconKey=item=>`${CATEGORY_ICON_PREFIX}${categorySectionKey(item)}`;
+  const categoryIconPath=item=>String(window.db?.settings?.[categoryIconKey(item)]||'').trim();
+  const categoryVisible=item=>{
+    const value=window.db?.settings?.[`${SECTION_VISIBLE_PREFIX}${categorySectionKey(item)}`];
+    if(value===undefined||value===null||value==='')return String(item?.status||'active')==='active';
+    return !['false','0','no','off','inactive','hidden'].includes(String(value).toLowerCase());
+  };
+  const categoryTypeLabel=value=>({booklet:'ملازم',stationery:'قرطاسية',gift:'هدايا',deal:'عروض'}[normalizeType(value)]||String(value||''));
+  const categoryIconUrl=item=>{const path=categoryIconPath(item);if(!path)return '';try{return typeof window.mediaUrl==='function'?window.mediaUrl(path):path}catch(_){return path}};
+  async function saveSetting(key,value){
+    if(typeof window.settingsSet==='function')return window.settingsSet(key,String(value??''));
+    const rows=typeof window.query==='function'?await window.query('settings'):[];
+    const existing=Array.isArray(rows)?rows.find(row=>String(row.key)===String(key)):null;
+    if(existing&&typeof window.update==='function')await window.update('settings',{value:String(value??'')},{key});
+    else if(typeof window.insert==='function')await window.insert('settings',{key,value:String(value??'')});
+    window.db=window.db||{};window.db.settings=window.db.settings||{};window.db.settings[key]=String(value??'');
+    window.dispatchEvent(new CustomEvent('alin:settings-updated',{detail:{keys:[key]}}));
+    return true;
+  }
   const imageUrl=item=>{
     const value=item?.image_path||item?.image_url||item?.image||'';
     if(!value)return '';
@@ -1829,6 +1860,7 @@ window.AlinTeacherModules.unpublishTeacherBooklet=unpublishTeacherBooklet;
       <input name="name" value="${escv(item.name||item.title||'')}" placeholder="اسم المنتج" required>
       <select name="category" id="alinProductCategory">${categoryOptions(type,item.category||'')}</select>
       <input name="price" type="number" min="0" value="${Number(item.price||0)}" placeholder="السعر" required>
+      <input name="salePrice" type="number" min="0" value="${Number(item.sale_price||item.deal_price||0)}" placeholder="سعر العرض (اختياري)">
       <input name="stock" type="number" min="0" value="${Number(item.stock||0)}" placeholder="المخزون" required>
       <input name="lowStockLimit" type="number" min="0" value="${Number(item.low_stock_limit||window.db?.settings?.low_stock_default||5)}" placeholder="حد تنبيه المخزون">
       <textarea name="description" rows="3" placeholder="تفاصيل المنتج">${escv(item.description||item.details||'')}</textarea>
@@ -1875,17 +1907,19 @@ window.AlinTeacherModules.unpublishTeacherBooklet=unpublishTeacherBooklet;
     const category=String(data.get('category')||'عام').trim()||'عام';
     const categoryRow=categories().find(item=>normalizeType(item.type)===type&&String(item.name||'')===category)||null;
     const price=Number(data.get('price')||0);
+    const salePrice=Number(data.get('salePrice')||0);
     const stock=Number(data.get('stock')||0);
     const lowStockLimit=Number(data.get('lowStockLimit')||5);
     const description=String(data.get('description')||'').trim();
     if(!name)return alert('اكتب اسم المنتج');
     if(!Number.isFinite(price)||price<0)return alert('السعر غير صحيح');
+    if(salePrice&&(!Number.isFinite(salePrice)||salePrice<0||salePrice>=price))return alert('سعر العرض يجب أن يكون أقل من السعر الأساسي');
     if(!Number.isFinite(stock)||stock<0)return alert('المخزون غير صحيح');
     try{
       const imageFile=data.get('image');
       const uploaded=imageFile&&imageFile.name?await uploadImage(imageFile):'';
       const payload={
-        name,title:name,type,category,category_id:categoryRow?.id||null,price,stock,
+        name,title:name,type,category,category_id:categoryRow?.id||null,price,sale_price:salePrice>0?salePrice:null,stock,
         low_stock_limit:Math.max(0,lowStockLimit||0),description,details:description,
         status:existing?.status||'published',updated_at:new Date().toISOString()
       };
@@ -1983,41 +2017,145 @@ window.AlinTeacherModules.unpublishTeacherBooklet=unpublishTeacherBooklet;
     select.innerHTML=categoryOptions(type,previous);
   }
 
+  function categoryAdminRows(){
+    const rows=[...categories()].sort((a,b)=>Number(a.sort_order||0)-Number(b.sort_order||0)||String(a.name||'').localeCompare(String(b.name||''),'ar'));
+    rows.push({id:'__deal__',type:'deal',name:'عروض',status:categoryVisible({id:'__deal__'})?'active':'inactive',sort_order:Number(window.db?.settings?.store_section_order_deal||4),virtual:true});
+    return rows;
+  }
+
+  function categoryIconMarkupAdmin(item){
+    const src=categoryIconUrl(item);
+    if(src)return `<span class="admin-category-icon"><img src="${escv(src)}" alt=""></span>`;
+    const fallback=normalizeType(item.type)==='booklet'?'📘':normalizeType(item.type)==='gift'?'🎁':normalizeType(item.type)==='deal'?'%':'✏️';
+    return `<span class="admin-category-icon fallback">${fallback}</span>`;
+  }
+
+  function categoryRowHtml(item){
+    const builtIn=Boolean(builtinCategoryKey(item))||item.virtual;
+    const visible=categoryVisible(item);
+    return `<article class="admin-category-card ${visible?'':'is-hidden'}">
+      ${categoryIconMarkupAdmin(item)}
+      <div class="admin-category-copy"><b>${escv(item.name)}</b><small>${escv(categoryTypeLabel(item.type))} • ترتيب ${Number(item.sort_order||0)}${builtIn?' • قسم رئيسي':' • قسم إضافي'}</small></div>
+      <div class="row-actions"><button type="button" class="secondary" onclick="editCategory('${escv(item.id)}')">تعديل</button><button type="button" onclick="toggleCategory('${escv(item.id)}','${visible?'inactive':'active'}')">${visible?'إخفاء':'إظهار'}</button>${builtIn?'':`<button type="button" class="danger" onclick="deleteCategory('${escv(item.id)}')">حذف</button>`}</div>
+    </article>`;
+  }
+
   function renderCategoriesAdmin(){
     const container=root();if(!container)return;
-    const labels={booklet:'ملازم',stationery:'قرطاسية',gift:'هدايا'};
-    container.innerHTML=`<section class="admin-categories"><header><h2>إدارة الأقسام</h2><p>الأقسام المستخدمة في المتجر ونماذج المنتجات.</p></header><form id="alinCategoryForm" class="form-grid"><select name="type"><option value="booklet">ملازم</option><option value="stationery">قرطاسية</option><option value="gift">هدايا</option></select><input name="name" placeholder="اسم القسم" required><button type="button" onclick="addCategory()">إضافة قسم</button></form>${categories().length?categories().map(item=>`<div class="row"><div><b>${escv(item.name)}</b><small>${labels[normalizeType(item.type)]||labels[item.type]||escv(item.type)}</small></div><div class="row-actions"><button type="button" class="secondary" onclick="editCategory('${escv(item.id)}')">تعديل</button><button type="button" onclick="toggleCategory('${escv(item.id)}','${String(item.status||'active')==='active'?'hidden':'active'}')">${String(item.status||'active')==='active'?'إخفاء':'إظهار'}</button><button type="button" class="danger" onclick="deleteCategory('${escv(item.id)}')">حذف</button></div></div>`).join(''):'<div class="empty">لا توجد أقسام.</div>'}</section>`;
+    const rows=categoryAdminRows();
+    container.innerHTML=`<section class="admin-categories admin-store-sections-v1">
+      <header><div><h2>أقسام واجهة المتجر</h2><p>تحكم بالملازم والقرطاسية والهدايا والعروض، وأضف أقساماً جديدة مع أيقونة خاصة لكل قسم.</p></div></header>
+      <form id="alinCategoryForm" class="form-grid admin-category-create">
+        <select name="type"><option value="stationery">قرطاسية</option><option value="gift">هدايا</option><option value="booklet">ملازم</option></select>
+        <input name="name" placeholder="اسم القسم الجديد" required>
+        <input name="sortOrder" type="number" min="1" value="10" placeholder="ترتيب الظهور">
+        <label class="admin-category-file">أيقونة القسم<input name="icon" type="file" accept="image/*"></label>
+        <button type="button" onclick="addCategory()">إضافة القسم</button>
+      </form>
+      <div class="admin-category-note">القسم الجديد يظهر في واجهة المتجر، وعند الضغط عليه تفتح صفحة مستقلة تعرض المنتجات المطابقة له.</div>
+      <div class="admin-category-list">${rows.length?rows.map(categoryRowHtml).join(''):'<div class="empty">لا توجد أقسام.</div>'}</div>
+    </section>`;
   }
 
   async function addCategory(){
     const form=document.getElementById('alinCategoryForm');if(!form)return;
     const data=new FormData(form),name=String(data.get('name')||'').trim(),type=normalizeType(data.get('type'));
+    const sortOrder=Math.max(1,Number(data.get('sortOrder')||10));
     if(!name)return alert('اكتب اسم القسم');
     if(categories().some(item=>normalizeType(item.type)===type&&String(item.name||'').trim().toLowerCase()===name.toLowerCase()))return alert('هذا القسم موجود مسبقًا');
+    const id=typeof window.uid==='function'?window.uid('C'):`C-${Date.now()}`;
     try{
-      await window.insert('categories',{id:typeof window.uid==='function'?window.uid('C'):`C-${Date.now()}`,type,name,status:'active',created_at:new Date().toISOString()});
-      if(typeof window.audit==='function')await window.audit('category',`إضافة القسم ${name}`);
+      await window.insert('categories',{id,type,name,status:'active',sort_order:sortOrder,created_at:new Date().toISOString()});
+      const iconFile=data.get('icon');
+      if(iconFile&&iconFile.name){const uploaded=await uploadImage(iconFile);if(uploaded)await saveSetting(`${CATEGORY_ICON_PREFIX}category:${id}`,uploaded)}
+      await saveSetting(`${SECTION_VISIBLE_PREFIX}category:${id}`,'true');
+      if(typeof window.audit==='function')await window.audit('category',`إضافة قسم واجهة المتجر ${name}`);
       await reloadAndRender(renderCategoriesAdmin);
-      if(typeof window.toast==='function')window.toast('تمت إضافة القسم');
-    }catch(error){alert(error?.message||'تعذر إضافة القسم')}
+      if(typeof window.renderStore==='function')window.renderStore();
+      if(typeof window.toast==='function')window.toast('تمت إضافة القسم وأصبح جاهزاً في واجهة المتجر');
+    }catch(error){console.error('[ALIN category add]',error);alert(error?.message||'تعذر إضافة القسم')}
   }
 
-  async function editCategory(id){
-    const item=categories().find(row=>String(row.id)===String(id));if(!item)return;
-    const name=prompt('اسم القسم',item.name||'');if(name===null||!name.trim())return;
-    try{await window.update('categories',{name:name.trim(),updated_at:new Date().toISOString()},{id:item.id});if(typeof window.audit==='function')await window.audit('category',`تعديل القسم ${item.name} إلى ${name.trim()}`);await reloadAndRender(renderCategoriesAdmin);if(typeof window.toast==='function')window.toast('تم تعديل القسم')}catch(error){alert(error?.message||'تعذر تعديل القسم')}
+  function ensureCategoryEditor(){
+    let modal=document.getElementById('alinCategoryEditorModal');
+    if(modal)return modal;
+    modal=document.createElement('div');modal.id='alinCategoryEditorModal';modal.className='modal hidden';
+    modal.innerHTML='<div class="modal-card"><button class="x" type="button" onclick="closeCategoryEditor()">×</button><div id="alinCategoryEditorBody"></div></div>';
+    document.body.appendChild(modal);return modal;
+  }
+
+  function closeCategoryEditor(){const modal=document.getElementById('alinCategoryEditorModal');if(modal){modal.classList.add('hidden');modal.hidden=true}}
+
+  function editCategory(id){
+    const item=id==='__deal__'?{id:'__deal__',type:'deal',name:'عروض',sort_order:Number(window.db?.settings?.store_section_order_deal||4),virtual:true}:categories().find(row=>String(row.id)===String(id));
+    if(!item)return;
+    const builtIn=Boolean(builtinCategoryKey(item))||item.virtual;
+    const modal=ensureCategoryEditor();
+    modal.querySelector('#alinCategoryEditorBody').innerHTML=`<h2>تعديل قسم ${escv(item.name)}</h2><form id="alinCategoryEditForm" class="form-grid" data-id="${escv(item.id)}">
+      ${builtIn?`<div class="admin-category-locked"><small>اسم القسم الرئيسي</small><b>${escv(item.name)}</b></div>`:`<select name="type"><option value="stationery" ${normalizeType(item.type)==='stationery'?'selected':''}>قرطاسية</option><option value="gift" ${normalizeType(item.type)==='gift'?'selected':''}>هدايا</option><option value="booklet" ${normalizeType(item.type)==='booklet'?'selected':''}>ملازم</option></select><input name="name" value="${escv(item.name||'')}" placeholder="اسم القسم" required>`}
+      <input name="sortOrder" type="number" min="1" value="${Number(item.sort_order||1)}" placeholder="ترتيب الظهور">
+      <label>تغيير الأيقونة<input name="icon" type="file" accept="image/*"></label>
+      ${categoryIconUrl(item)?`<div class="admin-category-current-icon">${categoryIconMarkupAdmin(item)}<small>الأيقونة الحالية</small></div>`:''}
+      <div class="row-actions"><button type="button" onclick="saveCategoryEdit()">حفظ التعديل</button><button type="button" class="secondary" onclick="closeCategoryEditor()">إلغاء</button></div>
+    </form>`;
+    modal.classList.remove('hidden');modal.hidden=false;
+  }
+
+  async function saveCategoryEdit(){
+    const form=document.getElementById('alinCategoryEditForm');if(!form)return;
+    const data=new FormData(form),id=String(form.dataset.id||'');
+    const virtual=id==='__deal__';
+    const item=virtual?{id:'__deal__',type:'deal',name:'عروض',virtual:true}:categories().find(row=>String(row.id)===id);
+    if(!item)return;
+    const builtIn=Boolean(builtinCategoryKey(item))||virtual;
+    const name=builtIn?item.name:String(data.get('name')||'').trim();
+    const type=builtIn?normalizeType(item.type):normalizeType(data.get('type'));
+    const sortOrder=Math.max(1,Number(data.get('sortOrder')||item.sort_order||1));
+    if(!name)return alert('اكتب اسم القسم');
+    try{
+      if(virtual)await saveSetting('store_section_order_deal',String(sortOrder));
+      else{
+        const oldName=item.name;
+        await window.update('categories',{name,type,sort_order:sortOrder,updated_at:new Date().toISOString()},{id});
+        if(!builtIn&&oldName!==name){
+          const linked=products().filter(product=>String(product.category_id||'')===id||String(product.category||'')===String(oldName||''));
+          for(const product of linked)await window.update('products',{category:name,type:normalizeType(product.type||type),updated_at:new Date().toISOString()},{id:product.id});
+        }
+      }
+      const iconFile=data.get('icon');
+      if(iconFile&&iconFile.name){const uploaded=await uploadImage(iconFile);if(uploaded)await saveSetting(categoryIconKey(item),uploaded)}
+      if(typeof window.audit==='function')await window.audit('category',`تعديل قسم واجهة المتجر ${name}`);
+      closeCategoryEditor();await reloadAndRender(renderCategoriesAdmin);if(typeof window.renderStore==='function')window.renderStore();
+      if(typeof window.toast==='function')window.toast('تم تحديث القسم');
+    }catch(error){console.error('[ALIN category edit]',error);alert(error?.message||'تعذر تعديل القسم')}
   }
 
   async function toggleCategory(id,status){
-    try{await window.update('categories',{status,updated_at:new Date().toISOString()},{id});await reloadAndRender(renderCategoriesAdmin)}catch(error){alert(error?.message||'تعذر تغيير حالة القسم')}
+    const virtual=id==='__deal__';
+    const item=virtual?{id:'__deal__',type:'deal',name:'عروض',virtual:true}:categories().find(row=>String(row.id)===String(id));
+    if(!item)return;
+    const visible=status==='active';
+    try{
+      if(!virtual)await window.update('categories',{status:visible?'active':'inactive',updated_at:new Date().toISOString()},{id});
+      await saveSetting(`${SECTION_VISIBLE_PREFIX}${categorySectionKey(item)}`,String(visible));
+      await reloadAndRender(renderCategoriesAdmin);if(typeof window.renderStore==='function')window.renderStore();
+      if(typeof window.toast==='function')window.toast(visible?'تم إظهار القسم في المتجر':'تم إخفاء القسم من المتجر');
+    }catch(error){console.error('[ALIN category toggle]',error);alert(error?.message||'تعذر تغيير حالة القسم')}
   }
 
   async function deleteCategory(id){
     const item=categories().find(row=>String(row.id)===String(id));if(!item)return;
-    const linked=products().filter(product=>String(product.category||'')===String(item.name||''));
+    if(builtinCategoryKey(item))return alert('القسم الرئيسي لا يُحذف، يمكنك إخفاؤه فقط.');
+    const linked=products().filter(product=>String(product.category_id||'')===String(item.id)||String(product.category||'')===String(item.name||''));
     if(linked.length)return alert(`لا يمكن حذف القسم لأنه مرتبط بـ ${linked.length} منتج. أخفِ القسم بدلًا من حذفه.`);
     if(!confirm(`حذف القسم ${item.name||''}؟`))return;
-    try{await window.removeRow('categories',{id:item.id});if(typeof window.audit==='function')await window.audit('category',`حذف القسم ${item.name||item.id}`);await reloadAndRender(renderCategoriesAdmin);if(typeof window.toast==='function')window.toast('تم حذف القسم')}catch(error){alert(error?.message||'تعذر حذف القسم')}
+    try{
+      await window.removeRow('categories',{id:item.id});
+      await saveSetting(categoryIconKey(item),'');await saveSetting(`${SECTION_VISIBLE_PREFIX}${categorySectionKey(item)}`,'false');
+      if(typeof window.audit==='function')await window.audit('category',`حذف القسم ${item.name||item.id}`);
+      await reloadAndRender(renderCategoriesAdmin);if(typeof window.renderStore==='function')window.renderStore();
+      if(typeof window.toast==='function')window.toast('تم حذف القسم');
+    }catch(error){alert(error?.message||'تعذر حذف القسم')}
   }
 
   window.renderProductsAdmin=renderProductsAdmin;
@@ -2031,6 +2169,8 @@ window.AlinTeacherModules.unpublishTeacherBooklet=unpublishTeacherBooklet;
   window.deleteProduct=deleteProduct;
   window.addCategory=addCategory;
   window.editCategory=editCategory;
+  window.saveCategoryEdit=saveCategoryEdit;
+  window.closeCategoryEditor=closeCategoryEditor;
   window.toggleCategory=toggleCategory;
   window.deleteCategory=deleteCategory;
   // Compatibility aliases point to the same implementation, not wrappers.
@@ -2041,8 +2181,6 @@ window.AlinTeacherModules.unpublishTeacherBooklet=unpublishTeacherBooklet;
   window.AlinAdminModules?.register?.('products',renderProductsAdmin);
   window.AlinAdminModules?.register?.('categories',renderCategoriesAdmin);
 })();
-
-;
 
 /* modules/admin/accounts-advanced.js */
 // === admin/accounts-advanced.js ===

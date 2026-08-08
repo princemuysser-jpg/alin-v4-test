@@ -46,6 +46,7 @@
     const item=findItem(button.dataset.kind,button.dataset.id);
     if(action==='close')closeModal();
     else if(action==='desktopFavorites'||action==='mobileFavorites')window.v99ShowFavorites?.();
+    else if(action==='storeHome')ctx.openStoreHome?.();
     else if(action==='toggleFilters'){
       const root=$('#v99DiscoveryTools'),open=root?.classList.toggle('open');
       button.setAttribute('aria-expanded',String(!!open));
@@ -61,7 +62,6 @@
     else if(action==='favorite'&&item)window.v99ToggleFavorite?.(item.kind,item.id);
     else if(action==='cart'&&item){if(item.stock!==null&&item.stock<=0)ctx.stockForm(item);else window.addToCart?.(item.kind,item.id)}
     else if(action==='cartQty'&&item){const quantity=Math.max(1,num($('#v99DetailQty')?.value));for(let index=0;index<quantity;index++)window.addToCart?.(item.kind,item.id);ctx.updateDesktopHeader();ctx.updateMobileHeader();window.toast?.('أضيفت الكمية إلى السلة')}
-    else if(action==='buy'&&item){const quantity=Math.max(1,num($('#v99DetailQty')?.value));for(let index=0;index<quantity;index++)window.addToCart?.(item.kind,item.id);ctx.updateDesktopHeader();ctx.updateMobileHeader();closeModal(false);window.openCart?.()}
     else if(action==='share'&&item)ctx.shareItem(item);
     else if(action==='stockForm'&&item)ctx.stockForm(item);
     else if(action==='stockSubmit'&&item)ctx.stockSubmit(item);
@@ -87,11 +87,8 @@
   }
 
   function selectCategory(category,clear=false){
-    if(clear){state.filters.kind='';state.filters.badge=''}
-    else if(category==='deal'){state.filters.kind='';state.filters.badge='deal'}
-    else{state.filters.kind=category;state.filters.badge=''}
-    ctx.syncFilterControls();
-    ctx.renderEffectiveStore();
+    if(clear)return ctx.openStoreHome?.();
+    return ctx.openStoreCategory?.(category);
   }
 
   function installEventRouting(){
@@ -120,10 +117,11 @@
       const button=event.target.closest('[data-v99-action]');
       if(!button)return;
       const action=button.dataset.v99Action;
-      if(!['desktopFavorites','browseProducts','closeDesktopFilters','toggleFilters'].includes(action))return;
+      if(!['desktopFavorites','browseProducts','closeDesktopFilters','toggleFilters','storeHome'].includes(action))return;
       event.preventDefault();event.stopImmediatePropagation();
       if(action==='desktopFavorites')window.v99ShowFavorites?.();
-      else if(action==='browseProducts'){closeModal();$('#storeGrid')?.scrollIntoView({behavior:'smooth'})}
+      else if(action==='storeHome'){ctx.openStoreHome?.();window.scrollTo({top:0,behavior:'smooth'})}
+      else if(action==='browseProducts'){closeModal();state.storeView='catalog';state.categoryKey='';state.searchCatalog=false;state.filters.kind='';state.filters.badge='';ctx.renderStore?.();$('#storeGrid')?.scrollIntoView({behavior:'smooth'})}
       else if(action==='closeDesktopFilters')setDesktopFilterDrawer(false);
       else setDesktopFilterDrawer(!$('#v99DiscoveryTools')?.classList.contains('open'));
     },true);
@@ -152,10 +150,11 @@
       const category=event.target.closest('[data-v99-category]');
       if(!actionButton&&!category)return;
       const action=actionButton?.dataset.v99Action;
-      if(!category&&!['mobileFavorites','browseProducts','toggleMobileFilters','closeMobileFilters','clearMobileCategory'].includes(action))return;
+      if(!category&&!['mobileFavorites','browseProducts','toggleMobileFilters','closeMobileFilters','clearMobileCategory','storeHome'].includes(action))return;
       event.preventDefault();event.stopImmediatePropagation();
       if(action==='mobileFavorites')window.v99ShowFavorites?.();
-      else if(action==='browseProducts'){closeModal();$('#storeGrid')?.scrollIntoView({behavior:'smooth'})}
+      else if(action==='storeHome'){ctx.openStoreHome?.();window.scrollTo({top:0,behavior:'smooth'})}
+      else if(action==='browseProducts'){closeModal();state.storeView='catalog';state.categoryKey='';state.searchCatalog=false;state.filters.kind='';state.filters.badge='';ctx.renderStore?.();$('#storeGrid')?.scrollIntoView({behavior:'smooth'})}
       else if(action==='toggleMobileFilters')setMobileFilterDrawer(!$('#v99DiscoveryTools')?.classList.contains('open'));
       else if(action==='closeMobileFilters')setMobileFilterDrawer(false);
       else{
@@ -175,6 +174,7 @@
 
   function installIntegrationEvents(){
     window.addEventListener('alin:data-refreshed',()=>{ctx.renderStoreStats();ctx.renderStore()});
+    window.addEventListener('alin:settings-updated',event=>{const keys=event.detail?.keys||[];if(keys.some(key=>String(key).startsWith('store_category_')||String(key).startsWith('store_section_')))ctx.renderStore?.()});
     window.addEventListener('alin:cloud-mutation',event=>{if(['booklets','products','accounts','orders'].includes(String(event.detail?.table||'')))ctx.renderStoreStats()});
     document.addEventListener('alin:cart-changed',()=>{ctx.updateDesktopHeader();ctx.updateMobileHeader()});
     document.addEventListener('alin:cart-rendered',()=>{

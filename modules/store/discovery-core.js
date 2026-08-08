@@ -44,7 +44,7 @@
         subject:row.subject||'',grade:row.grade||'',category:'ملازم',price:num(row.price),originalPrice:num(row.original_price),
         stock:row.stock==null?null:num(row.stock),image:row.cover_path||row.image_path||'',cover:row.cover_path||row.image_path||'',
         created:row.created_at||'',sold:num(row.sales_count)||counts[`booklet:${row.id}`]||0,badge:row.badge||'',prep:num(row.prep_minutes),
-        dealPrice:num(row.deal_price),dealStart:row.deal_start,dealEnd:row.deal_end,description:row.description||'',status:row.status
+        dealPrice:num(row.deal_price||row.sale_price),dealStart:row.deal_start,dealEnd:row.deal_end,description:row.description||'',status:row.status
       };
     });
     const products=(window.db?.products||[]).filter(row=>statusVisible(row.status)).map(row=>({
@@ -52,7 +52,7 @@
       subject:row.subject||row.category||'',grade:row.grade||'',category:row.category||row.type||'',price:num(row.price),originalPrice:num(row.original_price),
       stock:row.stock==null?null:num(row.stock),image:row.image_path||row.cover_path||'',cover:row.image_path||row.cover_path||'',created:row.created_at||'',
       sold:num(row.sales_count)||counts[`${row.type||'product'}:${row.id}`]||counts[`product:${row.id}`]||0,badge:row.badge||'',prep:num(row.prep_minutes),
-      dealPrice:num(row.deal_price),dealStart:row.deal_start,dealEnd:row.deal_end,description:row.description||'',status:row.status
+      dealPrice:num(row.deal_price||row.sale_price),dealStart:row.deal_start,dealEnd:row.deal_end,description:row.description||'',status:row.status
     }));
     return [...booklets,...products];
   }
