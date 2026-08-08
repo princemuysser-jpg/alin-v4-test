@@ -7,6 +7,19 @@
   const {$,esc,num,fmt,imageUrl,state,canonicalItems,activeDeal,effectivePrice,badges,findItem,isFavorite,openModal,hasSb,stableKey}=ctx;
 
   const reviewsFor=item=>(state.tables.product_reviews||[]).filter(row=>row.kind===item.kind&&String(row.item_id)===item.id&&['approved','published'].includes(row.status||'approved'));
+  const clampRating=value=>Math.max(0,Math.min(5,num(value)));
+  const starText=value=>{
+    const rounded=Math.round(clampRating(value));
+    return `${'★'.repeat(rounded)}${'☆'.repeat(5-rounded)}`;
+  };
+  function ratingBreakdown(reviews){
+    const total=reviews.length||0;
+    return [5,4,3,2,1].map(star=>{
+      const count=reviews.filter(row=>Math.round(clampRating(row.rating))===star).length;
+      const width=total?Math.round((count/total)*100):0;
+      return `<div class="v99-rating-bar"><span>${fmt(star)} ★</span><i><b style="width:${width}%"></b></i><small>${fmt(count)}</small></div>`;
+    }).join('');
+  }
   function relatedItems(item){
     return canonicalItems().filter(candidate=>stableKey(candidate.kind,candidate.id)!==stableKey(item.kind,item.id)).map(candidate=>({
       item:candidate,
@@ -25,9 +38,32 @@
     const item=findItem(kind,id);
     if(!item)return;
     const reviews=reviewsFor(item);
-    const average=reviews.length?reviews.reduce((sum,row)=>sum+num(row.rating),0)/reviews.length:0;
+    const average=reviews.length?reviews.reduce((sum,row)=>sum+clampRating(row.rating),0)/reviews.length:0;
     const out=item.stock!==null&&item.stock<=0;
-    openModal(`<div class="v99-detail"><div class="v99-detail-media">${item.image?`<img src="${esc(imageUrl(item.image))}" alt="${esc(item.title)}">`:'<span class="v99-placeholder">ALIN</span>'}</div><div class="v99-detail-copy"><div class="v99-badges">${badges(item).map(label=>`<span class="v99-badge">${esc(label)}</span>`).join('')}</div><h2>${esc(item.title)}</h2><p>${esc([item.teacher,item.subject,item.grade,item.category].filter(Boolean).join(' • '))}</p><p>${esc(item.description||'مادة مختارة من متجر آلين، راجع التفاصيل وحدد طريقة الاستلام أو التوصيل عند إكمال الطلب.')}</p><div class="v99-price">${fmt(effectivePrice(item))} د.ع ${activeDeal(item)?`<del>${fmt(item.price)}</del>`:''}</div><div class="v99-card-meta"><span>${out?'غير متوفر حالياً':item.stock===null?'متاح للطلب':`المخزون ${fmt(item.stock)}`}</span><span>${item.prep?`تقدير التجهيز ${fmt(item.prep)} دقيقة`:'وقت التجهيز تؤكده المكتبة'}</span></div><div class="v99-qty"><label for="v99DetailQty">الكمية</label><input id="v99DetailQty" type="number" min="1" max="99" value="1"></div><div class="v99-actions">${out?`<button data-v99-action="stockForm" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">أبلغني عند التوفر</button>`:`<button data-v99-action="cartQty" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">أضف للسلة</button>`}<button class="v99-ghost" data-v99-action="share" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">مشاركة</button><button class="v99-ghost" data-v99-action="favorite" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">${isFavorite(item)?'إزالة من المفضلة':'حفظ بالمفضلة'}</button></div></div></div><section class="v99-reviews"><h3>التقييمات ${reviews.length?`— ${average.toFixed(1)} من 5`:''}</h3>${reviews.map(review=>`<div class="row"><div><b>${fmt(review.rating)} / 5</b><small>${esc(review.comment||'')}</small></div></div>`).join('')||'<p class="muted">لا توجد تقييمات منشورة بعد.</p>'}<button data-v99-action="reviewForm" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">أضف تقييمك</button></section>${relatedDetailHtml(item)}`);
+    const current=effectivePrice(item),hasPrevious=activeDeal(item)&&item.price>current;
+    const discount=hasPrevious?Math.max(1,Math.round((1-current/item.price)*100)):0;
+    const reviewRows=reviews.slice(0,8).map(review=>`<article class="v99-review-card"><div class="v99-review-stars" aria-label="تقييم ${fmt(review.rating)} من 5">${starText(review.rating)}</div><p>${esc(review.comment||'تقييم بدون تعليق')}</p><small>تقييم موثّق في منصة آلين</small></article>`).join('');
+    openModal(`<section class="v99-detail-premium">
+      <div class="v99-detail-main">
+        <div class="v99-detail-media">${item.image?`<img src="${esc(imageUrl(item.image))}" alt="${esc(item.title)}">`:'<span class="v99-placeholder">ALIN</span>'}${discount?`<span class="v99-detail-discount">خصم ${fmt(discount)}%</span>`:''}</div>
+        <div class="v99-detail-copy">
+          <div class="v99-badges">${badges(item).map(label=>`<span class="v99-badge">${esc(label)}</span>`).join('')}</div>
+          <h2>${esc(item.title)}</h2>
+          <p class="v99-detail-meta-line">${esc([item.teacher,item.subject,item.grade,item.category].filter(Boolean).join(' • '))}</p>
+          <div class="v99-detail-rating-summary"><span class="v99-rating-stars" aria-label="متوسط التقييم ${average.toFixed(1)} من 5">${starText(average)}</span><b>${reviews.length?average.toFixed(1):'جديد'}</b><small>${reviews.length?`${fmt(reviews.length)} تقييم`:'لا توجد تقييمات منشورة بعد'}</small></div>
+          <p class="v99-detail-description">${esc(item.description||'مادة مختارة من متجر آلين. راجع المواصفات والسعر والتوفر ثم أضف الكمية المناسبة إلى السلة.')}</p>
+          <div class="v99-detail-price"><strong>${fmt(current)} د.ع</strong>${hasPrevious?`<del>${fmt(item.price)} د.ع</del><span>وفّر ${fmt(item.price-current)} د.ع</span>`:''}</div>
+          <div class="v99-detail-facts"><span>${out?'غير متوفر حالياً':item.stock===null?'متاح للطلب':`متوفر: ${fmt(item.stock)}`}</span><span>${item.prep?`تقدير التجهيز ${fmt(item.prep)} دقيقة`:'وقت التجهيز تؤكده المكتبة'}</span></div>
+          <div class="v99-qty"><label for="v99DetailQty">الكمية</label><input id="v99DetailQty" type="number" min="1" max="99" value="1"></div>
+          <div class="v99-actions">${out?`<button data-v99-action="stockForm" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">أبلغني عند التوفر</button>`:`<button data-v99-action="cartQty" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">أضف للسلة</button>`}<button class="v99-ghost" data-v99-action="favorite" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">${isFavorite(item)?'إزالة من المفضلة':'حفظ بالمفضلة'}</button><button class="v99-ghost" data-v99-action="share" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">مشاركة</button></div>
+        </div>
+      </div>
+      <section class="v99-reviews v99-reviews-premium"><div class="v99-reviews-head"><div><span>آراء العملاء</span><h3>التقييمات بالنجوم</h3></div><button data-v99-action="reviewForm" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">أضف تقييمك</button></div>
+        <div class="v99-rating-overview"><div class="v99-rating-score"><strong>${reviews.length?average.toFixed(1):'—'}</strong><span class="v99-rating-stars">${starText(average)}</span><small>${reviews.length?`${fmt(reviews.length)} تقييم منشور`:'كن أول من يقيّم هذا المنتج'}</small></div><div class="v99-rating-bars">${ratingBreakdown(reviews)}</div></div>
+        <div class="v99-review-list">${reviewRows||'<div class="v99-review-empty"><b>لا توجد تقييمات منشورة بعد</b><p>يمكنك إضافة تقييمك وسيظهر بعد مراجعته.</p></div>'}</div>
+      </section>
+      ${relatedDetailHtml(item)}
+    </section>`);
   }
 
   async function shareItem(item){
@@ -56,7 +92,7 @@
   }
 
   function reviewForm(item){
-    openModal(`<h2>قيّم ${esc(item.title)}</h2><div class="v99-form"><input id="v99ReviewContact" placeholder="رقم الهاتف"><select id="v99ReviewRating"><option value="5">5 — ممتاز</option><option value="4">4 — جيد جداً</option><option value="3">3 — جيد</option><option value="2">2 — مقبول</option><option value="1">1 — ضعيف</option></select><textarea id="v99ReviewComment" placeholder="اكتب رأيك"></textarea><button data-v99-action="reviewSubmit" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">إرسال للمراجعة</button><div id="v99FormMsg"></div></div>`);
+    openModal(`<section class="v99-review-form"><span class="v99-kicker">شارك تجربتك</span><h2>قيّم ${esc(item.title)}</h2><p>اختر عدد النجوم واكتب رأيك. التقييم يظهر بعد مراجعة الإدارة.</p><div class="v99-form"><input id="v99ReviewContact" placeholder="رقم الهاتف"><label class="v99-rating-select"><span>التقييم</span><select id="v99ReviewRating"><option value="5">★★★★★ — ممتاز</option><option value="4">★★★★☆ — جيد جداً</option><option value="3">★★★☆☆ — جيد</option><option value="2">★★☆☆☆ — مقبول</option><option value="1">★☆☆☆☆ — ضعيف</option></select></label><textarea id="v99ReviewComment" placeholder="اكتب رأيك عن المنتج"></textarea><button data-v99-action="reviewSubmit" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">إرسال التقييم</button><div id="v99FormMsg"></div></div></section>`);
   }
   async function reviewSubmit(item){
     const message=$('#v99FormMsg'),contact=$('#v99ReviewContact')?.value.trim(),rating=num($('#v99ReviewRating')?.value),comment=$('#v99ReviewComment')?.value.trim();

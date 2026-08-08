@@ -114,7 +114,7 @@
         ? window.AlinI18n.current()
         : document.documentElement.dataset.alinLanguage) || 'ar';
 
-    document.querySelectorAll('#alinAccountSheet [data-lang]').forEach(function(button){
+    document.querySelectorAll('#alinAccountSheet [data-lang], #alinDesktopOptionsPanel [data-lang]').forEach(function(button){
       var active = button.getAttribute('data-lang') === currentLanguage;
       button.classList.toggle('active', active);
       button.classList.toggle('is-active', active);
@@ -122,7 +122,7 @@
     });
 
     var currentTheme = document.documentElement.dataset.alinTheme === 'dark' ? 'dark' : 'light';
-    document.querySelectorAll('#alinAccountSheet [data-theme]').forEach(function(button){
+    document.querySelectorAll('#alinAccountSheet [data-theme], #alinDesktopOptionsPanel [data-theme]').forEach(function(button){
       var active = button.getAttribute('data-theme') === currentTheme;
       button.classList.toggle('active', active);
       button.classList.toggle('is-active', active);
@@ -131,7 +131,7 @@
   }
 
   function installOptionActions(){
-    if(!document.body || !document.body.classList.contains('store-mobile')) return;
+    if(!document.body) return;
 
     window.alinOpenRealAccount = function(){
       closeMobileSheets();

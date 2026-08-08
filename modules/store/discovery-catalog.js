@@ -148,8 +148,10 @@
   function matches(item){
     const filters=state.filters;
     const query=String($('#searchInput')?.value||'').trim().toLowerCase();
-    const haystack=[item.title,item.teacher,item.subject,item.grade,item.category].join(' ').toLowerCase();
+    const categoryQuery=String(state.categoryQuery||'').trim().toLowerCase();
+    const haystack=[item.title,item.teacher,item.subject,item.grade,item.category,item.description].join(' ').toLowerCase();
     return (!query||haystack.includes(query))
+      &&(!categoryQuery||haystack.includes(categoryQuery))
       &&customCategoryMatches(item)
       &&(!filters.kind||normalizeCategoryType(item.kind)===normalizeCategoryType(filters.kind)||String(item.category||'')===String(filters.kind))
       &&(!filters.grade||item.grade===filters.grade)
@@ -197,7 +199,7 @@
       <fieldset class="v99-price-range"><legend>نطاق السعر</legend><label><span>من</span><input data-filter="min" type="number" min="0" inputmode="numeric" placeholder="0"></label><label><span>إلى</span><input data-filter="max" type="number" min="0" inputmode="numeric" placeholder="بدون حد"></label></fieldset>
       <label><span>حالة التوفر</span><select data-filter="available"><option value="">الكل</option><option value="yes">متوفر</option><option value="no">نافد</option></select></label>
       <label><span>الشارة أو العرض</span><select data-filter="badge"><option value="">الكل</option><option value="deal">عرض اليوم</option><option>جديد</option><option>الأكثر طلباً</option><option>كمية محدودة</option></select></label>
-      <label class="v99-sort-control"><span>ترتيب النتائج</span><select data-filter="sort"><option value="recommended">الموصى بها</option><option value="newest">الأحدث</option><option value="best">الأكثر مبيعاً</option><option value="priceAsc">السعر: الأقل</option><option value="priceDesc">السعر: الأعلى</option></select></label>
+      <label class="v99-sort-control"><span>ترتيب النتائج</span><select data-filter="sort"><option value="recommended">افتراضي</option><option value="newest">الأحدث</option><option value="best">الأكثر مبيعاً</option><option value="priceAsc">السعر من الأقل إلى الأعلى</option><option value="priceDesc">السعر من الأعلى إلى الأقل</option></select></label>
       </div><div class="v99-filter-actions"><span class="v99-filter-summary" id="v99FilterSummary"></span><button type="button" class="v99-secondary" data-v99-action="clearFilters">مسح الكل</button></div>`;
     syncFilterControls();
     renderFilterChips();
@@ -228,7 +230,8 @@
   }
 
   function miniCard(item){
-    return `<article class="v99-mini-card"><div class="v99-mini-media">${item.image?`<img src="${esc(imageUrl(item.image))}" alt="">`:'<span class="v99-placeholder">آ</span>'}</div><div class="v99-mini-body"><div class="v99-badges">${badges(item).slice(0,2).map(label=>`<span class="v99-badge">${esc(label)}</span>`).join('')}</div><h3>${esc(item.title)}</h3><p>${esc([item.teacher,item.subject,item.grade].filter(Boolean).join(' • '))}</p><div class="v99-card-price">${fmt(effectivePrice(item))} د.ع</div><button data-v99-action="details" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">عرض</button></div></article>`;
+    const current=effectivePrice(item),hasPrevious=activeDeal(item)&&item.price>current;
+    return `<article class="v99-mini-card"><div class="v99-mini-media">${item.image?`<img src="${esc(imageUrl(item.image))}" alt="">`:'<span class="v99-placeholder">آ</span>'}</div><div class="v99-mini-body"><div class="v99-badges">${badges(item).slice(0,2).map(label=>`<span class="v99-badge">${esc(label)}</span>`).join('')}</div><h3>${esc(item.title)}</h3><p>${esc([item.teacher,item.subject,item.grade].filter(Boolean).join(' • '))}</p><div class="v99-card-price"><strong>${fmt(current)} د.ع</strong>${hasPrevious?`<del>${fmt(item.price)} د.ع</del>`:''}</div><button data-v99-action="details" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">عرض</button></div></article>`;
   }
 
   function rail(rootSelector,title,subtitle,rows){
@@ -334,6 +337,29 @@
     return values;
   }
 
+  function renderCategoryTools(resultCount=0){
+    const root=$('#storeProducts');
+    if(!root)return;
+    const isCatalog=state.storeView==='catalog';
+    root.hidden=!isCatalog;
+    if(!isCatalog){root.innerHTML='';return}
+    const key=String(state.categoryKey||(state.searchCatalog?'search':'all'));
+    if(root.dataset.categoryKey!==key||!root.querySelector('#v99CategorySearch')){
+      root.dataset.categoryKey=key;
+      root.innerHTML=`<div class="v99-category-tools">
+        <label class="v99-category-search" for="v99CategorySearch"><span class="v99-category-search-icon" aria-hidden="true"></span><input id="v99CategorySearch" type="search" autocomplete="off" placeholder="ابحث داخل هذا القسم..." value="${esc(state.categoryQuery||'')}" aria-label="البحث داخل القسم"></label>
+        <label class="v99-category-sort"><span>ترتيب</span><select id="v99CategorySort" aria-label="ترتيب منتجات القسم"><option value="recommended">افتراضي</option><option value="newest">الأحدث</option><option value="priceAsc">السعر من الأقل إلى الأعلى</option><option value="priceDesc">السعر من الأعلى إلى الأقل</option></select></label>
+        <span class="v99-category-result-count" id="v99CategoryResultCount" aria-live="polite"></span>
+      </div>`;
+    }
+    const search=root.querySelector('#v99CategorySearch');
+    if(search&&document.activeElement!==search)search.value=state.categoryQuery||'';
+    const sort=root.querySelector('#v99CategorySort');
+    if(sort)sort.value=['recommended','newest','priceAsc','priceDesc'].includes(state.filters.sort)?state.filters.sort:'recommended';
+    const count=root.querySelector('#v99CategoryResultCount');
+    if(count)count.textContent=`${fmt(resultCount)} منتج`;
+  }
+
   function categoryCopy(){
     const key=String(state.categoryKey||'');
     const custom=storefrontSections().find(section=>section.key===key);
@@ -355,6 +381,7 @@
 
   function resetCatalogSelection(){
     state.categoryKey='';
+    state.categoryQuery='';
     state.searchCatalog=false;
     state.filters={kind:'',grade:'',subject:'',teacher:'',min:'',max:'',available:'',badge:'',sort:'recommended'};
   }
@@ -372,6 +399,7 @@
     if(!section)return openStoreHome();
     state.storeView='catalog';
     state.categoryKey=section.key;
+    state.categoryQuery='';
     state.searchCatalog=false;
     state.filters={kind:'',grade:'',subject:'',teacher:'',min:'',max:'',available:'',badge:'',sort:'recommended'};
     state.filters.badge=section.key==='deal'?'deal':'';
@@ -389,6 +417,7 @@
     if(summary)summary.textContent=`${fmt(rows.length)} نتيجة`;
     renderFilterChips();
     renderStoreCategories();
+    renderCategoryTools(rows.length);
     syncDesktopCategoryUI();
     syncMobileCategoryUI();
     renderRails();
@@ -427,7 +456,7 @@
     return openStoreCategory(value);
   }
 
-  Object.assign(ctx,{card,matches,sorted,renderFilters,syncFilterControls,renderFilterChips,miniCard,rail,renderStage,renderDeal,renderRails,renderStoreStats,storefrontSections,renderStoreCategories,openStoreHome,openStoreCategory,applyStoreView,syncDesktopCategoryUI,syncMobileCategoryUI,renderEffectiveStore,normalizedStoreType,currentStoreItems,renderStore,setStoreType,publicTeachers,renderTeachers,renderBundles,updateCountdowns});
+  Object.assign(ctx,{card,matches,sorted,renderFilters,syncFilterControls,renderFilterChips,miniCard,rail,renderStage,renderDeal,renderRails,renderStoreStats,storefrontSections,renderStoreCategories,renderCategoryTools,openStoreHome,openStoreCategory,applyStoreView,syncDesktopCategoryUI,syncMobileCategoryUI,renderEffectiveStore,normalizedStoreType,currentStoreItems,renderStore,setStoreType,publicTeachers,renderTeachers,renderBundles,updateCountdowns});
   window.storeItems=currentStoreItems;
   window.renderStore=renderStore;
   window.setStoreType=setStoreType;

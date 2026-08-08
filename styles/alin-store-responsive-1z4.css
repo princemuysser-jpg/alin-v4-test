@@ -1,0 +1,400 @@
+/* ALIN v4.1.6 prepublish 1z4 — responsive banner, product cards, and category palette. */
+
+/* Store banner: keep the full uploaded artwork visible and stop desktop banners from becoming oversized. */
+.alin-store-banners{
+  max-width:1540px!important;
+  margin:12px auto 20px!important;
+  padding-inline:clamp(12px,2.1vw,32px)!important;
+  box-sizing:border-box!important;
+}
+.alin-store-banner{
+  border-radius:22px!important;
+  border-color:#dfe7f0!important;
+  box-shadow:0 14px 34px rgba(12,42,76,.09)!important;
+}
+.alin-store-banner__media{
+  aspect-ratio:auto!important;
+  height:clamp(220px,22vw,340px)!important;
+  min-height:0!important;
+  max-height:340px!important;
+  background:#f5f8fc!important;
+}
+.alin-store-banner__image{
+  width:100%!important;
+  height:100%!important;
+  object-fit:contain!important;
+  object-position:center center!important;
+  background:#f5f8fc!important;
+}
+.alin-store-banner__content{
+  padding:12px clamp(16px,2.4vw,28px) 14px!important;
+  gap:16px!important;
+}
+.alin-store-banner__label{background:#fff8e8!important;color:#966a12!important}
+.alin-store-banner h2{font-size:clamp(18px,1.65vw,26px)!important;color:#0b3158!important}
+.alin-store-banner p{font-size:clamp(12px,1vw,14px)!important;line-height:1.7!important}
+.alin-store-banner__cta{background:#0b4f89!important;box-shadow:0 7px 16px rgba(11,79,137,.18)!important}
+.alin-store-banner__dots button.active{background:#c89526!important}
+
+/* Category carousel: replace the pink palette with ALIN navy / soft blue / warm gold and make cards more compact. */
+.alin-category-showcase{
+  --alin-cat-card-w:176px!important;
+  --alin-cat-card-h:188px!important;
+  max-width:1480px!important;
+  margin:15px auto 28px!important;
+  padding:18px 18px 14px!important;
+  border-color:#dce5ef!important;
+  border-radius:24px!important;
+  background:linear-gradient(180deg,#f9fbfe 0%,#fff 100%)!important;
+  box-shadow:0 10px 28px rgba(11,49,88,.055)!important;
+}
+.alin-category-heading{margin-bottom:14px!important}
+.alin-category-heading span{color:#997019!important}
+.alin-category-heading h2{font-size:23px!important;color:#0b3158!important}
+.alin-category-heading h2::after{background:linear-gradient(90deg,#d3a43c,#0b5fa5)!important;height:2px!important}
+.alin-category-showcase #alinStoreCategories,
+html[data-alin-device="tablet"] body.store-mobile .alin-category-showcase #alinStoreCategories,
+html[data-alin-device="mobile"] body.store-mobile .alin-category-showcase #alinStoreCategories{
+  gap:12px!important;
+  padding:2px 1px 7px!important;
+}
+.alin-category-showcase #alinStoreCategories>button[data-v99-category],
+body.store-desktop .alin-category-showcase #alinStoreCategories>button[data-v99-category],
+body.store-mobile .alin-category-showcase #alinStoreCategories>button[data-v99-category],
+html[data-alin-device="tablet"] body.store-mobile .alin-category-showcase #alinStoreCategories>button[data-v99-category],
+html[data-alin-device="mobile"] body.store-mobile .alin-category-showcase #alinStoreCategories>button[data-v99-category]{
+  flex-basis:var(--alin-cat-card-w)!important;
+  width:var(--alin-cat-card-w)!important;
+  min-width:var(--alin-cat-card-w)!important;
+  height:var(--alin-cat-card-h)!important;
+  min-height:var(--alin-cat-card-h)!important;
+  padding:8px!important;
+  border:1px solid #dce5ef!important;
+  border-radius:21px!important;
+  background:linear-gradient(145deg,#f7faff 0%,#edf4fb 58%,#fffaf0 100%)!important;
+  color:#0b3158!important;
+  box-shadow:0 7px 20px rgba(11,49,88,.075)!important;
+}
+.alin-category-showcase #alinStoreCategories>button[data-v99-category]:nth-child(4n+2){background:linear-gradient(145deg,#fbfcfe,#f0f4f8 62%,#fff9ec)!important}
+.alin-category-showcase #alinStoreCategories>button[data-v99-category]:nth-child(4n+3){background:linear-gradient(145deg,#f8fbff,#eaf2fa 62%,#f8fbff)!important}
+.alin-category-showcase #alinStoreCategories>button[data-v99-category]:nth-child(4n+4){background:linear-gradient(145deg,#fffdf8,#f6f2e8 62%,#f3f7fb)!important}
+.alin-category-showcase #alinStoreCategories>button[data-v99-category]:hover,
+.alin-category-showcase #alinStoreCategories>button[data-v99-category]:focus-visible,
+.alin-category-showcase #alinStoreCategories>button[data-v99-category][aria-pressed="true"]{
+  border-color:#c99a32!important;
+  box-shadow:0 10px 24px rgba(11,49,88,.12),0 0 0 2px rgba(201,154,50,.12)!important;
+  transform:translateY(-2px)!important;
+}
+.alin-category-showcase #alinStoreCategories .cat-icon,
+body.store-mobile .alin-category-showcase #alinStoreCategories .cat-icon,
+html[data-alin-device="tablet"] body.store-mobile .alin-category-showcase #alinStoreCategories .cat-icon{
+  max-height:118px!important;
+  padding:6px!important;
+  border-radius:16px!important;
+  background:rgba(255,255,255,.72)!important;
+  color:#0b5fa5!important;
+}
+.alin-category-showcase #alinStoreCategories .cat-icon svg{width:min(88px,74%)!important;height:min(88px,74%)!important;filter:drop-shadow(0 6px 7px rgba(11,49,88,.08))!important}
+.alin-category-showcase .cat-svg-fill-1{fill:#dbeafb!important}
+.alin-category-showcase .cat-svg-fill-2{fill:#f5e6bd!important}
+.alin-category-showcase .cat-svg-ribbon{fill:#d5a440!important;stroke:#9b7018!important}
+.alin-category-showcase .cat-svg-pencil{stroke:#0b5fa5!important}
+.alin-category-showcase .cat-svg-line{stroke:#123d68!important}
+.alin-category-showcase .cat-svg-line.soft{stroke:#e8f2fb!important}
+.alin-category-showcase .cat-svg-dot{fill:#d5a440!important;stroke:#9b7018!important}
+.alin-category-showcase #alinStoreCategories .cat-copy,
+body.store-mobile .alin-category-showcase #alinStoreCategories .cat-copy,
+html[data-alin-device="tablet"] body.store-mobile .alin-category-showcase #alinStoreCategories .cat-copy{
+  min-height:42px!important;
+  margin-top:6px!important;
+  padding:6px 28px 6px 8px!important;
+  border-color:#dce5ef!important;
+  border-radius:13px!important;
+  background:rgba(255,255,255,.88)!important;
+  color:#0b3158!important;
+}
+.alin-category-showcase #alinStoreCategories .cat-copy::after{right:7px!important;width:21px!important;height:21px!important;background:#f1f6fb!important;color:#0b5fa5!important;border-color:#d8e4ef!important;font-size:16px!important}
+.alin-category-showcase #alinStoreCategories .cat-copy strong,
+body.store-mobile .alin-category-showcase #alinStoreCategories .cat-copy strong,
+body.store-desktop .alin-category-showcase #alinStoreCategories .cat-copy strong{font-size:14px!important;color:#0b3158!important}
+.alin-category-slide{width:36px!important;height:36px!important;border-color:#d8e4ef!important;background:#fff!important;color:#0b5fa5!important;box-shadow:0 4px 12px rgba(11,49,88,.07)!important}
+.alin-category-slide:hover,.alin-category-slide:focus-visible{background:#eef5fb!important;color:#0b3158!important;border-color:#c99a32!important}
+
+/* Product cards: compact, consistent cards without changing commerce logic. */
+#storeGrid.store-product-grid,
+.alin-storefront #storeGrid{
+  display:grid!important;
+  align-items:stretch!important;
+  gap:14px!important;
+}
+.v99-product-card{
+  border-radius:18px!important;
+  overflow:hidden!important;
+  box-shadow:0 7px 19px rgba(15,35,65,.055)!important;
+}
+.v99-product-media{
+  height:168px!important;
+  min-height:168px!important;
+  background:linear-gradient(145deg,#f5f8fc,#fbfcfe)!important;
+}
+.v99-product-media img{object-fit:contain!important;object-position:center!important;padding:8px!important;box-sizing:border-box!important}
+.v99-product-body{padding:10px 11px 11px!important}
+.v99-product-body h3{font-size:14px!important;line-height:1.45!important;margin:4px 0!important}
+.v99-product-body p{font-size:10px!important;min-height:16px!important}
+.v99-card-meta{font-size:10px!important;gap:5px!important}
+.v99-card-price{font-size:18px!important;margin-top:7px!important;gap:6px!important}
+.v99-card-price del{font-size:11px!important}
+.v99-fav{width:34px!important;height:34px!important;top:8px!important;left:8px!important;font-size:20px!important}
+.v99-actions{gap:7px!important;margin-top:8px!important}
+.v99-actions button{min-height:38px!important;padding:7px 6px!important;font-size:10px!important;border-radius:10px!important}
+
+/* Home rails, especially New Arrivals: preserve the full cover but remove the oversized 1w media. */
+.v99-rail-root{max-width:1480px!important}
+.v99-rail{grid-auto-columns:minmax(178px,200px)!important;gap:11px!important}
+.v99-mini-card{border-radius:16px!important}
+.v99-mini-media,
+#v99NewArrivals .v99-mini-media{
+  height:142px!important;
+  min-height:142px!important;
+  max-height:142px!important;
+  aspect-ratio:auto!important;
+  padding:7px!important;
+  background:linear-gradient(145deg,#f6f9fc,#fffaf1)!important;
+}
+.v99-mini-media img,
+#v99NewArrivals .v99-mini-media img{object-fit:contain!important;object-position:center!important}
+.v99-mini-body{padding:10px!important}
+.v99-mini-body h3{font-size:13px!important;line-height:1.4!important}.v99-mini-body p{font-size:10px!important;margin-bottom:6px!important}
+.v99-mini-body .v99-card-price{font-size:16px!important}.v99-mini-body button{min-height:34px!important;padding:6px 9px!important;font-size:10px!important}
+
+/* Desktop. */
+@media(min-width:1201px){
+  body.store-desktop #storeGrid.store-product-grid{grid-template-columns:repeat(5,minmax(0,1fr))!important}
+}
+@media(min-width:901px) and (max-width:1200px){
+  body.store-desktop #storeGrid.store-product-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+  body.store-desktop .v99-product-media{height:158px!important;min-height:158px!important}
+}
+
+/* Tablet portrait + landscape. */
+html[data-alin-device="tablet"] body.store-mobile .alin-category-showcase{--alin-cat-card-w:154px!important;--alin-cat-card-h:168px!important;margin:12px 0 22px!important;padding:15px 12px 11px!important}
+html[data-alin-device="tablet"] body.store-mobile .alin-category-showcase #alinStoreCategories .cat-icon{max-height:103px!important}
+html[data-alin-device="tablet"] body.store-mobile #storeGrid.store-product-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:12px!important}
+html[data-alin-device="tablet"] body.store-mobile #storeGrid .v99-product-media{height:160px!important;min-height:160px!important}
+html[data-alin-device="tablet"] body.store-mobile .v99-rail{grid-auto-columns:minmax(170px,190px)!important}
+@media(orientation:landscape) and (min-width:900px){
+  html[data-alin-device="tablet"] body.store-mobile #storeGrid.store-product-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+}
+
+/* Phone. */
+@media(max-width:650px){
+  .alin-store-banners{padding-inline:8px!important;margin:8px auto 14px!important}
+  .alin-store-banner{border-radius:16px!important}
+  .alin-store-banner__media{height:clamp(165px,52vw,220px)!important;max-height:220px!important;background:#f7f9fc!important}
+  .alin-store-banner__image{object-fit:contain!important;background:#f7f9fc!important}
+  .alin-store-banner__content{padding:10px 12px 12px!important;gap:8px!important}
+  .alin-store-banner h2{font-size:17px!important}.alin-store-banner p{font-size:11px!important}.alin-store-banner__cta{padding:7px 11px!important;font-size:11px!important}
+  .alin-category-showcase{--alin-cat-card-w:126px!important;--alin-cat-card-h:146px!important;margin:8px 0 18px!important;padding:12px 5px 9px!important;border-radius:18px!important}
+  .alin-category-heading{margin-bottom:10px!important;padding:0 38px!important}.alin-category-heading span{font-size:8px!important}.alin-category-heading h2{font-size:17px!important}.alin-category-heading h2::after{width:48px!important;margin-top:6px!important}
+  .alin-category-slider{grid-template-columns:28px minmax(0,1fr) 28px!important;gap:3px!important}.alin-category-slide{width:27px!important;height:27px!important}.alin-category-slide span{font-size:19px!important}
+  .alin-category-showcase #alinStoreCategories{gap:8px!important}.alin-category-showcase #alinStoreCategories>button[data-v99-category]{padding:6px!important;border-radius:17px!important}
+  .alin-category-showcase #alinStoreCategories .cat-icon{max-height:88px!important;border-radius:13px!important;padding:4px!important}.alin-category-showcase #alinStoreCategories .cat-icon svg{width:min(64px,70%)!important;height:min(64px,70%)!important}
+  .alin-category-showcase #alinStoreCategories .cat-copy{min-height:36px!important;margin-top:4px!important;padding:5px 23px 5px 6px!important;border-radius:11px!important}.alin-category-showcase #alinStoreCategories .cat-copy::after{right:5px!important;width:18px!important;height:18px!important;font-size:14px!important}.alin-category-showcase #alinStoreCategories .cat-copy strong{font-size:12px!important}
+  body.store-mobile #storeGrid.store-product-grid,
+  html[data-alin-device="mobile"] body.store-mobile #storeGrid.store-product-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;margin:0!important}
+  body.store-mobile #storeGrid>.v99-product-card:last-child:nth-child(odd),
+  html[data-alin-device="mobile"] body.store-mobile #storeGrid>.v99-product-card:last-child:nth-child(odd){grid-column:auto!important;width:100%!important;max-width:none!important}
+  body.store-mobile #storeGrid .v99-product-media{height:126px!important;min-height:126px!important}
+  body.store-mobile #storeGrid .v99-product-media img{padding:5px!important}
+  body.store-mobile #storeGrid .v99-product-body{padding:8px!important}
+  body.store-mobile #storeGrid .v99-product-body h3{font-size:12px!important;line-height:1.4!important;min-height:34px!important}
+  body.store-mobile #storeGrid .v99-product-body p{font-size:9px!important;min-height:13px!important}
+  body.store-mobile #storeGrid .v99-card-meta{font-size:8px!important}
+  body.store-mobile #storeGrid .v99-card-price{font-size:15px!important;margin-top:5px!important}
+  body.store-mobile #storeGrid .v99-card-price del{font-size:9px!important}
+  body.store-mobile #storeGrid .v99-actions{grid-template-columns:1fr 1fr!important;gap:5px!important;margin-top:6px!important}
+  body.store-mobile #storeGrid .v99-actions button{min-height:34px!important;padding:5px 3px!important;font-size:9px!important}
+  body.store-mobile .v99-rail{grid-auto-columns:46%!important;gap:8px!important}
+  body.store-mobile .v99-mini-media,#v99NewArrivals .v99-mini-media{height:116px!important;min-height:116px!important;max-height:116px!important;padding:5px!important}
+  body.store-mobile .v99-mini-body{padding:8px!important}.store-mobile .v99-section-head h2{font-size:17px!important}
+}
+
+/* Narrow phones still keep two clean product columns. */
+@media(max-width:380px){
+  body.store-mobile #storeGrid .v99-product-media{height:112px!important;min-height:112px!important}
+  body.store-mobile #storeGrid .v99-actions{grid-template-columns:1fr!important}
+  body.store-mobile .v99-rail{grid-auto-columns:48%!important}
+}
+
+/* Tablet/mobile landscape banners must also show the complete advertising artwork. */
+@media(orientation:landscape) and (max-height:620px){
+  body.store-mobile .alin-store-banner__media{height:min(40vh,205px)!important;min-height:140px!important;max-height:205px!important}
+  body.store-mobile .alin-store-banner__image{object-fit:contain!important}
+}
+
+
+/* ALIN 1z5 — keep full product images visible while preserving balanced card sizes on all devices. */
+.v99-product-media,
+body.store-desktop .v99-product-media,
+body.store-mobile #storeGrid .v99-product-media,
+html[data-alin-device="tablet"] body.store-mobile #storeGrid .v99-product-media,
+html[data-alin-device="mobile"] body.store-mobile #storeGrid .v99-product-media{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  overflow:hidden!important;
+  aspect-ratio:1 / 1.06!important;
+}
+.v99-product-media img,
+body.store-desktop .v99-product-media img,
+body.store-mobile #storeGrid .v99-product-media img,
+html[data-alin-device="tablet"] body.store-mobile #storeGrid .v99-product-media img,
+html[data-alin-device="mobile"] body.store-mobile #storeGrid .v99-product-media img{
+  width:100%!important;
+  height:100%!important;
+  max-width:100%!important;
+  max-height:100%!important;
+  object-fit:contain!important;
+  object-position:center center!important;
+  padding:10px!important;
+  box-sizing:border-box!important;
+  background:transparent!important;
+}
+body.store-desktop #storeGrid.store-product-grid{align-items:stretch!important}
+body.store-desktop .v99-product-card{display:flex!important;flex-direction:column!important}
+body.store-desktop .v99-product-body,
+body.store-mobile #storeGrid .v99-product-body{display:flex!important;flex-direction:column!important;justify-content:space-between!important}
+body.store-desktop .v99-actions,
+body.store-mobile #storeGrid .v99-actions{margin-top:auto!important}
+
+@media(min-width:1201px){
+  body.store-desktop .v99-product-media{height:180px!important;min-height:180px!important;max-height:180px!important}
+}
+@media(min-width:901px) and (max-width:1200px){
+  body.store-desktop .v99-product-media{height:172px!important;min-height:172px!important;max-height:172px!important}
+}
+html[data-alin-device="tablet"] body.store-mobile #storeGrid .v99-product-media{
+  height:170px!important;min-height:170px!important;max-height:170px!important;
+}
+@media(orientation:landscape) and (min-width:900px){
+  html[data-alin-device="tablet"] body.store-mobile #storeGrid .v99-product-media{height:162px!important;min-height:162px!important;max-height:162px!important}
+}
+@media(max-width:650px){
+  body.store-mobile #storeGrid .v99-product-media,
+  html[data-alin-device="mobile"] body.store-mobile #storeGrid .v99-product-media{height:136px!important;min-height:136px!important;max-height:136px!important;aspect-ratio:1 / 1.08!important}
+  body.store-mobile #storeGrid .v99-product-media img{padding:7px!important}
+}
+@media(max-width:380px){
+  body.store-mobile #storeGrid .v99-product-media{height:124px!important;min-height:124px!important;max-height:124px!important}
+  body.store-mobile #storeGrid .v99-product-media img{padding:6px!important}
+}
+
+.v99-mini-media,
+#v99NewArrivals .v99-mini-media{display:flex!important;align-items:center!important;justify-content:center!important;overflow:hidden!important}
+.v99-mini-media img,
+#v99NewArrivals .v99-mini-media img{width:100%!important;height:100%!important;max-width:100%!important;max-height:100%!important;object-fit:contain!important;object-position:center!important;padding:7px!important;box-sizing:border-box!important}
+
+
+/* ALIN 1z6 — authoritative desktop banner size + restored desktop Options. */
+@media (min-width:901px){
+  body.store-desktop #alinStoreBanners.alin-store-banners{
+    width:min(100% - 40px,1180px)!important;
+    max-width:1180px!important;
+    margin:10px auto 18px!important;
+    padding:0!important;
+  }
+  body.store-desktop #alinStoreBanners .alin-store-banner{
+    border-radius:18px!important;
+  }
+  body.store-desktop #alinStoreBanners .alin-store-banner__media{
+    width:100%!important;
+    height:clamp(178px,15vw,220px)!important;
+    min-height:178px!important;
+    max-height:220px!important;
+    aspect-ratio:auto!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    background:#f6f8fb!important;
+  }
+  body.store-desktop #alinStoreBanners .alin-store-banner__image{
+    width:100%!important;
+    height:100%!important;
+    max-width:100%!important;
+    max-height:100%!important;
+    object-fit:contain!important;
+    object-position:center!important;
+    background:#f6f8fb!important;
+  }
+  body.store-desktop #alinStoreBanners .alin-store-banner__content{
+    min-height:0!important;
+    padding:9px 18px 11px!important;
+    gap:14px!important;
+  }
+  body.store-desktop #alinStoreBanners .alin-store-banner h2{
+    font-size:18px!important;
+    line-height:1.35!important;
+  }
+  body.store-desktop #alinStoreBanners .alin-store-banner p{
+    font-size:12px!important;
+    line-height:1.55!important;
+  }
+  body.store-desktop #alinStoreBanners .alin-store-banner__label{
+    font-size:9px!important;
+    padding:3px 7px!important;
+  }
+  body.store-desktop #alinStoreBanners .alin-store-banner__cta{
+    padding:8px 12px!important;
+    font-size:11px!important;
+    border-radius:10px!important;
+  }
+}
+
+/* Desktop Options button and panel. */
+body.store-desktop .desktop-options-icon{
+  width:28px;height:28px;display:grid;place-items:center;color:#0b5fa5;
+}
+body.store-desktop .desktop-options-icon svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+body.store-desktop .desktop-options-button[aria-expanded="true"]{
+  background:#edf5fc!important;
+  color:#0b3158!important;
+}
+body.store-desktop .alin-desktop-options-panel{
+  position:fixed;
+  inset-inline-start:22px;
+  top:88px;
+  z-index:2147483000;
+  width:min(390px,calc(100vw - 44px));
+  max-height:calc(100vh - 110px);
+  overflow:auto;
+  padding:16px;
+  border:1px solid #d9e4ef;
+  border-radius:22px;
+  background:rgba(255,255,255,.985);
+  box-shadow:0 24px 60px rgba(10,38,70,.18);
+  backdrop-filter:blur(14px);
+}
+body.store-desktop .alin-desktop-options-panel[hidden]{display:none!important}
+body.store-desktop .alin-desktop-options-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:2px 2px 13px;border-bottom:1px solid #edf1f5}
+body.store-desktop .alin-desktop-options-head h2{margin:0;color:#0b3158;font-size:20px}
+body.store-desktop .alin-desktop-options-head p{margin:4px 0 0;color:#65758a;font-size:11px}
+body.store-desktop .alin-desktop-options-close{width:34px;height:34px;border:0;border-radius:11px;background:#f1f5f9;color:#334155;font-size:22px;cursor:pointer}
+body.store-desktop .alin-desktop-options-body{display:grid;gap:11px;padding-top:13px}
+body.store-desktop .alin-desktop-option-card{display:grid;grid-template-columns:38px minmax(0,1fr) auto;align-items:center;gap:10px;width:100%;padding:11px 12px;border:1px solid #e1e8ef;border-radius:15px;background:#fbfdff;color:#163553;text-align:right;cursor:pointer}
+body.store-desktop .alin-desktop-option-card:hover{border-color:#b7cadc;background:#f3f8fc}
+body.store-desktop .alin-desktop-option-icon{width:36px;height:36px;display:grid;place-items:center;border-radius:11px;background:#edf5fc;color:#0b5fa5;font-size:18px}
+body.store-desktop .alin-desktop-option-card b{display:block;font-size:13px;color:#0b3158}
+body.store-desktop .alin-desktop-option-card small{display:block;margin-top:2px;color:#6b7b8d;font-size:10px}
+body.store-desktop .alin-desktop-option-row{display:grid;gap:8px;padding:11px 12px;border:1px solid #e1e8ef;border-radius:15px;background:#fff}
+body.store-desktop .alin-desktop-option-row>div:first-child{display:flex;align-items:center;gap:9px}
+body.store-desktop .alin-desktop-option-row b{font-size:13px;color:#0b3158}
+body.store-desktop .alin-desktop-option-row small{font-size:10px;color:#6b7b8d}
+body.store-desktop .alin-desktop-choice-group{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+body.store-desktop .alin-desktop-choice-group.theme{grid-template-columns:repeat(2,minmax(0,1fr))}
+body.store-desktop .alin-desktop-choice{min-height:36px;border:1px solid #dbe5ed;border-radius:11px;background:#f7fafc;color:#36536f;font-size:11px;font-weight:800;cursor:pointer}
+body.store-desktop .alin-desktop-choice.active,
+body.store-desktop .alin-desktop-choice.is-active,
+body.store-desktop .alin-desktop-choice[aria-pressed="true"]{border-color:#0b5fa5;background:#eaf4fc;color:#083d6b;box-shadow:0 0 0 2px rgba(11,95,165,.08)}
+@media(max-width:1100px){
+  body.store-desktop .alin-desktop-options-panel{top:82px;inset-inline-start:14px;width:min(360px,calc(100vw - 28px))}
+}

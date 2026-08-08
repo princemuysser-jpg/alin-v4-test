@@ -3376,8 +3376,10 @@ window.Alin.helpers={
   function matches(item){
     const filters=state.filters;
     const query=String($('#searchInput')?.value||'').trim().toLowerCase();
-    const haystack=[item.title,item.teacher,item.subject,item.grade,item.category].join(' ').toLowerCase();
+    const categoryQuery=String(state.categoryQuery||'').trim().toLowerCase();
+    const haystack=[item.title,item.teacher,item.subject,item.grade,item.category,item.description].join(' ').toLowerCase();
     return (!query||haystack.includes(query))
+      &&(!categoryQuery||haystack.includes(categoryQuery))
       &&customCategoryMatches(item)
       &&(!filters.kind||normalizeCategoryType(item.kind)===normalizeCategoryType(filters.kind)||String(item.category||'')===String(filters.kind))
       &&(!filters.grade||item.grade===filters.grade)
@@ -3425,7 +3427,7 @@ window.Alin.helpers={
       <fieldset class="v99-price-range"><legend>نطاق السعر</legend><label><span>من</span><input data-filter="min" type="number" min="0" inputmode="numeric" placeholder="0"></label><label><span>إلى</span><input data-filter="max" type="number" min="0" inputmode="numeric" placeholder="بدون حد"></label></fieldset>
       <label><span>حالة التوفر</span><select data-filter="available"><option value="">الكل</option><option value="yes">متوفر</option><option value="no">نافد</option></select></label>
       <label><span>الشارة أو العرض</span><select data-filter="badge"><option value="">الكل</option><option value="deal">عرض اليوم</option><option>جديد</option><option>الأكثر طلباً</option><option>كمية محدودة</option></select></label>
-      <label class="v99-sort-control"><span>ترتيب النتائج</span><select data-filter="sort"><option value="recommended">الموصى بها</option><option value="newest">الأحدث</option><option value="best">الأكثر مبيعاً</option><option value="priceAsc">السعر: الأقل</option><option value="priceDesc">السعر: الأعلى</option></select></label>
+      <label class="v99-sort-control"><span>ترتيب النتائج</span><select data-filter="sort"><option value="recommended">افتراضي</option><option value="newest">الأحدث</option><option value="best">الأكثر مبيعاً</option><option value="priceAsc">السعر من الأقل إلى الأعلى</option><option value="priceDesc">السعر من الأعلى إلى الأقل</option></select></label>
       </div><div class="v99-filter-actions"><span class="v99-filter-summary" id="v99FilterSummary"></span><button type="button" class="v99-secondary" data-v99-action="clearFilters">مسح الكل</button></div>`;
     syncFilterControls();
     renderFilterChips();
@@ -3456,7 +3458,8 @@ window.Alin.helpers={
   }
 
   function miniCard(item){
-    return `<article class="v99-mini-card"><div class="v99-mini-media">${item.image?`<img src="${esc(imageUrl(item.image))}" alt="">`:'<span class="v99-placeholder">آ</span>'}</div><div class="v99-mini-body"><div class="v99-badges">${badges(item).slice(0,2).map(label=>`<span class="v99-badge">${esc(label)}</span>`).join('')}</div><h3>${esc(item.title)}</h3><p>${esc([item.teacher,item.subject,item.grade].filter(Boolean).join(' • '))}</p><div class="v99-card-price">${fmt(effectivePrice(item))} د.ع</div><button data-v99-action="details" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">عرض</button></div></article>`;
+    const current=effectivePrice(item),hasPrevious=activeDeal(item)&&item.price>current;
+    return `<article class="v99-mini-card"><div class="v99-mini-media">${item.image?`<img src="${esc(imageUrl(item.image))}" alt="">`:'<span class="v99-placeholder">آ</span>'}</div><div class="v99-mini-body"><div class="v99-badges">${badges(item).slice(0,2).map(label=>`<span class="v99-badge">${esc(label)}</span>`).join('')}</div><h3>${esc(item.title)}</h3><p>${esc([item.teacher,item.subject,item.grade].filter(Boolean).join(' • '))}</p><div class="v99-card-price"><strong>${fmt(current)} د.ع</strong>${hasPrevious?`<del>${fmt(item.price)} د.ع</del>`:''}</div><button data-v99-action="details" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">عرض</button></div></article>`;
   }
 
   function rail(rootSelector,title,subtitle,rows){
@@ -3562,6 +3565,29 @@ window.Alin.helpers={
     return values;
   }
 
+  function renderCategoryTools(resultCount=0){
+    const root=$('#storeProducts');
+    if(!root)return;
+    const isCatalog=state.storeView==='catalog';
+    root.hidden=!isCatalog;
+    if(!isCatalog){root.innerHTML='';return}
+    const key=String(state.categoryKey||(state.searchCatalog?'search':'all'));
+    if(root.dataset.categoryKey!==key||!root.querySelector('#v99CategorySearch')){
+      root.dataset.categoryKey=key;
+      root.innerHTML=`<div class="v99-category-tools">
+        <label class="v99-category-search" for="v99CategorySearch"><span class="v99-category-search-icon" aria-hidden="true"></span><input id="v99CategorySearch" type="search" autocomplete="off" placeholder="ابحث داخل هذا القسم..." value="${esc(state.categoryQuery||'')}" aria-label="البحث داخل القسم"></label>
+        <label class="v99-category-sort"><span>ترتيب</span><select id="v99CategorySort" aria-label="ترتيب منتجات القسم"><option value="recommended">افتراضي</option><option value="newest">الأحدث</option><option value="priceAsc">السعر من الأقل إلى الأعلى</option><option value="priceDesc">السعر من الأعلى إلى الأقل</option></select></label>
+        <span class="v99-category-result-count" id="v99CategoryResultCount" aria-live="polite"></span>
+      </div>`;
+    }
+    const search=root.querySelector('#v99CategorySearch');
+    if(search&&document.activeElement!==search)search.value=state.categoryQuery||'';
+    const sort=root.querySelector('#v99CategorySort');
+    if(sort)sort.value=['recommended','newest','priceAsc','priceDesc'].includes(state.filters.sort)?state.filters.sort:'recommended';
+    const count=root.querySelector('#v99CategoryResultCount');
+    if(count)count.textContent=`${fmt(resultCount)} منتج`;
+  }
+
   function categoryCopy(){
     const key=String(state.categoryKey||'');
     const custom=storefrontSections().find(section=>section.key===key);
@@ -3583,6 +3609,7 @@ window.Alin.helpers={
 
   function resetCatalogSelection(){
     state.categoryKey='';
+    state.categoryQuery='';
     state.searchCatalog=false;
     state.filters={kind:'',grade:'',subject:'',teacher:'',min:'',max:'',available:'',badge:'',sort:'recommended'};
   }
@@ -3600,6 +3627,7 @@ window.Alin.helpers={
     if(!section)return openStoreHome();
     state.storeView='catalog';
     state.categoryKey=section.key;
+    state.categoryQuery='';
     state.searchCatalog=false;
     state.filters={kind:'',grade:'',subject:'',teacher:'',min:'',max:'',available:'',badge:'',sort:'recommended'};
     state.filters.badge=section.key==='deal'?'deal':'';
@@ -3617,6 +3645,7 @@ window.Alin.helpers={
     if(summary)summary.textContent=`${fmt(rows.length)} نتيجة`;
     renderFilterChips();
     renderStoreCategories();
+    renderCategoryTools(rows.length);
     syncDesktopCategoryUI();
     syncMobileCategoryUI();
     renderRails();
@@ -3655,7 +3684,7 @@ window.Alin.helpers={
     return openStoreCategory(value);
   }
 
-  Object.assign(ctx,{card,matches,sorted,renderFilters,syncFilterControls,renderFilterChips,miniCard,rail,renderStage,renderDeal,renderRails,renderStoreStats,storefrontSections,renderStoreCategories,openStoreHome,openStoreCategory,applyStoreView,syncDesktopCategoryUI,syncMobileCategoryUI,renderEffectiveStore,normalizedStoreType,currentStoreItems,renderStore,setStoreType,publicTeachers,renderTeachers,renderBundles,updateCountdowns});
+  Object.assign(ctx,{card,matches,sorted,renderFilters,syncFilterControls,renderFilterChips,miniCard,rail,renderStage,renderDeal,renderRails,renderStoreStats,storefrontSections,renderStoreCategories,renderCategoryTools,openStoreHome,openStoreCategory,applyStoreView,syncDesktopCategoryUI,syncMobileCategoryUI,renderEffectiveStore,normalizedStoreType,currentStoreItems,renderStore,setStoreType,publicTeachers,renderTeachers,renderBundles,updateCountdowns});
   window.storeItems=currentStoreItems;
   window.renderStore=renderStore;
   window.setStoreType=setStoreType;
@@ -3674,6 +3703,19 @@ window.Alin.helpers={
   const {$,esc,num,fmt,imageUrl,state,canonicalItems,activeDeal,effectivePrice,badges,findItem,isFavorite,openModal,hasSb,stableKey}=ctx;
 
   const reviewsFor=item=>(state.tables.product_reviews||[]).filter(row=>row.kind===item.kind&&String(row.item_id)===item.id&&['approved','published'].includes(row.status||'approved'));
+  const clampRating=value=>Math.max(0,Math.min(5,num(value)));
+  const starText=value=>{
+    const rounded=Math.round(clampRating(value));
+    return `${'★'.repeat(rounded)}${'☆'.repeat(5-rounded)}`;
+  };
+  function ratingBreakdown(reviews){
+    const total=reviews.length||0;
+    return [5,4,3,2,1].map(star=>{
+      const count=reviews.filter(row=>Math.round(clampRating(row.rating))===star).length;
+      const width=total?Math.round((count/total)*100):0;
+      return `<div class="v99-rating-bar"><span>${fmt(star)} ★</span><i><b style="width:${width}%"></b></i><small>${fmt(count)}</small></div>`;
+    }).join('');
+  }
   function relatedItems(item){
     return canonicalItems().filter(candidate=>stableKey(candidate.kind,candidate.id)!==stableKey(item.kind,item.id)).map(candidate=>({
       item:candidate,
@@ -3692,9 +3734,32 @@ window.Alin.helpers={
     const item=findItem(kind,id);
     if(!item)return;
     const reviews=reviewsFor(item);
-    const average=reviews.length?reviews.reduce((sum,row)=>sum+num(row.rating),0)/reviews.length:0;
+    const average=reviews.length?reviews.reduce((sum,row)=>sum+clampRating(row.rating),0)/reviews.length:0;
     const out=item.stock!==null&&item.stock<=0;
-    openModal(`<div class="v99-detail"><div class="v99-detail-media">${item.image?`<img src="${esc(imageUrl(item.image))}" alt="${esc(item.title)}">`:'<span class="v99-placeholder">ALIN</span>'}</div><div class="v99-detail-copy"><div class="v99-badges">${badges(item).map(label=>`<span class="v99-badge">${esc(label)}</span>`).join('')}</div><h2>${esc(item.title)}</h2><p>${esc([item.teacher,item.subject,item.grade,item.category].filter(Boolean).join(' • '))}</p><p>${esc(item.description||'مادة مختارة من متجر آلين، راجع التفاصيل وحدد طريقة الاستلام أو التوصيل عند إكمال الطلب.')}</p><div class="v99-price">${fmt(effectivePrice(item))} د.ع ${activeDeal(item)?`<del>${fmt(item.price)}</del>`:''}</div><div class="v99-card-meta"><span>${out?'غير متوفر حالياً':item.stock===null?'متاح للطلب':`المخزون ${fmt(item.stock)}`}</span><span>${item.prep?`تقدير التجهيز ${fmt(item.prep)} دقيقة`:'وقت التجهيز تؤكده المكتبة'}</span></div><div class="v99-qty"><label for="v99DetailQty">الكمية</label><input id="v99DetailQty" type="number" min="1" max="99" value="1"></div><div class="v99-actions">${out?`<button data-v99-action="stockForm" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">أبلغني عند التوفر</button>`:`<button data-v99-action="cartQty" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">أضف للسلة</button>`}<button class="v99-ghost" data-v99-action="share" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">مشاركة</button><button class="v99-ghost" data-v99-action="favorite" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">${isFavorite(item)?'إزالة من المفضلة':'حفظ بالمفضلة'}</button></div></div></div><section class="v99-reviews"><h3>التقييمات ${reviews.length?`— ${average.toFixed(1)} من 5`:''}</h3>${reviews.map(review=>`<div class="row"><div><b>${fmt(review.rating)} / 5</b><small>${esc(review.comment||'')}</small></div></div>`).join('')||'<p class="muted">لا توجد تقييمات منشورة بعد.</p>'}<button data-v99-action="reviewForm" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">أضف تقييمك</button></section>${relatedDetailHtml(item)}`);
+    const current=effectivePrice(item),hasPrevious=activeDeal(item)&&item.price>current;
+    const discount=hasPrevious?Math.max(1,Math.round((1-current/item.price)*100)):0;
+    const reviewRows=reviews.slice(0,8).map(review=>`<article class="v99-review-card"><div class="v99-review-stars" aria-label="تقييم ${fmt(review.rating)} من 5">${starText(review.rating)}</div><p>${esc(review.comment||'تقييم بدون تعليق')}</p><small>تقييم موثّق في منصة آلين</small></article>`).join('');
+    openModal(`<section class="v99-detail-premium">
+      <div class="v99-detail-main">
+        <div class="v99-detail-media">${item.image?`<img src="${esc(imageUrl(item.image))}" alt="${esc(item.title)}">`:'<span class="v99-placeholder">ALIN</span>'}${discount?`<span class="v99-detail-discount">خصم ${fmt(discount)}%</span>`:''}</div>
+        <div class="v99-detail-copy">
+          <div class="v99-badges">${badges(item).map(label=>`<span class="v99-badge">${esc(label)}</span>`).join('')}</div>
+          <h2>${esc(item.title)}</h2>
+          <p class="v99-detail-meta-line">${esc([item.teacher,item.subject,item.grade,item.category].filter(Boolean).join(' • '))}</p>
+          <div class="v99-detail-rating-summary"><span class="v99-rating-stars" aria-label="متوسط التقييم ${average.toFixed(1)} من 5">${starText(average)}</span><b>${reviews.length?average.toFixed(1):'جديد'}</b><small>${reviews.length?`${fmt(reviews.length)} تقييم`:'لا توجد تقييمات منشورة بعد'}</small></div>
+          <p class="v99-detail-description">${esc(item.description||'مادة مختارة من متجر آلين. راجع المواصفات والسعر والتوفر ثم أضف الكمية المناسبة إلى السلة.')}</p>
+          <div class="v99-detail-price"><strong>${fmt(current)} د.ع</strong>${hasPrevious?`<del>${fmt(item.price)} د.ع</del><span>وفّر ${fmt(item.price-current)} د.ع</span>`:''}</div>
+          <div class="v99-detail-facts"><span>${out?'غير متوفر حالياً':item.stock===null?'متاح للطلب':`متوفر: ${fmt(item.stock)}`}</span><span>${item.prep?`تقدير التجهيز ${fmt(item.prep)} دقيقة`:'وقت التجهيز تؤكده المكتبة'}</span></div>
+          <div class="v99-qty"><label for="v99DetailQty">الكمية</label><input id="v99DetailQty" type="number" min="1" max="99" value="1"></div>
+          <div class="v99-actions">${out?`<button data-v99-action="stockForm" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">أبلغني عند التوفر</button>`:`<button data-v99-action="cartQty" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">أضف للسلة</button>`}<button class="v99-ghost" data-v99-action="favorite" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">${isFavorite(item)?'إزالة من المفضلة':'حفظ بالمفضلة'}</button><button class="v99-ghost" data-v99-action="share" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">مشاركة</button></div>
+        </div>
+      </div>
+      <section class="v99-reviews v99-reviews-premium"><div class="v99-reviews-head"><div><span>آراء العملاء</span><h3>التقييمات بالنجوم</h3></div><button data-v99-action="reviewForm" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">أضف تقييمك</button></div>
+        <div class="v99-rating-overview"><div class="v99-rating-score"><strong>${reviews.length?average.toFixed(1):'—'}</strong><span class="v99-rating-stars">${starText(average)}</span><small>${reviews.length?`${fmt(reviews.length)} تقييم منشور`:'كن أول من يقيّم هذا المنتج'}</small></div><div class="v99-rating-bars">${ratingBreakdown(reviews)}</div></div>
+        <div class="v99-review-list">${reviewRows||'<div class="v99-review-empty"><b>لا توجد تقييمات منشورة بعد</b><p>يمكنك إضافة تقييمك وسيظهر بعد مراجعته.</p></div>'}</div>
+      </section>
+      ${relatedDetailHtml(item)}
+    </section>`);
   }
 
   async function shareItem(item){
@@ -3723,7 +3788,7 @@ window.Alin.helpers={
   }
 
   function reviewForm(item){
-    openModal(`<h2>قيّم ${esc(item.title)}</h2><div class="v99-form"><input id="v99ReviewContact" placeholder="رقم الهاتف"><select id="v99ReviewRating"><option value="5">5 — ممتاز</option><option value="4">4 — جيد جداً</option><option value="3">3 — جيد</option><option value="2">2 — مقبول</option><option value="1">1 — ضعيف</option></select><textarea id="v99ReviewComment" placeholder="اكتب رأيك"></textarea><button data-v99-action="reviewSubmit" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">إرسال للمراجعة</button><div id="v99FormMsg"></div></div>`);
+    openModal(`<section class="v99-review-form"><span class="v99-kicker">شارك تجربتك</span><h2>قيّم ${esc(item.title)}</h2><p>اختر عدد النجوم واكتب رأيك. التقييم يظهر بعد مراجعة الإدارة.</p><div class="v99-form"><input id="v99ReviewContact" placeholder="رقم الهاتف"><label class="v99-rating-select"><span>التقييم</span><select id="v99ReviewRating"><option value="5">★★★★★ — ممتاز</option><option value="4">★★★★☆ — جيد جداً</option><option value="3">★★★☆☆ — جيد</option><option value="2">★★☆☆☆ — مقبول</option><option value="1">★☆☆☆☆ — ضعيف</option></select></label><textarea id="v99ReviewComment" placeholder="اكتب رأيك عن المنتج"></textarea><button data-v99-action="reviewSubmit" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">إرسال التقييم</button><div id="v99FormMsg"></div></div></section>`);
   }
   async function reviewSubmit(item){
     const message=$('#v99FormMsg'),contact=$('#v99ReviewContact')?.value.trim(),rating=num($('#v99ReviewRating')?.value),comment=$('#v99ReviewComment')?.value.trim();
@@ -4032,6 +4097,20 @@ window.Alin.helpers={
       if(event.target.id==='v99GradeSelect')ctx.saveGrade(event.target.value);
     });
 
+    document.addEventListener('input',event=>{
+      if(event.target.id!=='v99CategorySearch')return;
+      state.categoryQuery=event.target.value||'';
+      ctx.renderEffectiveStore();
+      requestAnimationFrame(()=>{const input=$('#v99CategorySearch');if(input){const end=input.value.length;input.focus();try{input.setSelectionRange(end,end)}catch(_){}}});
+    });
+
+    document.addEventListener('change',event=>{
+      if(event.target.id!=='v99CategorySort')return;
+      state.filters.sort=event.target.value||'recommended';
+      ctx.syncFilterControls();
+      ctx.renderEffectiveStore();
+    });
+
     document.addEventListener('click',event=>{
       if(!isDesktop())return;
       const button=event.target.closest('[data-v99-action]');
@@ -4137,6 +4216,8 @@ window.Alin.helpers={
   document.addEventListener('DOMContentLoaded',init,{once:true});
 })();
 
+;
+
 /* modules/store/cart.js */
 // === modules/store/cart.js ===
 /* ALIN v2.1.8 — authoritative cart module. Delivery uses area + landmark + GPS only. */
@@ -4166,6 +4247,15 @@ window.Alin.helpers={
   function products(){return Array.isArray(window.db?.products)?window.db.products:[]}
   function findBooklet(id){return booklets().find(item=>same(item.id,id))||null}
   function findProduct(id){return products().find(item=>same(item.id,id))||null}
+  function itemCurrentPrice(item){
+    const base=num(item?.price);
+    const sale=num(item?.sale_price??item?.deal_price);
+    const start=item?.deal_start?Date.parse(item.deal_start):0;
+    const end=item?.deal_end?Date.parse(item.deal_end):0;
+    const now=Date.now();
+    const validWindow=(!start||start<=now)&&(!end||end>=now);
+    return sale>0&&sale<base&&validWindow?sale:base;
+  }
 
   function normalizeKindAndId(kind,id){
     let rawKind=String(kind??'').trim().toLowerCase();
@@ -4186,7 +4276,7 @@ window.Alin.helpers={
       kind:normalized.kind,
       id:normalized.id,
       title:String(source?.title||source?.name||line?.title||`العنصر ${index+1}`),
-      price:num(source?.price??line?.price),
+      price:source?itemCurrentPrice(source):num(line?.price),
       qty:Math.max(1,Math.min(100,Math.floor(num(line?.qty)||1)))
     };
   }
@@ -4293,8 +4383,8 @@ window.Alin.helpers={
     const current=rows().find(line=>line.kind===normalized.kind&&same(line.id,normalized.id));
     const nextQty=(current?.qty||0)+amount;
     if(normalized.kind==='product'&&num(normalized.item.stock)<nextQty){alert('الكمية المطلوبة غير متوفرة');return false}
-    if(current){current.qty=nextQty;current.title=normalized.item.title||normalized.item.name||current.title;current.price=num(normalized.item.price)}
-    else rows().push({kind:normalized.kind,id:normalized.id,title:normalized.item.title||normalized.item.name||'مادة',price:num(normalized.item.price),qty:amount});
+    if(current){current.qty=nextQty;current.title=normalized.item.title||normalized.item.name||current.title;current.price=itemCurrentPrice(normalized.item)}
+    else rows().push({kind:normalized.kind,id:normalized.id,title:normalized.item.title||normalized.item.name||'مادة',price:itemCurrentPrice(normalized.item),qty:amount});
     cartSave();
     if(typeof window.toast==='function')window.toast('تمت الإضافة إلى السلة');
     return true;

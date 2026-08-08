@@ -19,16 +19,16 @@
 <link href="./manifest-desktop.webmanifest" rel="manifest"/>
 <link href="assets/icons/icon-192.png" rel="icon" sizes="192x192" type="image/png"/>
 <link href="assets/icons/icon-192.png" rel="apple-touch-icon"/>
-<link href="./dist/css/desktop.bundle.css?v=4.1.6-prepublish-1z2" rel="stylesheet"/>
-<link href="./styles/alin-tokens.css?v=4.1.6-prepublish-1z2" rel="stylesheet"/>
-<link href="./styles/alin-shared.css?v=4.1.6-prepublish-1z2" rel="stylesheet"/>
-<link href="./styles/alin-branding.css?v=4.1.6-prepublish-1z2" rel="stylesheet"/>
-<link href="./styles/alin-i18n.css?v=4.1.6-prepublish-1z2" rel="stylesheet"/>
-<link href="./styles/alin-desktop.css?v=4.1.6-prepublish-1z2" rel="stylesheet"/>
-<link rel="preload" href="./alin-app-desktop.v4.1.5.js?v=4.1.6-prepublish-1z2" as="script">
+<link href="./dist/css/desktop.bundle.css?v=4.1.6-prepublish-1z6" rel="stylesheet"/>
+<link href="./styles/alin-tokens.css?v=4.1.6-prepublish-1z6" rel="stylesheet"/>
+<link href="./styles/alin-shared.css?v=4.1.6-prepublish-1z6" rel="stylesheet"/>
+<link href="./styles/alin-branding.css?v=4.1.6-prepublish-1z6" rel="stylesheet"/>
+<link href="./styles/alin-i18n.css?v=4.1.6-prepublish-1z6" rel="stylesheet"/>
+<link href="./styles/alin-desktop.css?v=4.1.6-prepublish-1z6" rel="stylesheet"/>
+<link rel="preload" href="./alin-app-desktop.v4.1.5.js?v=4.1.6-prepublish-1z6" as="script">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7" defer onerror="window.__ALIN_CDN_ERROR__=true;console.error('تعذر تحميل Supabase')"></script>
-<script src="./alin-config.js?v=4.1.6-prepublish-1z2"></script>
-<script src="./dist/alin-core.v4.js?v=4.1.6-prepublish-1z2" defer></script>
+<script src="./alin-config.js?v=4.1.6-prepublish-1z6"></script>
+<script src="./dist/alin-core.v4.js?v=4.1.6-prepublish-1z6" defer></script>
 
 
 
@@ -73,7 +73,8 @@
 
 
 
-  <link rel="stylesheet" href="./store/banners.css?v=4.1.6-prepublish-1z2">
+  <link rel="stylesheet" href="./store/banners.css?v=4.1.6-prepublish-1z6">
+<link href="./styles/alin-store-responsive-1z4.css?v=4.1.6-prepublish-1z6" rel="stylesheet"/>
 <style id="alinAuthBootStyle">html[data-alin-auth-boot="1"] body>*{visibility:hidden!important}html[data-alin-auth-boot="1"] body::before{content:"جارٍ فتح منصة آلين...";visibility:visible;position:fixed;inset:0;display:grid;place-items:center;background:#f7f9fc;color:#102342;font:800 18px system-ui;z-index:2147483647}</style>
 <script>setTimeout(()=>document.documentElement.removeAttribute('data-alin-auth-boot'),3500)</script>
 
@@ -174,9 +175,30 @@ body.store-desktop .alin-track415-button:hover .alin-track415-mark,body.store-de
 <button aria-label="المفضلة" class="desktop-action" data-desktop-control="favorites" data-v99-action="desktopFavorites" type="button"><span aria-hidden="true" class="desktop-favorite-icon"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z"/></svg></span><small>المفضلة</small><span class="desktop-action-count" hidden="" id="v99DesktopFavoriteCount">0</span></button>
 <button aria-label="الإشعارات" class="desktop-action desktop-notification" data-desktop-control="notifications" onclick="AlinStoreNotifications?.open?.()" type="button"><span aria-hidden="true" class="desktop-notification-icon"><svg viewBox="0 0 24 24"><path d="M6.5 9.25a5.5 5.5 0 0 1 11 0c0 4.2 1.15 5.75 2.25 6.9H4.25c1.1-1.15 2.25-2.7 2.25-6.9Z"/><path d="M9.4 19a2.8 2.8 0 0 0 5.2 0"/><path d="M12 3V1.75"/></svg></span><small>الإشعارات</small><span class="alin98-notify-count desktop-action-count" hidden="">0</span></button>
 <button aria-label="سلة المشتريات" class="desktop-action desktop-cart" data-desktop-control="cart" onclick="openCart()" type="button"><svg aria-hidden="true" class="desktop-cart-icon alin-cart-nav-icon" style="stroke:#0b5fa5" viewBox="0 0 28 28"><path d="M2.8 4.5h3.1l2.2 11.1a2.3 2.3 0 0 0 2.3 1.9h10.2a2.3 2.3 0 0 0 2.2-1.8l1.5-7.1H7"/><path d="M10 12.9h12.9"/><circle cx="11" cy="22.2" r="1.7"/><circle cx="21" cy="22.2" r="1.7"/></svg><small>السلة</small><span class="desktop-action-count" hidden="" id="desktopCartCount">0</span></button>
+<button aria-label="خيارات" aria-expanded="false" class="desktop-action desktop-options-button" data-desktop-control="options" id="alinDesktopOptionsButton" onclick="alinToggleDesktopOptions()" type="button"><span aria-hidden="true" class="desktop-options-icon"><svg viewBox="0 0 24 24"><path d="M4 7h10"/><path d="M18 7h2"/><circle cx="16" cy="7" r="2"/><path d="M4 17h2"/><path d="M10 17h10"/><circle cx="8" cy="17" r="2"/></svg></span><small>خيارات</small></button>
 <button aria-label="خروج إلى القائمة الرئيسية" class="desktop-action desktop-exit" data-desktop-control="exit" onclick="logout()" type="button"><span aria-hidden="true" class="desktop-exit-icon"></span><small>خروج</small></button>
 </div>
 </header>
+
+<section class="alin-desktop-options-panel" id="alinDesktopOptionsPanel" hidden aria-modal="false" role="dialog" aria-label="خيارات منصة آلين">
+  <div class="alin-desktop-options-head">
+    <div><h2>خيارات</h2><p>الحساب واللغة ومظهر المنصة</p></div>
+    <button class="alin-desktop-options-close" type="button" onclick="alinToggleDesktopOptions(false)" aria-label="إغلاق">×</button>
+  </div>
+  <div class="alin-desktop-options-body">
+    <button class="alin-desktop-option-card" type="button" onclick="alinToggleDesktopOptions(false);alinOpenRealAccount?.()"><span class="alin-desktop-option-icon">👤</span><span><b>حسابي</b><small>تسجيل الدخول وإدارة حساب الطالب</small></span><span>‹</span></button>
+    <div class="alin-desktop-option-row">
+      <div><span class="alin-desktop-option-icon">🌐</span><span><b>اللغة</b><small>اختر لغة واجهة المنصة</small></span></div>
+      <div class="alin-desktop-choice-group"><button class="alin-desktop-choice" data-lang="ar" type="button" onclick="alinSetLanguage?.('ar')">العربية</button><button class="alin-desktop-choice" data-lang="ku" type="button" onclick="alinSetLanguage?.('ku')">کوردی</button><button class="alin-desktop-choice" data-lang="en" type="button" onclick="alinSetLanguage?.('en')">English</button></div>
+    </div>
+    <div class="alin-desktop-option-row">
+      <div><span class="alin-desktop-option-icon">◐</span><span><b>المظهر</b><small>الوضع النهاري أو الليلي</small></span></div>
+      <div class="alin-desktop-choice-group theme"><button class="alin-desktop-choice" data-theme="light" type="button" onclick="alinSetTheme?.('light')">نهاري</button><button class="alin-desktop-choice" data-theme="dark" type="button" onclick="alinSetTheme?.('dark')">ليلي</button></div>
+    </div>
+    <button class="alin-desktop-option-card" type="button" onclick="alinToggleDesktopOptions(false);alinAboutPlatform?.()"><span class="alin-desktop-option-icon">آ</span><span><b>حول المنصة</b><small>معلومات عن منصة آلين</small></span><span>‹</span></button>
+    <button class="alin-desktop-option-card" type="button" onclick="alinToggleDesktopOptions(false);alinContactUs?.()"><span class="alin-desktop-option-icon">💬</span><span><b>تواصل معنا</b><small>للاستفسار والدعم</small></span><span>‹</span></button>
+  </div>
+</section>
 <section id="alinStoreBanners" class="alin-store-banners" aria-label="إعلانات منصة آلين" hidden></section>
 <section class="alin-store-home-view" id="alinStoreHomeView">
 <section class="alin98-cats" id="alinStoreCategories" aria-label="أقسام متجر آلين"></section>
@@ -315,13 +337,13 @@ body.store-desktop .alin-track415-button:hover .alin-track415-mark,body.store-de
   
 
 
-<script src="./core/pwa-register.js?v=4.1.6-prepublish-1z2" defer></script>
-<script src="./core/boot-recovery.js?v=4.1.6-prepublish-1z2" defer></script>
-<script src="./modules/core/navigation.js?v=4.1.6-prepublish-1z2" defer></script>
-<script src="./alin-app-desktop.v4.1.5.js?v=4.1.6-prepublish-1z2" defer onload="alinAppBundleLoaded()" onerror="alinAppBundleFailed()"></script>
-<script src="./modules/core/account-admin-service.js?v=4.1.6-prepublish-1z2" defer></script>
-<script src="./modules/core/order-bell.js?v=4.1.6-prepublish-1z2" defer></script>
-<script src="./modules/teacher/admin-word-download.js?v=4.1.6-prepublish-1z2" defer></script>
+<script src="./core/pwa-register.js?v=4.1.6-prepublish-1z6" defer></script>
+<script src="./core/boot-recovery.js?v=4.1.6-prepublish-1z6" defer></script>
+<script src="./modules/core/navigation.js?v=4.1.6-prepublish-1z6" defer></script>
+<script src="./alin-app-desktop.v4.1.5.js?v=4.1.6-prepublish-1z6" defer onload="alinAppBundleLoaded()" onerror="alinAppBundleFailed()"></script>
+<script src="./modules/core/account-admin-service.js?v=4.1.6-prepublish-1z6" defer></script>
+<script src="./modules/core/order-bell.js?v=4.1.6-prepublish-1z6" defer></script>
+<script src="./modules/teacher/admin-word-download.js?v=4.1.6-prepublish-1z6" defer></script>
 
 <div id="alinTrack415Layer" hidden aria-hidden="true">
   <section id="alinTrack415Panel" role="dialog" aria-modal="true" aria-labelledby="alinTrack415Title">
@@ -434,5 +456,35 @@ body.store-desktop .alin-track415-button:hover .alin-track415-mark,body.store-de
   document.addEventListener('DOMContentLoaded',()=>{const box=$('alinTrack415Result');if(box)box.innerHTML=empty()});
 })();
 </script>
+
+<script id="alinDesktopOptionsController">
+(function(){
+  'use strict';
+  function panel(){return document.getElementById('alinDesktopOptionsPanel')}
+  function trigger(){return document.getElementById('alinDesktopOptionsButton')}
+  function sync(){
+    var lang=(window.AlinI18n&&typeof window.AlinI18n.current==='function'?window.AlinI18n.current():document.documentElement.dataset.alinLanguage)||'ar';
+    var theme=document.documentElement.dataset.alinTheme==='dark'?'dark':'light';
+    document.querySelectorAll('#alinDesktopOptionsPanel [data-lang]').forEach(function(b){var on=b.dataset.lang===lang;b.classList.toggle('active',on);b.setAttribute('aria-pressed',on?'true':'false')});
+    document.querySelectorAll('#alinDesktopOptionsPanel [data-theme]').forEach(function(b){var on=b.dataset.theme===theme;b.classList.toggle('active',on);b.setAttribute('aria-pressed',on?'true':'false')});
+  }
+  window.alinToggleDesktopOptions=function(force){
+    var box=panel(),btn=trigger();if(!box)return;
+    var open=typeof force==='boolean'?force:box.hidden;
+    box.hidden=!open;if(btn)btn.setAttribute('aria-expanded',open?'true':'false');
+    if(open){sync();requestAnimationFrame(function(){box.querySelector('button')?.focus()})}
+  };
+  document.addEventListener('click',function(e){
+    var box=panel(),btn=trigger();if(!box||box.hidden)return;
+    if(box.contains(e.target)||btn&&btn.contains(e.target))return;
+    window.alinToggleDesktopOptions(false);
+  });
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')window.alinToggleDesktopOptions(false)});
+  window.addEventListener('alin:language-applied',sync);
+  window.addEventListener('alin:theme-changed',sync);
+  window.addEventListener('load',sync,{once:true});
+})();
+</script>
+
 </body>
 </html>

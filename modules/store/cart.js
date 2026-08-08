@@ -26,6 +26,15 @@
   function products(){return Array.isArray(window.db?.products)?window.db.products:[]}
   function findBooklet(id){return booklets().find(item=>same(item.id,id))||null}
   function findProduct(id){return products().find(item=>same(item.id,id))||null}
+  function itemCurrentPrice(item){
+    const base=num(item?.price);
+    const sale=num(item?.sale_price??item?.deal_price);
+    const start=item?.deal_start?Date.parse(item.deal_start):0;
+    const end=item?.deal_end?Date.parse(item.deal_end):0;
+    const now=Date.now();
+    const validWindow=(!start||start<=now)&&(!end||end>=now);
+    return sale>0&&sale<base&&validWindow?sale:base;
+  }
 
   function normalizeKindAndId(kind,id){
     let rawKind=String(kind??'').trim().toLowerCase();
@@ -46,7 +55,7 @@
       kind:normalized.kind,
       id:normalized.id,
       title:String(source?.title||source?.name||line?.title||`العنصر ${index+1}`),
-      price:num(source?.price??line?.price),
+      price:source?itemCurrentPrice(source):num(line?.price),
       qty:Math.max(1,Math.min(100,Math.floor(num(line?.qty)||1)))
     };
   }
@@ -153,8 +162,8 @@
     const current=rows().find(line=>line.kind===normalized.kind&&same(line.id,normalized.id));
     const nextQty=(current?.qty||0)+amount;
     if(normalized.kind==='product'&&num(normalized.item.stock)<nextQty){alert('الكمية المطلوبة غير متوفرة');return false}
-    if(current){current.qty=nextQty;current.title=normalized.item.title||normalized.item.name||current.title;current.price=num(normalized.item.price)}
-    else rows().push({kind:normalized.kind,id:normalized.id,title:normalized.item.title||normalized.item.name||'مادة',price:num(normalized.item.price),qty:amount});
+    if(current){current.qty=nextQty;current.title=normalized.item.title||normalized.item.name||current.title;current.price=itemCurrentPrice(normalized.item)}
+    else rows().push({kind:normalized.kind,id:normalized.id,title:normalized.item.title||normalized.item.name||'مادة',price:itemCurrentPrice(normalized.item),qty:amount});
     cartSave();
     if(typeof window.toast==='function')window.toast('تمت الإضافة إلى السلة');
     return true;

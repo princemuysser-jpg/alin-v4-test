@@ -1,4 +1,4 @@
-const VERSION='alin-4.1.6-prepublish-1z2';
+const VERSION='alin-4.1.6-prepublish-1z6';
 const STATIC_CACHE=`${VERSION}-static`;
 const RUNTIME_CACHE=`${VERSION}-runtime`;
 
@@ -12,7 +12,7 @@ const CORE=[
   './core/device-router.js','./core/runtime-guard.js','./core/splash.js',
   './dist/css/desktop.bundle.css','./dist/css/mobile.bundle.css',
   './styles/alin-tokens.css','./styles/alin-shared.css','./styles/alin-branding.css',
-  './styles/alin-i18n.css','./styles/alin-desktop.css','./styles/alin-mobile.css','./styles/alin-splash.css',
+  './styles/alin-i18n.css','./styles/alin-desktop.css','./styles/alin-mobile.css','./styles/alin-splash.css','./styles/alin-store-responsive-1z4.css',
   './store/banners.css','./store/mobile-navigation.css',
   './assets/images/alin-splash-desktop.webp','./assets/images/alin-splash-mobile.webp',
   './assets/audio/alin-order-chime.wav',

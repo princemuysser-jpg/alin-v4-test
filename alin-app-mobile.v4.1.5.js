@@ -1839,8 +1839,8 @@ window.AlinTeacherModules.unpublishTeacherBooklet=unpublishTeacherBooklet;
     if(state.stock==='low')list=list.filter(item=>Number(item.stock)>0&&Number(item.stock)<=lowStockLimit(item));
     if(state.stock==='out')list=list.filter(item=>Number(item.stock)<=0);
     if(state.sort==='name')list.sort((a,b)=>String(a.name||a.title||'').localeCompare(String(b.name||b.title||''),'ar'));
-    else if(state.sort==='priceAsc')list.sort((a,b)=>Number(a.price)-Number(b.price));
-    else if(state.sort==='priceDesc')list.sort((a,b)=>Number(b.price)-Number(a.price));
+    else if(state.sort==='priceAsc')list.sort((a,b)=>Number(a.sale_price||a.deal_price||a.price)-Number(b.sale_price||b.deal_price||b.price));
+    else if(state.sort==='priceDesc')list.sort((a,b)=>Number(b.sale_price||b.deal_price||b.price)-Number(a.sale_price||a.deal_price||a.price));
     else if(state.sort==='stock')list.sort((a,b)=>Number(a.stock)-Number(b.stock));
     else list.sort((a,b)=>String(b.created_at||b.id||'').localeCompare(String(a.created_at||a.id||'')));
     return list;
@@ -1859,8 +1859,8 @@ window.AlinTeacherModules.unpublishTeacherBooklet=unpublishTeacherBooklet;
       <select name="type" id="alinProductType" onchange="refreshProductCategories()"><option value="stationery" ${type==='stationery'?'selected':''}>قرطاسية</option><option value="gift" ${type==='gift'?'selected':''}>هدايا</option></select>
       <input name="name" value="${escv(item.name||item.title||'')}" placeholder="اسم المنتج" required>
       <select name="category" id="alinProductCategory">${categoryOptions(type,item.category||'')}</select>
-      <input name="price" type="number" min="0" value="${Number(item.price||0)}" placeholder="السعر" required>
-      <input name="salePrice" type="number" min="0" value="${Number(item.sale_price||item.deal_price||0)}" placeholder="سعر العرض (اختياري)">
+      <input name="currentPrice" type="number" min="0" value="${Number(item.sale_price||item.deal_price||item.price||0)}" placeholder="السعر الحالي" required>
+      <input name="previousPrice" type="number" min="0" value="${Number((item.sale_price||item.deal_price)?item.price:0)}" placeholder="السعر السابق (اختياري)">
       <input name="stock" type="number" min="0" value="${Number(item.stock||0)}" placeholder="المخزون" required>
       <input name="lowStockLimit" type="number" min="0" value="${Number(item.low_stock_limit||window.db?.settings?.low_stock_default||5)}" placeholder="حد تنبيه المخزون">
       <textarea name="description" rows="3" placeholder="تفاصيل المنتج">${escv(item.description||item.details||'')}</textarea>
@@ -1906,20 +1906,22 @@ window.AlinTeacherModules.unpublishTeacherBooklet=unpublishTeacherBooklet;
     const type=normalizeType(data.get('type'));
     const category=String(data.get('category')||'عام').trim()||'عام';
     const categoryRow=categories().find(item=>normalizeType(item.type)===type&&String(item.name||'')===category)||null;
-    const price=Number(data.get('price')||0);
-    const salePrice=Number(data.get('salePrice')||0);
+    const currentPrice=Number(data.get('currentPrice')||0);
+    const previousPrice=Number(data.get('previousPrice')||0);
     const stock=Number(data.get('stock')||0);
     const lowStockLimit=Number(data.get('lowStockLimit')||5);
     const description=String(data.get('description')||'').trim();
     if(!name)return alert('اكتب اسم المنتج');
-    if(!Number.isFinite(price)||price<0)return alert('السعر غير صحيح');
-    if(salePrice&&(!Number.isFinite(salePrice)||salePrice<0||salePrice>=price))return alert('سعر العرض يجب أن يكون أقل من السعر الأساسي');
+    if(!Number.isFinite(currentPrice)||currentPrice<0)return alert('السعر الحالي غير صحيح');
+    if(previousPrice&&(!Number.isFinite(previousPrice)||previousPrice<=currentPrice))return alert('السعر السابق يجب أن يكون أعلى من السعر الحالي');
     if(!Number.isFinite(stock)||stock<0)return alert('المخزون غير صحيح');
     try{
       const imageFile=data.get('image');
       const uploaded=imageFile&&imageFile.name?await uploadImage(imageFile):'';
       const payload={
-        name,title:name,type,category,category_id:categoryRow?.id||null,price,sale_price:salePrice>0?salePrice:null,stock,
+        name,title:name,type,category,category_id:categoryRow?.id||null,
+        price:previousPrice>currentPrice?previousPrice:currentPrice,
+        sale_price:previousPrice>currentPrice?currentPrice:null,stock,
         low_stock_limit:Math.max(0,lowStockLimit||0),description,details:description,
         status:existing?.status||'published',updated_at:new Date().toISOString()
       };
@@ -1980,10 +1982,11 @@ window.AlinTeacherModules.unpublishTeacherBooklet=unpublishTeacherBooklet;
     const low=lowStockLimit(item);
     const stockClass=stock<=0?'out':stock<=low?'low':'ok';
     const stockText=stock<=0?'نافد':stock<=low?'مخزون قليل':'متوفر';
+    const currentPrice=Number(item.sale_price||item.deal_price||item.price||0),previousPrice=currentPrice<Number(item.price||0)?Number(item.price||0):0;
     return `<article class="admin-product-v129-card">
       <div class="admin-product-v129-image">${image?`<img src="${escv(image)}" alt="${escv(item.name||'منتج')}">`:`<span>${normalizeType(item.type)==='gift'?'🎁':'✏️'}</span>`}<em class="status ${escv(status)}">${statusLabel(status)}</em></div>
       <div class="admin-product-v129-body">
-        <div class="admin-product-v129-title"><div><small>${typeLabel(item.type)} • ${escv(item.category||'عام')}</small><h3>${escv(item.name||item.title||'منتج')}</h3></div><strong>${moneyv(item.price)} د.ع</strong></div>
+        <div class="admin-product-v129-title"><div><small>${typeLabel(item.type)} • ${escv(item.category||'عام')}</small><h3>${escv(item.name||item.title||'منتج')}</h3></div><div class="admin-product-price-pair"><strong>${moneyv(currentPrice)} د.ع</strong>${previousPrice?`<del>${moneyv(previousPrice)} د.ع</del>`:''}</div></div>
         <p>${escv(item.description||item.details||'')}</p>
         <div class="admin-product-v129-meta"><span class="stock ${stockClass}">${stockText}: ${moneyv(stock)}</span><span>الرمز: ${escv(item.id||'—')}</span></div>
         <div class="admin-product-v129-actions"><button type="button" class="secondary" onclick="editProduct('${escv(item.id)}')">تعديل</button><button type="button" onclick="setProductStatus('${escv(item.id)}','${status==='published'?'hidden':'published'}')">${status==='published'?'إخفاء':'نشر'}</button><button type="button" class="danger" onclick="deleteProduct('${escv(item.id)}')">حذف</button></div>

@@ -112,6 +112,20 @@
       if(event.target.id==='v99GradeSelect')ctx.saveGrade(event.target.value);
     });
 
+    document.addEventListener('input',event=>{
+      if(event.target.id!=='v99CategorySearch')return;
+      state.categoryQuery=event.target.value||'';
+      ctx.renderEffectiveStore();
+      requestAnimationFrame(()=>{const input=$('#v99CategorySearch');if(input){const end=input.value.length;input.focus();try{input.setSelectionRange(end,end)}catch(_){}}});
+    });
+
+    document.addEventListener('change',event=>{
+      if(event.target.id!=='v99CategorySort')return;
+      state.filters.sort=event.target.value||'recommended';
+      ctx.syncFilterControls();
+      ctx.renderEffectiveStore();
+    });
+
     document.addEventListener('click',event=>{
       if(!isDesktop())return;
       const button=event.target.closest('[data-v99-action]');
