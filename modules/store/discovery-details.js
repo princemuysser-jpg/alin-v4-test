@@ -51,9 +51,9 @@
           <h2>${esc(item.title)}</h2>
           <p class="v99-detail-meta-line">${esc([item.teacher,item.subject,item.grade,item.category].filter(Boolean).join(' • '))}</p>
           <div class="v99-detail-rating-summary"><span class="v99-rating-stars" aria-label="متوسط التقييم ${average.toFixed(1)} من 5">${starText(average)}</span><b>${reviews.length?average.toFixed(1):'جديد'}</b><small>${reviews.length?`${fmt(reviews.length)} تقييم`:'لا توجد تقييمات منشورة بعد'}</small></div>
-          <p class="v99-detail-description">${esc(item.description||'مادة مختارة من متجر آلين. راجع المواصفات والسعر والتوفر ثم أضف الكمية المناسبة إلى السلة.')}</p>
+          ${item.description?`<p class="v99-detail-description">${esc(item.description)}</p>`:''}
           <div class="v99-detail-price"><strong>${fmt(current)} د.ع</strong>${hasPrevious?`<del>${fmt(item.price)} د.ع</del><span>وفّر ${fmt(item.price-current)} د.ع</span>`:''}</div>
-          <div class="v99-detail-facts"><span>${out?'غير متوفر حالياً':item.stock===null?'متاح للطلب':`متوفر: ${fmt(item.stock)}`}</span><span>${item.prep?`تقدير التجهيز ${fmt(item.prep)} دقيقة`:'وقت التجهيز تؤكده المكتبة'}</span></div>
+          <div class="v99-detail-facts v99-detail-facts-stock-only"><span>${out?'غير متوفر حالياً':item.stock===null?'متاح للطلب':`متوفر: ${fmt(item.stock)}`}</span></div>
           <div class="v99-qty"><label for="v99DetailQty">الكمية</label><input id="v99DetailQty" type="number" min="1" max="99" value="1"></div>
           <div class="v99-actions">${out?`<button data-v99-action="stockForm" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">أبلغني عند التوفر</button>`:`<button data-v99-action="cartQty" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">أضف للسلة</button>`}<button class="v99-ghost" data-v99-action="favorite" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">${isFavorite(item)?'إزالة من المفضلة':'حفظ بالمفضلة'}</button><button class="v99-ghost" data-v99-action="share" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">مشاركة</button></div>
         </div>

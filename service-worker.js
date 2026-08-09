@@ -1,4 +1,4 @@
-const VERSION='alin-4.1.6-prepublish-1z9';
+const VERSION='alin-4.1.6-prepublish-1z10';
 const STATIC_CACHE=`${VERSION}-static`;
 const RUNTIME_CACHE=`${VERSION}-runtime`;
 
@@ -6,13 +6,13 @@ const RUNTIME_CACHE=`${VERSION}-runtime`;
 const CORE=[
   './','./index.html','./store-desktop.html','./store-mobile.html','./alin-config.js',
   './manifest-desktop.webmanifest','./manifest-mobile.webmanifest',
-  './dist/alin-core.v4.1z9.js','./alin-app-desktop.v4.1.5.1z9.js','./alin-app-mobile.v4.1.5.1z9.js',
+  './dist/alin-core.v4.1z10.js','./alin-app-desktop.v4.1.5.1z9.js','./alin-app-mobile.v4.1.5.1z9.js',
   './modules/core/navigation.js','./modules/core/account-admin-service.js','./modules/core/order-bell.js',
   './modules/teacher/admin-word-download.js','./core/boot-recovery.js','./core/pwa-register.js',
   './core/device-router.js','./core/runtime-guard.js','./core/splash.js',
   './dist/css/desktop.bundle.css','./dist/css/mobile.bundle.css',
   './styles/alin-tokens.css','./styles/alin-shared.css','./styles/alin-branding.css',
-  './styles/alin-i18n.css','./styles/alin-desktop.css','./styles/alin-mobile.css','./styles/alin-splash.css','./styles/alin-store-responsive-1z4.css','./styles/alin-store-media-1z9.css',
+  './styles/alin-i18n.css','./styles/alin-desktop.css','./styles/alin-mobile.css','./styles/alin-splash.css','./styles/alin-store-responsive-1z4.css','./styles/alin-store-media-1z9.css','./styles/alin-store-details-categories-1z10.css',
   './store/banners.css','./store/mobile-navigation.css',
   './assets/images/alin-splash-desktop.webp','./assets/images/alin-splash-mobile.webp',
   './assets/audio/alin-order-chime.wav',

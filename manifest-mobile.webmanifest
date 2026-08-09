@@ -4,7 +4,7 @@
   "description": "متجر آلين السريع للطلاب",
   "lang": "ar",
   "dir": "rtl",
-  "start_url": "./store-mobile.html?v=4.1.6-prepublish-1z9&view=mobile",
+  "start_url": "./store-mobile.html?v=4.1.6-prepublish-1z10&view=mobile",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",

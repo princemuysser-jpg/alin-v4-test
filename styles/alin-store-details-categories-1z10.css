@@ -1,0 +1,60 @@
+/* ALIN 1z10 — product details cleanup + full category icon artwork. */
+
+/* Details: stock is the only compact fact shown after price. */
+.v99-detail-facts.v99-detail-facts-stock-only{
+  grid-template-columns:minmax(0,1fr)!important;
+  max-width:360px!important;
+}
+
+/* Category artwork: show the whole uploaded image without cropping on every device. */
+.alin-category-showcase #alinStoreCategories .cat-icon.cat-image,
+body.store-desktop .alin-category-showcase #alinStoreCategories .cat-icon.cat-image,
+body.store-mobile .alin-category-showcase #alinStoreCategories .cat-icon.cat-image,
+html[data-alin-device="tablet"] body.store-mobile .alin-category-showcase #alinStoreCategories .cat-icon.cat-image,
+html[data-alin-device="mobile"] body.store-mobile .alin-category-showcase #alinStoreCategories .cat-icon.cat-image{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  overflow:hidden!important;
+  padding:0!important;
+  background:#fff!important;
+}
+.alin-category-showcase #alinStoreCategories .cat-icon.cat-image img,
+body.store-desktop .alin-category-showcase #alinStoreCategories .cat-icon.cat-image img,
+body.store-mobile .alin-category-showcase #alinStoreCategories .cat-icon.cat-image img,
+html[data-alin-device="tablet"] body.store-mobile .alin-category-showcase #alinStoreCategories .cat-icon.cat-image img,
+html[data-alin-device="mobile"] body.store-mobile .alin-category-showcase #alinStoreCategories .cat-icon.cat-image img{
+  display:block!important;
+  width:100%!important;
+  height:100%!important;
+  max-width:100%!important;
+  max-height:100%!important;
+  object-fit:contain!important;
+  object-position:center center!important;
+  padding:0!important;
+  margin:0!important;
+  border-radius:0!important;
+  background:#fff!important;
+}
+
+/* Give the image area the available card space so square and portrait icons both read clearly. */
+@media(min-width:901px){
+  body.store-desktop .alin-category-showcase #alinStoreCategories .cat-icon.cat-image{
+    height:118px!important;
+    min-height:118px!important;
+    max-height:118px!important;
+  }
+}
+html[data-alin-device="tablet"] body.store-mobile .alin-category-showcase #alinStoreCategories .cat-icon.cat-image{
+  height:103px!important;
+  min-height:103px!important;
+  max-height:103px!important;
+}
+@media(max-width:650px){
+  body.store-mobile .alin-category-showcase #alinStoreCategories .cat-icon.cat-image,
+  html[data-alin-device="mobile"] body.store-mobile .alin-category-showcase #alinStoreCategories .cat-icon.cat-image{
+    height:88px!important;
+    min-height:88px!important;
+    max-height:88px!important;
+  }
+}
