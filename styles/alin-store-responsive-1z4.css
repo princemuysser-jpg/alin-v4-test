@@ -398,3 +398,197 @@ body.store-desktop .alin-desktop-choice[aria-pressed="true"]{border-color:#0b5fa
 @media(max-width:1100px){
   body.store-desktop .alin-desktop-options-panel{top:82px;inset-inline-start:14px;width:min(360px,calc(100vw - 28px))}
 }
+
+
+/* ALIN 1z7 — banner and product media should fill their frames cleanly on all devices. */
+.alin-store-banner__media,
+body.store-desktop .alin-store-banner__media,
+body.store-mobile .alin-store-banner__media{
+  overflow:hidden!important;
+  background:#eaf2fb!important;
+}
+.alin-store-banner__image,
+body.store-desktop .alin-store-banner__image,
+body.store-mobile .alin-store-banner__image{
+  width:100%!important;
+  height:100%!important;
+  object-fit:cover!important;
+  object-position:center center!important;
+  background:transparent!important;
+}
+
+.v99-product-media,
+body.store-desktop .v99-product-media,
+body.store-mobile #storeGrid .v99-product-media,
+html[data-alin-device="tablet"] body.store-mobile #storeGrid .v99-product-media,
+html[data-alin-device="mobile"] body.store-mobile #storeGrid .v99-product-media{
+  display:flex!important;
+  align-items:stretch!important;
+  justify-content:stretch!important;
+  overflow:hidden!important;
+  background:#f6f8fb!important;
+}
+.v99-product-media img,
+body.store-desktop .v99-product-media img,
+body.store-mobile #storeGrid .v99-product-media img,
+html[data-alin-device="tablet"] body.store-mobile #storeGrid .v99-product-media img,
+html[data-alin-device="mobile"] body.store-mobile #storeGrid .v99-product-media img{
+  width:100%!important;
+  height:100%!important;
+  max-width:none!important;
+  max-height:none!important;
+  object-fit:cover!important;
+  object-position:center center!important;
+  padding:0!important;
+  margin:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+}
+
+/* Keep home mini product cards visually fuller as well. */
+.v99-mini-media,
+#v99NewArrivals .v99-mini-media{
+  overflow:hidden!important;
+}
+.v99-mini-media img,
+#v99NewArrivals .v99-mini-media img{
+  width:100%!important;
+  height:100%!important;
+  object-fit:cover!important;
+  object-position:center center!important;
+  padding:0!important;
+}
+
+@media(min-width:1201px){
+  body.store-desktop .v99-product-media{height:188px!important;min-height:188px!important;max-height:188px!important}
+}
+@media(min-width:901px) and (max-width:1200px){
+  body.store-desktop .v99-product-media{height:178px!important;min-height:178px!important;max-height:178px!important}
+}
+html[data-alin-device="tablet"] body.store-mobile #storeGrid .v99-product-media{
+  height:178px!important;min-height:178px!important;max-height:178px!important;
+}
+@media(max-width:650px){
+  body.store-mobile #storeGrid .v99-product-media,
+  html[data-alin-device="mobile"] body.store-mobile #storeGrid .v99-product-media{height:142px!important;min-height:142px!important;max-height:142px!important}
+}
+@media(max-width:380px){
+  body.store-mobile #storeGrid .v99-product-media{height:130px!important;min-height:130px!important;max-height:130px!important}
+}
+
+
+/* ALIN 1z8 — unify product card heights for a cleaner grid on all devices. */
+#storeGrid.store-product-grid,
+body.store-desktop #storeGrid.store-product-grid,
+body.store-mobile #storeGrid.store-product-grid{
+  align-items:stretch!important;
+}
+.v99-product-card,
+body.store-desktop .v99-product-card,
+body.store-mobile #storeGrid .v99-product-card{
+  display:flex!important;
+  flex-direction:column!important;
+  height:100%!important;
+  min-height:0!important;
+}
+.v99-product-body,
+body.store-desktop .v99-product-body,
+body.store-mobile #storeGrid .v99-product-body{
+  display:flex!important;
+  flex-direction:column!important;
+  flex:1 1 auto!important;
+  justify-content:flex-start!important;
+}
+.v99-product-body h3,
+body.store-desktop .v99-product-body h3,
+body.store-mobile #storeGrid .v99-product-body h3{
+  display:-webkit-box!important;
+  -webkit-box-orient:vertical!important;
+  -webkit-line-clamp:2!important;
+  overflow:hidden!important;
+  min-height:2.9em!important;
+}
+.v99-product-body p,
+body.store-desktop .v99-product-body p,
+body.store-mobile #storeGrid .v99-product-body p{
+  display:-webkit-box!important;
+  -webkit-box-orient:vertical!important;
+  -webkit-line-clamp:1!important;
+  overflow:hidden!important;
+  min-height:1.3em!important;
+  margin-bottom:4px!important;
+}
+.v99-card-meta,
+body.store-desktop .v99-card-meta,
+body.store-mobile #storeGrid .v99-card-meta{
+  min-height:1.6em!important;
+  align-items:center!important;
+}
+.v99-card-price,
+body.store-desktop .v99-card-price,
+body.store-mobile #storeGrid .v99-card-price{
+  min-height:1.8em!important;
+  align-items:center!important;
+}
+.v99-actions,
+body.store-desktop .v99-actions,
+body.store-mobile #storeGrid .v99-actions{
+  margin-top:auto!important;
+  min-height:40px!important;
+  align-items:stretch!important;
+}
+.v99-actions button,
+body.store-desktop .v99-actions button,
+body.store-mobile #storeGrid .v99-actions button{
+  white-space:nowrap!important;
+}
+
+/* Home and rail cards stay aligned too. */
+.v99-mini-card,
+body.store-desktop .v99-mini-card,
+body.store-mobile .v99-mini-card{
+  display:flex!important;
+  flex-direction:column!important;
+  height:100%!important;
+}
+.v99-mini-body,
+body.store-desktop .v99-mini-body,
+body.store-mobile .v99-mini-body{
+  display:flex!important;
+  flex-direction:column!important;
+  flex:1 1 auto!important;
+}
+.v99-mini-body h3{
+  display:-webkit-box!important;
+  -webkit-box-orient:vertical!important;
+  -webkit-line-clamp:2!important;
+  overflow:hidden!important;
+  min-height:2.8em!important;
+}
+.v99-mini-body p{
+  display:-webkit-box!important;
+  -webkit-box-orient:vertical!important;
+  -webkit-line-clamp:1!important;
+  overflow:hidden!important;
+  min-height:1.2em!important;
+}
+.v99-mini-body button{margin-top:auto!important}
+
+/* Unified card heights per device. */
+@media(min-width:1201px){
+  body.store-desktop .v99-product-card{min-height:356px!important}
+}
+@media(min-width:901px) and (max-width:1200px){
+  body.store-desktop .v99-product-card{min-height:346px!important}
+}
+html[data-alin-device="tablet"] body.store-mobile #storeGrid .v99-product-card{min-height:340px!important}
+@media(orientation:landscape) and (min-width:900px){
+  html[data-alin-device="tablet"] body.store-mobile #storeGrid .v99-product-card{min-height:330px!important}
+}
+@media(max-width:650px){
+  body.store-mobile #storeGrid .v99-product-card{min-height:300px!important}
+  body.store-mobile #storeGrid .v99-actions{min-height:34px!important}
+}
+@media(max-width:380px){
+  body.store-mobile #storeGrid .v99-product-card{min-height:286px!important}
+}

@@ -72,8 +72,8 @@
     const hasText=Boolean(String(banner.title||'').trim()||copy);
     box.innerHTML=`
       <article class="alin-store-banner${link?' is-clickable':''}${hasText?' has-copy':' no-copy'}" ${link?'role="link" tabindex="0"':''}>
-        <div class="alin-store-banner__media">
-          ${image?`<img class="alin-store-banner__image" src="${esc(image)}" alt="${esc(banner.title||'إعلان منصة آلين')}" loading="eager" decoding="async">`:`<span class="alin-store-banner__placeholder" aria-hidden="true">آ</span>`}
+        <div class="alin-store-banner__media"${image?` style='--alin-banner-image:url("${esc(image)}")'`:''}>
+          ${image?`<img class="alin-store-banner__image" src="${esc(image)}" alt="${esc(banner.title||'إعلان منصة آلين')}" loading="eager" decoding="async" style="width:100%!important;height:100%!important;object-fit:fill!important;object-position:center!important;padding:0!important;margin:0!important;">`:`<span class="alin-store-banner__placeholder" aria-hidden="true">آ</span>`}
         </div>
         ${hasText?`<div class="alin-store-banner__content">
           <div class="alin-store-banner__copy">

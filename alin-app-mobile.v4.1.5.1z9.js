@@ -2658,8 +2658,8 @@ window.deleteCoupon = deleteCoupon;
     const hasText=Boolean(String(banner.title||'').trim()||copy);
     box.innerHTML=`
       <article class="alin-store-banner${link?' is-clickable':''}${hasText?' has-copy':' no-copy'}" ${link?'role="link" tabindex="0"':''}>
-        <div class="alin-store-banner__media">
-          ${image?`<img class="alin-store-banner__image" src="${esc(image)}" alt="${esc(banner.title||'إعلان منصة آلين')}" loading="eager" decoding="async">`:`<span class="alin-store-banner__placeholder" aria-hidden="true">آ</span>`}
+        <div class="alin-store-banner__media"${image?` style='--alin-banner-image:url("${esc(image)}")'`:''}>
+          ${image?`<img class="alin-store-banner__image" src="${esc(image)}" alt="${esc(banner.title||'إعلان منصة آلين')}" loading="eager" decoding="async" style="width:100%!important;height:100%!important;object-fit:fill!important;object-position:center!important;padding:0!important;margin:0!important;">`:`<span class="alin-store-banner__placeholder" aria-hidden="true">آ</span>`}
         </div>
         ${hasText?`<div class="alin-store-banner__content">
           <div class="alin-store-banner__copy">
@@ -5276,6 +5276,53 @@ window.AlinCourierModules['recordCourierSettlementForOrder']=typeof recordCourie
 
 ;
 
+/* store/mobile-navigation.js */
+/* ALIN 2.0.1 - mobile navigation controller */
+
+(function(){
+  const byId=id=>document.getElementById(id);
+  function showSheet(id){
+    const backdrop=byId('alinSheetBackdrop');
+    ['alinAccountSheet','alinTrackingSheet'].forEach(x=>{const el=byId(x); if(el) el.hidden=x!==id;});
+    if(backdrop) backdrop.hidden=false;
+    document.body.style.overflow='hidden';
+  }
+  window.alinOpenAccountSheet=()=>showSheet('alinAccountSheet');
+  window.alinOpenTrackingSheet=()=>showSheet('alinTrackingSheet');
+  window.alinCloseMobileSheets=function(){
+    ['alinAccountSheet','alinTrackingSheet'].forEach(x=>{const el=byId(x);if(el)el.hidden=true;});
+    const backdrop=byId('alinSheetBackdrop'); if(backdrop)backdrop.hidden=true;
+    document.body.style.overflow='';
+  };
+  window.alinAccountAction=function(action){
+    if(action==='login'||action==='signup'){
+      alinCloseMobileSheets();
+      if(typeof openStudentAuth==='function') openStudentAuth(action);
+      else document.getElementById('studentAuthBtn')?.click();
+      return;
+    }
+    if(action==='about'){
+      alinCloseMobileSheets();
+      document.getElementById('storeAbout')?.scrollIntoView({behavior:'smooth',block:'start'});
+    }
+  };
+  window.alinSubmitMobileTracking=function(){
+    const source=byId('alinMobileTrackingInput');
+    const target=byId('trackOrderInput');
+    const result=byId('alinMobileTrackingResult');
+    if(!source?.value.trim()){if(result)result.innerHTML='<div class="notice">اكتب رقم الطلب أولاً.</div>';return;}
+    if(target)target.value=source.value.trim();
+    try{ if(typeof trackOrder==='function') trackOrder(); }catch(e){}
+    setTimeout(()=>{
+      const original=byId('trackOrderResult');
+      if(result&&original) result.innerHTML=original.innerHTML||'<div class="notice">جاري البحث عن الطلب...</div>';
+    },300);
+  };
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')alinCloseMobileSheets();});
+})();
+
+;
+
 /* store/notifications.js */
 /* ALIN v2.2.6 — storefront notification center backed by AlinNotifications. */
 (function(){
@@ -5389,7 +5436,6 @@ window.AlinCourierModules['recordCourierSettlementForOrder']=typeof recordCourie
 })();
 
 ;
-
 
 ;
 /* ALIN v4.1.5 — isolated receipts center (orders + settlements). */
@@ -5746,6 +5792,53 @@ window.AlinCourierModules['recordCourierSettlementForOrder']=typeof recordCourie
   const api=Object.freeze({renderCenter,openCenter,previewOrder,previewSettlement,closePreview,printOrder,printSettlement,orders:scopedOrders,settlements:scopedSettlements});
   window.Alin415Receipts=api;
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
+})();
+
+/* ALIN v4.1.5 — all-interface receipts parity and reliable tablet detection. */
+(function(){
+  'use strict';
+  function detectTablet(){
+    try{
+      const sw=Number(screen?.width)||innerWidth||0,sh=Number(screen?.height)||innerHeight||0;
+      const vw=Number(innerWidth)||sw,vh=Number(innerHeight)||sh;
+      const minEdge=Math.min(sw,sh,vw,vh),maxEdge=Math.max(sw,sh,vw,vh);
+      return (navigator.maxTouchPoints||0)>0&&minEdge>=540&&maxEdge>=800;
+    }catch(_){return false}
+  }
+  function applyDevice(){document.documentElement.dataset.alinDevice=detectTablet()?'tablet':'mobile'}
+  function findByTab(root,tab){return [...(root?.querySelectorAll('button')||[])].find(button=>button.dataset.adminTab===tab||button.dataset.teacherTab===tab||(button.getAttribute('onclick')||'').includes(`'${tab}'`))}
+  function insertBeforeNamed(root,button,names){
+    const before=[...(root?.querySelectorAll('button')||[])].find(item=>names.some(name=>(item.dataset.adminTab===name)||(item.dataset.teacherTab===name)||(item.getAttribute('onclick')||'').includes(`'${name}'`)));
+    before?root.insertBefore(button,before):root?.appendChild(button);
+  }
+  function ensureAdmin(){
+    const root=document.querySelector('#adminPage .admin-tabs');if(!root)return;
+    let button=findByTab(root,'receipts');
+    if(!button){button=document.createElement('button');button.type='button';button.id='adminReceiptsTab';button.textContent='الوصولات';button.dataset.adminTab='receipts';button.setAttribute('onclick',"adminTab('receipts')");insertBeforeNamed(root,button,['ads','coupons','notifications'])}
+    button.id='adminReceiptsTab';button.dataset.adminTab='receipts';button.hidden=false;button.style.removeProperty('display');
+  }
+  function ensureTeacher(){
+    const root=document.querySelector('#teacherPage .teacher-tabs');if(!root)return;
+    let button=findByTab(root,'receipts');
+    if(!button){button=document.createElement('button');button.type='button';button.id='teacherReceiptsTab';button.textContent='الوصولات';button.dataset.teacherTab='receipts';button.setAttribute('onclick',"teacherTab('receipts')");insertBeforeNamed(root,button,['notifications','requests','review'])}
+    button.id='teacherReceiptsTab';button.dataset.teacherTab='receipts';button.hidden=false;button.style.removeProperty('display');
+  }
+  function ensurePartner(role,selector,beforeSelector){
+    const root=document.querySelector(selector);if(!root)return;
+    let button=root.querySelector(`[data-alin415-receipts-role="${role}"]`);
+    if(!button){button=document.createElement('button');button.type='button';button.textContent='الوصولات';button.dataset.alin415ReceiptsRole=role;const before=root.querySelector(beforeSelector);before?root.insertBefore(button,before):root.appendChild(button)}
+    button.id=role==='library'?'libraryReceiptsTab':'courierReceiptsTab';button.hidden=false;button.style.removeProperty('display');
+  }
+  function ensureAll(){
+    applyDevice();ensureAdmin();ensureTeacher();
+    ensurePartner('library','#libraryPage .library-v116-tabs','[data-library-tab="notifications"]');
+    ensurePartner('courier','#courierPage .courier-v161-tabs','[data-courier-tab="notifications"]');
+  }
+  function boot(){ensureAll();[180,650,1400,2800].forEach(delay=>setTimeout(ensureAll,delay))}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
+  addEventListener('resize',applyDevice,{passive:true});addEventListener('orientationchange',()=>setTimeout(ensureAll,120),{passive:true});
+  addEventListener('alin:data-refreshed',ensureAll);addEventListener('alin:admin-tab',ensureAll);
+  window.AlinInterfaceParity=Object.freeze({refresh:ensureAll,isTablet:detectTablet});
 })();
 
 /* ALIN v4.1.5 — receipt preview lifecycle guard for every role and device. */

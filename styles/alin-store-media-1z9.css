@@ -1,0 +1,155 @@
+/* ALIN 1z9 — authoritative media sizing. Unique filename intentionally bypasses older PWA caches. */
+
+/* Advertisement: the uploaded artwork fills the complete visible ad frame. */
+.alin-store-banners{box-sizing:border-box!important}
+.alin-store-banner{overflow:hidden!important}
+.alin-store-banner__media,
+body.store-desktop #alinStoreBanners .alin-store-banner__media,
+body.store-mobile #alinStoreBanners .alin-store-banner__media{
+  position:relative!important;
+  width:100%!important;
+  overflow:hidden!important;
+  padding:0!important;
+  margin:0!important;
+  background:#eef3f8!important;
+}
+.alin-store-banner__image,
+body.store-desktop #alinStoreBanners .alin-store-banner__image,
+body.store-mobile #alinStoreBanners .alin-store-banner__image{
+  display:block!important;
+  width:100%!important;
+  height:100%!important;
+  min-width:100%!important;
+  min-height:100%!important;
+  max-width:none!important;
+  max-height:none!important;
+  object-fit:fill!important;
+  object-position:center center!important;
+  padding:0!important;
+  margin:0!important;
+  border:0!important;
+  background:transparent!important;
+}
+@media(min-width:901px){
+  body.store-desktop #alinStoreBanners.alin-store-banners{
+    width:min(calc(100% - 32px),1360px)!important;
+    max-width:1360px!important;
+    margin:10px auto 18px!important;
+    padding:0!important;
+  }
+  body.store-desktop #alinStoreBanners .alin-store-banner__media{
+    height:clamp(190px,17vw,250px)!important;
+    min-height:190px!important;
+    max-height:250px!important;
+    aspect-ratio:auto!important;
+  }
+}
+@media(max-width:900px){
+  body.store-mobile #alinStoreBanners .alin-store-banner__media{
+    height:clamp(160px,43vw,235px)!important;
+    min-height:160px!important;
+    max-height:235px!important;
+    aspect-ratio:auto!important;
+  }
+}
+
+/* Product cards: keep the original product photo completely visible, while filling the rest of the media frame with a soft copy of the same photo. */
+.v99-product-media,
+.v99-mini-media{
+  position:relative!important;
+  isolation:isolate!important;
+  overflow:hidden!important;
+  padding:0!important;
+  background:#f3f6f9!important;
+}
+.v99-product-media::before,
+.v99-mini-media::before{
+  content:""!important;
+  position:absolute!important;
+  inset:-14px!important;
+  z-index:0!important;
+  background-image:var(--alin-media-image)!important;
+  background-size:cover!important;
+  background-position:center!important;
+  background-repeat:no-repeat!important;
+  filter:blur(13px) saturate(.9)!important;
+  opacity:.24!important;
+  transform:scale(1.08)!important;
+}
+.v99-product-media::after,
+.v99-mini-media::after{
+  content:""!important;
+  position:absolute!important;
+  inset:0!important;
+  z-index:1!important;
+  background:rgba(255,255,255,.34)!important;
+  pointer-events:none!important;
+}
+.v99-product-media img,
+.v99-product-media img.alin-product-image-fit,
+.v99-mini-media img,
+.v99-mini-media img.alin-product-image-fit{
+  display:block!important;
+  position:relative!important;
+  z-index:2!important;
+  width:100%!important;
+  height:100%!important;
+  max-width:100%!important;
+  max-height:100%!important;
+  object-fit:contain!important;
+  object-position:center center!important;
+  padding:0!important;
+  margin:0!important;
+  border:0!important;
+  background:transparent!important;
+}
+
+/* One clean, consistent product card system. */
+#storeGrid.store-product-grid{align-items:stretch!important}
+#storeGrid .v99-product-card{
+  display:flex!important;
+  flex-direction:column!important;
+  height:100%!important;
+  overflow:hidden!important;
+}
+#storeGrid .v99-product-body{
+  display:flex!important;
+  flex-direction:column!important;
+  flex:1 1 auto!important;
+}
+#storeGrid .v99-product-body h3{
+  min-height:2.9em!important;
+  display:-webkit-box!important;
+  -webkit-box-orient:vertical!important;
+  -webkit-line-clamp:2!important;
+  overflow:hidden!important;
+}
+#storeGrid .v99-card-price{margin-top:auto!important}
+#storeGrid .v99-actions{margin-top:8px!important}
+
+@media(min-width:1201px){
+  body.store-desktop #storeGrid.store-product-grid{grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:14px!important}
+  body.store-desktop #storeGrid .v99-product-media{height:190px!important;min-height:190px!important;max-height:190px!important}
+  body.store-desktop #storeGrid .v99-product-card{min-height:360px!important}
+}
+@media(min-width:901px) and (max-width:1200px){
+  body.store-desktop #storeGrid.store-product-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:13px!important}
+  body.store-desktop #storeGrid .v99-product-media{height:182px!important;min-height:182px!important;max-height:182px!important}
+  body.store-desktop #storeGrid .v99-product-card{min-height:350px!important}
+}
+html[data-alin-device="tablet"] body.store-mobile #storeGrid.store-product-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:12px!important}
+html[data-alin-device="tablet"] body.store-mobile #storeGrid .v99-product-media{height:178px!important;min-height:178px!important;max-height:178px!important}
+html[data-alin-device="tablet"] body.store-mobile #storeGrid .v99-product-card{min-height:342px!important}
+@media(orientation:landscape) and (min-width:900px){
+  html[data-alin-device="tablet"] body.store-mobile #storeGrid.store-product-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+}
+@media(max-width:650px){
+  body.store-mobile #storeGrid.store-product-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}
+  body.store-mobile #storeGrid .v99-product-media{height:144px!important;min-height:144px!important;max-height:144px!important}
+  body.store-mobile #storeGrid .v99-product-card{min-height:302px!important}
+  body.store-mobile .v99-mini-media{height:122px!important;min-height:122px!important;max-height:122px!important}
+}
+@media(max-width:380px){
+  body.store-mobile #storeGrid .v99-product-media{height:132px!important;min-height:132px!important;max-height:132px!important}
+  body.store-mobile #storeGrid .v99-product-card{min-height:290px!important}
+}

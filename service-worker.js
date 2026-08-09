@@ -1,4 +1,4 @@
-const VERSION='alin-4.1.6-prepublish-1z6';
+const VERSION='alin-4.1.6-prepublish-1z9';
 const STATIC_CACHE=`${VERSION}-static`;
 const RUNTIME_CACHE=`${VERSION}-runtime`;
 
@@ -6,13 +6,13 @@ const RUNTIME_CACHE=`${VERSION}-runtime`;
 const CORE=[
   './','./index.html','./store-desktop.html','./store-mobile.html','./alin-config.js',
   './manifest-desktop.webmanifest','./manifest-mobile.webmanifest',
-  './dist/alin-core.v4.js','./alin-app-desktop.v4.1.5.js','./alin-app-mobile.v4.1.5.js',
+  './dist/alin-core.v4.1z9.js','./alin-app-desktop.v4.1.5.1z9.js','./alin-app-mobile.v4.1.5.1z9.js',
   './modules/core/navigation.js','./modules/core/account-admin-service.js','./modules/core/order-bell.js',
   './modules/teacher/admin-word-download.js','./core/boot-recovery.js','./core/pwa-register.js',
   './core/device-router.js','./core/runtime-guard.js','./core/splash.js',
   './dist/css/desktop.bundle.css','./dist/css/mobile.bundle.css',
   './styles/alin-tokens.css','./styles/alin-shared.css','./styles/alin-branding.css',
-  './styles/alin-i18n.css','./styles/alin-desktop.css','./styles/alin-mobile.css','./styles/alin-splash.css','./styles/alin-store-responsive-1z4.css',
+  './styles/alin-i18n.css','./styles/alin-desktop.css','./styles/alin-mobile.css','./styles/alin-splash.css','./styles/alin-store-responsive-1z4.css','./styles/alin-store-media-1z9.css',
   './store/banners.css','./store/mobile-navigation.css',
   './assets/images/alin-splash-desktop.webp','./assets/images/alin-splash-mobile.webp',
   './assets/audio/alin-order-chime.wav',
@@ -91,7 +91,7 @@ self.addEventListener('fetch',event=>{
   if(url.origin===self.location.origin){
     const codeAsset=['script','style','worker'].includes(request.destination)||/\.(?:html?|css|js|json|webmanifest)$/i.test(url.pathname);
     // لا نقطع ملفات التطبيق بعد 3.5 ثوانٍ. نخدم النسخة المخزنة ونحدّثها بالخلفية.
-    if(codeAsset){event.respondWith(staleWhileRevalidate(request,event));return;}
+    if(codeAsset){event.respondWith(networkFirst(request,8000));return;}
     event.respondWith(cacheFirstRuntime(request));
     return;
   }
