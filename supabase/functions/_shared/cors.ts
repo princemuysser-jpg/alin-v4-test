@@ -1,4 +1,4 @@
-const DEFAULT_ORIGINS = ['https://princemuysser-jpg.github.io'];
+const DEFAULT_ORIGINS = ['https://alinplatform.com', 'https://www.alinplatform.com', 'https://princemuysser-jpg.github.io'];
 
 function allowedOrigins(): string[] {
   const configured = (Deno.env.get('ALIN_ALLOWED_ORIGINS') || '')

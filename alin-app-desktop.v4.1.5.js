@@ -4508,10 +4508,9 @@ window.AlinCourierModules['recordCourierSettlementForOrder']=typeof recordCourie
 ;
 
 /* modules/core/auth-service.js */
-/* ALIN v4.0.0 Clean Project — fast cached boot with server-side attempt protection. */
+/* ALIN v4.2.0 RC3 — secure Edge login with authoritative server-side attempt protection. */
 (function(){
   'use strict';
-  const ATTEMPT_KEY='alin_auth_attempts_v146_1u',MAX_ATTEMPTS=5,LOCK_MS=10*60*1000;
   const cfg=()=>window.ALIN_CONFIG||{};
   const enabled=()=>cfg().authEnabled===true;
   const client=()=>window.sb||(window.AlinCloud&&window.AlinCloud.client?.())||null;
@@ -4529,46 +4528,6 @@ window.AlinCourierModules['recordCourierSettlementForOrder']=typeof recordCourie
     try{let value=localStorage.getItem(DEVICE_KEY);if(!value){value=crypto.randomUUID?.()||`${Date.now()}-${Math.random()}`;localStorage.setItem(DEVICE_KEY,value)}return value}
     catch(_){return 'browser-session'}
   }
-  function legacyEmailKey(value){
-    const raw=String(value||'').trim().normalize?.('NFKC')?.toLocaleLowerCase('en-US')||String(value||'').trim().toLocaleLowerCase('en-US');
-    const normalized=raw.replace(/\s+/g,'-');
-    const ascii=normalized.replace(/[^a-z0-9._-]/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'')||'user';
-    let hash=2166136261;for(const byte of new TextEncoder().encode(normalized))hash=Math.imul(hash^byte,16777619);
-    return `${ascii.slice(0,38)}-${(hash>>>0).toString(36)}`;
-  }
-  function loginEmailCandidates(username){
-    const source=String(username||'').trim();
-    const raw=(source.normalize?.('NFKC')||source).toLocaleLowerCase('en-US').replace(/\s+/g,'-');
-    const domain=cfg().authEmailDomain||'users.alin.local';
-    const simple=raw.replace(/[^a-z0-9._-]/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'');
-    const hashed=legacyEmailKey(raw);
-    const looksLikeRealEmail=/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(raw);
-    const out=[];
-    // Usernames such as moh@kik are login names, not necessarily real email addresses.
-    // Try ALIN's internal/legacy aliases as well as the literal value.
-    if(looksLikeRealEmail)out.push(raw);
-    out.push(`${hashed}@${domain}`);
-    if(simple){out.push(`${simple}@${domain}`);out.push(`${simple}@alin.local`)}
-    if(raw.includes('@'))out.push(raw);
-    else out.unshift(emailFor(raw));
-    return [...new Set(out.filter(Boolean))];
-  }
-  async function directSignIn(username,password){
-    const c=client();if(!c?.auth)throw new Error('خدمة تسجيل الدخول غير متاحة');
-    let invalid=false;
-    for(const email of loginEmailCandidates(username)){
-      const result=await c.auth.signInWithPassword({email,password:String(password||'')});
-      if(!result?.error){
-        if(!result?.data?.session||!result?.data?.user)throw new Error('تعذر تثبيت جلسة الدخول');
-        return result.data;
-      }
-      const text=String(result.error.message||'');
-      if(/invalid login credentials|email not confirmed|invalid credentials/i.test(text)){invalid=true;continue}
-      throw new Error('تعذر تسجيل الدخول حالياً');
-    }
-    if(invalid)throw new Error('بيانات الدخول غير صحيحة');
-    throw new Error('تعذر تسجيل الدخول حالياً');
-  }
   async function edgeErrorInfo(error){
     let message=String(error?.message||'');
     let status=Number(error?.context?.status||0);
@@ -4579,16 +4538,32 @@ window.AlinCourierModules['recordCourierSettlementForOrder']=typeof recordCourie
     return {message,status};
   }
   async function secureSignIn(username,password){
-    // Edge Functions are optional in the current production flow. Login must not fail
-    // just because secure-login is missing, stale, or returns an old 401 response.
-    return directSignIn(username,password);
+    const c=client();
+    if(!c?.functions||!c?.auth)throw new Error('خدمة تسجيل الدخول الآمنة غير متاحة');
+    const {data,error}=await c.functions.invoke('secure-login',{
+      body:{username:String(username||'').trim(),password:String(password||'')}
+    });
+    if(error){
+      const info=await edgeErrorInfo(error);
+      throw new Error(info.message||'تعذر تسجيل الدخول حالياً');
+    }
+    if(!data?.ok||!data?.session?.access_token||!data?.session?.refresh_token||!data?.user?.id){
+      throw new Error(data?.error||'تعذر تسجيل الدخول حالياً');
+    }
+    const sessionResult=await c.auth.setSession({
+      access_token:String(data.session.access_token),
+      refresh_token:String(data.session.refresh_token)
+    });
+    if(sessionResult?.error||!sessionResult?.data?.session||!sessionResult?.data?.user){
+      try{await c.auth.signOut()}catch(_){}
+      throw new Error('تعذر تثبيت جلسة الدخول الآمنة');
+    }
+    if(String(sessionResult.data.user.id)!==String(data.user.id)){
+      try{await c.auth.signOut()}catch(_){}
+      throw new Error('تعذر التحقق من جلسة الدخول');
+    }
+    return sessionResult.data;
   }
-  const readAttempts=()=>{try{return JSON.parse(localStorage.getItem(ATTEMPT_KEY)||'{}')}catch(_){return{}}};
-  const writeAttempts=x=>{try{localStorage.setItem(ATTEMPT_KEY,JSON.stringify(x))}catch(_){}};
-  const attemptId=(role,user)=>`${String(role||'').toLowerCase()}:${String(user||'').trim().toLowerCase()}`;
-  function lockRemaining(role,user){const all=readAttempts(),x=all[attemptId(role,user)];if(!x)return 0;if(x.lockedUntil<=Date.now()){delete all[attemptId(role,user)];writeAttempts(all);return 0}return x.lockedUntil-Date.now()}
-  function failAttempt(role,user){const all=readAttempts(),k=attemptId(role,user),now=Date.now(),x=all[k]||{count:0,first:now,lockedUntil:0};if(now-x.first>LOCK_MS){x.count=0;x.first=now}x.count++;if(x.count>=MAX_ATTEMPTS)x.lockedUntil=now+LOCK_MS;all[k]=x;writeAttempts(all);return x}
-  function clearAttempts(role,user){const all=readAttempts();delete all[attemptId(role,user)];writeAttempts(all)}
   const invokeError=async(error,fallback)=>{let message=error?.message||fallback;try{message=(await error?.context?.json())?.error||message}catch(_){}return new Error(message||fallback)};
   const friendlyAdminMessage=value=>{const text=String(value||'');if(/already (?:been )?registered|already exists|email.*registered/i.test(text))return 'الحساب موجود مسبقاً وسيتم ربطه بدلاً من إنشائه من جديد';if(/duplicate key.*username|اسم الدخول مستخدم/i.test(text))return 'اسم الدخول مستخدم مسبقاً';return text};
   const invalidSessionMessage=value=>/جلسة الدخول غير صالحة|انتهت جلسة|invalid(?:\s+)?jwt|jwt(?:\s+)?expired|session|user from sub claim/i.test(String(value||''));
@@ -4631,19 +4606,16 @@ window.AlinCourierModules['recordCourierSettlementForOrder']=typeof recordCourie
     const password=(window.loginPass||document.getElementById('loginPass'))?.value||'';
     const requested=String(window.pendingRole||'');
     if(!username.trim()||!password)throw new Error('اكتب اسم الدخول وكلمة المرور');
-    const left=lockRemaining(requested,username);
-    if(left>0)throw new Error(`تم إيقاف المحاولات مؤقتاً. حاول بعد ${Math.ceil(left/60000)} دقيقة`);
     let data;
-    try{data=await secureSignIn(username,password)}catch(error){const state=failAttempt(requested,username);throw new Error(error?.message||(state.lockedUntil>Date.now()?'تم إيقاف المحاولات مؤقتاً':'بيانات الدخول غير صحيحة'))}
+    try{data=await secureSignIn(username,password)}catch(error){throw new Error(error?.message||'تعذر تسجيل الدخول')}
     const account=await accountForUser(data.user);
     if(!account||account.status!=='active'){
-      await c.auth.signOut();failAttempt(requested,username);throw new Error('الحساب غير مربوط أو غير فعال');
+      await c.auth.signOut();throw new Error('الحساب غير مربوط أو غير فعال');
     }
     const accountRole=String(account.role||'').toLowerCase()==='delegate'?'courier':String(account.role||'').toLowerCase();
     if(requested&&requested!=='store'&&accountRole!==requested&&accountRole!=='admin'){
-      await c.auth.signOut();failAttempt(requested,username);throw new Error('نوع الحساب لا يطابق البوابة المختارة');
+      await c.auth.signOut();throw new Error('نوع الحساب لا يطابق البوابة المختارة');
     }
-    clearAttempts(requested,username);
     window.current={role:accountRole,id:account.id,name:account.name,username:account.username,auth_user_id:data.user.id,area:account.area||'',phone:account.phone||'',landmark:account.landmark||'',admin_level:account.admin_level||'operator'};
     if(typeof window.load==='function')await window.load();
     const targetPage=accountRole==='accountant'?'admin':accountRole;
@@ -4739,183 +4711,6 @@ window.AlinCourierModules['recordCourierSettlementForOrder']=typeof recordCourie
     enabled,emailFor,login,loginFromUI,signOut,restoreSession,accountForUser,
     ensureAdminSession:()=>adminSession(false)
   });
-})();
-
-;
-
-/* modules/core/account-admin-service.js */
-// === core/account-admin-service.js ===
-/* ALIN v4.1.6 prepublish 1n — account administration with direct database fallback for profile edits. */
-(function(){
-  'use strict';
-  const runtime=()=>window.ALINAuthRuntime||{};
-  const client=()=>runtime().client?.()||window.sb||window.AlinCloud?.client?.()||null;
-  const strongPassword=value=>String(value||'').length>=12&&/[0-9]/.test(value)&&/[A-Za-z\u0600-\u06FF]/.test(value);
-  const invokeAdmin=(name,body)=>{
-    const invoke=runtime().invokeAdmin;
-    if(typeof invoke!=='function')throw new Error('خدمة إدارة الحسابات غير جاهزة');
-    return invoke(name,body);
-  };
-  const edgeUnavailable=error=>/failed to send a request to the edge function|edge function|failed to fetch|networkerror|load failed|network request failed|خدمة الإدارة الآمنة غير متاحة/i.test(String(error?.message||error||''));
-  const compact=object=>Object.fromEntries(Object.entries(object||{}).filter(([,value])=>value!==undefined));
-  function missingColumn(error){
-    const text=String(error?.message||error||'');
-    return text.match(/Could not find the '([^']+)' column/i)?.[1]
-      ||text.match(/column\s+"?([a-zA-Z0-9_]+)"?\s+.*does not exist/i)?.[1]
-      ||text.match(/column\s+([a-zA-Z0-9_]+)\s+of relation/i)?.[1]
-      ||'';
-  }
-  async function updateCompat(table,id,values,select='*'){
-    const c=client();if(!c?.from)throw new Error('الاتصال بقاعدة البيانات غير متاح');
-    const payload=compact(values);
-    for(let attempt=0;attempt<10;attempt++){
-      const {data,error}=await c.from(table).update(payload).eq('id',String(id)).select(select).maybeSingle();
-      if(!error)return data||null;
-      const column=missingColumn(error);
-      if(column&&Object.prototype.hasOwnProperty.call(payload,column)){delete payload[column];continue}
-      throw error;
-    }
-    throw new Error('تعذر توافق حقول الحساب مع قاعدة البيانات');
-  }
-  async function directUpdateAccount(payload){
-    const c=client();if(!c?.from)throw new Error('الاتصال بقاعدة البيانات غير متاح');
-    const accountId=String(payload?.account_id||'').trim();
-    if(!accountId)throw new Error('معرّف الحساب غير موجود');
-    const {data:before,error:readError}=await c.from('accounts').select('*').eq('id',accountId).maybeSingle();
-    if(readError)throw readError;
-    if(!before)throw new Error('الحساب غير موجود');
-
-    const requestedRole=String(payload.role||before.role||'');
-    const requestedUsername=String(payload.username||before.username||'').trim();
-    const warnings=[];
-    if(requestedRole&&requestedRole!==String(before.role||''))warnings.push('تم حفظ البيانات الأساسية فقط؛ تغيير نوع الحساب يحتاج خدمة الحسابات الآمنة');
-    if(requestedUsername&&requestedUsername!==String(before.username||''))warnings.push('تم حفظ البيانات الأساسية فقط؛ تغيير اسم الدخول يحتاج خدمة الحسابات الآمنة');
-    if(payload.password)warnings.push('تم حفظ البيانات الأساسية، لكن كلمة المرور لم تتغير لأن خدمة الحسابات الآمنة غير متصلة');
-
-    const account=await updateCompat('accounts',accountId,{
-      name:String(payload.name??before.name??'').trim(),
-      status:payload.status===undefined?undefined:String(payload.status||'active'),
-      phone:payload.phone===undefined?undefined:String(payload.phone||'').trim(),
-      area:payload.area===undefined?undefined:String(payload.area||'').trim(),
-      landmark:payload.landmark===undefined?undefined:String(payload.landmark||'').trim(),
-      notes:payload.notes===undefined?undefined:String(payload.notes||'').trim(),
-      deleted_at:String(payload.status||'')==='active'?null:undefined,
-      updated_at:new Date().toISOString()
-    },'id,role,name,username,status,auth_user_id,phone,area,landmark,notes,admin_level,deleted_at');
-
-    if(String(before.role||'')==='courier'){
-      const areas=Array.isArray(payload.areas)?[...new Set(payload.areas.map(x=>String(x||'').trim()).filter(Boolean))]:undefined;
-      const courierValues=compact({
-        name:String(payload.name??before.name??'').trim(),
-        username:String(before.username||''),
-        phone:payload.phone===undefined?undefined:String(payload.phone||'').trim(),
-        area:payload.area===undefined?(areas?.[0]||undefined):String(payload.area||'').trim(),
-        areas,
-        availability:payload.availability===undefined?undefined:String(payload.availability||'available'),
-        status:payload.status===undefined?undefined:(String(payload.status)==='active'?'active':'inactive'),
-        updated_at:new Date().toISOString()
-      });
-      const {data:existing,error:existsError}=await c.from('couriers').select('id').eq('id',accountId).maybeSingle();
-      if(existsError)throw existsError;
-      if(existing)await updateCompat('couriers',accountId,courierValues,'id,name,username,phone,area,areas,availability,status');
-      else{
-        const {error:insertError}=await c.from('couriers').insert({id:accountId,...courierValues,created_at:new Date().toISOString()});
-        if(insertError)throw insertError;
-      }
-    }
-    if(typeof load==='function')try{await load()}catch(error){console.warn('[ALIN account refresh after direct save]',error)}
-    return Object.assign({},account||before,{warning:warnings.join(' — '),saved_directly:true});
-  }
-
-  async function createAccount(payload){
-    if(!payload?.name||!payload?.username||!payload?.password)throw new Error('أكمل الاسم واسم الدخول وكلمة المرور');
-    if(!strongPassword(payload.password))throw new Error('كلمة المرور يجب أن تكون 12 حرفاً على الأقل وتتضمن حروفاً وأرقاماً');
-    try{
-      const data=await invokeAdmin('admin-create-account',payload);
-      if(typeof load==='function')await load();
-      return data.account;
-    }catch(error){
-      if(edgeUnavailable(error))throw new Error('تعذر إنشاء حساب جديد لأن خدمة إنشاء الحسابات في Supabase غير منشورة. تعديل بيانات الحسابات الحالية يعمل مباشرة.');
-      throw error;
-    }
-  }
-
-  async function createAccountFromAdmin(){
-    const button=document.getElementById('v131SaveAccountButton');
-    if(button?.disabled)return null;
-    const originalLabel=button?.textContent||'حفظ الحساب';
-    try{
-      if(button){button.disabled=true;button.textContent='جارٍ الحفظ...'}
-      const role=document.getElementById('aRole')?.value||'';
-      const selectedAreas=[...document.querySelectorAll('#v163CourierAreaPicker input:checked')].map(x=>String(x.value||'').trim()).filter(Boolean);
-      const payload={
-        role,
-        name:document.getElementById('aName')?.value?.trim()||'',
-        username:document.getElementById('aUser')?.value?.trim()||'',
-        password:document.getElementById('aPass')?.value||'',
-        phone:document.getElementById('aPhone')?.value?.trim()||document.getElementById('v163CourierPhone')?.value?.trim()||'',
-        area:role==='courier'?(selectedAreas[0]||''):(document.getElementById('aArea')?.value?.trim()||''),
-        landmark:role==='courier'?'':(document.getElementById('aLandmark')?.value?.trim()||''),
-        availability:document.getElementById('v163CourierAvailability')?.value||'available',
-        areas:selectedAreas,
-        status:'active'
-      };
-      if(!['teacher','library','courier','accountant'].includes(role))throw new Error('اختر نوع الحساب');
-      if(role==='courier'&&!payload.areas.length)throw new Error('اختر منطقة عمل واحدة على الأقل');
-      if(role==='courier'&&!payload.phone)throw new Error('أدخل رقم هاتف المندوب');
-      const account=await createAccount(payload);
-      ['aName','aUser','aPass','aPhone','aArea','aLandmark'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
-      document.querySelectorAll('#v163CourierAreaPicker input').forEach(el=>{el.checked=false});
-      window.v131CourierAreaCount?.();
-      window.v131ToggleAccountForm?.(false);
-      if(typeof renderAccountsAdmin==='function')renderAccountsAdmin();
-      if(typeof toast==='function')toast(`تم إنشاء الحساب: ${account.username}`);else alert(`تم إنشاء الحساب بنجاح: ${account.username}`);
-      return account;
-    }catch(e){
-      alert(e?.message||'تعذر إنشاء الحساب');
-      return null;
-    }finally{
-      if(button){button.disabled=false;button.textContent=originalLabel}
-    }
-  }
-
-  async function repairAuthLink(accountId){
-    const c=client();if(!c?.rpc||!accountId)return 0;
-    const {data,error}=await c.rpc('alin_repair_auth_links',{p_account_id:String(accountId)});
-    if(error){
-      const text=String(error.message||'');
-      if(/PGRST202|Could not find the function|schema cache/i.test(text))throw new Error('خدمة ربط الحسابات غير مهيأة في مشروع Supabase الجديد');
-      throw error;
-    }
-    return Number(data||0);
-  }
-  async function updateAccountFromAdmin(payload){
-    try{
-      const data=await invokeAdmin('admin-update-account',payload);
-      if(typeof load==='function')await load();
-      return data.account;
-    }catch(error){
-      if(!edgeUnavailable(error))throw error;
-      console.warn('[ALIN account direct update fallback]',error?.message||error);
-      return directUpdateAccount(payload);
-    }
-  }
-  async function resetPasswordFromAdmin(accountId,password){
-    if(!strongPassword(password))throw new Error('كلمة المرور يجب أن تكون 12 حرفاً على الأقل وتتضمن حروفاً وأرقاماً');
-    try{
-      await repairAuthLink(accountId);
-      return await invokeAdmin('admin-reset-password',{account_id:accountId,password});
-    }catch(error){
-      if(edgeUnavailable(error))throw new Error('تعذر تغيير كلمة المرور لأن خدمة الحسابات الآمنة غير متصلة. بقية بيانات الحساب يمكن حفظها بصورة طبيعية.');
-      throw error;
-    }
-  }
-  async function deleteAccountFromAdmin(accountId){return invokeAdmin('admin-delete-account',{account_id:accountId})}
-  window.ALINAuth=Object.assign(window.ALINAuth||{},
-    {createAccount,createAccountFromAdmin,updateAccountFromAdmin,resetPasswordFromAdmin,repairAuthLink,deleteAccountFromAdmin});
-  window.addAccount=createAccountFromAdmin;
-  window.ALINAccountAdmin=Object.freeze({createAccount,createAccountFromAdmin,updateAccountFromAdmin,resetPasswordFromAdmin,repairAuthLink,deleteAccountFromAdmin});
-  window.dispatchEvent(new CustomEvent('alin:account-admin-ready'));
 })();
 
 ;
@@ -5276,53 +5071,6 @@ window.AlinCourierModules['recordCourierSettlementForOrder']=typeof recordCourie
 
 ;
 
-/* store/mobile-navigation.js */
-/* ALIN 2.0.1 - mobile navigation controller */
-
-(function(){
-  const byId=id=>document.getElementById(id);
-  function showSheet(id){
-    const backdrop=byId('alinSheetBackdrop');
-    ['alinAccountSheet','alinTrackingSheet'].forEach(x=>{const el=byId(x); if(el) el.hidden=x!==id;});
-    if(backdrop) backdrop.hidden=false;
-    document.body.style.overflow='hidden';
-  }
-  window.alinOpenAccountSheet=()=>showSheet('alinAccountSheet');
-  window.alinOpenTrackingSheet=()=>showSheet('alinTrackingSheet');
-  window.alinCloseMobileSheets=function(){
-    ['alinAccountSheet','alinTrackingSheet'].forEach(x=>{const el=byId(x);if(el)el.hidden=true;});
-    const backdrop=byId('alinSheetBackdrop'); if(backdrop)backdrop.hidden=true;
-    document.body.style.overflow='';
-  };
-  window.alinAccountAction=function(action){
-    if(action==='login'||action==='signup'){
-      alinCloseMobileSheets();
-      if(typeof openStudentAuth==='function') openStudentAuth(action);
-      else document.getElementById('studentAuthBtn')?.click();
-      return;
-    }
-    if(action==='about'){
-      alinCloseMobileSheets();
-      document.getElementById('storeAbout')?.scrollIntoView({behavior:'smooth',block:'start'});
-    }
-  };
-  window.alinSubmitMobileTracking=function(){
-    const source=byId('alinMobileTrackingInput');
-    const target=byId('trackOrderInput');
-    const result=byId('alinMobileTrackingResult');
-    if(!source?.value.trim()){if(result)result.innerHTML='<div class="notice">اكتب رقم الطلب أولاً.</div>';return;}
-    if(target)target.value=source.value.trim();
-    try{ if(typeof trackOrder==='function') trackOrder(); }catch(e){}
-    setTimeout(()=>{
-      const original=byId('trackOrderResult');
-      if(result&&original) result.innerHTML=original.innerHTML||'<div class="notice">جاري البحث عن الطلب...</div>';
-    },300);
-  };
-  document.addEventListener('keydown',e=>{if(e.key==='Escape')alinCloseMobileSheets();});
-})();
-
-;
-
 /* store/notifications.js */
 /* ALIN v2.2.6 — storefront notification center backed by AlinNotifications. */
 (function(){
@@ -5436,6 +5184,7 @@ window.AlinCourierModules['recordCourierSettlementForOrder']=typeof recordCourie
 })();
 
 ;
+
 
 ;
 /* ALIN v4.1.5 — isolated receipts center (orders + settlements). */
@@ -5792,53 +5541,6 @@ window.AlinCourierModules['recordCourierSettlementForOrder']=typeof recordCourie
   const api=Object.freeze({renderCenter,openCenter,previewOrder,previewSettlement,closePreview,printOrder,printSettlement,orders:scopedOrders,settlements:scopedSettlements});
   window.Alin415Receipts=api;
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
-})();
-
-/* ALIN v4.1.5 — all-interface receipts parity and reliable tablet detection. */
-(function(){
-  'use strict';
-  function detectTablet(){
-    try{
-      const sw=Number(screen?.width)||innerWidth||0,sh=Number(screen?.height)||innerHeight||0;
-      const vw=Number(innerWidth)||sw,vh=Number(innerHeight)||sh;
-      const minEdge=Math.min(sw,sh,vw,vh),maxEdge=Math.max(sw,sh,vw,vh);
-      return (navigator.maxTouchPoints||0)>0&&minEdge>=540&&maxEdge>=800;
-    }catch(_){return false}
-  }
-  function applyDevice(){document.documentElement.dataset.alinDevice=detectTablet()?'tablet':'mobile'}
-  function findByTab(root,tab){return [...(root?.querySelectorAll('button')||[])].find(button=>button.dataset.adminTab===tab||button.dataset.teacherTab===tab||(button.getAttribute('onclick')||'').includes(`'${tab}'`))}
-  function insertBeforeNamed(root,button,names){
-    const before=[...(root?.querySelectorAll('button')||[])].find(item=>names.some(name=>(item.dataset.adminTab===name)||(item.dataset.teacherTab===name)||(item.getAttribute('onclick')||'').includes(`'${name}'`)));
-    before?root.insertBefore(button,before):root?.appendChild(button);
-  }
-  function ensureAdmin(){
-    const root=document.querySelector('#adminPage .admin-tabs');if(!root)return;
-    let button=findByTab(root,'receipts');
-    if(!button){button=document.createElement('button');button.type='button';button.id='adminReceiptsTab';button.textContent='الوصولات';button.dataset.adminTab='receipts';button.setAttribute('onclick',"adminTab('receipts')");insertBeforeNamed(root,button,['ads','coupons','notifications'])}
-    button.id='adminReceiptsTab';button.dataset.adminTab='receipts';button.hidden=false;button.style.removeProperty('display');
-  }
-  function ensureTeacher(){
-    const root=document.querySelector('#teacherPage .teacher-tabs');if(!root)return;
-    let button=findByTab(root,'receipts');
-    if(!button){button=document.createElement('button');button.type='button';button.id='teacherReceiptsTab';button.textContent='الوصولات';button.dataset.teacherTab='receipts';button.setAttribute('onclick',"teacherTab('receipts')");insertBeforeNamed(root,button,['notifications','requests','review'])}
-    button.id='teacherReceiptsTab';button.dataset.teacherTab='receipts';button.hidden=false;button.style.removeProperty('display');
-  }
-  function ensurePartner(role,selector,beforeSelector){
-    const root=document.querySelector(selector);if(!root)return;
-    let button=root.querySelector(`[data-alin415-receipts-role="${role}"]`);
-    if(!button){button=document.createElement('button');button.type='button';button.textContent='الوصولات';button.dataset.alin415ReceiptsRole=role;const before=root.querySelector(beforeSelector);before?root.insertBefore(button,before):root.appendChild(button)}
-    button.id=role==='library'?'libraryReceiptsTab':'courierReceiptsTab';button.hidden=false;button.style.removeProperty('display');
-  }
-  function ensureAll(){
-    applyDevice();ensureAdmin();ensureTeacher();
-    ensurePartner('library','#libraryPage .library-v116-tabs','[data-library-tab="notifications"]');
-    ensurePartner('courier','#courierPage .courier-v161-tabs','[data-courier-tab="notifications"]');
-  }
-  function boot(){ensureAll();[180,650,1400,2800].forEach(delay=>setTimeout(ensureAll,delay))}
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
-  addEventListener('resize',applyDevice,{passive:true});addEventListener('orientationchange',()=>setTimeout(ensureAll,120),{passive:true});
-  addEventListener('alin:data-refreshed',ensureAll);addEventListener('alin:admin-tab',ensureAll);
-  window.AlinInterfaceParity=Object.freeze({refresh:ensureAll,isTablet:detectTablet});
 })();
 
 /* ALIN v4.1.5 — receipt preview lifecycle guard for every role and device. */

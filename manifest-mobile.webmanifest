@@ -4,7 +4,7 @@
   "description": "متجر آلين السريع للطلاب",
   "lang": "ar",
   "dir": "rtl",
-  "start_url": "./store-mobile.html?v=4.1.6-prepublish-1z10&view=mobile",
+  "start_url": "./store-mobile.html?v=4.2.0-rc.3&view=mobile",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
@@ -24,7 +24,7 @@
       "purpose": "any maskable"
     }
   ],
-  "id": "./store-mobile.html?alin-app=mobile-4.1.6-1z2",
+  "id": "./store-mobile.html?alin-app=mobile",
   "display_override": [
     "standalone",
     "minimal-ui"
