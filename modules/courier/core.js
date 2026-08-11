@@ -246,7 +246,7 @@
   function resetRefresh(){lastRefresh=0}
 
   window.AlinCourierCore=Object.freeze({
-    version:window.ALIN_CONFIG?.version||'4.2.0-rc.19',$, $$, arr, escv, moneyv, now, notify, currentAccount, dbx,
+    version:window.ALIN_CONFIG?.version||'4.2.0-rc.20',$, $$, arr, escv, moneyv, now, notify, currentAccount, dbx,
     allCouriers, areasOf, areaRows, statusOf, statusLabel, resolveCourier,
     allOrders, courierAliases, orderCourierIds, myOrders, settlements, done, cancelled, active, activeLoad, today, todayDone, financials,
     orderState, friendlyOrderError, mapLink, hasExactGps, phoneLink, waLink, fmtDate,

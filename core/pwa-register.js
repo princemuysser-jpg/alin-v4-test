@@ -13,7 +13,7 @@
 
   window.addEventListener('load',()=>schedule(async()=>{
     try{
-      const registration=await navigator.serviceWorker.register('./service-worker.js?v=4.2.0-rc.19',{scope:'./',updateViaCache:'none'});
+      const registration=await navigator.serviceWorker.register('./service-worker.js?v=4.2.0-rc.20',{scope:'./',updateViaCache:'none'});
       registration.addEventListener('updatefound',()=>{
         const worker=registration.installing;
         if(!worker)return;

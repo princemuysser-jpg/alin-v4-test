@@ -1,24 +1,22 @@
 {
-  "version": "4.2.0-rc.19",
-  "base": "4.2.0-rc.15",
-  "discarded_bases": [
-    "rc16",
-    "rc17",
-    "rc18"
-  ],
+  "version": "4.2.0-rc.20",
+  "base": "4.2.0-rc.19",
+  "change_scope": "phone_splash_duration_only",
+  "phone_splash_ms": 1000,
+  "tablet_desktop_splash_ms": 3000,
   "audit": {
     "ok": true,
     "errors": [],
     "actions": 145,
     "build_hashes": {
-      "dist/alin-core.v4.js": "e37717ab0b63ac95b130b24e8b625f50bbd29761777dd6d39c3d7a6a6b217804",
-      "alin-app-desktop.v4.1.5.js": "a92be3bf9d16f1dd2c072438b2a50e2d14ae4020ad4d6616b4a49708ab084292",
-      "alin-app-mobile.v4.1.5.js": "28a8e2005454ccaf74b5e43277d7ce4b4d367f7120336f1f6409cf6a034054c8",
-      "dist/alin-role-runtime.v4.js": "ffa88951b55df04906748fa2fea8bcf7049518d2c84ee0c2fd62b728a0c6e019"
+      "dist/alin-core.v4.js": "c5cea19737974fdf1152c5ef0a34ca5aa9e3b3febf2bd8216a35e039703620c4",
+      "alin-app-desktop.v4.1.5.js": "11989e0ed47e845cdf034db8aa067805738d4b5f556f116e371b24df42e39553",
+      "alin-app-mobile.v4.1.5.js": "12b7b32b13e834e286d46fc3590f2aaac404ffed1c71f6df1bd78544034a5457",
+      "dist/alin-role-runtime.v4.js": "f2781a2465fdebfcb351f0c30ee0ac24185d84d563ce2f5ca351212c3eb490a7"
     },
     "js_files": 106
   },
   "public_bootstrap_rpc": "alin_public_store_bootstrap",
   "public_catalog_requests": 1,
-  "sql_required": "already_applied_to_production"
+  "sql_required": false
 }
