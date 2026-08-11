@@ -2,7 +2,7 @@
 // === core/config.js ===
 /* ALIN v4.1.0 Courier Rebuilt — ضع بيانات مشروع Supabase الجديد فقط. */
 window.ALIN_CONFIG=window.ALIN_CONFIG||Object.freeze({
-  version:'4.2.0-rc.16',
+  version:'4.2.0-rc.17',
   desktopPage:'./store-desktop.html',
   mobilePage:'./store-mobile.html',
   currency:'د.ع',
@@ -1307,11 +1307,11 @@ window.Alin.helpers={
   async function seedData(){throw new Error('البيانات التجريبية معطلة في النسخة المستقرة')}
 
   Object.assign(window,{
-    ALIN_VERSION:window.ALIN_CONFIG?.version||'4.2.0-rc.16',init,requireConnection,audit,renderAll,seedData,
+    ALIN_VERSION:window.ALIN_CONFIG?.version||'4.2.0-rc.17',init,requireConnection,audit,renderAll,seedData,
     teacherName,libIsOpen,libStatusText,activeLibraries,alinOpenLibraries:activeLibraries,
     alinLibOpen:libIsOpen,deliveryFee,isMissingTableError,usePermit
   });
-  window.AlinRuntime=Object.freeze({version:window.ALIN_CONFIG?.version||'4.2.0-rc.16',init,requireConnection,renderAll,getDb:()=>stateDb,getCurrent:()=>stateCurrent});
+  window.AlinRuntime=Object.freeze({version:window.ALIN_CONFIG?.version||'4.2.0-rc.17',init,requireConnection,renderAll,getDb:()=>stateDb,getCurrent:()=>stateCurrent});
 
   /* PLATFORM STEP 1: coupons are owned by modules/store/coupons.js and modules/admin/coupons.js. */
   /* PLATFORM STEP 2: cart and order creation are owned by modules/store/cart.js and modules/store/order-routing.js. */
@@ -1595,7 +1595,7 @@ window.Alin.helpers={
 (function(){
   'use strict';
 
-  const VERSION=window.ALIN_CONFIG?.version||'4.2.0-rc.16';
+  const VERSION=window.ALIN_CONFIG?.version||'4.2.0-rc.17';
   const TABLES=[
     'settings','accounts','delivery_areas','couriers','courier_areas','categories',
     'booklets','teacher_requests','teacher_request_versions','products','orders',
@@ -4439,19 +4439,36 @@ window.Alin.helpers={
 ;
 
 /* core/role-runtime-loader.js */
-/* ALIN v4.2.0 RC16 — role runtime lazy loader. Public storefront never downloads staff dashboards until needed. */
+/* ALIN v4.2.0 RC17 — role runtime lazy loader. Public storefront never downloads staff dashboards until needed. */
 (function(){
   'use strict';
   let state='idle';
   let promise=null;
-  const version=window.ALIN_CONFIG?.version||'4.2.0-rc.16';
+  const version=window.ALIN_CONFIG?.version||'4.2.0-rc.17';
   const needsRole=role=>!['','store','student'].includes(String(role||'').toLowerCase());
+  function ensureRoleStyle(){
+    if(!document.body?.classList.contains('store-mobile'))return Promise.resolve(true);
+    const current=document.getElementById('alinMobileRoleCss');
+    if(current&&current.dataset.ready==='1')return Promise.resolve(true);
+    return new Promise((resolve,reject)=>{
+      const link=current||document.createElement('link');
+      if(!current){
+        link.id='alinMobileRoleCss';link.rel='stylesheet';
+        link.href=`./dist/css/mobile-entry.v4.css?v=${encodeURIComponent(version)}`;
+        document.head.appendChild(link);
+      }
+      const done=()=>{link.dataset.ready='1';resolve(true)};
+      if(link.sheet){done();return;}
+      link.addEventListener('load',done,{once:true});
+      link.addEventListener('error',()=>reject(new Error('تعذر تحميل تصميم لوحة الحساب')),{once:true});
+    });
+  }
   function ensure(role){
     if(!needsRole(role))return Promise.resolve(false);
-    if(state==='ready')return Promise.resolve(true);
+    if(state==='ready')return ensureRoleStyle().then(()=>true);
     if(promise)return promise;
     state='loading';
-    promise=new Promise((resolve,reject)=>{
+    promise=Promise.all([ensureRoleStyle(),new Promise((resolve,reject)=>{
       const existing=document.getElementById('alinRoleRuntimeScript');
       if(existing){
         existing.addEventListener('load',()=>{state='ready';resolve(true)},{once:true});
@@ -4472,7 +4489,7 @@ window.Alin.helpers={
         reject(new Error('تعذر تحميل لوحة الحساب. تحقق من الإنترنت وحاول مرة أخرى.'));
       },{once:true});
       document.head.appendChild(script);
-    });
+    })]).then(()=>true).catch(error=>{state='error';promise=null;throw error});
     return promise;
   }
   window.AlinRoleRuntime=Object.freeze({version,ensure,ready:()=>state==='ready',state:()=>state});
@@ -4500,7 +4517,7 @@ window.Alin.helpers={
   addEventListener('online',()=>document.documentElement.classList.remove('alin-offline'));
   addEventListener('offline',()=>document.documentElement.classList.add('alin-offline'));
   if(!navigator.onLine)document.documentElement.classList.add('alin-offline');
-  window.AlinRuntime=Object.freeze({...window.AlinRuntime,version:window.ALIN_CONFIG?.version||'4.2.0-rc.16',errors:()=>[...(window.__ALIN_RUNTIME_ERRORS__||[])]});
+  window.AlinRuntime=Object.freeze({...window.AlinRuntime,version:window.ALIN_CONFIG?.version||'4.2.0-rc.17',errors:()=>[...(window.__ALIN_RUNTIME_ERRORS__||[])]});
 })();
 ;
 

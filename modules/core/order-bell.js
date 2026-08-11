@@ -5,8 +5,8 @@
   if(window.__ALIN_ORDER_BELL__)return;
   window.__ALIN_ORDER_BELL__=true;
 
-  const VERSION='4.2.0-rc.16';
-  const SOUND_URL='./assets/audio/alin-order-chime.wav?v=4.2.0-rc.16';
+  const VERSION='4.2.0-rc.17';
+  const SOUND_URL='./assets/audio/alin-order-chime.wav?v=4.2.0-rc.17';
   const ROLE_PAGES={admin:'adminPage',library:'libraryPage',courier:'courierPage'};
   const roleState=new Map();
   const sessionSeen=new Set();

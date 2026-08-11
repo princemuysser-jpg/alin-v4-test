@@ -1,30 +1,12 @@
 {
-  "release": "4.2.0-rc.16",
   "ok": true,
-  "purpose": "mobile/tablet weak-network startup optimization while preserving RC14 navigation stability and RC15 3-second splash",
-  "splash_duration_ms": 3000,
-  "splash_network_independent": true,
-  "mobile_prefetch_during_splash": true,
-  "mobile_css_requests_before": 11,
-  "mobile_css_requests_after": 1,
-  "store_mobile_html_bytes_before": 51278,
-  "store_mobile_html_bytes_after": 19888,
-  "mobile_static_script_link_tags_before": 34,
-  "mobile_static_script_link_tags_after": 16,
-  "service_worker_intercepts_navigation": false,
-  "service_worker_registered_from_entry_splash": false,
-  "sql_required": false,
-  "database_changed": false,
+  "errors": [],
   "actions": 145,
-  "js_files": 106,
-  "local_missing_paths": 0,
-  "inline_scripts_main_html": 0,
-  "static_event_attributes_main_html": 0,
-  "browser_runtime_smoke": "not_claimed",
   "build_hashes": {
-    "dist/alin-core.v4.js": "ae52993ea77c12ebba2fbd96b60e09ae4d969da7aa7995582b1c3c58f553d39c",
-    "alin-app-desktop.v4.1.5.js": "86f6e94d04729fe2020df9301a8a268194d97d935eb85618b9c6f224871ca36f",
-    "alin-app-mobile.v4.1.5.js": "28139979d35b5950b2f4cc3a2dec8f7408504e51067e7dde22090c065dd8551f",
-    "dist/alin-role-runtime.v4.js": "cafbe829401d8e8883b9ed1de9b4f38425062a2ea116e024619f7a5a4c78eb8d"
-  }
+    "dist/alin-core.v4.js": "baefb9cd67823cc43739438548f0b7872ac69497dd2a2a0d9df543dc951d7653",
+    "alin-app-desktop.v4.1.5.js": "aa46688a7bc20f538d880233c0117c91b95c37ff5097c6fb7260be783c3a365c",
+    "alin-app-mobile.v4.1.5.js": "a96b48082dbc45e55e5466cea08fe5dfc45042d3e794448a413c80cc364c02fa",
+    "dist/alin-role-runtime.v4.js": "eb1312984def333e15abe0cffd98c8e12e859104e3062b9d890705e473301ec9"
+  },
+  "js_files": 107
 }

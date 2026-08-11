@@ -7,32 +7,48 @@
 <meta content="0" http-equiv="Expires"/>
 <meta charset="utf-8"/>
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; script-src-elem 'self' https://cdn.jsdelivr.net; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' blob: https://dgaikazhbtyjmswpyvrl.supabase.co wss://dgaikazhbtyjmswpyvrl.supabase.co; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; worker-src 'self' blob: https://cdn.jsdelivr.net; frame-src 'self' blob:;">
-<script src="./core/mobile-bootstrap.v4.js?v=4.2.0-rc.16"></script>
+<script src="./core/mobile-bootstrap.v4.js?v=4.2.0-rc.17"></script>
 <meta content="width=device-width,initial-scale=1,viewport-fit=cover" name="viewport"/>
-<title>منصة آلين v4.2 — RC16</title>
+<title>منصة آلين v4.2 — RC17</title>
 <meta content="#f8f3e8" name="theme-color"/>
 <meta content="yes" name="mobile-web-app-capable"/>
 <meta content="yes" name="apple-mobile-web-app-capable"/>
 <meta content="default" name="apple-mobile-web-app-status-bar-style"/>
 <meta content="منصة آلين" name="apple-mobile-web-app-title"/>
-<link href="./manifest-mobile.webmanifest?v=4.2.0-rc.16" rel="manifest"/>
+<link href="./manifest-mobile.webmanifest?v=4.2.0-rc.17" rel="manifest"/>
 <link href="assets/icons/icon-192.png" rel="icon" sizes="192x192" type="image/png"/>
 <link href="assets/icons/icon-192.png" rel="apple-touch-icon"/>
-<link href="./dist/css/mobile-entry.v4.css?v=4.2.0-rc.16" rel="stylesheet" fetchpriority="high"/>
+<link href="./styles/alin-splash.css?v=4.2.0-rc.17" rel="stylesheet"/>
+<link href="./styles/alin-mobile-first-paint.css?v=4.2.0-rc.17" rel="stylesheet"/>
+<link rel="preload" href="./dist/css/mobile-store.v4.css?v=4.2.0-rc.17" as="style" fetchpriority="high"/>
+<link id="alinMobileStoreCss" href="./dist/css/mobile-store.v4.css?v=4.2.0-rc.17" rel="stylesheet" media="print"/>
 
 
 
 
 
 
-<link rel="preload" href="./dist/alin-core.v4.js?v=4.2.0-rc.16" as="script" fetchpriority="high">
-<link rel="preload" href="./alin-app-mobile.v4.1.5.js?v=4.2.0-rc.16" as="script" fetchpriority="high">
-<script src="./alin-config.js?v=4.2.0-rc.16"></script>
-<script src="./core/supabase-sdk-loader.js?v=4.2.0-rc.16" defer></script>
-<script src="./core/ui-action-router.js?v=4.2.0-rc.16" defer></script>
-<script src="./dist/alin-core.v4.js?v=4.2.0-rc.16" defer></script>
+<link rel="preload" href="./dist/alin-core.v4.js?v=4.2.0-rc.17" as="script" fetchpriority="high">
+<link rel="preload" href="./alin-app-mobile.v4.1.5.js?v=4.2.0-rc.17" as="script" fetchpriority="high">
+<script src="./alin-config.js?v=4.2.0-rc.17"></script>
+<script src="./core/supabase-sdk-loader.js?v=4.2.0-rc.17" defer></script>
+<script src="./core/ui-action-router.js?v=4.2.0-rc.17" defer></script>
+<script src="./dist/alin-core.v4.js?v=4.2.0-rc.17" defer></script>
 </head>
 <body class="store-mobile">
+<main id="alinMobileEntrySplash" class="alin-splash" role="status" aria-live="polite" aria-label="جار فتح منصة آلين">
+  <div class="alin-splash__decor alin-splash__decor--book" aria-hidden="true">▤</div>
+  <div class="alin-splash__decor alin-splash__decor--pencil" aria-hidden="true">✎</div>
+  <div class="alin-splash__decor alin-splash__decor--gift" aria-hidden="true">◇</div>
+  <section class="alin-splash__content">
+    <img class="alin-splash__mark" src="./assets/images/alin-splash-mark.webp" alt="" aria-hidden="true"/>
+    <div class="alin-splash__latin" aria-hidden="true">ALIN</div>
+    <div class="alin-splash__platform" aria-hidden="true"><span></span>PLATFORM<span></span></div>
+    <h1>منصة آلين</h1><p class="alin-splash__tagline">للملازم والقرطاسية والهدايا</p>
+    <div class="alin-splash__loading" aria-hidden="true"><strong>جار فتح منصة آلين...</strong><div class="alin-splash__progress"><i></i></div></div>
+    <div class="alin-splash__features" aria-hidden="true"><div><b class="alin-splash__feature-icon">▤</b><strong>ملازم</strong><small>المواد الدراسية</small></div><div><b class="alin-splash__feature-icon">✎</b><strong>قرطاسية</strong><small>أدوات مدرسية</small></div><div><b class="alin-splash__feature-icon">◇</b><strong>هدايا</strong><small>لكل مناسبة</small></div></div>
+  </section><div class="alin-splash__wave" aria-hidden="true"></div><span class="alin-splash__sr">جار فتح منصة آلين، يرجى الانتظار.</span>
+</main>
 <section class="login hidden" id="login">
 <div class="login-card">
 <div class="logo">آ</div>
@@ -239,10 +255,11 @@
   
 
 
-<script src="./core/pwa-register.js?v=4.2.0-rc.16" defer></script>
-<script src="./core/boot-recovery.js?v=4.2.0-rc.16" defer></script>
-<script src="./modules/core/navigation.js?v=4.2.0-rc.16" defer></script>
-<script id="alinAppBundleScript" src="./alin-app-mobile.v4.1.5.js?v=4.2.0-rc.16" defer></script>
-<script src="./core/csp-app-bundle-guard.js?v=4.2.0-rc.16"></script>
+<script src="./core/mobile-entry-splash.js?v=4.2.0-rc.17" defer></script>
+<script src="./core/pwa-register.js?v=4.2.0-rc.17" defer></script>
+<script src="./core/boot-recovery.js?v=4.2.0-rc.17" defer></script>
+<script src="./modules/core/navigation.js?v=4.2.0-rc.17" defer></script>
+<script id="alinAppBundleScript" src="./alin-app-mobile.v4.1.5.js?v=4.2.0-rc.17" defer></script>
+<script src="./core/csp-app-bundle-guard.js?v=4.2.0-rc.17"></script>
 </body>
 </html>

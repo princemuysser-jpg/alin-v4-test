@@ -62,30 +62,11 @@
 
 
   function warmMobileEntry(){
+    // RC17: mobile navigation is immediate. The store page itself owns parallel loading.
     if(chosen!=='mobile')return;
-    const version='4.2.0-rc.16';
-    const assets=[
-      ['./dist/css/mobile-entry.v4.css','style'],
-      ['./dist/alin-core.v4.js','script'],
-      ['./alin-app-mobile.v4.1.5.js','script'],
-      ['./core/mobile-bootstrap.v4.js','script'],
-      ['./alin-config.js','script'],
-      ['./core/ui-action-router.js','script']
-    ];
-    for(const [href,as] of assets){
-      try{
-        const link=document.createElement('link');
-        link.rel='preload';link.as=as;link.href=href+'?v='+encodeURIComponent(version);
-        link.fetchPriority='high';document.head.appendChild(link);
-      }catch(_){ }
-    }
     try{
-      const image=document.createElement('link');
-      image.rel='preload';image.as='image';image.href='./assets/images/hero-products-mobile.webp';
-      image.fetchPriority='low';document.head.appendChild(image);
-    }catch(_){ }
-    try{
-      const page=document.createElement('link');page.rel='prefetch';page.as='document';page.href=destination;document.head.appendChild(page);
+      const page=document.createElement('link');
+      page.rel='prefetch';page.as='document';page.href=destination;document.head.appendChild(page);
     }catch(_){ }
   }
 
