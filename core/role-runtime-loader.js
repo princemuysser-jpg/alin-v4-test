@@ -1,9 +1,9 @@
-/* ALIN v4.2.0 RC12 — role runtime lazy loader. Public storefront never downloads staff dashboards until needed. */
+/* ALIN v4.2.0 RC13 — role runtime lazy loader. Public storefront never downloads staff dashboards until needed. */
 (function(){
   'use strict';
   let state='idle';
   let promise=null;
-  const version=window.ALIN_CONFIG?.version||'4.2.0-rc.12';
+  const version=window.ALIN_CONFIG?.version||'4.2.0-rc.13';
   const needsRole=role=>!['','store','student'].includes(String(role||'').toLowerCase());
   function ensure(role){
     if(!needsRole(role))return Promise.resolve(false);
