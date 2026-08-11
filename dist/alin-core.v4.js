@@ -2,7 +2,7 @@
 // === core/config.js ===
 /* ALIN v4.1.0 Courier Rebuilt — ضع بيانات مشروع Supabase الجديد فقط. */
 window.ALIN_CONFIG=window.ALIN_CONFIG||Object.freeze({
-  version:'4.2.0-rc.17',
+  version:'4.2.0-rc.18',
   desktopPage:'./store-desktop.html',
   mobilePage:'./store-mobile.html',
   currency:'د.ع',
@@ -994,6 +994,7 @@ window.Alin.helpers={
   const attrState=new WeakMap();
   let applying=false;
   let observer=null;
+  let activeLanguage=null;
 
   function normalizeLanguage(value){return SUPPORTED.includes(value)?value:'ar'}
   function current(){try{return normalizeLanguage(localStorage.getItem(STORAGE_KEY)||'ar')}catch(_){return'ar'}}
@@ -1114,11 +1115,17 @@ window.Alin.helpers={
 
   function applyDocument(code=current(),options={}){
     const lang=normalizeLanguage(code);
+    const previous=activeLanguage;
     try{localStorage.setItem(STORAGE_KEY,lang)}catch(_){}
     const html=document.documentElement;
     if(html){html.lang=HTML_LANG[lang];html.dir=direction(lang);html.dataset.alinLanguage=lang}
     if(document.body){document.body.dir=direction(lang);document.body.classList.toggle('alin-ltr',lang==='en');document.body.classList.toggle('alin-rtl',lang!=='en')}
-    translateTree(document,lang);
+    // The source UI is Arabic. On the normal Arabic boot there is nothing to translate,
+    // so do not walk the entire mobile DOM or attach a mutation observer just to reproduce
+    // the same Arabic text. A full pass is only needed for EN/KU, or when returning to AR.
+    if(lang!=='ar'||(previous&&previous!=='ar'))translateTree(document,lang);
+    activeLanguage=lang;
+    if(lang==='ar')stopObserver();else startObserver();
     if(options.emit)window.dispatchEvent(new CustomEvent('alin:language-applied',{detail:{language:lang,locale:locale(lang),direction:direction(lang)}}));
     return lang;
   }
@@ -1133,8 +1140,11 @@ window.Alin.helpers={
   function formatMoney(value,code=current()){return `${formatNumber(value,{maximumFractionDigits:0},code)} ${code==='en'?'IQD':'د.ع'}`}
   function formatDate(value,options,code=current()){const date=value instanceof Date?value:new Date(value);return Number.isNaN(date.getTime())?'—':date.toLocaleString(locale(code),options)}
 
+  function stopObserver(){
+    if(observer){observer.disconnect();observer=null}
+  }
   function startObserver(){
-    if(observer||typeof MutationObserver!=='function'||!document.documentElement)return;
+    if(current()==='ar'||observer||typeof MutationObserver!=='function'||!document.documentElement)return;
     observer=new MutationObserver(records=>{
       if(applying)return;
       const lang=current();
@@ -1159,10 +1169,10 @@ window.Alin.helpers={
   window.alinT=translate;
 
   window.addEventListener('alin:language-changed',event=>applyDocument(event.detail?.language||current(),{emit:true}));
-  window.addEventListener('alin:rendered',()=>translateTree(document,current()));
-  window.addEventListener('alin:data-refreshed',()=>translateTree(document,current()));
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{applyDocument(current());startObserver()},{once:true});
-  else{applyDocument(current());startObserver()}
+  window.addEventListener('alin:rendered',()=>{const lang=current();if(lang!=='ar')translateTree(document,lang)});
+  window.addEventListener('alin:data-refreshed',()=>{const lang=current();if(lang!=='ar')translateTree(document,lang)});
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>applyDocument(current()),{once:true});
+  else applyDocument(current())
 })();
 ;
 
@@ -1307,11 +1317,11 @@ window.Alin.helpers={
   async function seedData(){throw new Error('البيانات التجريبية معطلة في النسخة المستقرة')}
 
   Object.assign(window,{
-    ALIN_VERSION:window.ALIN_CONFIG?.version||'4.2.0-rc.17',init,requireConnection,audit,renderAll,seedData,
+    ALIN_VERSION:window.ALIN_CONFIG?.version||'4.2.0-rc.18',init,requireConnection,audit,renderAll,seedData,
     teacherName,libIsOpen,libStatusText,activeLibraries,alinOpenLibraries:activeLibraries,
     alinLibOpen:libIsOpen,deliveryFee,isMissingTableError,usePermit
   });
-  window.AlinRuntime=Object.freeze({version:window.ALIN_CONFIG?.version||'4.2.0-rc.17',init,requireConnection,renderAll,getDb:()=>stateDb,getCurrent:()=>stateCurrent});
+  window.AlinRuntime=Object.freeze({version:window.ALIN_CONFIG?.version||'4.2.0-rc.18',init,requireConnection,renderAll,getDb:()=>stateDb,getCurrent:()=>stateCurrent});
 
   /* PLATFORM STEP 1: coupons are owned by modules/store/coupons.js and modules/admin/coupons.js. */
   /* PLATFORM STEP 2: cart and order creation are owned by modules/store/cart.js and modules/store/order-routing.js. */
@@ -1595,7 +1605,7 @@ window.Alin.helpers={
 (function(){
   'use strict';
 
-  const VERSION=window.ALIN_CONFIG?.version||'4.2.0-rc.17';
+  const VERSION=window.ALIN_CONFIG?.version||'4.2.0-rc.18';
   const TABLES=[
     'settings','accounts','delivery_areas','couriers','courier_areas','categories',
     'booklets','teacher_requests','teacher_request_versions','products','orders',
@@ -2895,7 +2905,7 @@ window.Alin.helpers={
 
   function categoryIconMarkup(section){
     const icon=categoryIcon(section);
-    if(icon)return `<span class="cat-icon cat-image"><img src="${esc(imageUrl(icon))}" alt="" loading="lazy" decoding="async"></span>`;
+    if(icon)return `<span class="cat-icon cat-image"><img src="${esc(imageUrl(icon))}" alt="" loading="lazy"></span>`;
     return `<span class="cat-icon cat-default-icon ${esc(section.iconClass||'cat-custom')}">${defaultCategorySvg(section)}</span>`;
   }
 
@@ -2967,7 +2977,7 @@ window.Alin.helpers={
     const price=effectivePrice(item);
     return `<article class="v99-product-card" data-v99-item="${esc(ctx.stableKey(item.kind,item.id))}">
       <button class="v99-fav" type="button" data-v99-action="favorite" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}" aria-label="المفضلة">${isFavorite(item)?'♥':'♡'}</button>
-      <button class="v99-product-media" type="button" data-v99-action="details" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}" aria-label="عرض تفاصيل ${esc(item.title)}"${item.image?` style='--alin-media-image:url("${esc(imageUrl(item.image))}")'`:''}>${item.image?`<img class="alin-product-image-fit" src="${esc(imageUrl(item.image))}" alt="" loading="lazy" decoding="async" style="width:100%!important;height:100%!important;object-fit:contain!important;object-position:center!important;padding:0!important;margin:0!important;position:relative!important;z-index:2!important;">`:'<span class="v99-placeholder" aria-hidden="true">آ</span>'}</button>
+      <button class="v99-product-media" type="button" data-v99-action="details" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}" aria-label="عرض تفاصيل ${esc(item.title)}"${item.image?` style='--alin-media-image:url("${esc(imageUrl(item.image))}")'`:''}>${item.image?`<img class="alin-product-image-fit" src="${esc(imageUrl(item.image))}" alt="" loading="lazy" style="width:100%!important;height:100%!important;object-fit:contain!important;object-position:center!important;padding:0!important;margin:0!important;position:relative!important;z-index:2!important;">`:'<span class="v99-placeholder" aria-hidden="true">آ</span>'}</button>
       <div class="v99-product-body"><div class="v99-badges">${badges(item).map(label=>`<span class="v99-badge ${label==='كمية محدودة'?'stock':''}">${esc(label)}</span>`).join('')}</div>
         <h3><button class="v99-title-button" type="button" data-v99-action="details" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">${esc(item.title)}</button></h3>
         <p>${esc([item.teacher,item.subject,item.grade].filter(Boolean).join(' • '))}</p>
@@ -3063,7 +3073,7 @@ window.Alin.helpers={
 
   function miniCard(item){
     const current=effectivePrice(item),hasPrevious=activeDeal(item)&&item.price>current;
-    return `<article class="v99-mini-card"><div class="v99-mini-media"${item.image?` style='--alin-media-image:url("${esc(imageUrl(item.image))}")'`:''}>${item.image?`<img class="alin-product-image-fit" src="${esc(imageUrl(item.image))}" alt="" loading="lazy" decoding="async" style="width:100%!important;height:100%!important;object-fit:contain!important;object-position:center!important;padding:0!important;margin:0!important;position:relative!important;z-index:2!important;">`:'<span class="v99-placeholder">آ</span>'}</div><div class="v99-mini-body"><div class="v99-badges">${badges(item).slice(0,2).map(label=>`<span class="v99-badge">${esc(label)}</span>`).join('')}</div><h3>${esc(item.title)}</h3><p>${esc([item.teacher,item.subject,item.grade].filter(Boolean).join(' • '))}</p><div class="v99-card-price"><strong>${fmt(current)} د.ع</strong>${hasPrevious?`<del>${fmt(item.price)} د.ع</del>`:''}</div><button data-v99-action="details" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">عرض</button></div></article>`;
+    return `<article class="v99-mini-card"><div class="v99-mini-media"${item.image?` style='--alin-media-image:url("${esc(imageUrl(item.image))}")'`:''}>${item.image?`<img class="alin-product-image-fit" src="${esc(imageUrl(item.image))}" alt="" style="width:100%!important;height:100%!important;object-fit:contain!important;object-position:center!important;padding:0!important;margin:0!important;position:relative!important;z-index:2!important;">`:'<span class="v99-placeholder">آ</span>'}</div><div class="v99-mini-body"><div class="v99-badges">${badges(item).slice(0,2).map(label=>`<span class="v99-badge">${esc(label)}</span>`).join('')}</div><h3>${esc(item.title)}</h3><p>${esc([item.teacher,item.subject,item.grade].filter(Boolean).join(' • '))}</p><div class="v99-card-price"><strong>${fmt(current)} د.ع</strong>${hasPrevious?`<del>${fmt(item.price)} د.ع</del>`:''}</div><button data-v99-action="details" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">عرض</button></div></article>`;
   }
 
   function rail(rootSelector,title,subtitle,rows){
@@ -3111,7 +3121,7 @@ window.Alin.helpers={
     if(!root)return;
     if(isDesktop()||isMobile()){root.innerHTML='';root.hidden=true;return}
     if(!rows.length){root.innerHTML='';return}
-    root.innerHTML=`<div class="v99-section-head"><div><h2>مدرسون مميزون</h2><small>تعرّف على المدرس وملزماته</small></div></div><div class="v99-rail">${rows.slice(0,10).map(teacher=>`<article class="v99-teacher-card" data-v99-action="teacher" data-id="${esc(teacher.id)}"><span class="v99-avatar">${teacher.avatar_path||teacher.image_path?`<img src="${esc(imageUrl(teacher.avatar_path||teacher.image_path))}" alt="" loading="lazy" decoding="async">`:esc((teacher.name||'آ').slice(0,1))}</span><span><b>${esc(teacher.name)}</b><small>${esc(teacher.specialty||teacher.subject||'مدرس معتمد')}</small></span></article>`).join('')}</div>`;
+    root.innerHTML=`<div class="v99-section-head"><div><h2>مدرسون مميزون</h2><small>تعرّف على المدرس وملزماته</small></div></div><div class="v99-rail">${rows.slice(0,10).map(teacher=>`<article class="v99-teacher-card" data-v99-action="teacher" data-id="${esc(teacher.id)}"><span class="v99-avatar">${teacher.avatar_path||teacher.image_path?`<img src="${esc(imageUrl(teacher.avatar_path||teacher.image_path))}" alt="">`:esc((teacher.name||'آ').slice(0,1))}</span><span><b>${esc(teacher.name)}</b><small>${esc(teacher.specialty||teacher.subject||'مدرس معتمد')}</small></span></article>`).join('')}</div>`;
   }
 
   function renderBundles(){
@@ -4439,57 +4449,61 @@ window.Alin.helpers={
 ;
 
 /* core/role-runtime-loader.js */
-/* ALIN v4.2.0 RC17 — role runtime lazy loader. Public storefront never downloads staff dashboards until needed. */
+/* ALIN v4.2.0 RC18 — role runtime lazy loader. Public storefront never downloads staff dashboards until needed. */
 (function(){
   'use strict';
   let state='idle';
   let promise=null;
-  const version=window.ALIN_CONFIG?.version||'4.2.0-rc.17';
+  const version=window.ALIN_CONFIG?.version||'4.2.0-rc.18';
   const needsRole=role=>!['','store','student'].includes(String(role||'').toLowerCase());
-  function ensureRoleStyle(){
+  function ensureStaffCss(){
     if(!document.body?.classList.contains('store-mobile'))return Promise.resolve(true);
-    const current=document.getElementById('alinMobileRoleCss');
-    if(current&&current.dataset.ready==='1')return Promise.resolve(true);
+    const existing=document.getElementById('alinRoleRuntimeCss');
+    if(existing?.dataset.ready==='1')return Promise.resolve(true);
     return new Promise((resolve,reject)=>{
-      const link=current||document.createElement('link');
-      if(!current){
-        link.id='alinMobileRoleCss';link.rel='stylesheet';
-        link.href=`./dist/css/mobile-entry.v4.css?v=${encodeURIComponent(version)}`;
+      const link=existing||document.createElement('link');
+      const done=()=>{link.dataset.ready='1';resolve(true)};
+      if(link.sheet){done();return}
+      link.addEventListener('load',done,{once:true});
+      link.addEventListener('error',()=>{link.remove();reject(new Error('تعذر تحميل تصميم لوحة الحساب'))},{once:true});
+      if(!existing){
+        link.id='alinRoleRuntimeCss';
+        link.rel='stylesheet';
+        link.href=`./dist/css/mobile-role.v4.css?v=${encodeURIComponent(version)}`;
         document.head.appendChild(link);
       }
-      const done=()=>{link.dataset.ready='1';resolve(true)};
-      if(link.sheet){done();return;}
-      link.addEventListener('load',done,{once:true});
-      link.addEventListener('error',()=>reject(new Error('تعذر تحميل تصميم لوحة الحساب')),{once:true});
+    });
+  }
+  function ensureStaffScript(){
+    const existing=document.getElementById('alinRoleRuntimeScript');
+    if(existing?.dataset.ready==='1')return Promise.resolve(true);
+    return new Promise((resolve,reject)=>{
+      const script=existing||document.createElement('script');
+      const done=()=>{script.dataset.ready='1';resolve(true)};
+      if(script.dataset.ready==='1'){done();return}
+      script.addEventListener('load',done,{once:true});
+      script.addEventListener('error',()=>{script.remove();reject(new Error('تعذر تحميل وظائف لوحة الحساب'))},{once:true});
+      if(!existing){
+        script.id='alinRoleRuntimeScript';
+        script.src=`./dist/alin-role-runtime.v4.js?v=${encodeURIComponent(version)}`;
+        script.async=true;
+        document.head.appendChild(script);
+      }
     });
   }
   function ensure(role){
     if(!needsRole(role))return Promise.resolve(false);
-    if(state==='ready')return ensureRoleStyle().then(()=>true);
+    if(state==='ready')return Promise.resolve(true);
     if(promise)return promise;
     state='loading';
-    promise=Promise.all([ensureRoleStyle(),new Promise((resolve,reject)=>{
-      const existing=document.getElementById('alinRoleRuntimeScript');
-      if(existing){
-        existing.addEventListener('load',()=>{state='ready';resolve(true)},{once:true});
-        existing.addEventListener('error',()=>{state='error';promise=null;reject(new Error('تعذر تحميل لوحة الحساب'))},{once:true});
-        return;
-      }
-      const script=document.createElement('script');
-      script.id='alinRoleRuntimeScript';
-      script.src=`./dist/alin-role-runtime.v4.js?v=${encodeURIComponent(version)}`;
-      script.async=true;
-      script.addEventListener('load',()=>{
-        state='ready';
-        window.dispatchEvent(new CustomEvent('alin:role-runtime-ready',{detail:{role:String(role||''),version}}));
-        resolve(true);
-      },{once:true});
-      script.addEventListener('error',()=>{
-        state='error';promise=null;script.remove();
-        reject(new Error('تعذر تحميل لوحة الحساب. تحقق من الإنترنت وحاول مرة أخرى.'));
-      },{once:true});
-      document.head.appendChild(script);
-    })]).then(()=>true).catch(error=>{state='error';promise=null;throw error});
+    promise=Promise.all([ensureStaffCss(),ensureStaffScript()]).then(()=>{
+      state='ready';
+      window.dispatchEvent(new CustomEvent('alin:role-runtime-ready',{detail:{role:String(role||''),version}}));
+      return true;
+    }).catch(error=>{
+      state='error';promise=null;
+      throw new Error(error?.message||'تعذر تحميل لوحة الحساب. تحقق من الإنترنت وحاول مرة أخرى.');
+    });
     return promise;
   }
   window.AlinRoleRuntime=Object.freeze({version,ensure,ready:()=>state==='ready',state:()=>state});
@@ -4517,7 +4531,7 @@ window.Alin.helpers={
   addEventListener('online',()=>document.documentElement.classList.remove('alin-offline'));
   addEventListener('offline',()=>document.documentElement.classList.add('alin-offline'));
   if(!navigator.onLine)document.documentElement.classList.add('alin-offline');
-  window.AlinRuntime=Object.freeze({...window.AlinRuntime,version:window.ALIN_CONFIG?.version||'4.2.0-rc.17',errors:()=>[...(window.__ALIN_RUNTIME_ERRORS__||[])]});
+  window.AlinRuntime=Object.freeze({...window.AlinRuntime,version:window.ALIN_CONFIG?.version||'4.2.0-rc.18',errors:()=>[...(window.__ALIN_RUNTIME_ERRORS__||[])]});
 })();
 ;
 

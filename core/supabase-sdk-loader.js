@@ -1,4 +1,4 @@
-/* ALIN v4.2.0 RC17 — non-blocking Supabase SDK loader with automatic retry. */
+/* ALIN v4.2.0 RC18 — non-blocking Supabase SDK loader with automatic retry. */
 (function(){
   'use strict';
   const CDN='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7';

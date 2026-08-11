@@ -60,18 +60,6 @@
     destination='./'+(chosen==='mobile'?'store-mobile':'store-desktop')+(query?'?'+query:'')+String(location.hash||'');
   }
 
-
-  function warmMobileEntry(){
-    // RC17: mobile navigation is immediate. The store page itself owns parallel loading.
-    if(chosen!=='mobile')return;
-    try{
-      const page=document.createElement('link');
-      page.rel='prefetch';page.as='document';page.href=destination;document.head.appendChild(page);
-    }catch(_){ }
-  }
-
-  warmMobileEntry();
-
   const go=()=>{
     if(navigated)return;
     navigated=true;

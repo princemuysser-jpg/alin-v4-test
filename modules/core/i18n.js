@@ -22,6 +22,7 @@
   const attrState=new WeakMap();
   let applying=false;
   let observer=null;
+  let activeLanguage=null;
 
   function normalizeLanguage(value){return SUPPORTED.includes(value)?value:'ar'}
   function current(){try{return normalizeLanguage(localStorage.getItem(STORAGE_KEY)||'ar')}catch(_){return'ar'}}
@@ -142,11 +143,17 @@
 
   function applyDocument(code=current(),options={}){
     const lang=normalizeLanguage(code);
+    const previous=activeLanguage;
     try{localStorage.setItem(STORAGE_KEY,lang)}catch(_){}
     const html=document.documentElement;
     if(html){html.lang=HTML_LANG[lang];html.dir=direction(lang);html.dataset.alinLanguage=lang}
     if(document.body){document.body.dir=direction(lang);document.body.classList.toggle('alin-ltr',lang==='en');document.body.classList.toggle('alin-rtl',lang!=='en')}
-    translateTree(document,lang);
+    // The source UI is Arabic. On the normal Arabic boot there is nothing to translate,
+    // so do not walk the entire mobile DOM or attach a mutation observer just to reproduce
+    // the same Arabic text. A full pass is only needed for EN/KU, or when returning to AR.
+    if(lang!=='ar'||(previous&&previous!=='ar'))translateTree(document,lang);
+    activeLanguage=lang;
+    if(lang==='ar')stopObserver();else startObserver();
     if(options.emit)window.dispatchEvent(new CustomEvent('alin:language-applied',{detail:{language:lang,locale:locale(lang),direction:direction(lang)}}));
     return lang;
   }
@@ -161,8 +168,11 @@
   function formatMoney(value,code=current()){return `${formatNumber(value,{maximumFractionDigits:0},code)} ${code==='en'?'IQD':'د.ع'}`}
   function formatDate(value,options,code=current()){const date=value instanceof Date?value:new Date(value);return Number.isNaN(date.getTime())?'—':date.toLocaleString(locale(code),options)}
 
+  function stopObserver(){
+    if(observer){observer.disconnect();observer=null}
+  }
   function startObserver(){
-    if(observer||typeof MutationObserver!=='function'||!document.documentElement)return;
+    if(current()==='ar'||observer||typeof MutationObserver!=='function'||!document.documentElement)return;
     observer=new MutationObserver(records=>{
       if(applying)return;
       const lang=current();
@@ -187,8 +197,8 @@
   window.alinT=translate;
 
   window.addEventListener('alin:language-changed',event=>applyDocument(event.detail?.language||current(),{emit:true}));
-  window.addEventListener('alin:rendered',()=>translateTree(document,current()));
-  window.addEventListener('alin:data-refreshed',()=>translateTree(document,current()));
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{applyDocument(current());startObserver()},{once:true});
-  else{applyDocument(current());startObserver()}
+  window.addEventListener('alin:rendered',()=>{const lang=current();if(lang!=='ar')translateTree(document,lang)});
+  window.addEventListener('alin:data-refreshed',()=>{const lang=current();if(lang!=='ar')translateTree(document,lang)});
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>applyDocument(current()),{once:true});
+  else applyDocument(current())
 })();

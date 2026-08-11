@@ -1,12 +1,33 @@
 {
+  "release": "4.2.0-rc.18",
   "ok": true,
-  "errors": [],
+  "purpose": "clean mobile/tablet public boot: staff CSS lazy + Arabic i18n no-op boot",
+  "base_release": "4.2.0-rc.15",
+  "rejected_experimental_releases": [
+    "4.2.0-rc.16",
+    "4.2.0-rc.17"
+  ],
+  "mobile_css_before_bytes": 327224,
+  "mobile_public_css_bytes": 163968,
+  "mobile_role_css_lazy_bytes": 163335,
+  "mobile_public_css_reduction_percent": 49.9,
+  "arabic_boot_full_dom_translation_scan": false,
+  "arabic_boot_mutation_observer": false,
+  "staff_css_loaded_on_public_store": false,
+  "staff_css_loaded_after_staff_auth": true,
+  "service_worker_intercepts_navigation": false,
+  "sql_required": false,
+  "database_changed": false,
   "actions": 145,
+  "js_files": 105,
+  "local_missing_paths": 0,
+  "inline_scripts_main_html": 0,
+  "static_event_attributes_main_html": 0,
+  "browser_runtime_smoke": "not_claimed",
   "build_hashes": {
-    "dist/alin-core.v4.js": "baefb9cd67823cc43739438548f0b7872ac69497dd2a2a0d9df543dc951d7653",
-    "alin-app-desktop.v4.1.5.js": "aa46688a7bc20f538d880233c0117c91b95c37ff5097c6fb7260be783c3a365c",
-    "alin-app-mobile.v4.1.5.js": "a96b48082dbc45e55e5466cea08fe5dfc45042d3e794448a413c80cc364c02fa",
-    "dist/alin-role-runtime.v4.js": "eb1312984def333e15abe0cffd98c8e12e859104e3062b9d890705e473301ec9"
-  },
-  "js_files": 107
+    "dist/alin-core.v4.js": "053f1b88d3460c4d5d3775e142d329b3ec022bbd3d8d4599dd2516ca7a21e23f",
+    "alin-app-desktop.v4.1.5.js": "5beb5694fdcf394fccdff794a9bd13589c8c0ed6fa5155d6f6befae92f2713a8",
+    "alin-app-mobile.v4.1.5.js": "870402fe72f0f7f76a91183c87008996889a23c3f1fda6927373b4db5cfbdcc2",
+    "dist/alin-role-runtime.v4.js": "636b9b32815653cc57884b56d80fcc7328a1781c64516da9646da99795173caf"
+  }
 }

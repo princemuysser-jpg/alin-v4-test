@@ -1,4 +1,4 @@
-/* ALIN v4.2.0 RC17 — approved branded splash; fixed 3-second entry, independent of network speed. */
+/* ALIN v4.2.0 RC18 — approved branded splash; fixed 3-second entry, independent of network speed. */
 (()=>{
   'use strict';
   const root=document.getElementById('alinSplash');
@@ -11,9 +11,7 @@
     root.classList.add('is-leaving');
     root.setAttribute('aria-hidden','true');
   };
-  // Phones/tablets route immediately; their 3-second splash runs inside store-mobile while assets load in parallel.
-  if(route.view==='mobile'){route.go();return;}
-  // Desktop keeps the approved 3-second entry.
+  // Keep the approved splash visible for a total of 3 seconds.
   setTimeout(leave,2740);
   setTimeout(route.go,3000);
 })();
