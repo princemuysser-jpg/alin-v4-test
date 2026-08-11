@@ -5,7 +5,7 @@
 (function(){
   'use strict';
 
-  const VERSION=window.ALIN_CONFIG?.version||'4.2.0-rc.18';
+  const VERSION=window.ALIN_CONFIG?.version||'4.2.0-rc.19';
   const TABLES=[
     'settings','accounts','delivery_areas','couriers','courier_areas','categories',
     'booklets','teacher_requests','teacher_request_versions','products','orders',
@@ -71,7 +71,7 @@
   const readJson=(key,fallback,storage=localStorage)=>{try{return JSON.parse(storage.getItem(key)||'null')??fallback}catch(_){return fallback}};
   const writeJson=(key,value,storage=localStorage)=>{try{storage.setItem(key,JSON.stringify(value))}catch(_){}};
   function publicSnapshot(snapshot){
-    return {booklets:snapshot.booklets||[],products:snapshot.products||[],categories:snapshot.categories||[],banners:snapshot.banners||[],settings:snapshot.settings||{storeType:'booklet'},accounts:{all:[],teachers:snapshot.accounts?.teachers||[],libraries:snapshot.accounts?.libraries||[],couriers:[],accountants:[]},notifications:[]};
+    return {booklets:snapshot.booklets||[],products:snapshot.products||[],categories:snapshot.categories||[],banners:snapshot.banners||[],coupons:snapshot.coupons||[],deliveryAreas:snapshot.deliveryAreas||[],settings:snapshot.settings||{storeType:'booklet'},accounts:{all:[],teachers:snapshot.accounts?.teachers||[],libraries:snapshot.accounts?.libraries||[],couriers:[],accountants:[]},notifications:[]};
   }
   function persistSnapshot(snapshot){
     if(window.current?.id){writeJson(SESSION_SNAPSHOT_KEY,{at:nowIso(),snapshot},sessionStorage);return}
@@ -362,13 +362,54 @@
     if(queue.length!==remain.length)scheduleReload(100);
   }
 
+  function normalizePublicBootstrap(raw){
+    if(!raw||typeof raw!=='object')return null;
+    const snapshot={
+      ...ensureDb(),
+      settings:raw.settings&&typeof raw.settings==='object'?raw.settings:{storeType:'booklet'},
+      accounts:{
+        all:[],
+        teachers:Array.isArray(raw.accounts?.teachers)?raw.accounts.teachers:[],
+        libraries:Array.isArray(raw.accounts?.libraries)?raw.accounts.libraries:[],
+        couriers:[],accountants:[]
+      },
+      deliveryAreas:Array.isArray(raw.deliveryAreas)?raw.deliveryAreas:[],
+      categories:Array.isArray(raw.categories)?raw.categories:[],
+      booklets:Array.isArray(raw.booklets)?raw.booklets:[],
+      products:Array.isArray(raw.products)?raw.products:[],
+      banners:Array.isArray(raw.banners)?raw.banners:[],
+      coupons:Array.isArray(raw.coupons)?raw.coupons:[],
+      notifications:[]
+    };
+    return syncAliases(snapshot);
+  }
+  async function publicBootstrapSnapshot(){
+    let raw=window.__ALIN_PUBLIC_BOOTSTRAP__||null;
+    if(!raw&&window.__ALIN_PUBLIC_BOOTSTRAP_PROMISE__){
+      try{raw=await window.__ALIN_PUBLIC_BOOTSTRAP_PROMISE__}catch(_){raw=null}
+    }
+    const snapshot=normalizePublicBootstrap(raw);
+    if(!snapshot)return null;
+    window.db=snapshot;
+    persistSnapshot(snapshot);
+    lastRefreshErrors=[];
+    window.dispatchEvent(new CustomEvent(REFRESH_EVENT,{detail:{version:VERSION,errors:[],at:nowIso(),reason:'public-bootstrap'}}));
+    try{window.renderAll?.()}catch(error){console.warn('[ALIN renderAll]',error)}
+    emit('online',{tables:8,errors:0,role:'public',bootstrap_ms:window.__ALIN_PUBLIC_BOOTSTRAP_MS__||0});
+    return snapshot;
+  }
+
   async function loadCloudSnapshot(options={}){
     if(snapshotPromise&&!options.force)return snapshotPromise;
     clearTimeout(reloadTimer);
     snapshotPromise=(async()=>{
+      const role=activeRole();
+      if(!role){
+        const boot=await publicBootstrapSnapshot();
+        if(boot)return boot;
+      }
       const c=client();
       if(!c){emit('offline',{reason:'no-client'});return loadCachedSnapshot()||ensureDb()}
-      const role=activeRole();
       const selectedTables=Array.isArray(options.tables)&&options.tables.length?[...new Set(options.tables)]:tablesForRole(role);
       if(options.status!==false)emit('loading',{reason:options.reason||'load',tables:selectedTables.length,role:role||'public'});
       if(!role){

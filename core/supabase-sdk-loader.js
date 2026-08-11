@@ -1,4 +1,4 @@
-/* ALIN v4.2.0 RC18 — non-blocking Supabase SDK loader with automatic retry. */
+/* ALIN v4.2.0 RC19 — SDK loads after public bootstrap has already started. */
 (function(){
   'use strict';
   const CDN='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7';
@@ -11,7 +11,7 @@
     try{window.init?.()}catch(_){ }
     window.dispatchEvent(new CustomEvent('alin:supabase-ready'));
     Promise.resolve(window.ALINAuth?.restoreSession?.()).catch(()=>false).finally(()=>{
-      if(navigator.onLine)window.AlinCloud?.refresh?.({force:true,reason:'supabase-ready'}).catch(()=>{});
+      if(navigator.onLine&&window.current?.id)window.AlinCloud?.refresh?.({force:true,reason:'supabase-ready-session'}).catch(()=>{});
     });
   }
 

@@ -1,33 +1,24 @@
 {
-  "release": "4.2.0-rc.18",
-  "ok": true,
-  "purpose": "clean mobile/tablet public boot: staff CSS lazy + Arabic i18n no-op boot",
-  "base_release": "4.2.0-rc.15",
-  "rejected_experimental_releases": [
-    "4.2.0-rc.16",
-    "4.2.0-rc.17"
+  "version": "4.2.0-rc.19",
+  "base": "4.2.0-rc.15",
+  "discarded_bases": [
+    "rc16",
+    "rc17",
+    "rc18"
   ],
-  "mobile_css_before_bytes": 327224,
-  "mobile_public_css_bytes": 163968,
-  "mobile_role_css_lazy_bytes": 163335,
-  "mobile_public_css_reduction_percent": 49.9,
-  "arabic_boot_full_dom_translation_scan": false,
-  "arabic_boot_mutation_observer": false,
-  "staff_css_loaded_on_public_store": false,
-  "staff_css_loaded_after_staff_auth": true,
-  "service_worker_intercepts_navigation": false,
-  "sql_required": false,
-  "database_changed": false,
-  "actions": 145,
-  "js_files": 105,
-  "local_missing_paths": 0,
-  "inline_scripts_main_html": 0,
-  "static_event_attributes_main_html": 0,
-  "browser_runtime_smoke": "not_claimed",
-  "build_hashes": {
-    "dist/alin-core.v4.js": "053f1b88d3460c4d5d3775e142d329b3ec022bbd3d8d4599dd2516ca7a21e23f",
-    "alin-app-desktop.v4.1.5.js": "5beb5694fdcf394fccdff794a9bd13589c8c0ed6fa5155d6f6befae92f2713a8",
-    "alin-app-mobile.v4.1.5.js": "870402fe72f0f7f76a91183c87008996889a23c3f1fda6927373b4db5cfbdcc2",
-    "dist/alin-role-runtime.v4.js": "636b9b32815653cc57884b56d80fcc7328a1781c64516da9646da99795173caf"
-  }
+  "audit": {
+    "ok": true,
+    "errors": [],
+    "actions": 145,
+    "build_hashes": {
+      "dist/alin-core.v4.js": "e37717ab0b63ac95b130b24e8b625f50bbd29761777dd6d39c3d7a6a6b217804",
+      "alin-app-desktop.v4.1.5.js": "a92be3bf9d16f1dd2c072438b2a50e2d14ae4020ad4d6616b4a49708ab084292",
+      "alin-app-mobile.v4.1.5.js": "28a8e2005454ccaf74b5e43277d7ce4b4d367f7120336f1f6409cf6a034054c8",
+      "dist/alin-role-runtime.v4.js": "ffa88951b55df04906748fa2fea8bcf7049518d2c84ee0c2fd62b728a0c6e019"
+    },
+    "js_files": 106
+  },
+  "public_bootstrap_rpc": "alin_public_store_bootstrap",
+  "public_catalog_requests": 1,
+  "sql_required": "already_applied_to_production"
 }

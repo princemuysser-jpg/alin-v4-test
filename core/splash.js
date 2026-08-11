@@ -1,4 +1,4 @@
-/* ALIN v4.2.0 RC18 — approved branded splash; fixed 3-second entry, independent of network speed. */
+/* ALIN v4.2.0 RC15 — approved branded splash; fixed 3-second entry, independent of network speed. */
 (()=>{
   'use strict';
   const root=document.getElementById('alinSplash');

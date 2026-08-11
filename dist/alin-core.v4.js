@@ -2,7 +2,7 @@
 // === core/config.js ===
 /* ALIN v4.1.0 Courier Rebuilt — ضع بيانات مشروع Supabase الجديد فقط. */
 window.ALIN_CONFIG=window.ALIN_CONFIG||Object.freeze({
-  version:'4.2.0-rc.18',
+  version:'4.2.0-rc.19',
   desktopPage:'./store-desktop.html',
   mobilePage:'./store-mobile.html',
   currency:'د.ع',
@@ -994,7 +994,6 @@ window.Alin.helpers={
   const attrState=new WeakMap();
   let applying=false;
   let observer=null;
-  let activeLanguage=null;
 
   function normalizeLanguage(value){return SUPPORTED.includes(value)?value:'ar'}
   function current(){try{return normalizeLanguage(localStorage.getItem(STORAGE_KEY)||'ar')}catch(_){return'ar'}}
@@ -1115,17 +1114,11 @@ window.Alin.helpers={
 
   function applyDocument(code=current(),options={}){
     const lang=normalizeLanguage(code);
-    const previous=activeLanguage;
     try{localStorage.setItem(STORAGE_KEY,lang)}catch(_){}
     const html=document.documentElement;
     if(html){html.lang=HTML_LANG[lang];html.dir=direction(lang);html.dataset.alinLanguage=lang}
     if(document.body){document.body.dir=direction(lang);document.body.classList.toggle('alin-ltr',lang==='en');document.body.classList.toggle('alin-rtl',lang!=='en')}
-    // The source UI is Arabic. On the normal Arabic boot there is nothing to translate,
-    // so do not walk the entire mobile DOM or attach a mutation observer just to reproduce
-    // the same Arabic text. A full pass is only needed for EN/KU, or when returning to AR.
-    if(lang!=='ar'||(previous&&previous!=='ar'))translateTree(document,lang);
-    activeLanguage=lang;
-    if(lang==='ar')stopObserver();else startObserver();
+    translateTree(document,lang);
     if(options.emit)window.dispatchEvent(new CustomEvent('alin:language-applied',{detail:{language:lang,locale:locale(lang),direction:direction(lang)}}));
     return lang;
   }
@@ -1140,11 +1133,8 @@ window.Alin.helpers={
   function formatMoney(value,code=current()){return `${formatNumber(value,{maximumFractionDigits:0},code)} ${code==='en'?'IQD':'د.ع'}`}
   function formatDate(value,options,code=current()){const date=value instanceof Date?value:new Date(value);return Number.isNaN(date.getTime())?'—':date.toLocaleString(locale(code),options)}
 
-  function stopObserver(){
-    if(observer){observer.disconnect();observer=null}
-  }
   function startObserver(){
-    if(current()==='ar'||observer||typeof MutationObserver!=='function'||!document.documentElement)return;
+    if(observer||typeof MutationObserver!=='function'||!document.documentElement)return;
     observer=new MutationObserver(records=>{
       if(applying)return;
       const lang=current();
@@ -1169,10 +1159,10 @@ window.Alin.helpers={
   window.alinT=translate;
 
   window.addEventListener('alin:language-changed',event=>applyDocument(event.detail?.language||current(),{emit:true}));
-  window.addEventListener('alin:rendered',()=>{const lang=current();if(lang!=='ar')translateTree(document,lang)});
-  window.addEventListener('alin:data-refreshed',()=>{const lang=current();if(lang!=='ar')translateTree(document,lang)});
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>applyDocument(current()),{once:true});
-  else applyDocument(current())
+  window.addEventListener('alin:rendered',()=>translateTree(document,current()));
+  window.addEventListener('alin:data-refreshed',()=>translateTree(document,current()));
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{applyDocument(current());startObserver()},{once:true});
+  else{applyDocument(current());startObserver()}
 })();
 ;
 
@@ -1317,11 +1307,11 @@ window.Alin.helpers={
   async function seedData(){throw new Error('البيانات التجريبية معطلة في النسخة المستقرة')}
 
   Object.assign(window,{
-    ALIN_VERSION:window.ALIN_CONFIG?.version||'4.2.0-rc.18',init,requireConnection,audit,renderAll,seedData,
+    ALIN_VERSION:window.ALIN_CONFIG?.version||'4.2.0-rc.19',init,requireConnection,audit,renderAll,seedData,
     teacherName,libIsOpen,libStatusText,activeLibraries,alinOpenLibraries:activeLibraries,
     alinLibOpen:libIsOpen,deliveryFee,isMissingTableError,usePermit
   });
-  window.AlinRuntime=Object.freeze({version:window.ALIN_CONFIG?.version||'4.2.0-rc.18',init,requireConnection,renderAll,getDb:()=>stateDb,getCurrent:()=>stateCurrent});
+  window.AlinRuntime=Object.freeze({version:window.ALIN_CONFIG?.version||'4.2.0-rc.19',init,requireConnection,renderAll,getDb:()=>stateDb,getCurrent:()=>stateCurrent});
 
   /* PLATFORM STEP 1: coupons are owned by modules/store/coupons.js and modules/admin/coupons.js. */
   /* PLATFORM STEP 2: cart and order creation are owned by modules/store/cart.js and modules/store/order-routing.js. */
@@ -1605,7 +1595,7 @@ window.Alin.helpers={
 (function(){
   'use strict';
 
-  const VERSION=window.ALIN_CONFIG?.version||'4.2.0-rc.18';
+  const VERSION=window.ALIN_CONFIG?.version||'4.2.0-rc.19';
   const TABLES=[
     'settings','accounts','delivery_areas','couriers','courier_areas','categories',
     'booklets','teacher_requests','teacher_request_versions','products','orders',
@@ -1671,7 +1661,7 @@ window.Alin.helpers={
   const readJson=(key,fallback,storage=localStorage)=>{try{return JSON.parse(storage.getItem(key)||'null')??fallback}catch(_){return fallback}};
   const writeJson=(key,value,storage=localStorage)=>{try{storage.setItem(key,JSON.stringify(value))}catch(_){}};
   function publicSnapshot(snapshot){
-    return {booklets:snapshot.booklets||[],products:snapshot.products||[],categories:snapshot.categories||[],banners:snapshot.banners||[],settings:snapshot.settings||{storeType:'booklet'},accounts:{all:[],teachers:snapshot.accounts?.teachers||[],libraries:snapshot.accounts?.libraries||[],couriers:[],accountants:[]},notifications:[]};
+    return {booklets:snapshot.booklets||[],products:snapshot.products||[],categories:snapshot.categories||[],banners:snapshot.banners||[],coupons:snapshot.coupons||[],deliveryAreas:snapshot.deliveryAreas||[],settings:snapshot.settings||{storeType:'booklet'},accounts:{all:[],teachers:snapshot.accounts?.teachers||[],libraries:snapshot.accounts?.libraries||[],couriers:[],accountants:[]},notifications:[]};
   }
   function persistSnapshot(snapshot){
     if(window.current?.id){writeJson(SESSION_SNAPSHOT_KEY,{at:nowIso(),snapshot},sessionStorage);return}
@@ -1962,13 +1952,54 @@ window.Alin.helpers={
     if(queue.length!==remain.length)scheduleReload(100);
   }
 
+  function normalizePublicBootstrap(raw){
+    if(!raw||typeof raw!=='object')return null;
+    const snapshot={
+      ...ensureDb(),
+      settings:raw.settings&&typeof raw.settings==='object'?raw.settings:{storeType:'booklet'},
+      accounts:{
+        all:[],
+        teachers:Array.isArray(raw.accounts?.teachers)?raw.accounts.teachers:[],
+        libraries:Array.isArray(raw.accounts?.libraries)?raw.accounts.libraries:[],
+        couriers:[],accountants:[]
+      },
+      deliveryAreas:Array.isArray(raw.deliveryAreas)?raw.deliveryAreas:[],
+      categories:Array.isArray(raw.categories)?raw.categories:[],
+      booklets:Array.isArray(raw.booklets)?raw.booklets:[],
+      products:Array.isArray(raw.products)?raw.products:[],
+      banners:Array.isArray(raw.banners)?raw.banners:[],
+      coupons:Array.isArray(raw.coupons)?raw.coupons:[],
+      notifications:[]
+    };
+    return syncAliases(snapshot);
+  }
+  async function publicBootstrapSnapshot(){
+    let raw=window.__ALIN_PUBLIC_BOOTSTRAP__||null;
+    if(!raw&&window.__ALIN_PUBLIC_BOOTSTRAP_PROMISE__){
+      try{raw=await window.__ALIN_PUBLIC_BOOTSTRAP_PROMISE__}catch(_){raw=null}
+    }
+    const snapshot=normalizePublicBootstrap(raw);
+    if(!snapshot)return null;
+    window.db=snapshot;
+    persistSnapshot(snapshot);
+    lastRefreshErrors=[];
+    window.dispatchEvent(new CustomEvent(REFRESH_EVENT,{detail:{version:VERSION,errors:[],at:nowIso(),reason:'public-bootstrap'}}));
+    try{window.renderAll?.()}catch(error){console.warn('[ALIN renderAll]',error)}
+    emit('online',{tables:8,errors:0,role:'public',bootstrap_ms:window.__ALIN_PUBLIC_BOOTSTRAP_MS__||0});
+    return snapshot;
+  }
+
   async function loadCloudSnapshot(options={}){
     if(snapshotPromise&&!options.force)return snapshotPromise;
     clearTimeout(reloadTimer);
     snapshotPromise=(async()=>{
+      const role=activeRole();
+      if(!role){
+        const boot=await publicBootstrapSnapshot();
+        if(boot)return boot;
+      }
       const c=client();
       if(!c){emit('offline',{reason:'no-client'});return loadCachedSnapshot()||ensureDb()}
-      const role=activeRole();
       const selectedTables=Array.isArray(options.tables)&&options.tables.length?[...new Set(options.tables)]:tablesForRole(role);
       if(options.status!==false)emit('loading',{reason:options.reason||'load',tables:selectedTables.length,role:role||'public'});
       if(!role){
@@ -4449,60 +4480,39 @@ window.Alin.helpers={
 ;
 
 /* core/role-runtime-loader.js */
-/* ALIN v4.2.0 RC18 — role runtime lazy loader. Public storefront never downloads staff dashboards until needed. */
+/* ALIN v4.2.0 RC15 — role runtime lazy loader. Public storefront never downloads staff dashboards until needed. */
 (function(){
   'use strict';
   let state='idle';
   let promise=null;
-  const version=window.ALIN_CONFIG?.version||'4.2.0-rc.18';
+  const version=window.ALIN_CONFIG?.version||'4.2.0-rc.19';
   const needsRole=role=>!['','store','student'].includes(String(role||'').toLowerCase());
-  function ensureStaffCss(){
-    if(!document.body?.classList.contains('store-mobile'))return Promise.resolve(true);
-    const existing=document.getElementById('alinRoleRuntimeCss');
-    if(existing?.dataset.ready==='1')return Promise.resolve(true);
-    return new Promise((resolve,reject)=>{
-      const link=existing||document.createElement('link');
-      const done=()=>{link.dataset.ready='1';resolve(true)};
-      if(link.sheet){done();return}
-      link.addEventListener('load',done,{once:true});
-      link.addEventListener('error',()=>{link.remove();reject(new Error('تعذر تحميل تصميم لوحة الحساب'))},{once:true});
-      if(!existing){
-        link.id='alinRoleRuntimeCss';
-        link.rel='stylesheet';
-        link.href=`./dist/css/mobile-role.v4.css?v=${encodeURIComponent(version)}`;
-        document.head.appendChild(link);
-      }
-    });
-  }
-  function ensureStaffScript(){
-    const existing=document.getElementById('alinRoleRuntimeScript');
-    if(existing?.dataset.ready==='1')return Promise.resolve(true);
-    return new Promise((resolve,reject)=>{
-      const script=existing||document.createElement('script');
-      const done=()=>{script.dataset.ready='1';resolve(true)};
-      if(script.dataset.ready==='1'){done();return}
-      script.addEventListener('load',done,{once:true});
-      script.addEventListener('error',()=>{script.remove();reject(new Error('تعذر تحميل وظائف لوحة الحساب'))},{once:true});
-      if(!existing){
-        script.id='alinRoleRuntimeScript';
-        script.src=`./dist/alin-role-runtime.v4.js?v=${encodeURIComponent(version)}`;
-        script.async=true;
-        document.head.appendChild(script);
-      }
-    });
-  }
   function ensure(role){
     if(!needsRole(role))return Promise.resolve(false);
     if(state==='ready')return Promise.resolve(true);
     if(promise)return promise;
     state='loading';
-    promise=Promise.all([ensureStaffCss(),ensureStaffScript()]).then(()=>{
-      state='ready';
-      window.dispatchEvent(new CustomEvent('alin:role-runtime-ready',{detail:{role:String(role||''),version}}));
-      return true;
-    }).catch(error=>{
-      state='error';promise=null;
-      throw new Error(error?.message||'تعذر تحميل لوحة الحساب. تحقق من الإنترنت وحاول مرة أخرى.');
+    promise=new Promise((resolve,reject)=>{
+      const existing=document.getElementById('alinRoleRuntimeScript');
+      if(existing){
+        existing.addEventListener('load',()=>{state='ready';resolve(true)},{once:true});
+        existing.addEventListener('error',()=>{state='error';promise=null;reject(new Error('تعذر تحميل لوحة الحساب'))},{once:true});
+        return;
+      }
+      const script=document.createElement('script');
+      script.id='alinRoleRuntimeScript';
+      script.src=`./dist/alin-role-runtime.v4.js?v=${encodeURIComponent(version)}`;
+      script.async=true;
+      script.addEventListener('load',()=>{
+        state='ready';
+        window.dispatchEvent(new CustomEvent('alin:role-runtime-ready',{detail:{role:String(role||''),version}}));
+        resolve(true);
+      },{once:true});
+      script.addEventListener('error',()=>{
+        state='error';promise=null;script.remove();
+        reject(new Error('تعذر تحميل لوحة الحساب. تحقق من الإنترنت وحاول مرة أخرى.'));
+      },{once:true});
+      document.head.appendChild(script);
     });
     return promise;
   }
@@ -4531,7 +4541,7 @@ window.Alin.helpers={
   addEventListener('online',()=>document.documentElement.classList.remove('alin-offline'));
   addEventListener('offline',()=>document.documentElement.classList.add('alin-offline'));
   if(!navigator.onLine)document.documentElement.classList.add('alin-offline');
-  window.AlinRuntime=Object.freeze({...window.AlinRuntime,version:window.ALIN_CONFIG?.version||'4.2.0-rc.18',errors:()=>[...(window.__ALIN_RUNTIME_ERRORS__||[])]});
+  window.AlinRuntime=Object.freeze({...window.AlinRuntime,version:window.ALIN_CONFIG?.version||'4.2.0-rc.19',errors:()=>[...(window.__ALIN_RUNTIME_ERRORS__||[])]});
 })();
 ;
 
