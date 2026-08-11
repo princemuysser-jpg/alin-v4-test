@@ -1,4 +1,4 @@
-const VERSION='alin-4.2.0-rc.7';
+const VERSION='alin-4.2.0-rc.11';
 const STATIC_CACHE=`${VERSION}-static`;
 const RUNTIME_CACHE=`${VERSION}-runtime`;
 

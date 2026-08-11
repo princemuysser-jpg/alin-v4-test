@@ -170,7 +170,36 @@
     if(result?.order)mergeOrder(result.order);
     return result;
   }
-  function mapLink(o){const lat=o.delivery_latitude||o.delivery_lat||o.latitude,lng=o.delivery_longitude||o.delivery_lng||o.longitude;return o.delivery_location_url||o.delivery_map_url||o.gps_url||(lat&&lng?`https://maps.google.com/?q=${lat},${lng}`:'')}
+  function gpsCoords(o){
+    const lat=Number(o?.delivery_latitude??o?.delivery_lat??o?.latitude);
+    const lng=Number(o?.delivery_longitude??o?.delivery_lng??o?.longitude);
+    return Number.isFinite(lat)&&Number.isFinite(lng)&&lat>=-90&&lat<=90&&lng>=-180&&lng<=180?{lat,lng}:null;
+  }
+  function hasExactGps(o){return Boolean(gpsCoords(o))}
+  function safeStoredMapUrl(o){
+    const raw=String(o?.delivery_location_url||o?.delivery_map_url||o?.gps_url||'').trim();
+    if(!raw)return '';
+    try{const u=new URL(raw);return u.protocol==='https:'?u.href:''}catch(_){return ''}
+  }
+  function landmarkMapLink(o){
+    const parts=[o?.delivery_landmark,window.alinNormalizeDeliveryArea?.(o?.delivery_area)||o?.delivery_area,'كركوك','العراق']
+      .map(value=>String(value||'').trim()).filter(Boolean);
+    return parts.length>2?`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(parts.join('، '))}`:'';
+  }
+  function mapLink(o){
+    const stored=safeStoredMapUrl(o);if(stored)return stored;
+    const gps=gpsCoords(o);if(gps)return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${gps.lat},${gps.lng}`)}`;
+    return landmarkMapLink(o);
+  }
+  window.alinCourierOpenMap=function(orderId){
+    const order=allOrders().find(row=>String(row.id)===String(orderId)||String(row.order_number)===String(orderId));
+    if(!order){notify('تعذر العثور على الطلب');return false}
+    const url=mapLink(order);
+    if(!url){notify('لا يوجد موقع GPS أو نقطة دالة محفوظة لهذا الطلب');return false}
+    if(!hasExactGps(order))notify('هذا الطلب لا يحتوي GPS دقيقاً؛ سيتم فتح النقطة الدالة على الخريطة.');
+    window.location.assign(url);
+    return true;
+  };
   function phoneLink(p){p=String(p||'').replace(/\D/g,'');return p?`tel:+${p.startsWith('964')?p:'964'+p.replace(/^0/,'')}`:'#'}
   function waLink(p){p=String(p||'').replace(/\D/g,'');return p?`https://wa.me/${p.startsWith('964')?p:'964'+p.replace(/^0/,'')}`:'#'}
   function fmtDate(v){if(!v)return'—';try{return new Date(v).toLocaleString(window.AlinI18n?.locale?.()||'ar-IQ')}catch(_){return String(v)}}
@@ -217,10 +246,10 @@
   function resetRefresh(){lastRefresh=0}
 
   window.AlinCourierCore=Object.freeze({
-    version:window.ALIN_CONFIG?.version||'4.2.0-rc.7',$, $$, arr, escv, moneyv, now, notify, currentAccount, dbx,
+    version:window.ALIN_CONFIG?.version||'4.2.0-rc.8',$, $$, arr, escv, moneyv, now, notify, currentAccount, dbx,
     allCouriers, areasOf, areaRows, statusOf, statusLabel, resolveCourier,
     allOrders, courierAliases, orderCourierIds, myOrders, settlements, done, cancelled, active, activeLoad, today, todayDone, financials,
-    orderState, friendlyOrderError, mapLink, phoneLink, waLink, fmtDate,
+    orderState, friendlyOrderError, mapLink, hasExactGps, phoneLink, waLink, fmtDate,
     matchingCouriers, activeCouriers, alinCouriersOptions, assignOrder, transitionOrder,
     refreshCourierData, resetRefresh
   });

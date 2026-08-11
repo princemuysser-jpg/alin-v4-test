@@ -28,6 +28,40 @@ for base in ['modules','core','store']:
   t=p.read_text(encoding='utf-8',errors='ignore')
   for x in bad:
    if x in t: errors.append(f'legacy schema {x}: {p.relative_to(root)}')
+
+# Validate actions against JS files that are actually loaded by each storefront.
+def local_script_paths(html_path):
+ text=html_path.read_text(encoding='utf-8',errors='ignore')
+ paths=[]
+ for src in re.findall(r'<script\b[^>]*\bsrc=["\']([^"\']+)["\']',text,re.I):
+  if src.startswith(('http://','https://','data:')): continue
+  rel=urlsplit(src).path
+  fp=(html_path.parent/rel).resolve()
+  if fp.is_file(): paths.append(fp)
+ return paths
+
+def unresolved_loaded_actions(html_name):
+ html_path=root/html_name
+ scripts=local_script_paths(html_path)
+ loaded='\n'.join(p.read_text(encoding='utf-8',errors='ignore') for p in scripts)
+ surface=html_path.read_text(encoding='utf-8',errors='ignore')+'\n'+loaded
+ used=set(re.findall(r'data-alin-(?:click|change|input|submit|keydown)=["\']([A-Za-z_$][\w$]*)["\']',surface))
+ missing=[]
+ for a in sorted(used):
+  if a=='print': continue
+  patterns=[
+   rf'window\.{re.escape(a)}\s*=',
+   rf'function\s+{re.escape(a)}\s*\(',
+   rf'(?:^|[{{,]\s*){re.escape(a)}\s*:',
+   rf'Object\.assign\(window,\s*{{[^}}]*\b{re.escape(a)}\b',
+  ]
+  if not any(re.search(pattern,loaded,re.M|re.S) for pattern in patterns): missing.append(a)
+ return missing
+
+for storefront in ['store-desktop.html','store-mobile.html']:
+ runtime_missing=unresolved_loaded_actions(storefront)
+ if runtime_missing: errors.append(f'{storefront}: unresolved loaded actions: '+', '.join(runtime_missing))
+
 files=['dist/alin-core.v4.js','alin-app-desktop.v4.1.5.js','alin-app-mobile.v4.1.5.js']
 before={f:hashlib.sha256((root/f).read_bytes()).hexdigest() for f in files}
 subprocess.run([sys.executable,str(root/'scripts/build-runtime.py')],cwd=root,check=True,stdout=subprocess.DEVNULL)

@@ -56,56 +56,113 @@
     return digits;
   }
 
-  function ensureInfoModal(){
-    var modal = byId('alinOptionsInfoModal');
-    if(modal) return modal;
-
-    modal = document.createElement('div');
-    modal.id = 'alinOptionsInfoModal';
-    modal.className = 'modal hidden';
-    modal.innerHTML =
-      '<div class="modal-card" style="max-width:520px">' +
-        '<button type="button" class="x" id="alinOptionsInfoClose" aria-label="إغلاق">×</button>' +
-        '<div id="alinOptionsInfoContent"></div>' +
-      '</div>';
-
-    document.body.appendChild(modal);
-
-    byId('alinOptionsInfoClose').addEventListener('click', function(){
-      modal.classList.add('hidden');
-    });
-
-    modal.addEventListener('click', function(event){
-      if(event.target === modal) modal.classList.add('hidden');
-    });
-
-    return modal;
+  function normalizeSocialUrl(value, platform){
+    var raw = String(value || '').trim();
+    if(!raw) return '';
+    if(!/^https:\/\//i.test(raw)) raw = 'https://' + raw.replace(/^\/+/, '');
+    try{
+      var parsed = new URL(raw);
+      if(parsed.protocol !== 'https:') return '';
+      var host = parsed.hostname.toLowerCase().replace(/^www\./,'');
+      var allowed = {
+        facebook:['facebook.com','fb.com'],
+        instagram:['instagram.com'],
+        tiktok:['tiktok.com']
+      }[platform] || [];
+      if(!allowed.some(function(domain){ return host === domain || host.endsWith('.' + domain); })) return '';
+      return parsed.href;
+    }catch(_){
+      return '';
+    }
   }
 
-  function showInfo(title, text, whatsapp){
+  function hideInfoModal(){
+    var backdrop = byId('alinOptionsInfoBackdrop');
+    var dialog = byId('alinOptionsInfoDialog');
+    if(backdrop) backdrop.classList.add('hidden');
+    if(dialog) dialog.classList.add('hidden');
+    document.body.classList.remove('alin-options-open');
+    if(document.body) document.body.style.overflow = '';
+  }
+
+  function ensureInfoModal(){
+    var backdrop = byId('alinOptionsInfoBackdrop');
+    var dialog = byId('alinOptionsInfoDialog');
+    if(backdrop && dialog) return {backdrop:backdrop,dialog:dialog};
+
+    backdrop = document.createElement('div');
+    backdrop.id = 'alinOptionsInfoBackdrop';
+    backdrop.className = 'alin-options-backdrop hidden';
+    backdrop.setAttribute('aria-hidden', 'true');
+
+    dialog = document.createElement('section');
+    dialog.id = 'alinOptionsInfoDialog';
+    dialog.className = 'alin-contact-dialog hidden';
+    dialog.setAttribute('dir', 'rtl');
+    dialog.setAttribute('role', 'dialog');
+    dialog.setAttribute('aria-modal', 'true');
+    dialog.setAttribute('aria-labelledby', 'alinOptionsInfoTitle');
+    dialog.innerHTML =
+      '<header>' +
+        '<div>' +
+          '<h2 id="alinOptionsInfoTitle">معلومات</h2>' +
+          '<p id="alinOptionsInfoSubtitle">تفاصيل المنصة</p>' +
+        '</div>' +
+        '<button type="button" data-contact-close aria-label="إغلاق">×</button>' +
+      '</header>' +
+      '<div data-contact-content id="alinOptionsInfoContent"></div>';
+
+    document.body.appendChild(backdrop);
+    document.body.appendChild(dialog);
+
+    var closeButton = dialog.querySelector('[data-contact-close]');
+    if(closeButton){
+      closeButton.addEventListener('click', hideInfoModal);
+    }
+    backdrop.addEventListener('click', hideInfoModal);
+    dialog.addEventListener('click', function(event){
+      event.stopPropagation();
+    });
+    document.addEventListener('keydown', function(event){
+      if(event.key === 'Escape') hideInfoModal();
+    });
+
+    return {backdrop:backdrop,dialog:dialog};
+  }
+
+  function showInfo(title, text, options){
     closeMobileSheets();
 
     var modal = ensureInfoModal();
     var contentBox = byId('alinOptionsInfoContent');
-    var phone = normalizeWhatsapp(whatsapp);
+    var titleBox = byId('alinOptionsInfoTitle');
+    var subtitleBox = byId('alinOptionsInfoSubtitle');
+    var data = options && typeof options === 'object' ? options : {};
+    var phone = normalizeWhatsapp(data.whatsapp || '');
+    var facebook = normalizeSocialUrl(data.facebook, 'facebook');
+    var instagram = normalizeSocialUrl(data.instagram, 'instagram');
+    var tiktok = normalizeSocialUrl(data.tiktok, 'tiktok');
+    var actions = [];
 
-    contentBox.innerHTML =
-      '<section dir="rtl" style="padding:8px 2px;text-align:right">' +
-        '<h2 style="margin:0 0 12px;color:#0b3158">' + escapeHtml(title) + '</h2>' +
-        '<p style="margin:0;line-height:1.9;color:#4d5f73;white-space:pre-wrap">' + escapeHtml(text) + '</p>' +
-        (phone
-          ? '<button type="button" id="alinOptionsWhatsappButton" style="width:100%;margin-top:18px;min-height:48px;border:0;border-radius:14px;background:#168b4d;color:#fff;font-weight:900;font-size:15px">فتح واتساب</button>'
-          : '') +
-      '</section>';
+    if(phone) actions.push('<a class="alin-contact-link whatsapp" href="https://wa.me/' + escapeHtml(phone) + '" target="_blank" rel="noopener noreferrer"><span>واتساب</span><b>فتح المحادثة</b></a>');
+    if(facebook) actions.push('<a class="alin-contact-link facebook" href="' + escapeHtml(facebook) + '" target="_blank" rel="noopener noreferrer"><span>فيسبوك</span><b>فتح الصفحة</b></a>');
+    if(instagram) actions.push('<a class="alin-contact-link instagram" href="' + escapeHtml(instagram) + '" target="_blank" rel="noopener noreferrer"><span>إنستغرام</span><b>فتح الصفحة</b></a>');
+    if(tiktok) actions.push('<a class="alin-contact-link tiktok" href="' + escapeHtml(tiktok) + '" target="_blank" rel="noopener noreferrer"><span>تيك توك</span><b>فتح الصفحة</b></a>');
 
-    modal.classList.remove('hidden');
-
-    var whatsappButton = byId('alinOptionsWhatsappButton');
-    if(whatsappButton){
-      whatsappButton.addEventListener('click', function(){
-        window.open('https://wa.me/' + phone, '_blank', 'noopener,noreferrer');
-      }, {once:true});
+    if(titleBox) titleBox.textContent = String(title || 'معلومات');
+    if(subtitleBox) subtitleBox.textContent = actions.length ? 'اختر وسيلة التواصل المناسبة' : 'نبذة مختصرة';
+    if(contentBox){
+      contentBox.innerHTML =
+        '<section class="alin-info-section alin-info-section--centered">' +
+          '<p>' + escapeHtml(text) + '</p>' +
+          (actions.length ? '<div class="alin-contact-links">' + actions.join('') + '</div>' : '') +
+        '</section>';
     }
+
+    modal.backdrop.classList.remove('hidden');
+    modal.dialog.classList.remove('hidden');
+    document.body.classList.add('alin-options-open');
+    document.body.style.overflow = 'hidden';
   }
 
   function updateOptionStates(){
@@ -220,7 +277,12 @@
         settingValue('platform_phone', '')
       );
 
-      showInfo(title, text, whatsapp);
+      showInfo(title, text, {
+        whatsapp: whatsapp,
+        facebook: settingValue('facebook_url', ''),
+        instagram: settingValue('instagram_url', ''),
+        tiktok: settingValue('tiktok_url', '')
+      });
     };
 
     window.alinAboutPlatform = function(){
@@ -230,7 +292,7 @@
         'منصة آلين تجمع الملازم والقرطاسية والهدايا في مكان واحد، وتربط الطالب بالمدرس والمكتبة وخدمة التوصيل.'
       );
 
-      showInfo(title, text, '');
+      showInfo(title, text, {});
     };
 
     updateOptionStates();

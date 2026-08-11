@@ -3014,7 +3014,7 @@ window.deleteCoupon = deleteCoupon;
     const version=window.ALIN_CONFIG?.version||'2.4.2';
     content.innerHTML=`
       <div class="as144-head"><div><h2>إعدادات المنصة</h2><p>إدارة الإعدادات العامة والأرباح والطلبات والتواصل وأمان المدير.</p></div><span class="as144-version">v${escv(version)}</span></div>
-      <div class="as144-tabs" role="tablist"><button class="active" data-as144-tab="general">عام</button><button data-as144-tab="profits">الأرباح</button><button data-as144-tab="orders">الطلبات</button><button data-as144-tab="contact">التواصل</button><button data-as144-tab="security">أمان المدير</button></div>
+      <div class="as144-tabs" role="tablist"><button class="active" data-as144-tab="general">عام</button><button data-as144-tab="profits">الأرباح</button><button data-as144-tab="orders">الطلبات</button><button data-as144-tab="contact">تواصل معنا</button><button data-as144-tab="about">حول منصة آلين</button><button data-as144-tab="security">أمان المدير</button></div>
       <section class="as144-panel active" data-as144-panel="general"><div class="as144-card"><h3>الإعدادات العامة</h3><div class="as144-grid">
         <div class="as144-field"><label>اسم المنصة</label><input id="as144PlatformName" value="${escv(value('platform_name','منصة آلين'))}"></div>
         <div class="as144-field"><label>الاسم المختصر</label><input id="as144ShortName" value="${escv(value('platform_short_name','آلين'))}"></div>
@@ -3033,15 +3033,20 @@ window.deleteCoupon = deleteCoupon;
         <div class="as144-field"><label>حالة استقبال الطلبات</label><select id="as144PauseScope"><option value="" ${value('order_pause_scope','')===''?'selected':''}>الطلبات مفتوحة</option><option value="all" ${value('order_pause_scope','')==='all'?'selected':''}>إيقاف الكل</option><option value="booklet" ${value('order_pause_scope','')==='booklet'?'selected':''}>إيقاف الملازم</option><option value="stationery" ${value('order_pause_scope','')==='stationery'?'selected':''}>إيقاف القرطاسية</option><option value="gift" ${value('order_pause_scope','')==='gift'?'selected':''}>إيقاف الهدايا</option></select></div>
         <div class="as144-field full"><label>سبب إيقاف الطلبات</label><textarea id="as144PauseReason">${escv(value('order_pause_reason',''))}</textarea></div>
       </div><div class="as144-toggle"><div><b>التوصيل للبيت</b><small style="display:block;color:#667085">السماح للطالب باختيار التوصيل عن طريق المندوب.</small></div><input id="as144DeliveryEnabled" type="checkbox" ${String(value('delivery_enabled','true'))!=='false'?'checked':''}></div><div class="as144-actions"><button class="as144-save" data-save="orders">حفظ إعدادات الطلبات</button></div><div id="as144OrdersMsg" class="as144-status"></div></div></section>
-      <section class="as144-panel" data-as144-panel="contact"><div class="as144-card"><h3>واجهة المتجر والتواصل</h3><div class="as144-grid">
+      <section class="as144-panel" data-as144-panel="contact"><div class="as144-card"><h3>تواصل معنا وروابط المنصة</h3><div class="as144-grid">
         <div class="as144-field"><label>عنوان الواجهة</label><input id="as144HeroTitle" value="${escv(value('hero_title','كل ما تحتاجه للدراسة بمكان واحد'))}"></div>
-        <div class="as144-field"><label>رقم واتساب المنصة</label><input id="as144Whatsapp" value="${escv(value('whatsapp',value('platform_phone','')))}"></div>
-        <div class="as144-field full"><label>نص الواجهة</label><textarea id="as144HeroText">${escv(value('hero_text','اختر ملزمتك أو قرطاسيتك واطلبها بسهولة.'))}</textarea></div>
-        <div class="as144-field"><label>عنوان قسم عن المنصة</label><input id="as144AboutTitle" value="${escv(value('about_title','عن المنصة'))}"></div>
         <div class="as144-field"><label>عنوان التواصل</label><input id="as144ContactTitle" value="${escv(value('contact_title','تواصل معنا'))}"></div>
-        <div class="as144-field full"><label>نص عن المنصة</label><textarea id="as144AboutText">${escv(value('about_text','منصة آلين تجمع الملازم والقرطاسية والهدايا في مكان واحد.'))}</textarea></div>
+        <div class="as144-field full"><label>نص الواجهة</label><textarea id="as144HeroText">${escv(value('hero_text','اختر ملزمتك أو قرطاسيتك واطلبها بسهولة.'))}</textarea></div>
         <div class="as144-field full"><label>نص التواصل</label><textarea id="as144ContactText">${escv(value('contact_text','للاستفسار أو الانضمام، تواصل مع إدارة منصة آلين.'))}</textarea></div>
-      </div><div class="as144-actions"><button class="as144-save" data-save="contact">حفظ الواجهة والتواصل</button></div><div id="as144ContactMsg" class="as144-status"></div></div></section>
+        <div class="as144-field"><label>رقم واتساب المنصة</label><input id="as144Whatsapp" inputmode="tel" placeholder="07xxxxxxxxx" value="${escv(value('whatsapp',value('platform_phone','')))}"></div>
+        <div class="as144-field"><label>رابط صفحة فيسبوك</label><input id="as144Facebook" type="url" inputmode="url" placeholder="https://www.facebook.com/..." value="${escv(value('facebook_url',''))}"></div>
+        <div class="as144-field"><label>رابط صفحة إنستغرام</label><input id="as144Instagram" type="url" inputmode="url" placeholder="https://www.instagram.com/..." value="${escv(value('instagram_url',''))}"></div>
+        <div class="as144-field"><label>رابط صفحة تيك توك</label><input id="as144Tiktok" type="url" inputmode="url" placeholder="https://www.tiktok.com/@..." value="${escv(value('tiktok_url',''))}"></div>
+      </div><div class="as144-note">ألصق رابط الصفحة الكامل. إذا تركت أي رابط فارغاً فلن يظهر زرّه للزبون.</div><div class="as144-actions"><button class="as144-save" data-save="contact">حفظ التواصل والروابط</button></div><div id="as144ContactMsg" class="as144-status"></div></div></section>
+      <section class="as144-panel" data-as144-panel="about"><div class="as144-card"><h3>حول منصة آلين</h3><div class="as144-grid">
+        <div class="as144-field full"><label>عنوان حول المنصة</label><input id="as144AboutTitle" value="${escv(value('about_title','حول منصة آلين'))}"></div>
+        <div class="as144-field full"><label>نبذة عن منصة آلين</label><textarea id="as144AboutText" rows="7">${escv(value('about_text','منصة آلين تجمع الملازم والقرطاسية والهدايا في مكان واحد، وتربط الطالب بالمدرس والمكتبة وخدمة التوصيل.'))}</textarea></div>
+      </div><div class="as144-actions"><button class="as144-save" data-save="about">حفظ معلومات حول المنصة</button></div><div id="as144AboutMsg" class="as144-status"></div></div></section>
       <section class="as144-panel" data-as144-panel="security"><div class="as144-card as144-danger"><h3>أمان حساب المدير</h3><div class="as144-grid">
         <div class="as144-field"><label>اسم دخول المدير</label><input id="adminLoginName" value="${escv(adminUser())}"></div>
         <div class="as144-field"><label>كلمة المرور الجديدة</label><input id="adminNewPass" type="password" autocomplete="new-password"></div>
@@ -3057,7 +3062,8 @@ window.deleteCoupon = deleteCoupon;
     content.querySelector('[data-save="general"]')?.addEventListener('click',()=>saveMany({platform_name:document.getElementById('as144PlatformName').value.trim(),platform_short_name:document.getElementById('as144ShortName').value.trim()||'آلين',low_stock_default:document.getElementById('as144LowStock').value||5,library_debt_alert_limit:document.getElementById('as144DebtLimit').value||0,admin_internal_note:document.getElementById('as144AdminNote').value.trim()},document.getElementById('as144GeneralMsg')).catch(()=>{}));
     content.querySelector('[data-save="profits"]')?.addEventListener('click',()=>saveMany({admin_profit_percent:document.getElementById('as144AdminProfit').value||20,teacher_profit_percent:document.getElementById('as144TeacherProfit').value||50,library_profit_percent:document.getElementById('as144LibraryProfit').value||30,delegate_profit_percent:document.getElementById('as144CourierProfit').value||30},document.getElementById('as144ProfitsMsg')).catch(()=>{}));
     content.querySelector('[data-save="orders"]')?.addEventListener('click',()=>saveMany({delivery_fee:document.getElementById('as144DeliveryFee').value||0,order_pause_scope:document.getElementById('as144PauseScope').value,order_pause_reason:document.getElementById('as144PauseReason').value.trim(),delivery_enabled:document.getElementById('as144DeliveryEnabled').checked?'true':'false'},document.getElementById('as144OrdersMsg')).catch(()=>{}));
-    content.querySelector('[data-save="contact"]')?.addEventListener('click',()=>saveMany({hero_title:document.getElementById('as144HeroTitle').value.trim(),hero_text:document.getElementById('as144HeroText').value.trim(),whatsapp:document.getElementById('as144Whatsapp').value.trim(),platform_phone:document.getElementById('as144Whatsapp').value.trim(),about_title:document.getElementById('as144AboutTitle').value.trim(),about_text:document.getElementById('as144AboutText').value.trim(),contact_title:document.getElementById('as144ContactTitle').value.trim(),contact_text:document.getElementById('as144ContactText').value.trim()},document.getElementById('as144ContactMsg')).catch(()=>{}));
+    content.querySelector('[data-save="contact"]')?.addEventListener('click',()=>saveMany({hero_title:document.getElementById('as144HeroTitle').value.trim(),hero_text:document.getElementById('as144HeroText').value.trim(),whatsapp:document.getElementById('as144Whatsapp').value.trim(),platform_phone:document.getElementById('as144Whatsapp').value.trim(),facebook_url:document.getElementById('as144Facebook').value.trim(),instagram_url:document.getElementById('as144Instagram').value.trim(),tiktok_url:document.getElementById('as144Tiktok').value.trim(),contact_title:document.getElementById('as144ContactTitle').value.trim(),contact_text:document.getElementById('as144ContactText').value.trim()},document.getElementById('as144ContactMsg')).catch(()=>{}));
+    content.querySelector('[data-save="about"]')?.addEventListener('click',()=>saveMany({about_title:document.getElementById('as144AboutTitle').value.trim(),about_text:document.getElementById('as144AboutText').value.trim()},document.getElementById('as144AboutMsg')).catch(()=>{}));
     document.getElementById('as144SecuritySave')?.addEventListener('click',()=>saveAdminSecurity().catch(()=>{}));
   }
 
@@ -3380,7 +3386,36 @@ window.deleteCoupon = deleteCoupon;
     if(result?.order)mergeOrder(result.order);
     return result;
   }
-  function mapLink(o){const lat=o.delivery_latitude||o.delivery_lat||o.latitude,lng=o.delivery_longitude||o.delivery_lng||o.longitude;return o.delivery_location_url||o.delivery_map_url||o.gps_url||(lat&&lng?`https://maps.google.com/?q=${lat},${lng}`:'')}
+  function gpsCoords(o){
+    const lat=Number(o?.delivery_latitude??o?.delivery_lat??o?.latitude);
+    const lng=Number(o?.delivery_longitude??o?.delivery_lng??o?.longitude);
+    return Number.isFinite(lat)&&Number.isFinite(lng)&&lat>=-90&&lat<=90&&lng>=-180&&lng<=180?{lat,lng}:null;
+  }
+  function hasExactGps(o){return Boolean(gpsCoords(o))}
+  function safeStoredMapUrl(o){
+    const raw=String(o?.delivery_location_url||o?.delivery_map_url||o?.gps_url||'').trim();
+    if(!raw)return '';
+    try{const u=new URL(raw);return u.protocol==='https:'?u.href:''}catch(_){return ''}
+  }
+  function landmarkMapLink(o){
+    const parts=[o?.delivery_landmark,window.alinNormalizeDeliveryArea?.(o?.delivery_area)||o?.delivery_area,'كركوك','العراق']
+      .map(value=>String(value||'').trim()).filter(Boolean);
+    return parts.length>2?`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(parts.join('، '))}`:'';
+  }
+  function mapLink(o){
+    const stored=safeStoredMapUrl(o);if(stored)return stored;
+    const gps=gpsCoords(o);if(gps)return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${gps.lat},${gps.lng}`)}`;
+    return landmarkMapLink(o);
+  }
+  window.alinCourierOpenMap=function(orderId){
+    const order=allOrders().find(row=>String(row.id)===String(orderId)||String(row.order_number)===String(orderId));
+    if(!order){notify('تعذر العثور على الطلب');return false}
+    const url=mapLink(order);
+    if(!url){notify('لا يوجد موقع GPS أو نقطة دالة محفوظة لهذا الطلب');return false}
+    if(!hasExactGps(order))notify('هذا الطلب لا يحتوي GPS دقيقاً؛ سيتم فتح النقطة الدالة على الخريطة.');
+    window.location.assign(url);
+    return true;
+  };
   function phoneLink(p){p=String(p||'').replace(/\D/g,'');return p?`tel:+${p.startsWith('964')?p:'964'+p.replace(/^0/,'')}`:'#'}
   function waLink(p){p=String(p||'').replace(/\D/g,'');return p?`https://wa.me/${p.startsWith('964')?p:'964'+p.replace(/^0/,'')}`:'#'}
   function fmtDate(v){if(!v)return'—';try{return new Date(v).toLocaleString(window.AlinI18n?.locale?.()||'ar-IQ')}catch(_){return String(v)}}
@@ -3427,10 +3462,10 @@ window.deleteCoupon = deleteCoupon;
   function resetRefresh(){lastRefresh=0}
 
   window.AlinCourierCore=Object.freeze({
-    version:window.ALIN_CONFIG?.version||'4.2.0-rc.7',$, $$, arr, escv, moneyv, now, notify, currentAccount, dbx,
+    version:window.ALIN_CONFIG?.version||'4.2.0-rc.8',$, $$, arr, escv, moneyv, now, notify, currentAccount, dbx,
     allCouriers, areasOf, areaRows, statusOf, statusLabel, resolveCourier,
     allOrders, courierAliases, orderCourierIds, myOrders, settlements, done, cancelled, active, activeLoad, today, todayDone, financials,
-    orderState, friendlyOrderError, mapLink, phoneLink, waLink, fmtDate,
+    orderState, friendlyOrderError, mapLink, hasExactGps, phoneLink, waLink, fmtDate,
     matchingCouriers, activeCouriers, alinCouriersOptions, assignOrder, transitionOrder,
     refreshCourierData, resetRefresh
   });
@@ -3510,7 +3545,7 @@ window.deleteCoupon = deleteCoupon;
 (function(){
   'use strict';
   const core=window.AlinCourierCore;if(!core)throw new Error('AlinCourierCore is required before courier/assignment.js');
-  const {$,escv,moneyv,notify,allOrders,active,done,matchingCouriers,allCouriers,mapLink,orderState,statusLabel,statusOf,activeLoad,friendlyOrderError,assignOrder,transitionOrder}=core;
+  const {$,escv,moneyv,notify,allOrders,active,done,matchingCouriers,allCouriers,mapLink,hasExactGps,orderState,statusLabel,statusOf,activeLoad,friendlyOrderError,assignOrder,transitionOrder}=core;
   const pending=new Set();
 
   function deliveryOrders(){return allOrders().filter(o=>o.fulfillment_type==='home_delivery'||o.delivery_type==='courier')}
@@ -3523,8 +3558,8 @@ window.deleteCoupon = deleteCoupon;
     const area=window.alinNormalizeDeliveryArea(o.delivery_area)||'غير محددة';
     const matches=matchingCouriers(area);
     const assigned=allCouriers().find(c=>String(c.id)===String(o.courier_id||o.delegate_id||''));
-    const map=mapLink(o),locked=done(o)||['cancelled','rejected'].includes(String(o.status||''));
-    return `<article class="v164-delivery-admin-card"><header><div><small>${escv(o.order_number||o.id)}</small><h3>${escv(o.title||'طلب توصيل')}</h3></div><span>${escv(area)}</span></header>${o.delivery_note?`<div class="v164-issue">ملاحظة المندوب: ${escv(o.delivery_note)}</div>`:''}<div class="v164-order-grid"><div><small>الطالب</small><b>${escv(o.student_name||'—')}</b></div><div><small>الهاتف</small><b>${escv(o.student_phone||'—')}</b></div><div class="wide"><small>أقرب نقطة دالة</small><b>${escv(o.delivery_landmark||'—')}</b></div><div><small>المبلغ</small><b>${moneyv(o.total)} د.ع</b></div><div><small>الحالة</small><b>${escv(orderState(o.status))}</b></div></div>${map?`<a class="v164-map-btn" href="${escv(map)}" target="_blank" rel="noopener">فتح موقع الطالب GPS</a>`:''}<div class="v164-match-list"><h4>المندوبون المطابقون للمنطقة (${matches.length})</h4>${matches.map(c=>`<label><input type="radio" name="v216assign_${escv(o.id)}" value="${escv(c.id)}" ${assigned&&String(assigned.id)===String(c.id)?'checked':''} ${locked?'disabled':''}><span><b>${escv(c.name)}</b><small>${statusLabel(statusOf(c))} • ${activeLoad(c)} طلب حالي • ${escv(c.phone||'')}</small></span></label>`).join('')||'<p class="warning-text">لا يوجد مندوب مرتبط بهذه المنطقة.</p>'}</div><footer><button data-order-action="${escv(o.id)}" ${locked||!matches.length?'disabled':''} data-alin-click="alinV164Assign" data-alin-click-arg0="${escv(o.id)}">${assigned?'حفظ المندوب':'تحويل للمندوب'}</button>${assigned&&!locked?`<button class="secondary" data-order-action="${escv(o.id)}" data-alin-click="alinV410Unassign" data-alin-click-arg0="${escv(o.id)}">إلغاء التعيين</button>`:''}${assigned?`<span>المندوب الحالي: <b>${escv(assigned.name)}</b></span>`:'<span>لم يتم تعيين مندوب</span>'}</footer></article>`;
+    const map=mapLink(o),exactGps=hasExactGps(o),locked=done(o)||['cancelled','rejected'].includes(String(o.status||''));
+    return `<article class="v164-delivery-admin-card"><header><div><small>${escv(o.order_number||o.id)}</small><h3>${escv(o.title||'طلب توصيل')}</h3></div><span>${escv(area)}</span></header>${o.delivery_note?`<div class="v164-issue">ملاحظة المندوب: ${escv(o.delivery_note)}</div>`:''}<div class="v164-order-grid"><div><small>الطالب</small><b>${escv(o.student_name||'—')}</b></div><div><small>الهاتف</small><b>${escv(o.student_phone||'—')}</b></div><div class="wide"><small>أقرب نقطة دالة</small><b>${escv(o.delivery_landmark||'—')}</b></div><div><small>المبلغ</small><b>${moneyv(o.total)} د.ع</b></div><div><small>الحالة</small><b>${escv(orderState(o.status))}</b></div></div>${map?`<button type="button" class="v164-map-btn" data-alin-click="alinCourierOpenMap" data-alin-click-arg0="${escv(o.id)}">${exactGps?'فتح موقع الطالب GPS':'فتح النقطة الدالة على الخريطة'}</button>`:''}<div class="v164-match-list"><h4>المندوبون المطابقون للمنطقة (${matches.length})</h4>${matches.map(c=>`<label><input type="radio" name="v216assign_${escv(o.id)}" value="${escv(c.id)}" ${assigned&&String(assigned.id)===String(c.id)?'checked':''} ${locked?'disabled':''}><span><b>${escv(c.name)}</b><small>${statusLabel(statusOf(c))} • ${activeLoad(c)} طلب حالي • ${escv(c.phone||'')}</small></span></label>`).join('')||'<p class="warning-text">لا يوجد مندوب مرتبط بهذه المنطقة.</p>'}</div><footer><button data-order-action="${escv(o.id)}" ${locked||!matches.length?'disabled':''} data-alin-click="alinV164Assign" data-alin-click-arg0="${escv(o.id)}">${assigned?'حفظ المندوب':'تحويل للمندوب'}</button>${assigned&&!locked?`<button class="secondary" data-order-action="${escv(o.id)}" data-alin-click="alinV410Unassign" data-alin-click-arg0="${escv(o.id)}">إلغاء التعيين</button>`:''}${assigned?`<span>المندوب الحالي: <b>${escv(assigned.name)}</b></span>`:'<span>لم يتم تعيين مندوب</span>'}</footer></article>`;
   }
   async function runAssignment(id,courierId){
     const key=String(id);if(pending.has(key)){notify('العملية قيد التنفيذ');return false}
@@ -3580,7 +3615,7 @@ window.deleteCoupon = deleteCoupon;
 (function(){
   'use strict';
   const core=window.AlinCourierCore;if(!core)throw new Error('AlinCourierCore is required before courier/dashboard.js');
-  const {$,$$,arr,escv,moneyv,now,notify,currentAccount,dbx,areasOf,statusOf,statusLabel,resolveCourier,allOrders,myOrders,done,active,today,financials,orderState,friendlyOrderError,mapLink,phoneLink,waLink,fmtDate,transitionOrder,refreshCourierData,resetRefresh}=core;
+  const {$,$$,arr,escv,moneyv,now,notify,currentAccount,dbx,areasOf,statusOf,statusLabel,resolveCourier,allOrders,myOrders,done,active,today,financials,orderState,friendlyOrderError,mapLink,hasExactGps,phoneLink,waLink,fmtDate,transitionOrder,refreshCourierData,resetRefresh}=core;
   let renderSerial=0;
   const pendingOrders=new Set();
   function ensureTabs(){const nav=$('.courier-v161-tabs');if(!nav)return;const wanted=[['home','الرئيسية'],['current','طلبات التوصيل'],['completed','المكتملة'],['finance','الحسابات'],['receipts','الوصولات'],['notifications','الإشعارات'],['profile','حسابي']];nav.innerHTML=wanted.map(([key,label])=>key==='receipts'?`<button type="button" id="courierReceiptsTab" data-courier-tab="receipts" data-alin415-receipts-role="courier">${label}</button>`:`<button type="button" data-courier-tab="${key}" data-alin-click="renderCourierDashboard" data-alin-click-arg0="${key}">${label}${key==='current'?'<span id="courierCurrentBadge" hidden>0</span>':''}${key==='notifications'?'<span id="courierNotifyBadge" hidden>0</span>':''}</button>`).join('')}
@@ -3588,7 +3623,7 @@ window.deleteCoupon = deleteCoupon;
   function setHeader(c,tab){const name=$('#courierV161Name'),areas=$('#courierV161Areas');if(name)name.textContent=c?.name||currentAccount()?.name||'المندوب';if(areas)areas.textContent=areasOf(c).join('، ')||'غير محددة';$$('.courier-v161-tabs [data-courier-tab]').forEach(b=>b.classList.toggle('active',b.dataset.courierTab===tab));const cb=$('#courierCurrentBadge'),nb=$('#courierNotifyBadge'),activeCount=myOrders(c).filter(active).length,unread=window.AlinNotifications?.unreadCount?.({role:'courier',id:String(c?.id||'')})??notificationsFor(c).filter(n=>!(n.read_at||n.is_read)).length;if(cb){cb.textContent=activeCount;cb.hidden=!activeCount}if(nb){nb.textContent=unread;nb.hidden=!unread}}
   function summary(c,rows){const f=financials(c);return `<section class="v174-metrics"><article><small>طلبات جديدة</small><strong>${rows.filter(o=>['assigned','new','pending_admin'].includes(String(o.status||''))).length}</strong></article><article><small>قيد التوصيل</small><strong>${rows.filter(o=>['accepted','picked_up','out_for_delivery','processing'].includes(String(o.status||''))).length}</strong></article><article><small>تم التسليم اليوم</small><strong>${rows.filter(o=>done(o)&&today(o)).length}</strong></article><article><small>كل المكتملة</small><strong>${rows.filter(done).length}</strong></article><article><small>أرباح التوصيل</small><strong>${moneyv(f.earnings)} د.ع</strong></article><article class="debt"><small>ذمتك للإدارة</small><strong>${moneyv(f.debt)} د.ع</strong></article></section>`}
   function homeHtml(c,rows){const currentRows=rows.filter(active).slice(0,5),notes=notificationsFor(c).slice(0,4);return `${summary(c,rows)}<section class="v174-home-grid"><article class="v174-panel"><header><div><small>حالة العمل</small><h2>${statusLabel(statusOf(c))}</h2></div><span class="v174-status ${statusOf(c)}"></span></header><div class="v174-status-actions"><button data-alin-click="alinV174QuickStatus" data-alin-click-arg0="available">متاح</button><button data-alin-click="alinV174QuickStatus" data-alin-click-arg0="busy">مشغول</button><button data-alin-click="alinV174QuickStatus" data-alin-click-arg0="offline">خارج الخدمة</button></div><p>مناطق العمل: ${escv(areasOf(c).join('، ')||'غير محددة')}</p></article><article class="v174-panel"><header><div><small>طلبات تحتاج متابعة</small><h2>طلباتك الحالية</h2></div><button data-alin-click="renderCourierDashboard" data-alin-click-arg0="current">عرض الكل</button></header><div class="v174-mini-list">${currentRows.map(o=>`<button data-alin-click="renderCourierDashboard" data-alin-click-arg0="current"><b>${escv(o.order_number||o.id)}</b><span>${escv(window.alinNormalizeDeliveryArea(o.delivery_area)||'—')}</span><small>${escv(orderState(String(o.status||'')))}</small></button>`).join('')||'<p class="empty">لا توجد طلبات حالياً.</p>'}</div></article><article class="v174-panel wide"><header><div><small>آخر الإشعارات</small><h2>تنبيهات المندوب</h2></div><button data-alin-click="renderCourierDashboard" data-alin-click-arg0="notifications">عرض الإشعارات</button></header><div class="v174-mini-list">${notes.map(n=>`<div><b>${escv(n.title||'إشعار')}</b><span>${escv(n.message||n.body||'')}</span><small>${escv(fmtDate(n.created_at))}</small></div>`).join('')||'<p class="empty">لا توجد إشعارات جديدة.</p>'}</div></article></section>`}
-  function orderCard(o,actions=true){const st=String(o.status||'assigned'),phone=o.student_phone||'',map=mapLink(o),first=['assigned','new','pending_admin'].includes(st),accepted=st==='accepted',picked=st==='picked_up',moving=st==='out_for_delivery';return `<article class="v174-order" data-courier-order="${escv(o.id)}"><header><div><small>${escv(o.order_number||o.id)}</small><h3>${escv(o.title||'طلب توصيل')}</h3></div><span class="v174-order-state ${escv(st)}">${escv(orderState(st))}</span></header><div class="v174-order-data"><div><small>الطالب</small><b>${escv(o.student_name||'—')}</b></div><div><small>الهاتف</small><b>${escv(phone||'—')}</b></div><div><small>المنطقة</small><b>${escv(window.alinNormalizeDeliveryArea(o.delivery_area)||'—')}</b></div><div><small>المبلغ المطلوب</small><b>${moneyv(o.total)} د.ع</b></div><div><small>ربح التوصيل</small><b>${moneyv(o.delegate_profit||o.courier_profit||window.AlinFinance?.shares?.(o)?.delegate||0)} د.ع</b></div><div class="wide"><small>أقرب نقطة دالة</small><b>${escv(o.delivery_landmark||'—')}</b></div></div><div class="v174-links">${phone?`<a href="${phoneLink(phone)}">اتصال</a><a href="${waLink(phone)}" target="_blank" rel="noopener">واتساب</a>`:''}${map?`<a class="map" href="${escv(map)}" target="_blank" rel="noopener">فتح الموقع GPS</a>`:''}</div>${actions?`<div class="v174-actions">${first?`<button data-alin-click="alinV164CourierStep" data-alin-click-arg0="${escv(o.id)}" data-alin-click-arg1="accepted">قبول الطلب</button><button class="reject" data-alin-click="alinV174Reject" data-alin-click-arg0="${escv(o.id)}">رفض الطلب</button>`:''}${accepted?`<button data-alin-click="alinV164CourierStep" data-alin-click-arg0="${escv(o.id)}" data-alin-click-arg1="picked_up">استلمت الطلب</button>`:''}${picked?`<button data-alin-click="alinV164CourierStep" data-alin-click-arg0="${escv(o.id)}" data-alin-click-arg1="out_for_delivery">بدء التوصيل</button>`:''}${moving?`<button class="success" data-alin-click="alinV164CourierComplete" data-alin-click-arg0="${escv(o.id)}">تم التسليم واستلام المبلغ</button>`:''}<button class="secondary" data-alin-click="alinV164ReportIssue" data-alin-click-arg0="${escv(o.id)}">إرسال ملاحظة للإدارة</button></div>`:`<footer>تم التسليم: ${escv(fmtDate(o.delivered_at||o.completed_at||o.updated_at))}</footer>`}</article>`}
+  function orderCard(o,actions=true){const st=String(o.status||'assigned'),phone=o.student_phone||'',map=mapLink(o),exactGps=hasExactGps(o),first=['assigned','new','pending_admin'].includes(st),accepted=st==='accepted',picked=st==='picked_up',moving=st==='out_for_delivery';return `<article class="v174-order" data-courier-order="${escv(o.id)}"><header><div><small>${escv(o.order_number||o.id)}</small><h3>${escv(o.title||'طلب توصيل')}</h3></div><span class="v174-order-state ${escv(st)}">${escv(orderState(st))}</span></header><div class="v174-order-data"><div><small>الطالب</small><b>${escv(o.student_name||'—')}</b></div><div><small>الهاتف</small><b>${escv(phone||'—')}</b></div><div><small>المنطقة</small><b>${escv(window.alinNormalizeDeliveryArea(o.delivery_area)||'—')}</b></div><div><small>المبلغ المطلوب</small><b>${moneyv(o.total)} د.ع</b></div><div><small>ربح التوصيل</small><b>${moneyv(o.delegate_profit||o.courier_profit||window.AlinFinance?.shares?.(o)?.delegate||0)} د.ع</b></div><div class="wide"><small>أقرب نقطة دالة</small><b>${escv(o.delivery_landmark||'—')}</b></div></div><div class="v174-links">${phone?`<a href="${phoneLink(phone)}">اتصال</a><a href="${waLink(phone)}" target="_blank" rel="noopener">واتساب</a>`:''}${map?`<button type="button" class="map" data-alin-click="alinCourierOpenMap" data-alin-click-arg0="${escv(o.id)}">${exactGps?'فتح الموقع GPS':'فتح النقطة على الخريطة'}</button>`:''}</div>${actions?`<div class="v174-actions">${first?`<button data-alin-click="alinV164CourierStep" data-alin-click-arg0="${escv(o.id)}" data-alin-click-arg1="accepted">قبول الطلب</button><button class="reject" data-alin-click="alinV174Reject" data-alin-click-arg0="${escv(o.id)}">رفض الطلب</button>`:''}${accepted?`<button data-alin-click="alinV164CourierStep" data-alin-click-arg0="${escv(o.id)}" data-alin-click-arg1="picked_up">استلمت الطلب</button>`:''}${picked?`<button data-alin-click="alinV164CourierStep" data-alin-click-arg0="${escv(o.id)}" data-alin-click-arg1="out_for_delivery">بدء التوصيل</button>`:''}${moving?`<button class="success" data-alin-click="alinV164CourierComplete" data-alin-click-arg0="${escv(o.id)}">تم التسليم واستلام المبلغ</button>`:''}<button class="secondary" data-alin-click="alinV164ReportIssue" data-alin-click-arg0="${escv(o.id)}">إرسال ملاحظة للإدارة</button></div>`:`<footer>تم التسليم: ${escv(fmtDate(o.delivered_at||o.completed_at||o.updated_at))}</footer>`}</article>`}
   function ordersHtml(c,rows,completed=false){const list=rows.filter(completed?done:active);return `${summary(c,rows)}<section class="v174-head"><div><small>${completed?'سجل الإنجاز':'طلبات التوصيل'}</small><h2>${completed?'الطلبات المكتملة':'طلباتك الحالية'}</h2></div><span>${list.length}</span></section><div class="v174-orders">${list.map(o=>orderCard(o,!completed)).join('')||`<div class="empty">${completed?'لا توجد طلبات مكتملة بعد.':'لا توجد طلبات مسندة إليك حالياً.'}</div>`}</div>`}
   function financeHtml(c,rows){const f=financials(c),doneRows=rows.filter(done);return `${summary(c,rows)}<section class="v164-finance-grid"><article><small>المبالغ المستلمة</small><strong>${moneyv(f.collected)} د.ع</strong></article><article><small>أرباح التوصيل</small><strong>${moneyv(f.earnings)} د.ع</strong></article><article><small>المسدّد للإدارة</small><strong>${moneyv(f.paid)} د.ع</strong></article><article class="debt"><small>المبلغ بذمتك</small><strong>${moneyv(f.debt)} د.ع</strong></article></section><section class="v164-table-card"><h2>كشف الطلبات المالية</h2><div class="v164-finance-list">${doneRows.map(o=>`<div><span>${escv(o.order_number||o.id)}</span><span>${moneyv(o.total)} د.ع</span><span>ربح التوصيل ${moneyv(o.delegate_profit||o.courier_profit||window.AlinFinance?.shares?.(o)?.delegate||0)} د.ع</span><span>${escv(fmtDate(o.delivered_at||o.updated_at))}</span></div>`).join('')||'<p class="empty">لا توجد حركات مالية بعد.</p>'}</div></section>`}
   function notificationsHtml(c,rows){const notes=notificationsFor(c);return `${summary(c,rows)}<section class="v164-section-head"><div><h2>إشعارات المندوب</h2><p>الطلبات الجديدة ورسائل الإدارة والتسويات.</p></div><button data-alin-click="alinV164CourierReadAll">تحديد الكل كمقروء</button></section><div class="v164-notifications">${notes.map(n=>{const read=window.AlinNotifications?.isRead?.(n,{role:'courier',id:String(c?.id||'')})??Boolean(n.read_at||n.is_read);return `<article class="${read?'read':''}"><div><h3>${escv(n.title||'إشعار')}</h3><p>${escv(n.message||n.body||'')}</p><small>${escv(fmtDate(n.created_at))}</small></div>${read?'':`<button data-alin-click="alinV164CourierRead" data-alin-click-arg0="${escv(n.id)}">مقروء</button>`}</article>`}).join('')||'<div class="empty">لا توجد إشعارات.</div>'}</div>`}
@@ -3625,7 +3660,7 @@ window.deleteCoupon = deleteCoupon;
 
 
   window.renderCourierDashboard=renderCourierDashboard;
-  window.AlinCourierDashboard=Object.freeze({version:window.ALIN_CONFIG?.version||'4.2.0-rc.7',resolveCourier,myOrders,refreshCourierData,render:renderCourierDashboard});
+  window.AlinCourierDashboard=Object.freeze({version:window.ALIN_CONFIG?.version||'4.2.0-rc.8',resolveCourier,myOrders,refreshCourierData,render:renderCourierDashboard});
 
   window.addEventListener('alin:page-open',event=>{if(event.detail?.page==='courier')renderCourierDashboard('home',{force:true})});
   window.addEventListener('alin:data-refreshed',()=>{if($('#courierPage:not(.hidden)'))renderCourierDashboard($('.courier-v161-tabs .active')?.dataset.courierTab||'home',{refresh:false})});
@@ -3633,6 +3668,106 @@ window.deleteCoupon = deleteCoupon;
   window.addEventListener('alin:auth-restored',event=>{if(event.detail?.account?.role==='courier')setTimeout(()=>renderCourierDashboard('home',{force:true}),0)});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ensureTabs,{once:true});else ensureTabs();
 })();
+
+;
+;
+
+/* modules/store/delivery.js */
+// === store/delivery.js ===
+/* ===== store/js/delivery-gps-v162.js ===== */
+/* ALIN v2.1.8: delivery area dropdown + landmark + GPS, without free-text address. */
+(function(){
+  'use strict';
+  const $=(s,r=document)=>r.querySelector(s);
+  const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+  const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const areas=()=>{const cloud=window.db?.deliveryAreas||window.db?.delivery_areas||[];const source=cloud.length?cloud.map(row=>row?.name):(Array.isArray(window.ALIN_KIRKUK_AREAS)?window.ALIN_KIRKUK_AREAS:[]);return [...new Set(source.map(name=>String(name||'').trim()).filter(Boolean))]};
+  const mapUrl=(lat,lng)=>lat&&lng?`https://www.google.com/maps?q=${encodeURIComponent(lat)},${encodeURIComponent(lng)}`:'';
+
+  function areaOptions(selected=''){
+    return `<option value="">اختر منطقة التوصيل في كركوك</option>`+areas().map(a=>`<option value="${esc(a)}" ${String(a)===String(selected)?'selected':''}>${esc(a)}</option>`).join('');
+  }
+  function gpsMarkup(){
+    return `<section class="v162-gps-box" id="v162GpsBox">
+      <div class="v162-gps-head"><div><b>نقطة موقع التوصيل GPS</b><small>تساعد الإدارة والمندوب على الوصول لنقطة التسليم بدقة.</small></div><span id="v162GpsStatus" class="v162-gps-status">غير محدد</span></div>
+      <div class="v162-gps-actions">
+        <button type="button" class="v162-gps-primary" data-alin-click="alinV162UseCurrentLocation"><span aria-hidden="true">⌖</span> استخدام موقعي الحالي</button>
+        <button type="button" id="v162OpenMapBtn" class="secondary" data-alin-click="alinV162OpenSelectedMap" disabled>فتح الموقع على الخريطة</button>
+        <button type="button" id="v162ClearGpsBtn" class="secondary" data-alin-click="alinV162ClearGps" hidden>مسح الموقع</button>
+      </div>
+      <div id="v162GpsDetails" class="v162-gps-details" hidden></div>
+      <input type="hidden" id="deliveryLatitude"><input type="hidden" id="deliveryLongitude"><input type="hidden" id="deliveryLocationUrl"><input type="hidden" id="deliveryLocationAccuracy">
+      <p class="v162-gps-note">حدد موقع التوصيل أو اكتب أقرب نقطة دالة، وبعد تأكيد الطلب تتولى الإدارة تعيين المندوب.</p>
+    </section>`;
+  }
+  function enhanceDeliveryFields(){
+    const root=$('#checkoutBox'); if(!root)return;
+    const fields=$('#deliveryFields',root); if(!fields)return;
+    const oldArea=$('#deliveryArea',root);
+    if(oldArea && oldArea.tagName!=='SELECT'){
+      const select=document.createElement('select');select.id='deliveryArea';select.required=true;select.innerHTML=areaOptions(oldArea.value);
+      oldArea.replaceWith(select);
+    } else if(oldArea && oldArea.tagName==='SELECT' && oldArea.options.length<2){ oldArea.innerHTML=areaOptions(oldArea.value); }
+    const oldAddress=$('#deliveryAddress',root);if(oldAddress)oldAddress.remove();
+    const courier=$('#courierSelect',root); if(courier) courier.closest('label')?.remove(),courier.remove();
+    if(!$('#v162GpsBox',root)){
+      const grid=$('.form-grid',fields);
+      if(grid) grid.insertAdjacentHTML('afterend',gpsMarkup()); else fields.insertAdjacentHTML('beforeend',gpsMarkup());
+    }
+    restoreGpsState();
+  }
+  const stateKey='alin_v162_checkout_gps';
+  function saveGpsState(data){try{sessionStorage.setItem(stateKey,JSON.stringify(data))}catch(_){}}
+  function readGpsState(){try{return JSON.parse(sessionStorage.getItem(stateKey)||'null')}catch(_){return null}}
+  function restoreGpsState(){const s=readGpsState();if(s?.lat&&s?.lng)setGps(s.lat,s.lng,s.accuracy,false)}
+  function setGps(lat,lng,accuracy,store=true){
+    const la=$('#deliveryLatitude'),lo=$('#deliveryLongitude'),url=$('#deliveryLocationUrl'),acc=$('#deliveryLocationAccuracy');if(!la||!lo)return;
+    la.value=Number(lat).toFixed(7);lo.value=Number(lng).toFixed(7);url.value=mapUrl(la.value,lo.value);if(acc)acc.value=Math.round(Number(accuracy||0));
+    const status=$('#v162GpsStatus'),details=$('#v162GpsDetails'),open=$('#v162OpenMapBtn'),clear=$('#v162ClearGpsBtn');
+    if(status){status.textContent='تم تحديد الموقع';status.classList.add('is-set')}
+    if(details){details.hidden=false;details.innerHTML=`<span>خط العرض: <b>${esc(la.value)}</b></span><span>خط الطول: <b>${esc(lo.value)}</b></span>${accuracy?`<span>الدقة التقريبية: <b>${Math.round(accuracy)} متر</b></span>`:''}`}
+    if(open)open.disabled=false;if(clear)clear.hidden=false;if(store)saveGpsState({lat:la.value,lng:lo.value,accuracy:Number(accuracy||0)});
+  }
+  window.alinV162UseCurrentLocation=function(){
+    const status=$('#v162GpsStatus');
+    if(!navigator.geolocation){if(status)status.textContent='المتصفح لا يدعم GPS';return}
+    if(status){status.textContent='جاري تحديد الموقع...';status.classList.remove('is-set')}
+    navigator.geolocation.getCurrentPosition(p=>setGps(p.coords.latitude,p.coords.longitude,p.coords.accuracy),e=>{
+      if(status)status.textContent=e.code===1?'لم يتم السماح بالموقع':'تعذر تحديد الموقع';
+      if(typeof toast==='function')toast('تعذر تحديد GPS. اكتب أقرب نقطة دالة أو حاول مرة أخرى.');
+    },{enableHighAccuracy:true,timeout:15000,maximumAge:30000});
+  };
+  window.alinV162OpenSelectedMap=function(){const u=$('#deliveryLocationUrl')?.value;if(u)window.open(u,'_blank','noopener')};
+  window.alinV162ClearGps=function(){['deliveryLatitude','deliveryLongitude','deliveryLocationUrl','deliveryLocationAccuracy'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=''});try{sessionStorage.removeItem(stateKey)}catch(_){};const st=$('#v162GpsStatus'),dt=$('#v162GpsDetails'),op=$('#v162OpenMapBtn'),cl=$('#v162ClearGpsBtn');if(st){st.textContent='غير محدد';st.classList.remove('is-set')}if(dt)dt.hidden=true;if(op)op.disabled=true;if(cl)cl.hidden=true};
+
+  function installCartHook(){
+    document.addEventListener('alin:cart-rendered',()=>setTimeout(enhanceDeliveryFields,0));
+    document.addEventListener('alin:fulfillment-changed',()=>setTimeout(enhanceDeliveryFields,0));
+    document.addEventListener('change',e=>{if(e.target?.name==='fulfillment')setTimeout(enhanceDeliveryFields,0)});
+  }
+
+  function orderMapLink(o){
+    const lat=o.delivery_latitude||o.latitude||o.delivery_lat,lng=o.delivery_longitude||o.longitude||o.delivery_lng;
+    return o.delivery_location_url||o.location_url||mapUrl(lat,lng);
+  }
+  function decorateAdminDelivery(){
+    const rows=(window.db?.orders||[]).filter(o=>o.fulfillment_type==='home_delivery'||o.delivery_area);
+    $$('.v161-delivery-card').forEach((card,i)=>{const o=rows[i];if(!o)return;const url=orderMapLink(o);if(!url||$('.v162-map-link',card))return;const actions=$('.v161-delivery-actions',card)||card;actions.insertAdjacentHTML('afterbegin',`<a class="v162-map-link" href="${esc(url)}" target="_blank" rel="noopener">فتح موقع الطالب GPS</a>`)});
+  }
+  function decorateCourierOrders(){
+    const currentId=window.current?.id;
+    const rows=(window.db?.orders||[]).filter(o=>String(o.courier_id||o.delegate_id||'')===String(currentId));
+    $$('.v161-courier-orders>article').forEach(card=>{
+      const numText=$('small',card)?.textContent||'';const o=rows.find(x=>String(x.order_number||x.id)===numText.trim());if(!o)return;const url=orderMapLink(o);if(!url||$('.v162-map-link',card))return;const target=$('.v161-courier-order-actions',card)||card;target.insertAdjacentHTML('afterbegin',`<a class="v162-map-link" href="${esc(url)}" target="_blank" rel="noopener">فتح موقع الطالب</a>`)});
+  }
+  function installDashboardHooks(){
+    if(typeof window.renderDeliveryOrdersAdmin==='function'){const old=window.renderDeliveryOrdersAdmin;window.renderDeliveryOrdersAdmin=function(){const r=old.apply(this,arguments);setTimeout(decorateAdminDelivery,0);return r}}
+    if(typeof window.renderCourierDashboard==='function'){const old=window.renderCourierDashboard;window.renderCourierDashboard=function(){const r=old.apply(this,arguments);setTimeout(decorateCourierOrders,0);return r}}
+  }
+  function install(){installCartHook();installDashboardHooks();setTimeout(enhanceDeliveryFields,100)}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install);else install();
+})();
+
 
 ;
 ;
@@ -4132,7 +4267,7 @@ window.AlinCourierModules['recordCourierSettlementForOrder']=typeof recordCourie
     root.innerHTML=`
       <header class="ab235-head">
         <div><span class="ab235-eyebrow">إعدادات المظهر</span><h2>الهوية البصرية</h2><p>غيّر هوية المنصة بأمان. القالب لا يغيّر الوضع النهاري أو الليلي.</p></div>
-        <span class="ab235-version">v${esc(window.ALIN_CONFIG?.version||'4.2.0-rc.7')}</span>
+        <span class="ab235-version">v${esc(window.ALIN_CONFIG?.version||'4.2.0-rc.8')}</span>
       </header>
       <div class="ab235-layout">
         <main class="ab235-main">

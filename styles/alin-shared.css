@@ -660,3 +660,145 @@ body.store-desktop .v99-reviews{display:block!important}
   .alin-storefront #storeProducts{margin:12px 0 14px!important}.v99-category-tools{grid-template-columns:1fr;gap:9px;padding:10px;border-radius:15px}.v99-category-search,.v99-category-sort select{height:44px!important}.v99-category-result-count{grid-column:auto;justify-self:stretch;min-height:38px}.v99-category-sort{grid-template-columns:auto 1fr;align-items:center}.v99-category-sort>span{font-size:11px}.v99-modal-card:has(.v99-detail-premium){width:100%!important;height:100dvh!important;max-height:none!important;border-radius:0!important;padding:54px 12px 110px!important}.v99-detail-premium{gap:14px}.v99-detail-premium .v99-detail-media{min-height:260px!important;border-radius:18px!important}.v99-detail-premium .v99-detail-media img{max-height:260px;padding:12px}.v99-detail-premium .v99-detail-copy h2{font-size:24px!important}.v99-detail-price strong{font-size:28px}.v99-detail-facts{grid-template-columns:1fr}.v99-detail-premium .v99-actions{grid-template-columns:1fr}.v99-detail-premium .v99-actions>button:first-child{grid-column:auto}.v99-reviews-premium{padding:14px!important;border-radius:16px}.v99-reviews-head{align-items:flex-start}.v99-reviews-head h3{font-size:19px}.v99-reviews-head button{font-size:11px!important;padding:8px 10px!important}.v99-rating-overview{grid-template-columns:1fr;gap:14px}.v99-rating-score{border-inline-end:0;border-bottom:1px solid #e3e8ef;padding-bottom:12px}.v99-review-list{grid-template-columns:1fr}.v99-rating-stars{font-size:18px}
 }
 .admin-product-price-pair{display:grid;justify-items:end;gap:3px}.admin-product-price-pair strong{color:#0b2d57}.admin-product-price-pair del{font-size:11px;color:#98a2b3;font-weight:700}
+
+/* ALIN RC11 — contact/about modal */
+.alin-info-card{max-width:560px}
+.alin-info-section{padding:8px 2px;text-align:right}
+.alin-info-section h2{margin:0 0 12px;color:#0b3158}
+.alin-info-section p{margin:0;line-height:1.9;color:#4d5f73;white-space:pre-wrap}
+.alin-contact-links{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:18px}
+.alin-contact-link{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:52px;padding:11px 14px;border:1px solid #d8e1eb;border-radius:14px;background:#fff;color:#102d49;text-decoration:none;font-weight:900;box-shadow:0 5px 16px rgba(16,45,73,.06)}
+.alin-contact-link span{font-size:15px}
+.alin-contact-link b{font-size:12px;font-weight:800;opacity:.72}
+.alin-contact-link.whatsapp{border-color:#bfe8cf;background:#f0fbf4;color:#147a42}
+.alin-contact-link.facebook{border-color:#cbdcf8;background:#f4f8ff;color:#1d5db6}
+.alin-contact-link.instagram{border-color:#ecd2e9;background:#fff7fc;color:#9b2f78}
+.alin-contact-link.tiktok{border-color:#d6d9df;background:#f7f8fa;color:#16181d}
+.alin-contact-link:focus-visible{outline:3px solid rgba(22,112,180,.24);outline-offset:2px}
+@media(max-width:520px){.alin-contact-links{grid-template-columns:1fr}}
+html[data-alin-theme="dark"] .alin-info-section h2{color:#f6d98a}
+html[data-alin-theme="dark"] .alin-info-section p{color:#c7d3df}
+html[data-alin-theme="dark"] .alin-contact-link{background:#102a43;border-color:#274760;color:#f6f8fb}
+
+
+
+/* ALIN RC11 — centered contact/about dialog on mobile + tablet */
+#alinOptionsInfoBackdrop.hidden,#alinOptionsInfoDialog.hidden{display:none!important}
+#alinOptionsInfoDialog{direction:rtl;text-align:right;width:min(560px,calc(100vw - 32px));max-height:min(82dvh,calc(100dvh - 40px));overflow:auto;border-radius:26px;z-index:12010}
+#alinOptionsInfoBackdrop{z-index:12000}
+#alinOptionsInfoDialog header{position:sticky;top:0;background:var(--ao-bg);z-index:2}
+#alinOptionsInfoDialog [data-contact-content]{padding:22px 24px 24px}
+#alinOptionsInfoDialog .alin-info-section--centered{display:grid;gap:18px;justify-items:stretch}
+#alinOptionsInfoDialog .alin-info-section--centered p{margin:0;font-size:16px;line-height:2;color:#4d5f73;text-align:right}
+#alinOptionsInfoDialog .alin-contact-links{margin-top:2px}
+#alinOptionsInfoDialog .alin-contact-link{min-height:58px;border-radius:16px;padding:13px 15px}
+#alinOptionsInfoDialog .alin-contact-link span{font-size:16px}
+#alinOptionsInfoDialog .alin-contact-link b{font-size:12px}
+html[data-alin-device="tablet"] #alinOptionsInfoDialog{width:min(640px,calc(100vw - 72px));max-height:min(78dvh,calc(100dvh - 72px))}
+@media(max-width:760px){#alinOptionsInfoDialog{width:min(560px,calc(100vw - 24px));max-height:min(78dvh,calc(100dvh - 84px));border-radius:24px;top:50%;bottom:auto;transform:translate(-50%,-50%)}#alinOptionsInfoDialog header{padding:20px 20px 14px}#alinOptionsInfoDialog h2{font-size:20px}#alinOptionsInfoDialog [data-contact-content]{padding:18px 20px 22px}.alin-info-section{padding:0}.alin-contact-links{grid-template-columns:1fr;gap:10px}}
+
+/* ALIN RC11 — unified centered Contact/About dialog on every device */
+#alinOptionsInfoBackdrop{
+  position:fixed!important;
+  inset:0!important;
+  display:block;
+  background:rgba(3,15,28,.62)!important;
+  backdrop-filter:blur(7px);
+  -webkit-backdrop-filter:blur(7px);
+  z-index:12000!important;
+}
+#alinOptionsInfoDialog{
+  position:fixed!important;
+  top:50%!important;
+  left:50%!important;
+  right:auto!important;
+  bottom:auto!important;
+  transform:translate(-50%,-50%)!important;
+  width:min(620px,calc(100vw - 40px))!important;
+  max-height:min(80dvh,760px)!important;
+  margin:0!important;
+  padding:0!important;
+  overflow:auto!important;
+  border:1px solid rgba(214,170,66,.34)!important;
+  border-radius:26px!important;
+  background:var(--ao-bg)!important;
+  color:var(--ao-ink)!important;
+  box-shadow:0 28px 90px rgba(4,15,31,.34)!important;
+  z-index:12010!important;
+}
+#alinOptionsInfoDialog>header{
+  position:sticky!important;
+  top:0!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:18px!important;
+  padding:20px 24px 16px!important;
+  border-bottom:1px solid var(--ao-border)!important;
+  background:var(--ao-bg)!important;
+  z-index:3!important;
+}
+#alinOptionsInfoDialog>header>div{min-width:0;flex:1}
+#alinOptionsInfoDialog h2{margin:0!important;font-size:24px!important;line-height:1.35!important;color:var(--ao-ink)!important}
+#alinOptionsInfoDialog #alinOptionsInfoSubtitle{margin:5px 0 0!important;color:var(--ao-muted)!important;font-size:13px!important}
+#alinOptionsInfoDialog [data-contact-close]{
+  flex:0 0 42px!important;
+  width:42px!important;
+  height:42px!important;
+  display:grid!important;
+  place-items:center!important;
+  padding:0!important;
+  border:1px solid var(--ao-border)!important;
+  border-radius:13px!important;
+  background:var(--ao-surface)!important;
+  color:var(--ao-ink)!important;
+  font-size:25px!important;
+  line-height:1!important;
+}
+#alinOptionsInfoDialog [data-contact-content]{padding:22px 24px 26px!important}
+#alinOptionsInfoDialog .alin-info-section--centered{display:grid!important;gap:20px!important;padding:0!important}
+#alinOptionsInfoDialog .alin-info-section--centered p{
+  margin:0!important;
+  color:#4d5f73!important;
+  font-size:16px!important;
+  line-height:2!important;
+  text-align:right!important;
+  white-space:pre-wrap!important;
+}
+#alinOptionsInfoDialog .alin-contact-links{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:11px!important;
+  margin:0!important;
+}
+#alinOptionsInfoDialog .alin-contact-link{
+  min-height:60px!important;
+  padding:13px 15px!important;
+  border-radius:16px!important;
+}
+html[data-alin-theme="dark"] #alinOptionsInfoDialog .alin-info-section--centered p{color:var(--ao-muted)!important}
+
+@media (min-width:761px){
+  #alinOptionsInfoDialog{width:min(650px,calc(100vw - 64px))!important}
+  #alinOptionsInfoDialog [data-contact-content]{padding:26px 30px 30px!important}
+}
+
+@media (max-width:760px){
+  #alinOptionsInfoBackdrop{background:rgba(3,15,28,.60)!important}
+  #alinOptionsInfoDialog{
+    width:calc(100vw - 24px)!important;
+    max-height:calc(100dvh - 96px)!important;
+    border-radius:23px!important;
+  }
+  #alinOptionsInfoDialog>header{padding:17px 18px 13px!important}
+  #alinOptionsInfoDialog h2{font-size:21px!important}
+  #alinOptionsInfoDialog [data-contact-close]{width:40px!important;height:40px!important;flex-basis:40px!important}
+  #alinOptionsInfoDialog [data-contact-content]{padding:18px!important}
+  #alinOptionsInfoDialog .alin-info-section--centered p{font-size:15px!important;line-height:1.9!important}
+  #alinOptionsInfoDialog .alin-contact-links{grid-template-columns:1fr!important}
+}
+
+html[data-alin-device="tablet"] #alinOptionsInfoDialog{
+  width:min(660px,calc(100vw - 72px))!important;
+  max-height:calc(100dvh - 110px)!important;
+}

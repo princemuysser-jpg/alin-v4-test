@@ -1,11 +1,19 @@
 {
   "ok": true,
   "errors": [],
-  "actions": 144,
+  "actions": 29,
   "build_hashes": {
-    "dist/alin-core.v4.js": "4a6c1f03c9c3af0b0e50d7051eeff3d324f97cad83f6f09f21caaf217ecda29f",
-    "alin-app-desktop.v4.1.5.js": "23ae40917fc8b36627ea12ab92a4a86ea9f723d46ff6443070fdc5e356cd5ad1",
-    "alin-app-mobile.v4.1.5.js": "2e92b3fa5e1570ebde027251f6ad665ee9a89bae003dd773df451faa9e5517ec"
+    "dist/alin-core.v4.js": "5f6ef1d65a0edbd27d5fce7c432d89b4a84ad800f13f0a2e326f38961612e991",
+    "alin-app-desktop.v4.1.5.js": "6d8ce312eb573e313bc431ab4ca9aeaecb9cb640d4ec0a0a90b41dbacefeadfb",
+    "alin-app-mobile.v4.1.5.js": "b9fef2108cfee37b24f8677fadefed04492ec3f9191e6e35b0cd4ac03d147de8"
   },
-  "js_files": 102
+  "js_files": 102,
+  "release": "4.2.0-rc.11",
+  "contact_about_centered_devices": [
+    "mobile",
+    "tablet",
+    "desktop"
+  ],
+  "inline_scripts_main_html": 0,
+  "static_event_attributes_main_html": 0
 }
