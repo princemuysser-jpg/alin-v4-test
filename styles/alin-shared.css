@@ -661,7 +661,7 @@ body.store-desktop .v99-reviews{display:block!important}
 }
 .admin-product-price-pair{display:grid;justify-items:end;gap:3px}.admin-product-price-pair strong{color:#0b2d57}.admin-product-price-pair del{font-size:11px;color:#98a2b3;font-weight:700}
 
-/* ALIN RC13 — contact/about modal */
+/* ALIN RC14 — contact/about modal */
 .alin-info-card{max-width:560px}
 .alin-info-section{padding:8px 2px;text-align:right}
 .alin-info-section h2{margin:0 0 12px;color:#0b3158}
@@ -682,7 +682,7 @@ html[data-alin-theme="dark"] .alin-contact-link{background:#102a43;border-color:
 
 
 
-/* ALIN RC13 — centered contact/about dialog on mobile + tablet */
+/* ALIN RC14 — centered contact/about dialog on mobile + tablet */
 #alinOptionsInfoBackdrop.hidden,#alinOptionsInfoDialog.hidden{display:none!important}
 #alinOptionsInfoDialog{direction:rtl;text-align:right;width:min(560px,calc(100vw - 32px));max-height:min(82dvh,calc(100dvh - 40px));overflow:auto;border-radius:26px;z-index:12010}
 #alinOptionsInfoBackdrop{z-index:12000}
@@ -697,7 +697,7 @@ html[data-alin-theme="dark"] .alin-contact-link{background:#102a43;border-color:
 html[data-alin-device="tablet"] #alinOptionsInfoDialog{width:min(640px,calc(100vw - 72px));max-height:min(78dvh,calc(100dvh - 72px))}
 @media(max-width:760px){#alinOptionsInfoDialog{width:min(560px,calc(100vw - 24px));max-height:min(78dvh,calc(100dvh - 84px));border-radius:24px;top:50%;bottom:auto;transform:translate(-50%,-50%)}#alinOptionsInfoDialog header{padding:20px 20px 14px}#alinOptionsInfoDialog h2{font-size:20px}#alinOptionsInfoDialog [data-contact-content]{padding:18px 20px 22px}.alin-info-section{padding:0}.alin-contact-links{grid-template-columns:1fr;gap:10px}}
 
-/* ALIN RC13 — unified centered Contact/About dialog on every device */
+/* ALIN RC14 — unified centered Contact/About dialog on every device */
 #alinOptionsInfoBackdrop{
   position:fixed!important;
   inset:0!important;

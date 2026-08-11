@@ -44,7 +44,7 @@
       try{sessionStorage.setItem(STORAGE_KEY,chosen)}catch(_){ }
     }
     cleanQuery(current);
-    current.pathname=current.pathname.replace(/[^/]*$/,'')+(chosen==='mobile'?'store-mobile.html':'store-desktop.html');
+    current.pathname=current.pathname.replace(/[^/]*$/,'')+(chosen==='mobile'?'store-mobile':'store-desktop');
     destination=current.href;
   }catch(_){
     chosen=(window.innerWidth||1024)<800?'mobile':'desktop';
@@ -57,7 +57,7 @@
         return key!=='view'&&key!=='splash';
       }).join('&');
     }catch(_){query=''}
-    destination='./'+(chosen==='mobile'?'store-mobile.html':'store-desktop.html')+(query?'?'+query:'')+String(location.hash||'');
+    destination='./'+(chosen==='mobile'?'store-mobile':'store-desktop')+(query?'?'+query:'')+String(location.hash||'');
   }
 
   const go=()=>{

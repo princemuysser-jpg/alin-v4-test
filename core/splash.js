@@ -1,4 +1,4 @@
-/* ALIN v4.2.0 RC13 — fast entry screen; routing starts immediately on slow networks. */
+/* ALIN v4.2.0 RC14 — fast entry screen; routing starts immediately on slow networks. */
 (()=>{
   'use strict';
   const root=document.getElementById('alinSplash');

@@ -1,14 +1,14 @@
-const VERSION='alin-4.2.0-rc.13';
+const VERSION='alin-4.2.0-rc.14';
 const STATIC_CACHE=`${VERSION}-static`;
 const RUNTIME_CACHE=`${VERSION}-runtime`;
 
-// RC13: atomic app-shell install. A new worker is allowed to activate only
-// after every file required to open the app has been cached successfully.
-const CRITICAL_SHELL=[
-  './',
-  './index.html',
-  './store-desktop.html',
-  './store-mobile.html',
+// RC14 stability rule:
+// Cloudflare Pages owns HTML/navigation delivery and redirects.
+// The Service Worker NEVER calls respondWith() for top-level navigations.
+// This prevents a controlled page from turning a normal Pages navigation into
+// Chromium ERR_FAILED after the first successful visit.
+
+const CORE_ASSETS=[
   './alin-config.js',
   './core/device-router.js',
   './core/runtime-guard.js',
@@ -21,48 +21,35 @@ const CRITICAL_SHELL=[
   './styles/alin-splash.css'
 ];
 
-const OPTIONAL_SHELL=[
-  './manifest-desktop.webmanifest',
-  './manifest-mobile.webmanifest',
-  './assets/icons/icon-192.png',
-  './assets/icons/icon-512.png'
-];
-
 const cacheable=response=>!!response&&(response.ok||response.type==='opaque');
 
-async function fetchAndCache(cache,path){
-  const request=new Request(path,{cache:'reload'});
-  const response=await fetch(request,{cache:'no-cache'});
-  if(!cacheable(response))throw new Error(`${path}: ${response?.status||'network'}`);
-  await cache.put(request,response.clone());
-  return response;
+async function safeFetch(request){
+  try{
+    const response=await fetch(request,{cache:'no-cache'});
+    return cacheable(response)?response:null;
+  }catch(_){
+    return null;
+  }
 }
 
-async function precacheShellAtomic(){
+async function precacheCore(){
   const cache=await caches.open(STATIC_CACHE);
-
-  // Critical files are all-or-nothing. If even one fails, installation rejects,
-  // the currently active worker remains in control, and its cache is preserved.
-  await Promise.all(CRITICAL_SHELL.map(path=>fetchAndCache(cache,path)));
-
-  // Non-critical metadata/icons are best effort and never block activation.
-  const optional=await Promise.allSettled(OPTIONAL_SHELL.map(path=>fetchAndCache(cache,path)));
-  const failed=optional.filter(item=>item.status==='rejected');
-  if(failed.length)console.warn('ALIN PWA: ملفات اختيارية لم تُخزّن',failed.length);
+  await Promise.allSettled(CORE_ASSETS.map(async path=>{
+    const response=await safeFetch(new Request(path,{cache:'reload'}));
+    if(response)await cache.put(path,response.clone());
+  }));
 }
 
 self.addEventListener('install',event=>{
-  event.waitUntil(precacheShellAtomic().then(()=>self.skipWaiting()));
+  event.waitUntil(precacheCore().then(()=>self.skipWaiting()));
 });
 
 self.addEventListener('activate',event=>event.waitUntil((async()=>{
-  // At this point CRITICAL_SHELL is guaranteed to exist for RC13.
   const keys=await caches.keys();
-  await Promise.all(
-    keys
-      .filter(key=>key.startsWith('alin-')&&!key.startsWith(VERSION))
-      .map(key=>caches.delete(key))
-  );
+  await Promise.all(keys.filter(key=>key.startsWith('alin-')&&!key.startsWith(VERSION)).map(key=>caches.delete(key)));
+  if(self.registration.navigationPreload){
+    try{await self.registration.navigationPreload.disable()}catch(_){ }
+  }
   await self.clients.claim();
 })()));
 
@@ -70,100 +57,58 @@ self.addEventListener('message',event=>{
   if(event.data?.type==='SKIP_WAITING')self.skipWaiting();
 });
 
-async function matchAny(request){
-  return (await caches.match(request,{ignoreSearch:true}))||null;
-}
-
-async function updateCache(request,cacheName){
-  try{
-    const response=await fetch(request,{cache:'no-cache'});
-    if(cacheable(response)){
-      const cache=await caches.open(cacheName);
-      await cache.put(request,response.clone());
-    }
-    return cacheable(response)?response:null;
-  }catch(_){
-    return null;
+async function cacheFirst(request,cacheName=RUNTIME_CACHE){
+  const cached=await caches.match(request,{ignoreSearch:true});
+  if(cached)return cached;
+  const network=await safeFetch(request);
+  if(network){
+    try{const cache=await caches.open(cacheName);await cache.put(request,network.clone())}catch(_){ }
+    return network;
   }
+  return new Response('',{status:503,statusText:'Offline'});
 }
 
 async function staleWhileRevalidate(request,event,cacheName=RUNTIME_CACHE){
-  const cached=await matchAny(request);
-  const refresh=updateCache(request,cacheName);
+  const cached=await caches.match(request,{ignoreSearch:true});
+  const refresh=(async()=>{
+    const network=await safeFetch(request);
+    if(network){
+      try{const cache=await caches.open(cacheName);await cache.put(request,network.clone())}catch(_){ }
+    }
+    return network;
+  })();
   if(cached){
-    if(event)event.waitUntil(refresh);
+    event.waitUntil(refresh);
     return cached;
   }
-  const network=await refresh;
-  return network||new Response('',{status:503,statusText:'Offline'});
-}
-
-async function cacheFirst(request,cacheName=RUNTIME_CACHE){
-  const cached=await matchAny(request);
-  if(cached)return cached;
-  const network=await updateCache(request,cacheName);
-  return network||new Response('',{status:503,statusText:'Offline'});
-}
-
-function navigationFallbackPath(url){
-  const path=url.pathname.toLowerCase();
-  if(path.endsWith('/store-mobile.html'))return './store-mobile.html';
-  if(path.endsWith('/store-desktop.html'))return './store-desktop.html';
-  return './index.html';
-}
-
-async function navigationResponse(request,event){
-  // Cache first gives instant startup on weak links. Refresh is background only.
-  const cached=await matchAny(request);
-  if(cached){
-    event.waitUntil(updateCache(request,STATIC_CACHE));
-    return cached;
-  }
-
-  const fallbackPath=navigationFallbackPath(new URL(request.url));
-  const fallbackCached=await caches.match(fallbackPath,{ignoreSearch:true});
-  if(fallbackCached){
-    event.waitUntil(updateCache(request,STATIC_CACHE));
-    return fallbackCached;
-  }
-
-  const network=await updateCache(request,STATIC_CACHE);
-  if(network)return network;
-
-  // RC13 never returns Response.error() for a top-level navigation. This avoids
-  // Chromium's ERR_FAILED screen even during a temporary network outage.
-  const indexCached=await caches.match('./index.html',{ignoreSearch:true});
-  if(indexCached)return indexCached;
-
-  return new Response(
-    '<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>منصة آلين</title><body dir="rtl" style="font-family:Tahoma,Arial;padding:32px;text-align:center"><h2>منصة آلين</h2><p>الاتصال بالإنترنت ضعيف حالياً. أعد المحاولة بعد لحظات.</p></body>',
-    {status:503,headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'}}
-  );
+  return (await refresh)||new Response('',{status:503,statusText:'Offline'});
 }
 
 self.addEventListener('fetch',event=>{
   const request=event.request;
   if(request.method!=='GET')return;
+
+  // IMPORTANT: never intercept page navigations. Let Cloudflare Pages and the
+  // browser handle HTML, redirects, HTTP cache, ETag/304 and connection errors.
+  if(request.mode==='navigate')return;
+
   const url=new URL(request.url);
 
-  // API/auth/data always stay network-authoritative.
+  // API/auth/data remain network-authoritative.
   if(url.hostname.endsWith('.supabase.co'))return;
 
-  if(request.mode==='navigate'){
-    event.respondWith(navigationResponse(request,event));
-    return;
-  }
-
   if(url.origin===self.location.origin){
-    const codeAsset=['script','style','worker','manifest'].includes(request.destination)||/\.(?:html?|css|js|json|webmanifest)$/i.test(url.pathname);
+    const codeAsset=['script','style','worker','manifest'].includes(request.destination)||/\.(?:css|js|json|webmanifest)$/i.test(url.pathname);
     if(codeAsset){
       event.respondWith(staleWhileRevalidate(request,event));
       return;
     }
-    event.respondWith(cacheFirst(request));
+    if(['image','font'].includes(request.destination)||/\.(?:png|jpe?g|webp|gif|svg|ico|woff2?)$/i.test(url.pathname)){
+      event.respondWith(cacheFirst(request));
+    }
     return;
   }
 
-  // Cache the CDN SDK after first successful load.
+  // The optional CDN SDK can be reused after one successful request.
   if(url.hostname==='cdn.jsdelivr.net')event.respondWith(cacheFirst(request));
 });
