@@ -107,6 +107,10 @@
       await c.auth.signOut();throw new Error('نوع الحساب لا يطابق البوابة المختارة');
     }
     window.current={role:accountRole,id:account.id,name:account.name,username:account.username,auth_user_id:data.user.id,area:account.area||'',phone:account.phone||'',landmark:account.landmark||'',admin_level:account.admin_level||'operator'};
+    try{await ensureRoleRuntime(accountRole)}catch(error){
+      window.current=null;try{await c.auth.signOut()}catch(_){ }
+      throw error;
+    }
     if(typeof window.load==='function')await window.load();
     const targetPage=accountRole==='accountant'?'admin':accountRole;
     if(typeof window.openPage==='function')window.openPage(targetPage,{render:false});
@@ -128,6 +132,12 @@
   }
   function accountState(account,user){
     return {role:String(account.role||'').toLowerCase()==='delegate'?'courier':String(account.role||'').toLowerCase(),id:account.id,name:account.name,username:account.username,auth_user_id:user.id,area:account.area||'',phone:account.phone||'',landmark:account.landmark||'',admin_level:account.admin_level||'operator'};
+  }
+  async function ensureRoleRuntime(role){
+    const normalized=String(role||'').toLowerCase();
+    if(!normalized||normalized==='store'||normalized==='student')return false;
+    if(!window.AlinRoleRuntime?.ensure)throw new Error('محمل لوحة الحساب غير متوفر');
+    return window.AlinRoleRuntime.ensure(normalized);
   }
   async function openPublicStore(){
     try{window.AlinCloud?.loadCachedSnapshot?.()}catch(_){}
@@ -154,6 +164,9 @@
       }
       window.current=accountState(account,session.user);
       try{window.AlinCloud?.loadCachedSnapshot?.()}catch(_){}
+      try{await ensureRoleRuntime(window.current.role)}catch(error){
+        console.warn('[ALIN role runtime]',error);window.current=null;return openPublicStore();
+      }
       const target=account.role==='accountant'?'admin':account.role;
       if(typeof window.openPage==='function')window.openPage(target,{render:true});
       finishAuthBoot();

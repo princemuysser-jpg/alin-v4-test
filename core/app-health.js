@@ -16,13 +16,18 @@
   function hide(){if(bar)bar.style.display='none'}
   function check(){
     if(!navigator.onLine){show('لا يوجد اتصال بالإنترنت. يمكنك تصفح المحتوى المحفوظ، لكن الطلبات وتسجيل الدخول تحتاج اتصالاً.');return}
-    if(window.__ALIN_CDN_ERROR__ || typeof window.supabase==='undefined'){
-      show('تعذر تحميل خدمة الاتصال بقاعدة البيانات. حدّث الصفحة أو تحقق من الإنترنت.');return
+    if(window.__ALIN_CDN_ERROR__){
+      show('الاتصال ضعيف حالياً. يمكنك تصفح المحتوى المحفوظ وسنعيد ربط البيانات تلقائياً.');return
+    }
+    if(typeof window.supabase==='undefined'){
+      hide();return
     }
     hide();
   }
   addEventListener('online',()=>setTimeout(check,300));
   addEventListener('offline',check);
-  addEventListener('load',()=>setTimeout(check,1200));
+  addEventListener('load',()=>setTimeout(check,5000));
+  addEventListener('alin:supabase-ready',()=>setTimeout(check,50));
+  addEventListener('alin:supabase-unavailable',()=>setTimeout(check,50));
   window.AlinHealth=Object.freeze({check,show,hide});
 })();

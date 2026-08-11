@@ -2,7 +2,7 @@
 // === core/config.js ===
 /* ALIN v4.1.0 Courier Rebuilt — ضع بيانات مشروع Supabase الجديد فقط. */
 window.ALIN_CONFIG=window.ALIN_CONFIG||Object.freeze({
-  version:'4.2.0-rc.8',
+  version:'4.2.0-rc.12',
   desktopPage:'./store-desktop.html',
   mobilePage:'./store-mobile.html',
   currency:'د.ع',
@@ -1307,11 +1307,11 @@ window.Alin.helpers={
   async function seedData(){throw new Error('البيانات التجريبية معطلة في النسخة المستقرة')}
 
   Object.assign(window,{
-    ALIN_VERSION:window.ALIN_CONFIG?.version||'4.2.0-rc.8',init,requireConnection,audit,renderAll,seedData,
+    ALIN_VERSION:window.ALIN_CONFIG?.version||'4.2.0-rc.12',init,requireConnection,audit,renderAll,seedData,
     teacherName,libIsOpen,libStatusText,activeLibraries,alinOpenLibraries:activeLibraries,
     alinLibOpen:libIsOpen,deliveryFee,isMissingTableError,usePermit
   });
-  window.AlinRuntime=Object.freeze({version:window.ALIN_CONFIG?.version||'4.2.0-rc.8',init,requireConnection,renderAll,getDb:()=>stateDb,getCurrent:()=>stateCurrent});
+  window.AlinRuntime=Object.freeze({version:window.ALIN_CONFIG?.version||'4.2.0-rc.12',init,requireConnection,renderAll,getDb:()=>stateDb,getCurrent:()=>stateCurrent});
 
   /* PLATFORM STEP 1: coupons are owned by modules/store/coupons.js and modules/admin/coupons.js. */
   /* PLATFORM STEP 2: cart and order creation are owned by modules/store/cart.js and modules/store/order-routing.js. */
@@ -1595,7 +1595,7 @@ window.Alin.helpers={
 (function(){
   'use strict';
 
-  const VERSION=window.ALIN_CONFIG?.version||'4.2.0-rc.8';
+  const VERSION=window.ALIN_CONFIG?.version||'4.2.0-rc.12';
   const TABLES=[
     'settings','accounts','delivery_areas','couriers','courier_areas','categories',
     'booklets','teacher_requests','teacher_request_versions','products','orders',
@@ -2041,12 +2041,19 @@ window.Alin.helpers={
   window.addEventListener('offline',()=>emit('offline'));
   window.addEventListener('alin:logout',clearPrivateCache);
   document.addEventListener('DOMContentLoaded',async()=>{
-    if(!navigator.onLine)loadCachedSnapshot();
+    // Paint the last known catalog immediately, even while the network/SDK is still waking up.
+    const cached=loadCachedSnapshot();
+    if(cached){try{requestAnimationFrame(()=>window.renderAll?.())}catch(_){ }}
     try{
       await flushQueue();startRealtime();
-      if(window.ALIN_CONFIG?.authEnabled!==true)await loadCloudSnapshot({reason:'boot'});
+      if(window.ALIN_CONFIG?.authEnabled!==true&&client())await loadCloudSnapshot({reason:'boot'});
     }catch(error){console.warn('[ALIN cloud init]',error)}
   },{once:true});
+
+  window.addEventListener('alin:supabase-ready',()=>{
+    try{startRealtime()}catch(_){ }
+    flushQueue().catch(()=>{});
+  });
 })();
 
 ;
@@ -2243,269 +2250,6 @@ window.Alin.helpers={
   window.AlinNotifications=api;
 
   window.addEventListener('alin:data-refreshed',()=>emit('data-refreshed'));
-})();
-;
-
-/* core/finance-runtime.js */
-/* ALIN v2.8.0 Stage 5 — server-authoritative atomic finance runtime. */
-(function(){
-  'use strict';
-
-  const arr=value=>Array.isArray(value)?value:[];
-  const num=value=>Number.isFinite(Number(value))?Number(value):0;
-  const same=(a,b)=>String(a??'')===String(b??'');
-  const now=()=>new Date().toISOString();
-  const db=()=>window.db||{};
-  const api=name=>typeof window[name]==='function'?window[name]:null;
-  const client=()=>window.ALINAuthRuntime?.client?.()||window.sb||window.AlinCloud?.client?.()||null;
-  const money=value=>typeof window.money==='function'?window.money(value):Math.round(num(value)).toLocaleString(window.AlinI18n?.locale?.()||'ar-IQ');
-  const delivered=value=>['completed','delivered','done','received','settled','تم التسليم'].includes(String(value||'').toLowerCase());
-  const cancelled=value=>['cancelled','canceled','rejected','ملغي','إلغاء'].some(token=>String(value||'').toLowerCase().includes(token));
-
-  function ratios(){
-    const settings=db().settings||{};
-    const clamp=value=>Math.max(0,Math.min(100,num(value)));
-    return {
-      admin:clamp(settings.admin_profit_percent??20),
-      teacher:clamp(settings.teacher_profit_percent??50),
-      library:clamp(settings.library_profit_percent??30),
-      delegate:clamp(settings.delegate_profit_percent??30)
-    };
-  }
-
-  function deliveryType(order){
-    const raw=String(order?.fulfillment_type||order?.delivery_type||order?.delivery_method||'').toLowerCase();
-    if(/home_delivery|delivery|delegate|courier|مندوب/.test(raw)||order?.delegate_id||order?.courier_id)return 'delegate';
-    return 'library';
-  }
-
-  function booklet(order){return arr(db().booklets).find(row=>same(row.id,order?.item_id||order?.booklet_id))||null}
-
-  function shares(order){
-    const total=Math.max(0,Math.round(num(order?.total)));
-    const deliveryFee=Math.min(total,Math.max(0,Math.round(num(order?.delivery_fee))));
-    const merchandise=Math.max(0,total-deliveryFee);
-    const rate=ratios(),book=booklet(order),isBooklet=/booklet|ملزمة|ملازم/.test(String(order?.kind||order?.item_kind||'').toLowerCase());
-    const teacherPct=Math.max(0,Math.min(100,num(book?.teacher_share_percent??rate.teacher)));
-    const libraryPct=Math.max(0,Math.min(100,num(book?.library_share_percent??rate.library)));
-    const delivery=deliveryType(order);
-    const teacher=isBooklet?Math.min(merchandise,Math.max(0,Math.round(merchandise*teacherPct/100))):0;
-    const library=delivery==='library'?Math.min(Math.max(0,merchandise-teacher),Math.max(0,Math.round(merchandise*libraryPct/100))):0;
-    const delegate=delivery==='delegate'?Math.min(deliveryFee,Math.max(0,Math.round(deliveryFee*rate.delegate/100))):0;
-    const admin=Math.max(0,total-teacher-library-delegate);
-    const collectorId=delivery==='library'?(order?.library_id||order?.pickup_library_id||order?.assigned_library_id||''):(order?.delegate_id||order?.courier_id||'');
-    const collectorProfit=delivery==='library'?library:delegate;
-    return {total,merchandise,deliveryFee,admin,teacher,library,delegate,delivery,collectorId,debt:Math.max(0,total-collectorProfit)};
-  }
-
-  function orderFor(row){return arr(db().orders).find(order=>same(order.id,row?.order_id)||same(order.order_number,row?.order_number||row?.order_id))||null}
-
-  function delegateAliases(id){
-    const set=new Set([String(id??'')].filter(Boolean));
-    const sources=[...arr(db().delegates),...arr(db().accounts?.delegates),...arr(db().accounts?.couriers),...arr(db().accounts?.all).filter(row=>['courier','delegate'].includes(String(row?.role||'').toLowerCase())),...arr(db().couriers)];
-    let changed=true;
-    while(changed){
-      changed=false;
-      for(const row of sources){
-        const values=[row?.id,row?.account_id,row?.accountId,row?.user_id,row?.courier_row_id,row?.auth_user_id].filter(Boolean).map(String);
-        if(values.some(value=>set.has(value))){for(const value of values)if(!set.has(value)){set.add(value);changed=true}}
-      }
-    }
-    return set;
-  }
-  const matchesDelegate=(value,id)=>delegateAliases(id).has(String(value??''));
-
-  function syntheticLedgerRow(order){
-    const split=shares(order),book=booklet(order),delivery=split.delivery;
-    const delegateId=order?.delegate_id||order?.courier_id||order?.courier_account_id||'';
-    const libraryId=order?.library_id||order?.pickup_library_id||order?.assigned_library_id||'';
-    const teacherId=book?.teacher_id||order?.teacher_id||'';
-    const delegateProfit=Math.max(0,num(order?.delegate_profit||order?.courier_profit||split.delegate));
-    const libraryProfit=Math.max(0,num(order?.library_profit||split.library));
-    const teacherProfit=Math.max(0,num(order?.teacher_profit||split.teacher));
-    const adminProfit=Math.max(0,num(order?.platform_profit||order?.admin_profit||split.admin));
-    const total=Math.max(0,num(order?.total));
-    const collectorProfit=delivery==='delegate'?delegateProfit:libraryProfit;
-    return {
-      id:`virtual-${order?.id||order?.order_number||Date.now()}`,order_id:order?.id,order_number:order?.order_number,title:order?.title,
-      total,merchandise_total:split.merchandise,delivery_fee:split.deliveryFee,
-      alin:adminProfit,admin:adminProfit,teacher:teacherProfit,teacher_id:teacherId,
-      library:libraryProfit,library_id:libraryId,delegate:delegateProfit,courier:delegateProfit,
-      delegate_id:delegateId,courier_id:delegateId,collector_role:delivery,collector_id:delivery==='delegate'?delegateId:libraryId,
-      collector_debt:Math.max(0,total-collectorProfit),delivery_type:delivery,status:'pending',settlement_status:'pending',
-      settled_at:order?.settlement_at||order?.completed_at||order?.delivered_at||order?.updated_at||order?.created_at||'',
-      created_at:order?.completed_at||order?.delivered_at||order?.created_at||'',is_current:true,is_virtual:true,finance_version:'4.1.6-fallback'
-    };
-  }
-
-  function canonicalLedger(){
-    const rows=new Map(),coveredOrders=new Set();
-    for(const row of arr(db().ledger)){
-      if(row?.is_current===false)continue;
-      const order=orderFor(row);
-      if(cancelled(row?.settlement_status)||cancelled(order?.status)||order?.settlement_cancelled)continue;
-      if(order&&!delivered(order.status)&&!order.settlement_done)continue;
-      const key=String(row?.order_id||row?.order_number||row?.id||'');if(!key)continue;
-      const previous=rows.get(key),currentAt=String(row?.settled_at||row?.updated_at||row?.created_at||''),previousAt=String(previous?.settled_at||previous?.updated_at||previous?.created_at||'');
-      if(!previous||currentAt>=previousAt)rows.set(key,row);
-      if(row?.order_id)coveredOrders.add(String(row.order_id));
-      if(row?.order_number)coveredOrders.add(String(row.order_number));
-    }
-    for(const order of arr(db().orders)){
-      if(!order||cancelled(order.status)||order.settlement_cancelled||!delivered(order.status))continue;
-      const id=String(order.id||''),number=String(order.order_number||'');
-      if((id&&coveredOrders.has(id))||(number&&coveredOrders.has(number)))continue;
-      const virtual=syntheticLedgerRow(order),key=String(virtual.order_id||virtual.order_number||virtual.id);
-      rows.set(key,virtual);if(id)coveredOrders.add(id);if(number)coveredOrders.add(number);
-    }
-    return [...rows.values()];
-  }
-
-  function payoutRows(){
-    const rows=[
-      ...arr(db().settlements).filter(row=>['admin','teacher'].includes(String(row.party_role||'').toLowerCase())),
-      ...arr(db().withdrawals).filter(row=>String(row.status||'').toLowerCase()==='paid')
-    ];
-    const seen=new Set();
-    return rows.filter(row=>{const key=String(row.id||row.receipt_number||`${row.party_role||row.role}-${row.party_id||row.account_id}-${row.created_at}-${row.amount}`);if(!key||seen.has(key))return false;seen.add(key);return true});
-  }
-  const payoutRole=row=>String(row.party_role||row.role||(row.teacher_id?'teacher':'')||'').toLowerCase().replace('courier','delegate');
-  const payoutParty=row=>row.party_id||row.account_id||row.user_id||row.teacher_id||row.library_id||row.delegate_id||row.courier_id||'';
-  function payoutValue(row){const status=String(row.status||'paid').toLowerCase();if(['cancelled','canceled','rejected','reversed','pending'].includes(status))return 0;return status==='reversal'?-Math.abs(num(row.amount)):Math.max(0,num(row.amount))}
-
-  function librarySettlementRows(id){
-    return arr(db().settlements).filter(row=>String(row.party_role||'').toLowerCase()==='library'&&same(row.party_id,id));
-  }
-  function isConfirmedDelegateSettlement(row){
-    if(!row)return false;
-    const role=String(row.party_role||'').toLowerCase().replace('courier','delegate');
-    const status=String(row.status||'').toLowerCase();
-    return role==='delegate'&&['received','paid'].includes(status);
-  }
-  function delegateSettlementRows(id){
-    const aliases=delegateAliases(id),seen=new Set();
-    return arr(db().settlements).filter(row=>{
-      if(!isConfirmedDelegateSettlement(row)||!aliases.has(String(row.party_id||'')))return false;
-      const key=String(row.id||row.receipt_number||`${row.party_id}-${row.created_at}-${row.amount}`);if(!key||seen.has(key))return false;seen.add(key);return true;
-    });
-  }
-  function settlementValue(row){const status=String(row.status||'').toLowerCase();if(!['received','paid'].includes(status))return 0;return Math.max(0,num(row.amount))}
-
-  function earned(role,id){
-    const key=String(role||'').toLowerCase().replace('courier','delegate');
-    return canonicalLedger().reduce((sum,row)=>{
-      if(key==='admin')return sum+Math.max(0,num(row.admin||row.alin));
-      if(key==='teacher'&&same(row.teacher_id,id))return sum+Math.max(0,num(row.teacher||row.teacher_amount));
-      if(key==='library'&&same(row.library_id,id))return sum+Math.max(0,num(row.library||row.library_amount));
-      if(key==='delegate'&&matchesDelegate(row.delegate_id||row.courier_id||row.collector_id,id))return sum+Math.max(0,num(row.delegate||row.courier||row.courier_amount));
-      return sum;
-    },0);
-  }
-  function paid(role,id){const key=String(role||'').toLowerCase().replace('courier','delegate');return Math.max(0,payoutRows().filter(row=>payoutRole(row)===key&&(key==='admin'||same(payoutParty(row),id))).reduce((sum,row)=>sum+payoutValue(row),0))}
-  function balance(role,id){const totalEarned=earned(role,id),totalPaid=paid(role,id);return {earned:totalEarned,paid:totalPaid,remaining:Math.max(0,totalEarned-totalPaid)}}
-
-  function librarySummary(libraryId){
-    const rows=canonicalLedger().filter(row=>same(row.library_id,libraryId)&&String(row.collector_role||row.delivery_type||'library')==='library').map(row=>{const order=orderFor(row)||{},gross=Math.max(0,num(row.total)||num(order.total)),profit=Math.max(0,num(row.library||row.library_amount)),debt=Math.max(0,num(row.collector_debt)||gross-profit);return {...row,order,gross,profit,libraryProfit:profit,debt,at:row.settled_at||row.created_at||order.delivered_at||order.updated_at||order.created_at||''}});
-    const settlements=librarySettlementRows(libraryId),gross=rows.reduce((sum,row)=>sum+row.gross,0),profit=rows.reduce((sum,row)=>sum+row.profit,0),debtTotal=rows.reduce((sum,row)=>sum+row.debt,0),settled=Math.max(0,settlements.reduce((sum,row)=>sum+settlementValue(row),0)),month=new Date().toISOString().slice(0,7),monthProfit=rows.filter(row=>String(row.at).slice(0,7)===month).reduce((sum,row)=>sum+row.profit,0);
-    return {rows,settlements,gross,profit,libraryProfit:profit,debtTotal,settled,remaining:Math.max(0,debtTotal-settled),debtRemaining:Math.max(0,debtTotal-settled),monthProfit};
-  }
-  function teacherSummary(teacherId){const rows=canonicalLedger().filter(row=>same(row.teacher_id,teacherId)),summary=balance('teacher',teacherId),month=new Date().toISOString().slice(0,7),monthEarn=rows.filter(row=>String(row.settled_at||row.created_at||'').slice(0,7)===month).reduce((sum,row)=>sum+Math.max(0,num(row.teacher||row.teacher_amount)),0);return {...summary,rows,payouts:payoutRows().filter(row=>payoutRole(row)==='teacher'&&same(payoutParty(row),teacherId)),monthEarn}}
-  function delegateSummary(delegateId){
-    const aliases=delegateAliases(delegateId);
-    // Use delivered orders as the primary source for courier cash debt. Ledger rows can be stale/partial on older installs.
-    const deliveredOrders=arr(db().orders).filter(order=>delivered(order?.status)&&!cancelled(order?.status)&&deliveryType(order)==='delegate'&&[
-      order?.delegate_id,order?.courier_id,order?.courier_account_id,order?.assigned_courier_id,order?.assigned_delegate_id
-    ].filter(Boolean).some(value=>aliases.has(String(value))));
-    const rows=deliveredOrders.map(order=>{
-      const split=shares(order);
-      const gross=Math.max(0,num(order?.delegate_cash_collected)||num(order?.courier_cash_collected)||num(order?.cash_collected)||num(order?.amount_collected)||num(order?.total)||num(order?.grand_total)||num(order?.final_total));
-      const persistedProfit=Math.max(0,num(order?.delegate_profit)||num(order?.courier_profit));
-      const profit=persistedProfit>0?persistedProfit:Math.max(0,num(split.delegate));
-      return {...syntheticLedgerRow(order),order,total:gross,delegate:profit,courier:profit,collector_debt:Math.max(0,gross-profit)};
-    });
-    const covered=new Set(rows.map(row=>String(row.order_id||row.order_number||'')));
-    // Preserve legacy completed finance entries only when their order is no longer present in the local order cache.
-    for(const row of canonicalLedger()){
-      if(!aliases.has(String(row.delegate_id||row.courier_id||row.collector_id||''))||String(row.collector_role||row.delivery_type||'delegate')!=='delegate')continue;
-      const key=String(row.order_id||row.order_number||'');if(key&&covered.has(key))continue;
-      const order=orderFor(row)||{};
-      const gross=Math.max(0,num(row.total)||num(order.total));
-      const persistedProfit=Math.max(0,num(row.delegate||row.courier||row.courier_amount)||num(order.delegate_profit)||num(order.courier_profit));
-      const profit=persistedProfit>0?persistedProfit:Math.max(0,num(shares(order).delegate));
-      rows.push({...row,order,total:gross,delegate:profit,courier:profit,collector_debt:Math.max(0,gross-profit)});if(key)covered.add(key);
-    }
-    const collected=rows.reduce((sum,row)=>sum+Math.max(0,num(row.total)),0),earnings=rows.reduce((sum,row)=>sum+Math.max(0,num(row.delegate||row.courier||row.courier_amount)),0),debtTotal=rows.reduce((sum,row)=>sum+Math.max(0,num(row.collector_debt)),0),settlements=delegateSettlementRows(delegateId),settled=Math.max(0,settlements.reduce((sum,row)=>sum+settlementValue(row),0));
-    return {earned:earnings,earnings,collected,debtTotal,paid:settled,settled,remaining:Math.max(0,debtTotal-settled),debt:Math.max(0,debtTotal-settled),rows,settlements,payouts:payoutRows().filter(row=>payoutRole(row)==='delegate'&&aliases.has(String(payoutParty(row))))};
-  }
-  function partySummary(role,id){if(String(role).toLowerCase()==='library'){const profit=balance('library',id);return {...profit,debt:librarySummary(id)}}if(['courier','delegate'].includes(String(role).toLowerCase()))return delegateSummary(id);return balance(role,id)}
-
-  function financeError(error){
-    const message=String(error?.message||error||'').trim();
-    if(/alin_order_transition_atomic|schema cache|function .* does not exist/i.test(message))return new Error('خدمة الحسابات غير مهيأة في مشروع Supabase الجديد. نفّذ ملف ALIN_V4_CLEAN_PROJECT_MASTER.sql مرة واحدة ثم حدّث الصفحة.');
-    return error instanceof Error?error:new Error(message||'تعذر تنفيذ العملية المالية');
-  }
-  async function rpc(name,args){const c=client();if(!c?.rpc)throw new Error('خدمة Supabase غير متاحة');const {data,error}=await c.rpc(name,args);if(error)throw financeError(error);return data}
-
-  async function transitionOrder(id,status,reason=''){
-    const data=await rpc('alin_order_transition_atomic',{p_order_id:String(id),p_status:String(status),p_reason:reason||null});
-    if(!data?.ok)throw new Error('لم يؤكد الخادم تحديث الطلب');
-    const order=arr(db().orders).find(row=>same(row.id,id));if(order&&data.order)Object.assign(order,data.order);
-    if(api('load'))await window.load({force:true,reason:'atomic-order-finance'});
-    return data;
-  }
-  async function persistLedger(order){if(!order?.id)throw new Error('الطلب غير موجود');const data=await transitionOrder(order.id,'completed');return {row:data.finance,split:data.finance}}
-  async function finalizeDelivered(order,status='completed'){if(!order?.id)throw new Error('الطلب غير موجود');const data=await transitionOrder(order.id,status);return {order:data.order,row:data.finance,split:data.finance}}
-  async function cancelOrder(order,reason=''){if(!order?.id)throw new Error('الطلب غير موجود');return transitionOrder(order.id,'cancelled',reason)}
-  async function setOrderStatus(id,status,source='admin',reason=''){
-    const data=await transitionOrder(id,status,reason);
-    const order=data.order||arr(db().orders).find(row=>same(row.id,id));
-    if(api('audit'))await window.audit('order',`${source==='library'?'المكتبة':source==='courier'?'المندوب':'الإدارة'} حدثت الطلب ${order?.order_number||id} إلى ${status}`);
-    if(source==='library'&&api('renderLibrary'))window.renderLibrary();if(source==='admin'&&api('renderOrdersAdmin'))window.renderOrdersAdmin();if(api('toast'))window.toast('تم تحديث الطلب والحسابات');
-    return true;
-  }
-
-  function partyName(role,id){const accounts=db().accounts||{};if(role==='admin')return 'منصة آلين';const list=role==='teacher'?arr(accounts.teachers):role==='library'?arr(accounts.libraries):arr(db().delegates||accounts.couriers||db().couriers);return list.find(row=>same(row.id,id))?.name||id||role}
-  async function recordSettlement(role,id,amount,method,note){return rpc('alin_finance_record_settlement',{p_role:role,p_party_id:String(id||role),p_amount:Number(amount),p_method:method||'نقدي',p_note:note||null})}
-  async function payBalance(role,id){
-    const normalized=String(role||'').toLowerCase().replace('courier','delegate'),currentRole=String(window.current?.role||'').toLowerCase();if(!['admin','accountant'].includes(currentRole))return alert('هذا الإجراء متاح للإدارة فقط');
-    const summary=balance(normalized,id);if(summary.remaining<=0)return alert('لا يوجد رصيد متبقٍ');
-    const raw=window.prompt(`الرصيد المتبقي لـ ${partyName(normalized,id)} هو ${money(summary.remaining)} د.ع\nاكتب مبلغ التسديد`,String(summary.remaining));if(raw===null)return false;
-    const amount=num(String(raw).replace(/[,،]/g,''));if(amount<=0||amount>summary.remaining)return alert('مبلغ التسديد غير صحيح');
-    const method=window.prompt('طريقة الدفع','نقدي')||'نقدي',data=await recordSettlement(normalized,id,amount,method,normalized==='admin'?'استلام ربح المنصة':'تسديد أرباح');
-    if(api('load'))await window.load({force:true,reason:'finance-payout'});if(api('renderFinanceAdmin'))window.renderFinanceAdmin();if(api('toast'))window.toast('تم تسجيل السند');return data;
-  }
-  async function settleLibrary(libraryId){
-    const currentRole=String(window.current?.role||'').toLowerCase();if(!['admin','accountant'].includes(currentRole))return alert('هذا الإجراء متاح للإدارة فقط');
-    const summary=librarySummary(libraryId);if(summary.remaining<=0)return alert('حساب المكتبة مصفّى ولا توجد ذمة متبقية');
-    const raw=window.prompt(`المتبقي بذمة ${partyName('library',libraryId)} هو ${money(summary.remaining)} د.ع\nاكتب المبلغ المستلم`,String(summary.remaining));if(raw===null)return false;
-    const amount=num(String(raw).replace(/[,،]/g,''));if(amount<=0||amount>summary.remaining)return alert('مبلغ التسوية غير صحيح');
-    const data=await recordSettlement('library',libraryId,amount,window.prompt('طريقة الاستلام','نقدي')||'نقدي','تسوية ذمة مكتبة من لوحة الإدارة');
-    if(api('load'))await window.load({force:true,reason:'library-settlement'});if(api('renderFinanceAdmin'))window.renderFinanceAdmin();if(api('toast'))window.toast('تم تسجيل تسوية المكتبة');return data;
-  }
-  async function settleDelegate(delegateId){
-    const currentRole=String(window.current?.role||'').toLowerCase();if(!['admin','accountant'].includes(currentRole))return alert('هذا الإجراء متاح للإدارة فقط');
-    const summary=delegateSummary(delegateId);if(summary.remaining<=0)return alert('ذمة المندوب مصفّاة');
-    const raw=window.prompt(`المتبقي بذمة ${partyName('delegate',delegateId)} هو ${money(summary.remaining)} د.ع\nاكتب المبلغ المستلم`,String(summary.remaining));if(raw===null)return false;
-    const amount=num(String(raw).replace(/[,،]/g,''));if(amount<=0||amount>summary.remaining)return alert('مبلغ التسوية غير صحيح');
-    const data=await recordSettlement('delegate',delegateId,amount,window.prompt('طريقة الاستلام','نقدي')||'نقدي','تسوية ذمة مندوب من لوحة الإدارة');
-    if(api('load'))await window.load({force:true,reason:'delegate-settlement'});if(api('renderFinanceAdmin'))window.renderFinanceAdmin();if(api('toast'))window.toast('تم تسجيل تسوية المندوب');return data;
-  }
-
-  async function reverseSettlement(role,id,reason){
-    const text=String(reason||'').trim();if(!text)throw new Error('اكتب سبب عكس السند');
-    const data=await rpc('alin_finance_reverse_settlement',{p_role:role,p_settlement_id:String(id),p_reason:text});
-    if(api('load'))await window.load({force:true,reason:'finance-reversal'});return data;
-  }
-
-  async function requestWithdraw(role){const id=window.current?.id;if(!id)return alert('سجل الدخول أولاً');const field=role==='teacher'?document.getElementById('teacherWithdrawAmount'):document.getElementById('libraryWithdrawAmount'),amount=num(field?.value);if(amount<=0)return alert('المبلغ غير صحيح');const row={id:api('uid')?window.uid('W'):`W-${Date.now()}`,role,account_id:id,amount,status:'pending',created_at:now()},insert=api('insert');if(!insert)throw new Error('خدمة طلبات السحب غير جاهزة');await insert('withdrawals',row);if(api('toast'))window.toast('تم إرسال طلب السحب');return row}
-  async function updateWithdrawal(id,status){const update=api('update');if(!update)throw new Error('خدمة تحديث طلب السحب غير جاهزة');await update('withdrawals',{status,updated_at:now()},{id});if(api('load'))await window.load();if(api('renderFinanceAdmin'))window.renderFinanceAdmin()}
-
-  const service=Object.freeze({ratios,deliveryType,shares,canonicalLedger,payoutRows,librarySummary,teacherSummary,delegateSummary,partySummary,balance,earned,paid,transitionOrder,persistLedger,finalizeDelivered,cancelOrder,setOrderStatus,recordSettlement,payBalance,settleLibrary,settleDelegate,reverseSettlement,requestWithdraw,updateWithdrawal,partyName});
-  window.AlinFinance=service;window.AlinFinanceV207=service;
-  window.ensureOrderFinancials=async order=>delivered(order?.status)?transitionOrder(order.id,'completed'):null;
-  window.alinV57SettleOrder=async order=>transitionOrder(order.id,'completed');
-  window.maybeCreateFinancialEntry=async id=>transitionOrder(id,'completed');
-  window.requestWithdraw=requestWithdraw;window.withdrawStatus=updateWithdrawal;window.alinV68Balance=balance;window.alinV65Balance=balance;window.alinV65Paid=paid;window.alinV65AllPayouts=payoutRows;window.alinV64LibraryDebt=librarySummary;window.alinV64AllSettlements=()=>arr(db().settlements);window.alinV68PayBalance=payBalance;window.alinV65PayBalance=payBalance;window.alinV64AdminSettleLibrary=settleLibrary;window.addTeacherPayoutPrompt=id=>payBalance('teacher',id);window.AlinV120Finance={summary:librarySummary,settle:settleLibrary};
 })();
 ;
 
@@ -2827,101 +2571,6 @@ window.Alin.helpers={
     const page=document.getElementById('adminPage');
     if(page&&!page.classList.contains('hidden')&&window.current?.role&&['admin','accountant'].includes(window.current.role))api.refresh();
   });
-})();
-
-;
-;
-
-/* modules/admin/accounts.js */
-// === admin/accounts.js ===
-/* ALIN v2.2.6 — authoritative accounts administration. */
-
-/* ===== admin/js/admin-accounts-v133.js ===== */
-(function(){
-  'use strict';
-  const state={query:'',role:'all',status:'all',area:'all'};
-  const DEFAULT_COURIER_AREAS=['القادسية','الحرية','الإسكان','عرفة','رحيم آوه','شوراو','طريق بغداد','الواسطي','دوميز','بنجا علي','تسعين','حي النصر','حي النداء','الخضراء','المصلى','القورية','الشورجة','واحد حزيران','الحي العسكري','حي المعلمين','حي الجامعة','حي عدن','حي الزوراء','حي الحسين','حي العمل الشعبي','غرناطة','المنصور','البلديات','الشرطة'];
-  const escx=v=>typeof esc==='function'?esc(v):String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-  const arr=v=>Array.isArray(v)?v:[];
-  const roleLabel={teacher:'مدرس',library:'مكتبة',courier:'مندوب',accountant:'محاسب',admin:'مدير'};
-
-  function unique(values){return [...new Set(values.map(x=>String(x||'').trim()).filter(Boolean))]}
-  function parseAreas(value){
-    if(Array.isArray(value))return unique(value);
-    if(value&&typeof value==='object')return unique(Object.values(value));
-    const text=String(value||'').trim();
-    if(!text)return[];
-    try{const parsed=JSON.parse(text);if(Array.isArray(parsed))return unique(parsed)}catch(_){ }
-    return unique(text.split(/[,،|]/));
-  }
-  function deliveryAreaNames(){
-    const rows=arr(window.db?.deliveryAreas||window.db?.delivery_areas||window.deliveryAreas);
-    const cloud=rows.filter(x=>x&&x.active!==false&&String(x.status||'active')!=='inactive').map(x=>x.name||x.title||x.area);
-    const names=unique(cloud.length?cloud:(window.ALIN_KIRKUK_AREAS||DEFAULT_COURIER_AREAS));
-    return names.sort((a,b)=>a.localeCompare(b,'ar'));
-  }
-  function accountAreas(x){return unique([...parseAreas(x?.areas||x?.area_ids),...parseAreas(x?.area)])}
-  window.AlinCourierAreas=Object.freeze({list:deliveryAreaNames,parse:parseAreas,forAccount:accountAreas});
-
-  function initials(name){return String(name||'؟').trim().split(/\s+/).slice(0,2).map(x=>x[0]||'').join('')||'؟'}
-  function allAccounts(){
-    const teachers=arr(window.db?.accounts?.teachers).map(x=>({...x,role:'teacher'}));
-    const libraries=arr(window.db?.accounts?.libraries).map(x=>({...x,role:'library'}));
-    const couriers=arr(window.db?.accounts?.couriers||window.db?.couriers).map(x=>({...x,role:'courier'}));
-    const accountants=arr(window.db?.accounts?.accountants).map(x=>({...x,role:'accountant'}));
-    return [...teachers,...libraries,...couriers,...accountants];
-  }
-  function normalizedStatus(x){const s=String(x.status||'active').toLowerCase();return ['active','open','enabled','approved'].includes(s)?'active':['pending','review'].includes(s)?'pending':'inactive'}
-  function filtered(){return allAccounts().filter(x=>{
-    const xAreas=accountAreas(x);
-    const text=[x.name,x.username,x.phone,x.mobile,x.landmark,roleLabel[x.role],...xAreas].join(' ').toLowerCase();
-    return (!state.query||text.includes(state.query.toLowerCase()))&&(state.role==='all'||x.role===state.role)&&(state.status==='all'||normalizedStatus(x)===state.status)&&(state.area==='all'||xAreas.includes(state.area));
-  })}
-  function areas(){return unique(allAccounts().flatMap(accountAreas)).sort((a,b)=>a.localeCompare(b,'ar'))}
-  function stats(){const a=allAccounts();return {all:a.length,active:a.filter(x=>normalizedStatus(x)==='active').length,inactive:a.filter(x=>normalizedStatus(x)==='inactive').length,teachers:a.filter(x=>x.role==='teacher').length,libraries:a.filter(x=>x.role==='library').length,couriers:a.filter(x=>x.role==='courier').length}}
-  function card(x){
-    const st=normalizedStatus(x),locked=['admin','accountant'].includes(x.role),phone=x.phone||x.mobile||'',xAreas=accountAreas(x);
-    const meta=[x.username?`الدخول: ${escx(x.username)}`:'',phone?escx(phone):'',...xAreas.slice(0,4).map(escx)].filter(Boolean);
-    if(xAreas.length>4)meta.push(`+${xAreas.length-4} مناطق`);
-    return `<article class="v131-account-card"><div class="v131-avatar ${escx(x.role)}">${escx(initials(x.name))}</div><div class="v131-account-info"><h3>${escx(x.name||roleLabel[x.role])}</h3><div class="v131-account-meta"><span class="v131-chip">${roleLabel[x.role]||escx(x.role)}</span>${meta.map(m=>`<span class="v131-chip">${m}</span>`).join('')}<span class="v131-status ${st}">${st==='active'?'فعال':st==='pending'?'قيد المراجعة':'موقوف'}</span></div></div><div class="v131-card-actions">${locked?`<button class="secondary" data-alin-click="v131AccountInfo" data-alin-click-arg0="${escx(x.id)}">تفاصيل الصلاحية</button>`:`<button class="secondary" data-alin-click="v132OpenAccountEditor" data-alin-click-arg0="${escx(x.id)}">تعديل كامل</button><button class="warning" data-alin-click="v132ToggleAccount" data-alin-click-arg0="${escx(x.id)}" data-alin-click-arg1="${st==='active'?'inactive':'active'}">${st==='active'?'إيقاف':'تفعيل'}</button><button class="secondary" data-alin-click="v132OpenActivity" data-alin-click-arg0="${escx(x.id)}">النشاط</button><button class="danger" data-alin-click="v132SafeDeleteAccount" data-alin-click-arg0="${escx(x.id)}">أرشفة</button>`}</div></article>`;
-  }
-  function courierAreaPicker(){
-    return `<section id="v163CourierAccountFields" class="v163-courier-account-fields" hidden>
-      <div class="v163-courier-fields-title"><div><b>بيانات حساب المندوب</b><small>حدد كل المناطق التي يعمل بها المندوب. الطلبات تُطابق حسب منطقة الزبون.</small></div><span>مناطق متعددة</span></div>
-      <div class="form-grid v163-courier-fields-grid"><select id="v163CourierAvailability"><option value="available">متاح</option><option value="busy">مشغول</option><option value="offline">غير متصل</option></select></div>
-      <div class="v163-area-toolbar"><h4>مناطق عمل المندوب</h4><div><button type="button" class="secondary" data-alin-click="v131CourierAreasSelectAll">تحديد الكل</button><button type="button" class="secondary" data-alin-click="v131CourierAreasClear">إلغاء التحديد</button></div></div>
-      <div id="v163CourierAreaPicker" class="v163-area-picker">${deliveryAreaNames().map(name=>`<label><input type="checkbox" value="${escx(name)}" data-alin-change="v131CourierAreaCount"><span>${escx(name)}</span></label>`).join('')}</div>
-      <p class="v163-account-note"><b id="v163CourierAreaCount">0</b> منطقة محددة. بعد الحفظ يظهر المندوب فقط ضمن الطلبات المطابقة لمناطقه.</p>
-    </section>`;
-  }
-  function render(){
-    if(!window.adminContent)return;
-    const s=stats(),rows=filtered();
-    adminContent.innerHTML=`<section class="v131-accounts"><header class="v131-accounts-head"><div><h2>إدارة الحسابات</h2><p>إدارة المدرسين والمكتبات والمندوبين والصلاحيات من مكان واحد.</p></div><button type="button" class="v131-add-account" data-alin-click="v131ToggleAccountForm">+ إضافة حساب جديد</button></header><section class="v131-account-stats"><article class="v131-account-stat"><small>إجمالي الحسابات</small><b>${s.all}</b></article><article class="v131-account-stat"><small>الحسابات الفعالة</small><b>${s.active}</b></article><article class="v131-account-stat danger"><small>الحسابات الموقوفة</small><b>${s.inactive}</b></article><article class="v131-account-stat"><small>المدرسون</small><b>${s.teachers}</b></article><article class="v131-account-stat"><small>المكتبات</small><b>${s.libraries}</b></article><article class="v131-account-stat"><small>المندوبون</small><b>${s.couriers}</b></article></section><section id="v131AccountForm" class="v131-account-form"><h3>إضافة حساب</h3><div class="form-grid"><select id="aRole" data-alin-change="v131SyncAccountRole"><option value="teacher">مدرس</option><option value="library">مكتبة</option><option value="courier">مندوب</option><option value="accountant">محاسب</option></select><input id="aName" placeholder="الاسم الكامل"><input id="aUser" placeholder="اسم الدخول"><input id="aPass" type="password" placeholder="كلمة مرور من 12 حرفاً وحروف وأرقام"><input id="aPhone" inputmode="tel" placeholder="رقم الهاتف"><input id="aArea" placeholder="المنطقة"><input id="aLandmark" placeholder="أقرب نقطة دالة"></div>${courierAreaPicker()}<div class="form-actions"><button type="button" class="secondary" data-alin-click="v131ToggleAccountForm" data-alin-click-arg0="false" data-alin-click-arg0-type="boolean">إلغاء</button><button type="button" id="v131SaveAccountButton" data-alin-click="addAccount">حفظ الحساب</button></div></section><section class="v131-account-tools"><input id="v131AccountSearch" value="${escx(state.query)}" placeholder="ابحث بالاسم أو اسم الدخول أو المنطقة" data-alin-input="v131AccountFilter" data-alin-input-arg0="query" data-alin-input-arg1-source="value"><select data-alin-change="v131AccountFilter" data-alin-change-arg0="role" data-alin-change-arg1-source="value"><option value="all">كل أنواع الحسابات</option>${Object.entries(roleLabel).map(([k,v])=>`<option value="${k}" ${state.role===k?'selected':''}>${v}</option>`).join('')}</select><select data-alin-change="v131AccountFilter" data-alin-change-arg0="status" data-alin-change-arg1-source="value"><option value="all">كل الحالات</option><option value="active" ${state.status==='active'?'selected':''}>فعال</option><option value="inactive" ${state.status==='inactive'?'selected':''}>موقوف</option><option value="pending" ${state.status==='pending'?'selected':''}>قيد المراجعة</option></select><select data-alin-change="v131AccountFilter" data-alin-change-arg0="area" data-alin-change-arg1-source="value"><option value="all">كل المناطق</option>${areas().map(a=>`<option value="${escx(a)}" ${state.area===a?'selected':''}>${escx(a)}</option>`).join('')}</select></section><nav class="v131-role-tabs">${[['all','الكل'],...Object.entries(roleLabel)].map(([k,v])=>`<button class="${state.role===k?'active':''}" data-alin-click="v131AccountFilter" data-alin-click-arg0="role" data-alin-click-arg1="${k}">${v}</button>`).join('')}</nav><section class="v131-account-grid">${rows.map(card).join('')||'<div class="v131-empty">لا توجد حسابات مطابقة للبحث والفلترة.</div>'}</section><section id="v132AccountEditorHost"></section></section>`;
-    adminContent.dataset.adminModule='accounts';
-    adminContent.classList.add('admin-accounts-module');
-    window.v131SyncAccountRole();
-  }
-
-  window.v131SyncAccountRole=()=>{
-    const role=document.getElementById('aRole')?.value||'teacher';
-    const courier=role==='courier';
-    const box=document.getElementById('v163CourierAccountFields');if(box)box.hidden=!courier;
-    const area=document.getElementById('aArea'),landmark=document.getElementById('aLandmark');
-    if(area){area.hidden=courier;area.disabled=courier;}
-    if(landmark){landmark.hidden=courier;landmark.disabled=courier;}
-    const title=document.querySelector('#v131AccountForm h3');if(title)title.textContent=courier?'إضافة حساب مندوب':'إضافة حساب';
-    const save=document.getElementById('v131SaveAccountButton');if(save)save.textContent=courier?'حفظ حساب المندوب':'حفظ الحساب';
-    window.v131CourierAreaCount();
-  };
-  window.v131CourierAreaCount=()=>{const count=document.querySelectorAll('#v163CourierAreaPicker input:checked').length;const out=document.getElementById('v163CourierAreaCount');if(out)out.textContent=String(count);return count};
-  window.v131CourierAreasSelectAll=()=>{document.querySelectorAll('#v163CourierAreaPicker input').forEach(x=>x.checked=true);window.v131CourierAreaCount()};
-  window.v131CourierAreasClear=()=>{document.querySelectorAll('#v163CourierAreaPicker input').forEach(x=>x.checked=false);window.v131CourierAreaCount()};
-  window.v131AccountFilter=(k,v)=>{state[k]=v;render()};
-  window.v131ToggleAccountForm=(force)=>{const el=document.getElementById('v131AccountForm');if(!el)return;el.classList.toggle('open',typeof force==='boolean'?force:!el.classList.contains('open'));if(el.classList.contains('open')){window.v131SyncAccountRole();el.scrollIntoView({behavior:'smooth',block:'center'})}};
-  window.v131AccountInfo=id=>{const x=allAccounts().find(a=>String(a.id)===String(id));if(!x)return;alert(`${x.name}\nنوع الحساب: ${roleLabel[x.role]}\nالصلاحية: ${x.role==='admin'?'إدارة كاملة':'المالية والتقارير فقط'}`)};
-  window.renderAccountsAdmin=render;
-  if(window.AlinAdminModules?.register)AlinAdminModules.register('accounts',()=>render());
 })();
 
 ;
@@ -4789,6 +4438,47 @@ window.Alin.helpers={
 })();
 ;
 
+/* core/role-runtime-loader.js */
+/* ALIN v4.2.0 RC12 — role runtime lazy loader. Public storefront never downloads staff dashboards until needed. */
+(function(){
+  'use strict';
+  let state='idle';
+  let promise=null;
+  const version=window.ALIN_CONFIG?.version||'4.2.0-rc.12';
+  const needsRole=role=>!['','store','student'].includes(String(role||'').toLowerCase());
+  function ensure(role){
+    if(!needsRole(role))return Promise.resolve(false);
+    if(state==='ready')return Promise.resolve(true);
+    if(promise)return promise;
+    state='loading';
+    promise=new Promise((resolve,reject)=>{
+      const existing=document.getElementById('alinRoleRuntimeScript');
+      if(existing){
+        existing.addEventListener('load',()=>{state='ready';resolve(true)},{once:true});
+        existing.addEventListener('error',()=>{state='error';promise=null;reject(new Error('تعذر تحميل لوحة الحساب'))},{once:true});
+        return;
+      }
+      const script=document.createElement('script');
+      script.id='alinRoleRuntimeScript';
+      script.src=`./dist/alin-role-runtime.v4.js?v=${encodeURIComponent(version)}`;
+      script.async=true;
+      script.addEventListener('load',()=>{
+        state='ready';
+        window.dispatchEvent(new CustomEvent('alin:role-runtime-ready',{detail:{role:String(role||''),version}}));
+        resolve(true);
+      },{once:true});
+      script.addEventListener('error',()=>{
+        state='error';promise=null;script.remove();
+        reject(new Error('تعذر تحميل لوحة الحساب. تحقق من الإنترنت وحاول مرة أخرى.'));
+      },{once:true});
+      document.head.appendChild(script);
+    });
+    return promise;
+  }
+  window.AlinRoleRuntime=Object.freeze({version,ensure,ready:()=>state==='ready',state:()=>state});
+})();
+;
+
 /* core/runtime-guard.js */
 /* ALIN v4.0.0 — runtime stability and path guard */
 (function(){
@@ -4810,7 +4500,7 @@ window.Alin.helpers={
   addEventListener('online',()=>document.documentElement.classList.remove('alin-offline'));
   addEventListener('offline',()=>document.documentElement.classList.add('alin-offline'));
   if(!navigator.onLine)document.documentElement.classList.add('alin-offline');
-  window.AlinRuntime=Object.freeze({...window.AlinRuntime,version:window.ALIN_CONFIG?.version||'4.2.0-rc.8',errors:()=>[...(window.__ALIN_RUNTIME_ERRORS__||[])]});
+  window.AlinRuntime=Object.freeze({...window.AlinRuntime,version:window.ALIN_CONFIG?.version||'4.2.0-rc.12',errors:()=>[...(window.__ALIN_RUNTIME_ERRORS__||[])]});
 })();
 ;
 
@@ -4833,14 +4523,19 @@ window.Alin.helpers={
   function hide(){if(bar)bar.style.display='none'}
   function check(){
     if(!navigator.onLine){show('لا يوجد اتصال بالإنترنت. يمكنك تصفح المحتوى المحفوظ، لكن الطلبات وتسجيل الدخول تحتاج اتصالاً.');return}
-    if(window.__ALIN_CDN_ERROR__ || typeof window.supabase==='undefined'){
-      show('تعذر تحميل خدمة الاتصال بقاعدة البيانات. حدّث الصفحة أو تحقق من الإنترنت.');return
+    if(window.__ALIN_CDN_ERROR__){
+      show('الاتصال ضعيف حالياً. يمكنك تصفح المحتوى المحفوظ وسنعيد ربط البيانات تلقائياً.');return
+    }
+    if(typeof window.supabase==='undefined'){
+      hide();return
     }
     hide();
   }
   addEventListener('online',()=>setTimeout(check,300));
   addEventListener('offline',check);
-  addEventListener('load',()=>setTimeout(check,1200));
+  addEventListener('load',()=>setTimeout(check,5000));
+  addEventListener('alin:supabase-ready',()=>setTimeout(check,50));
+  addEventListener('alin:supabase-unavailable',()=>setTimeout(check,50));
   window.AlinHealth=Object.freeze({check,show,hide});
 })();
 ;

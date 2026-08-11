@@ -2,7 +2,7 @@
 /* ALIN v2.4.2 — final boot verification for modular cloud services. */
 (function(){
   'use strict';
-  const required=['enabled','loginFromUI','signOut','restoreSession','secureCheckout','createAccountFromAdmin','updateAccountFromAdmin','resetPasswordFromAdmin'];
+  const required=['enabled','loginFromUI','signOut','restoreSession','secureCheckout'];
   const auth=window.ALINAuth||{};
   const missing=required.filter(name=>typeof auth[name]!=='function');
   if(missing.length)console.error('[ALIN cloud modules missing]',missing);

@@ -22,6 +22,9 @@ for mf in ['manifest-desktop.webmanifest','manifest-mobile.webmanifest']:
 sw=(root/'service-worker.js').read_text(encoding='utf-8')
 for val in re.findall(r"['\"](\./[^'\"?]+)(?:\?[^'\"]*)?['\"]",sw):
  if val!='./' and not (root/val[2:]).exists(): errors.append(f'SW missing {val}')
+if not (root/'dist/alin-role-runtime.v4.js').is_file(): errors.append('missing lazy role runtime')
+loader=(root/'core/role-runtime-loader.js').read_text(encoding='utf-8',errors='ignore')
+if 'dist/alin-role-runtime.v4.js' not in loader: errors.append('role runtime loader path missing')
 bad=['financial_entries','financial_payouts','library_settlements','teacher_settlements','delegate_settlements','admin_settlements','order_items']
 for base in ['modules','core','store']:
  for p in (root/base).rglob('*.js'):
@@ -62,7 +65,7 @@ for storefront in ['store-desktop.html','store-mobile.html']:
  runtime_missing=unresolved_loaded_actions(storefront)
  if runtime_missing: errors.append(f'{storefront}: unresolved loaded actions: '+', '.join(runtime_missing))
 
-files=['dist/alin-core.v4.js','alin-app-desktop.v4.1.5.js','alin-app-mobile.v4.1.5.js']
+files=['dist/alin-core.v4.js','alin-app-desktop.v4.1.5.js','alin-app-mobile.v4.1.5.js','dist/alin-role-runtime.v4.js']
 before={f:hashlib.sha256((root/f).read_bytes()).hexdigest() for f in files}
 subprocess.run([sys.executable,str(root/'scripts/build-runtime.py')],cwd=root,check=True,stdout=subprocess.DEVNULL)
 after={f:hashlib.sha256((root/f).read_bytes()).hexdigest() for f in files}

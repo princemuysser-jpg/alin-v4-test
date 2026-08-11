@@ -127,5 +127,5 @@
   }
 
   EVENTS.forEach(event=>document.addEventListener(event,eventObject=>{void dispatch(eventObject,event);},false));
-  window.AlinUiActions=Object.freeze({version:'4.2.0-rc.8',resolve});
+  window.AlinUiActions=Object.freeze({version:'4.2.0-rc.12',resolve});
 })();

@@ -5,7 +5,7 @@
 (function(){
   'use strict';
 
-  const VERSION=window.ALIN_CONFIG?.version||'4.2.0-rc.8';
+  const VERSION=window.ALIN_CONFIG?.version||'4.2.0-rc.12';
   const TABLES=[
     'settings','accounts','delivery_areas','couriers','courier_areas','categories',
     'booklets','teacher_requests','teacher_request_versions','products','orders',
@@ -451,12 +451,19 @@
   window.addEventListener('offline',()=>emit('offline'));
   window.addEventListener('alin:logout',clearPrivateCache);
   document.addEventListener('DOMContentLoaded',async()=>{
-    if(!navigator.onLine)loadCachedSnapshot();
+    // Paint the last known catalog immediately, even while the network/SDK is still waking up.
+    const cached=loadCachedSnapshot();
+    if(cached){try{requestAnimationFrame(()=>window.renderAll?.())}catch(_){ }}
     try{
       await flushQueue();startRealtime();
-      if(window.ALIN_CONFIG?.authEnabled!==true)await loadCloudSnapshot({reason:'boot'});
+      if(window.ALIN_CONFIG?.authEnabled!==true&&client())await loadCloudSnapshot({reason:'boot'});
     }catch(error){console.warn('[ALIN cloud init]',error)}
   },{once:true});
+
+  window.addEventListener('alin:supabase-ready',()=>{
+    try{startRealtime()}catch(_){ }
+    flushQueue().catch(()=>{});
+  });
 })();
 
 ;

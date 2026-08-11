@@ -1,19 +1,31 @@
 {
+  "release": "4.2.0-rc.12",
   "ok": true,
-  "errors": [],
-  "actions": 29,
-  "build_hashes": {
-    "dist/alin-core.v4.js": "5f6ef1d65a0edbd27d5fce7c432d89b4a84ad800f13f0a2e326f38961612e991",
-    "alin-app-desktop.v4.1.5.js": "6d8ce312eb573e313bc431ab4ca9aeaecb9cb640d4ec0a0a90b41dbacefeadfb",
-    "alin-app-mobile.v4.1.5.js": "b9fef2108cfee37b24f8677fadefed04492ec3f9191e6e35b0cd4ac03d147de8"
-  },
-  "js_files": 102,
-  "release": "4.2.0-rc.11",
-  "contact_about_centered_devices": [
-    "mobile",
-    "tablet",
-    "desktop"
-  ],
+  "startup_local_js_mobile_bytes_before": 847820,
+  "startup_local_js_mobile_bytes_after": 389247,
+  "startup_local_js_reduction_percent": 54.09,
+  "startup_core_plus_app_gzip_before": 194067,
+  "startup_core_plus_app_gzip_after": 92445,
+  "service_worker_precache_bytes_before": 2456198,
+  "service_worker_precache_bytes_after": 124144,
+  "service_worker_precache_reduction_percent": 94.95,
+  "role_runtime_lazy_bytes": 463498,
+  "role_runtime_loaded_on_public_startup": false,
+  "supabase_sdk_parser_blocking": false,
+  "auth_boot_fullscreen_overlay": false,
+  "cached_snapshot_first": true,
+  "service_worker_network_first_long_waits": false,
   "inline_scripts_main_html": 0,
-  "static_event_attributes_main_html": 0
+  "static_event_attributes_main_html": 0,
+  "js_files": 105,
+  "local_missing_paths": 0,
+  "sql_required": false,
+  "database_changed": false,
+  "browser_runtime_smoke": "not_claimed; container Chromium did not complete reliably",
+  "build_hashes": {
+    "dist/alin-core.v4.js": "97fff0b6c5638d285a959b4f3b39ddacfdce21b19aa8cff05018cea6bce6541d",
+    "alin-app-desktop.v4.1.5.js": "88c5feac8775e2f88f8a897bc07b821b59a25627c345c124d61b91e7ee9bb2f0",
+    "alin-app-mobile.v4.1.5.js": "d95fedf4785179a09ff86ad9e35ae50e44610c69523f0d4c23b21b51e102a6df",
+    "dist/alin-role-runtime.v4.js": "6a457e1b188e9567964049b49d67b42a586835d9be5f7eff8f051a6506035833"
+  }
 }
