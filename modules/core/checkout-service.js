@@ -88,7 +88,7 @@
   let checkoutPending=false;
   async function secureCheckout(){
     if(checkoutPending)return;
-    const button=document.querySelector('[onclick*="confirmCartCheckout"],#confirmCheckoutButton,[data-confirm-checkout]');
+    const button=document.querySelector('[data-alin-click="confirmCartCheckout"],#confirmCheckoutButton,[data-confirm-checkout]');
     try{
       checkoutPending=true;
       if(button){button.disabled=true;button.setAttribute('aria-busy','true');button.dataset.originalText=button.textContent;button.textContent='جارٍ إرسال الطلب...'}

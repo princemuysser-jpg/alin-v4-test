@@ -36,8 +36,7 @@
     if(username){username.value='';username.placeholder=copy.username;username.setAttribute('aria-label',copy.username)}
     if(password){password.value='';password.placeholder=copy.password;password.setAttribute('aria-label',copy.password)}
     document.querySelectorAll('.login-actions button').forEach(button=>{
-      const action=String(button.getAttribute('onclick')||'');
-      const active=action.includes(`'${selected}'`)||action.includes(`"${selected}"`)||(selected==='library'&&action.includes('openLibraryJoinPortal'));
+      const active=button.dataset.loginRole===selected;
       button.classList.toggle('active-login-role',active);
       button.setAttribute('aria-pressed',active?'true':'false');
     });

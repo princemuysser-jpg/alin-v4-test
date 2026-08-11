@@ -16,9 +16,9 @@
     return `<section class="v162-gps-box" id="v162GpsBox">
       <div class="v162-gps-head"><div><b>نقطة موقع التوصيل GPS</b><small>تساعد الإدارة والمندوب على الوصول لنقطة التسليم بدقة.</small></div><span id="v162GpsStatus" class="v162-gps-status">غير محدد</span></div>
       <div class="v162-gps-actions">
-        <button type="button" class="v162-gps-primary" onclick="alinV162UseCurrentLocation()"><span aria-hidden="true">⌖</span> استخدام موقعي الحالي</button>
-        <button type="button" id="v162OpenMapBtn" class="secondary" onclick="alinV162OpenSelectedMap()" disabled>فتح الموقع على الخريطة</button>
-        <button type="button" id="v162ClearGpsBtn" class="secondary" onclick="alinV162ClearGps()" hidden>مسح الموقع</button>
+        <button type="button" class="v162-gps-primary" data-alin-click="alinV162UseCurrentLocation"><span aria-hidden="true">⌖</span> استخدام موقعي الحالي</button>
+        <button type="button" id="v162OpenMapBtn" class="secondary" data-alin-click="alinV162OpenSelectedMap" disabled>فتح الموقع على الخريطة</button>
+        <button type="button" id="v162ClearGpsBtn" class="secondary" data-alin-click="alinV162ClearGps" hidden>مسح الموقع</button>
       </div>
       <div id="v162GpsDetails" class="v162-gps-details" hidden></div>
       <input type="hidden" id="deliveryLatitude"><input type="hidden" id="deliveryLongitude"><input type="hidden" id="deliveryLocationUrl"><input type="hidden" id="deliveryLocationAccuracy">

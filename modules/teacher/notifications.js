@@ -93,7 +93,7 @@
 
     if(!button){
       button=document.createElement('button');
-      const before=[...tabs.querySelectorAll('button')].find(item=>(item.getAttribute('onclick')||'').includes("'requests'"));
+      const before=tabs.querySelector('button[data-teacher-tab="requests"]');
       tabs.insertBefore(button,before||null);
     }
 
@@ -101,7 +101,7 @@
     button.id=BUTTON_ID;
     button.dataset.teacherTab='notifications';
     button.classList.add('teacher-notifications-tab');
-    button.setAttribute('onclick',"teacherTab('notifications')");
+    button.setAttribute('data-alin-click','teacherTab');button.setAttribute('data-alin-click-arg0','notifications');
     button.innerHTML=`<span aria-hidden="true">🔔</span><span>الإشعارات</span><span id="${BADGE_ID}" class="teacher-v160-badge" hidden>0</span>`;
     button.hidden=false;
     return button;
@@ -117,7 +117,7 @@
 
   function setActive(){
     document.querySelectorAll('#teacherPage .teacher-tabs button').forEach(button=>{
-      const target=button.dataset.teacherTab||((button.getAttribute('onclick')||'').match(/teacherTab\('([^']+)'\)/)||[])[1]||'';
+      const target=button.dataset.teacherTab||'';
       button.classList.toggle('active-teacher-tab',target==='notifications');
     });
   }
@@ -128,7 +128,7 @@
     const title=escapeHtml(notification.title||'إشعار');
     const message=escapeHtml(notification.message||notification.text||'');
     const searchable=escapeHtml(`${notification.title||''} ${notification.message||notification.text||''}`.toLowerCase());
-    return `<article class="teacher-v155-card ${read?'':'unread'}" data-notification-id="${id}" data-text="${searchable}" data-read="${read?'1':'0'}"><div class="teacher-v155-icon">${icon(notification)}</div><div><h3>${title}</h3><p>${message}</p><small>${escapeHtml(formatDate(notification.created_at))}</small></div><div class="teacher-v155-card-actions">${read?'':`<button type="button" onclick="TeacherNotifications.mark('${id}')">مقروء</button>`}<button type="button" class="secondary" onclick="TeacherNotifications.copy('${id}')">نسخ</button></div></article>`;
+    return `<article class="teacher-v155-card ${read?'':'unread'}" data-notification-id="${id}" data-text="${searchable}" data-read="${read?'1':'0'}"><div class="teacher-v155-icon">${icon(notification)}</div><div><h3>${title}</h3><p>${message}</p><small>${escapeHtml(formatDate(notification.created_at))}</small></div><div class="teacher-v155-card-actions">${read?'':`<button type="button" data-alin-click="TeacherNotifications.mark" data-alin-click-arg0="${id}">مقروء</button>`}<button type="button" class="secondary" data-alin-click="TeacherNotifications.copy" data-alin-click-arg0="${id}">نسخ</button></div></article>`;
   }
 
   function render(){
@@ -147,7 +147,7 @@
     const today=new Date().toISOString().slice(0,10);
     const todayCount=notifications.filter(notification=>String(notification.created_at||'').slice(0,10)===today).length;
 
-    container.innerHTML=`<section class="teacher-v155-notifications"><div class="teacher-v155-head"><div><h2>إشعاراتي</h2><p>تابع الموافقات والمبيعات والتسويات ورسائل الإدارة.</p></div><div class="teacher-v155-actions"><button type="button" onclick="TeacherNotifications.markAll()">تحديد الكل كمقروء</button><button type="button" class="secondary" onclick="TeacherNotifications.refresh()">تحديث</button></div></div><div class="teacher-v155-stats"><div class="teacher-v155-stat"><small>كل الإشعارات</small><b>${notifications.length}</b></div><div class="teacher-v155-stat"><small>غير المقروء</small><b>${unread}</b></div><div class="teacher-v155-stat"><small>اليوم</small><b>${todayCount}</b></div></div><div class="teacher-v155-toolbar"><input id="teacherNotificationSearch" placeholder="ابحث بعنوان الإشعار أو محتواه" oninput="TeacherNotifications.filter()"><select id="teacherNotificationFilter" onchange="TeacherNotifications.filter()"><option value="all">الكل</option><option value="unread">غير المقروء</option><option value="read">المقروء</option></select></div><div id="teacherNotificationList" class="teacher-v155-list">${notifications.map(notification=>card(notification,seen)).join('')||'<div class="teacher-v155-empty">لا توجد إشعارات حالياً.</div>'}</div></section>`;
+    container.innerHTML=`<section class="teacher-v155-notifications"><div class="teacher-v155-head"><div><h2>إشعاراتي</h2><p>تابع الموافقات والمبيعات والتسويات ورسائل الإدارة.</p></div><div class="teacher-v155-actions"><button type="button" data-alin-click="TeacherNotifications.markAll">تحديد الكل كمقروء</button><button type="button" class="secondary" data-alin-click="TeacherNotifications.refresh">تحديث</button></div></div><div class="teacher-v155-stats"><div class="teacher-v155-stat"><small>كل الإشعارات</small><b>${notifications.length}</b></div><div class="teacher-v155-stat"><small>غير المقروء</small><b>${unread}</b></div><div class="teacher-v155-stat"><small>اليوم</small><b>${todayCount}</b></div></div><div class="teacher-v155-toolbar"><input id="teacherNotificationSearch" placeholder="ابحث بعنوان الإشعار أو محتواه" data-alin-input="TeacherNotifications.filter"><select id="teacherNotificationFilter" data-alin-change="TeacherNotifications.filter"><option value="all">الكل</option><option value="unread">غير المقروء</option><option value="read">المقروء</option></select></div><div id="teacherNotificationList" class="teacher-v155-list">${notifications.map(notification=>card(notification,seen)).join('')||'<div class="teacher-v155-empty">لا توجد إشعارات حالياً.</div>'}</div></section>`;
 
     window.activeTeacherTab='notifications';
     setActive();

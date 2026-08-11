@@ -5,14 +5,12 @@
 (function(){
   'use strict';
 
-  const VERSION='4.0.0-clean';
+  const VERSION=window.ALIN_CONFIG?.version||'4.2.0-rc.7';
   const TABLES=[
     'settings','accounts','delivery_areas','couriers','courier_areas','categories',
     'booklets','teacher_requests','teacher_request_versions','products','orders',
-    'order_items','order_timeline','permits','ledger','financial_entries',
-    'financial_payouts','withdrawals','library_settlements','teacher_settlements',
-    'delegate_settlements','admin_settlements','notifications','banners','coupons',
-    'student_profiles','product_reviews','stock_alerts','bundles','bundle_items',
+    'order_timeline','permits','ledger','settlements','withdrawals','notifications',
+    'banners','coupons','product_reviews','stock_alerts','bundles','bundle_items',
     'audit_events','notification_reads','account_permissions','backup_logs','system_health_logs'
   ];
   const PUBLIC_TABLES=[
@@ -21,40 +19,31 @@
   const ROLE_TABLES={
     admin:TABLES,
     accountant:[
-      'settings','accounts','orders','order_items','order_timeline','ledger','financial_entries','financial_payouts',
-      'withdrawals','library_settlements','teacher_settlements','delegate_settlements','admin_settlements',
+      'settings','accounts','orders','order_timeline','ledger','settlements','withdrawals',
       'notifications','notification_reads','audit_events'
     ],
     teacher:[
-      ...PUBLIC_TABLES,'teacher_requests','teacher_request_versions','orders','order_items','order_timeline','ledger',
-      'financial_entries','financial_payouts','withdrawals','teacher_settlements','notification_reads'
+      ...PUBLIC_TABLES,'teacher_requests','teacher_request_versions','orders','ledger','settlements','withdrawals','notification_reads'
     ],
     library:[
-      ...PUBLIC_TABLES,'orders','order_items','order_timeline','permits','ledger','financial_entries','financial_payouts',
-      'withdrawals','library_settlements','notification_reads'
+      ...PUBLIC_TABLES,'orders','order_timeline','permits','ledger','settlements','withdrawals','notification_reads'
     ],
     courier:[
-      ...PUBLIC_TABLES,'couriers','courier_areas','orders','order_items','order_timeline','ledger','financial_entries',
-      'financial_payouts','withdrawals','delegate_settlements','notification_reads'
+      ...PUBLIC_TABLES,'couriers','courier_areas','orders','order_timeline','ledger','settlements','withdrawals','notification_reads'
     ]
   };
   const TABLE_LIMITS={
-    orders:1000,order_items:2000,order_timeline:2000,notifications:250,audit_events:500,
-    ledger:1500,financial_entries:1500,financial_payouts:750,withdrawals:750,
-    library_settlements:750,teacher_settlements:750,delegate_settlements:750,admin_settlements:750,
+    orders:1000,order_timeline:2000,notifications:250,audit_events:500,
+    ledger:1500,settlements:1000,withdrawals:750,
     teacher_requests:500,teacher_request_versions:750,product_reviews:500,stock_alerts:500,
     backup_logs:100,system_health_logs:250
   };
-  const REQUIRED_TABLES=['settings','accounts','booklets','products','orders','notifications','audit_events'];
-  const SORTED_TABLES=new Set(['orders','notifications','audit_events','order_timeline','financial_entries']);
-  const CRITICAL_TABLES=new Set([
-    'orders','order_items','order_timeline','coupons','products','ledger','financial_entries',
-    'financial_payouts','withdrawals','library_settlements','teacher_settlements',
-    'delegate_settlements','admin_settlements'
-  ]);
+  const REQUIRED_TABLES=['settings','accounts','booklets','products','orders','ledger','settlements','notifications','audit_events'];
+  const SORTED_TABLES=new Set(['orders','notifications','audit_events','order_timeline','settlements']);
+  const CRITICAL_TABLES=new Set(['orders','order_timeline','coupons','products','ledger','settlements','withdrawals']);
   const NO_CLIENT_ID=new Set(['settings','courier_areas']);
-  const QUEUE_KEY='alin_rc5_offline_queue';
-  const DEAD_QUEUE_KEY='alin_rc5_failed_queue';
+  const QUEUE_KEY='alin_rc7_offline_queue';
+  const DEAD_QUEUE_KEY='alin_rc7_failed_queue';
   const SNAPSHOT_KEY='alin_v3_public_snapshot';
   const SESSION_SNAPSHOT_KEY='alin_v3_session_snapshot';
   const STATUS_EVENT='alin:cloud-status';
@@ -62,15 +51,12 @@
   const MUTATION_EVENT='alin:cloud-mutation';
   const TABLE_TO_DB={
     booklets:'booklets',products:'products',categories:'categories',banners:'banners',orders:'orders',
-    permits:'permits',ledger:'ledger',withdrawals:'withdrawals',audit_events:'audit',couriers:'couriers',
+    permits:'permits',ledger:'ledger',settlements:'settlements',withdrawals:'withdrawals',audit_events:'audit',couriers:'couriers',
     delivery_areas:'deliveryAreas',courier_areas:'courierAreas',notifications:'notifications',
     teacher_requests:'teacherRequests',teacher_request_versions:'teacherRequestVersions',
-    order_items:'orderItems',order_timeline:'orderTimeline',financial_entries:'financialEntries',
-    financial_payouts:'financialPayouts',library_settlements:'librarySettlements',
-    teacher_settlements:'teacherSettlements',delegate_settlements:'courierSettlements',
-    admin_settlements:'adminSettlements',coupons:'coupons',student_profiles:'studentProfiles',
-    product_reviews:'productReviews',stock_alerts:'stockAlerts',bundles:'bundles',bundle_items:'bundleItems',
-    notification_reads:'notificationReads',account_permissions:'accountPermissions',backup_logs:'backupLogs',system_health_logs:'systemHealthLogs'
+    order_timeline:'orderTimeline',coupons:'coupons',product_reviews:'productReviews',stock_alerts:'stockAlerts',
+    bundles:'bundles',bundle_items:'bundleItems',notification_reads:'notificationReads',account_permissions:'accountPermissions',
+    backup_logs:'backupLogs',system_health_logs:'systemHealthLogs'
   };
 
   let realtimeChannel=null;
@@ -108,12 +94,7 @@
   }
   const connected=()=>!!client()&&navigator.onLine;
 
-  function syncAliases(d){
-    d.financial_entries=d.financialEntries;d.financial_payouts=d.financialPayouts;
-    d.library_settlements=d.librarySettlements;d.teacher_settlements=d.teacherSettlements;
-    d.delegate_settlements=d.courierSettlements;
-    return d;
-  }
+  function syncAliases(d){return d;}
   function ensureDb(){
     if(!window.db||typeof window.db!=='object')window.db={};
     const d=window.db;
@@ -248,12 +229,6 @@
     if(table==='accounts')return selectAccountsForCurrentSession();
     if(table==='settings')return selectSettingsForCurrentSession();
     if(table==='booklets')return selectBookletsForCurrentSession();
-    if(table==='booklets'){
-      const c=client();
-      const source=!role||['courier','accountant'].includes(role)?'alin_public_booklets':role==='library'?'alin_library_booklets':'booklets';
-      const {data,error}=await c.from(source).select('*');
-      if(error)throw error;return data||[];
-    }
     if(table==='orders'&&role==='teacher'){
       const c=client();let request=c.from('alin_teacher_orders').select('*').order('created_at',{ascending:false});
       const cap=options.limit??limitFor(table,role);if(cap)request=request.limit(cap);
@@ -408,7 +383,6 @@
       const snapshot=mapCloudToDb(rows);
       window.db=snapshot;
       try{window.couriers=snapshot.couriers||snapshot.accounts?.couriers||[]}catch(_){ }
-      try{window.courierSettlements=snapshot.courierSettlements||[]}catch(_){ }
       persistSnapshot(snapshot);
       lastRefreshErrors=errors;
       window.dispatchEvent(new CustomEvent(REFRESH_EVENT,{detail:{version:VERSION,errors,at:nowIso(),reason:options.reason||'load'}}));
@@ -459,7 +433,7 @@
   function startRealtime(){
     const c=client();if(!c?.channel||realtimeChannel)return;
     realtimeChannel=c.channel('alin-live-v229');
-    for(const table of ['orders','notifications','booklets','products','accounts','couriers','ledger','financial_entries']){
+    for(const table of ['orders','notifications','booklets','products','accounts','couriers','ledger','settlements']){
       realtimeChannel.on('postgres_changes',{event:'*',schema:'public',table},()=>scheduleReload(300));
     }
     realtimeChannel.subscribe(status=>emit(status==='SUBSCRIBED'?'realtime':'realtime-wait',{realtime:status}));

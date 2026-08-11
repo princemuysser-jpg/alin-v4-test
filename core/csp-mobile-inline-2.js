@@ -1,0 +1,1 @@
+(function(){function unlock(){try{screen.orientation&&screen.orientation.unlock&&screen.orientation.unlock()}catch(_){}}unlock();addEventListener('pageshow',unlock,{passive:true});addEventListener('orientationchange',function(){setTimeout(unlock,50)},{passive:true})})();

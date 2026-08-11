@@ -1,0 +1,1 @@
+(function(){try{var mode=localStorage.getItem('alin_theme_v234')==='dark'?'dark':'light';document.documentElement.dataset.alinTheme=mode;document.documentElement.dataset.alinThemeMode=mode}catch(_){document.documentElement.dataset.alinTheme='light';document.documentElement.dataset.alinThemeMode='light'}})();

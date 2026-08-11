@@ -21,8 +21,8 @@
     const orders=arr(database.orders).filter(row=>row.kind==='booklet'&&bookIds.has(String(row.item_id||row.booklet_id||'')));
     const ledger=arr(database.ledger).filter(row=>same(row.teacher_id,id));
     const payouts=[
-      ...arr(database.teacherPayouts).filter(row=>same(row.teacher_id,id)),
-      ...arr(database.withdrawals).filter(row=>row.role==='teacher'&&same(row.account_id||row.user_id,id))
+      ...arr(database.settlements).filter(row=>String(row.party_role||'').toLowerCase()==='teacher'&&same(row.party_id,id)),
+      ...arr(database.withdrawals).filter(row=>row.role==='teacher'&&same(row.account_id||row.user_id,id)&&String(row.status||'').toLowerCase()==='paid')
     ];
     const requests=arr(database.teacherRequests||database.teacher_requests).filter(row=>same(row.teacher_id,id));
     const notifications=window.AlinNotifications?.visible?.({role:'teacher',id})||arr(database.notifications).filter(row=>{
@@ -36,8 +36,7 @@
 
   function markActive(){
     document.querySelectorAll('#teacherPage .teacher-tabs button').forEach(button=>{
-      const inline=button.getAttribute('onclick')||'';
-      const target=button.dataset.teacherTab||(inline.match(/teacherTab\('([^']+)'\)/)||[])[1]||'';
+      const target=button.dataset.teacherTab||'';
       button.classList.toggle('active-teacher-tab',target===active);
     });
   }

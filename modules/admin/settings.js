@@ -80,7 +80,7 @@
         <div class="as144-field"><label>حد تنبيه المخزون</label><input id="as144LowStock" type="number" min="0" value="${escv(value('low_stock_default','5'))}"></div>
         <div class="as144-field"><label>حد تنبيه ذمة المكتبة</label><input id="as144DebtLimit" type="number" min="0" value="${escv(value('library_debt_alert_limit','500000'))}"></div>
         <div class="as144-field full"><label>ملاحظة إدارية داخلية</label><textarea id="as144AdminNote">${escv(value('admin_internal_note',''))}</textarea></div>
-      </div><div class="as144-actions"><button class="as144-save" data-save="general">حفظ الإعدادات العامة</button><button class="secondary" onclick="adminTab('brandIdentity')">فتح الهوية البصرية</button></div><div id="as144GeneralMsg" class="as144-status"></div></div></section>
+      </div><div class="as144-actions"><button class="as144-save" data-save="general">حفظ الإعدادات العامة</button><button class="secondary" data-alin-click="adminTab" data-alin-click-arg0="brandIdentity">فتح الهوية البصرية</button></div><div id="as144GeneralMsg" class="as144-status"></div></div></section>
       <section class="as144-panel" data-as144-panel="profits"><div class="as144-card"><h3>نسب الأرباح الافتراضية</h3><div class="as144-grid">
         <div class="as144-field"><label>حصة المنصة %</label><input id="as144AdminProfit" type="number" min="0" max="100" value="${escv(value('admin_profit_percent','20'))}"></div>
         <div class="as144-field"><label>حصة المدرس %</label><input id="as144TeacherProfit" type="number" min="0" max="100" value="${escv(value('teacher_profit_percent','50'))}"></div>
@@ -121,7 +121,7 @@
   }
 
   Object.assign(window,{settingsSet,adminUser,saveAdminSecurity,renderSettingsAdmin:render,saveSystemSettings:()=>Promise.resolve(true),openSystemSettings:()=>window.adminTab?.('settings')});
-  function install(){const button=[...document.querySelectorAll('#adminPage .admin-tabs button')].find(item=>(item.getAttribute('onclick')||'').includes("'settings'"));if(button){button.textContent='الإعدادات';button.dataset.adminTab='settings'}window.AlinAdminModules?.register?.('settings',render)}
+  function install(){const button=document.querySelector('#adminPage .admin-tabs button[data-admin-tab="settings"]');if(button)button.textContent='الإعدادات';window.AlinAdminModules?.register?.('settings',render)}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
   window.AlinSettings=Object.freeze({render,set:settingsSet,saveMany,saveAdminSecurity});
 })();

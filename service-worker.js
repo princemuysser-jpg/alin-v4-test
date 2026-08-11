@@ -1,4 +1,4 @@
-const VERSION='alin-4.2.0-rc.3';
+const VERSION='alin-4.2.0-rc.7';
 const STATIC_CACHE=`${VERSION}-static`;
 const RUNTIME_CACHE=`${VERSION}-runtime`;
 
@@ -9,7 +9,10 @@ const CORE=[
   './dist/alin-core.v4.js','./alin-app-desktop.v4.1.5.js','./alin-app-mobile.v4.1.5.js',
   './modules/core/navigation.js','./modules/core/account-admin-service.js','./modules/core/order-bell.js',
   './modules/teacher/admin-word-download.js','./core/boot-recovery.js','./core/pwa-register.js',
-  './core/device-router.js','./core/runtime-guard.js','./core/splash.js',
+  './core/device-router.js','./core/runtime-guard.js','./core/splash.js','./core/ui-action-router.js','./core/setup-new-project.js',
+  './core/csp-desktop-inline-1.js','./core/csp-desktop-inline-2.js','./core/csp-desktop-inline-3.js','./core/csp-desktop-inline-4.js',
+  './core/csp-mobile-inline-1.js','./core/csp-mobile-inline-2.js','./core/csp-mobile-inline-3.js','./core/csp-mobile-inline-4.js','./core/csp-mobile-inline-5.js','./core/csp-mobile-inline-6.js',
+  './core/csp-cdn-guard.js','./core/csp-app-bundle-guard.js',
   './dist/css/desktop.bundle.css','./dist/css/mobile.bundle.css',
   './styles/alin-tokens.css','./styles/alin-shared.css','./styles/alin-branding.css',
   './styles/alin-i18n.css','./styles/alin-desktop.css','./styles/alin-mobile.css','./styles/alin-splash.css','./styles/alin-store-responsive-1z4.css','./styles/alin-store-media-1z9.css','./styles/alin-store-details-categories-1z10.css',

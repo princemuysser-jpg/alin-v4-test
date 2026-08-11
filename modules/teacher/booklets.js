@@ -20,13 +20,12 @@ async function sendTeacherBookRequest(){
     if(sourceFile.type && !validMime.includes(sourceFile.type)) throw Error('اختر ملف Word DOCX صحيح');
     const requestId=uid('TR');
     const path=await uploadFile('teacher-requests',sourceFile,{type:'docx',required:true,ownerId:current.id,entityId:requestId,maxBytes:20*1024*1024});
-    await insert('teacher_requests',{
-      id:requestId,teacher_id:current.id,teacher_name:current.name,
-      title:String(f.get('title')).trim(),subject:String(f.get('subject')||''),grade:String(f.get('grade')||''),
-      note:String(f.get('note')||''),source_file_path:path||'',source_file_name:sourceFile.name||'',
-      source_file_type:'docx',source_mime_type:sourceFile.type||'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      status:'new'
+    const client=window.sb||window.AlinCloud?.client?.();if(!client?.rpc)throw new Error('خدمة طلبات المدرسين غير متاحة');
+    const {data,error}=await client.rpc('alin_teacher_create_request',{
+      p_id:requestId,p_title:String(f.get('title')).trim(),p_subject:String(f.get('subject')||''),p_grade:String(f.get('grade')||''),p_note:String(f.get('note')||''),
+      p_source_file_path:path||'',p_source_file_name:sourceFile.name||'',p_source_mime_type:sourceFile.type||'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
     });
+    if(error)throw error;if(!data?.ok)throw new Error(data?.error||'لم يؤكد الخادم إرسال الطلب');
     await audit('teacher_request','رفع ملف Word لطلب ملزمة من '+current.name);
     await load(); teacherTab('requests'); toast('تم إرسال ملف Word للإدارة للمراجعة');
   }catch(e){
@@ -43,15 +42,15 @@ async function openTeacherPdf(bookletId){
   const b=db.booklets.find(x=>x.id===bookletId); if(!b?.file_path)return alert('لا يوجد ملف PDF لهذه الملزمة');
   let cleanUrl='';
   try{cleanUrl=await secureFileUrl(b.file_path,300,'booklets');}catch(e){return alert(e.message||'تعذر فتح ملف الملزمة');}
-  checkoutBox.innerHTML=`<h2>مشاهدة الملزمة</h2><div class="pdf-viewer"><div class="pdf-loading">جاري فتح الملزمة...</div></div><div class="row-actions no-print"><button class="secondary" onclick="closeCheckout()">إغلاق</button></div>`;
+  checkoutBox.innerHTML=`<h2>مشاهدة الملزمة</h2><div class="pdf-viewer"><div class="pdf-loading">جاري فتح الملزمة...</div></div><div class="row-actions no-print"><button class="secondary" data-alin-click="closeCheckout">إغلاق</button></div>`;
   checkoutModal.classList.remove('hidden');
   const ok=await checkPublicFile(cleanUrl);
   if(!ok){
-    checkoutBox.innerHTML=`<h2>مشاهدة الملزمة</h2><div class="empty-state"><b>تعذر فتح ملف الملزمة</b><p>الملف القديم غير مرتبط بالتخزين الحالي. احذف الملزمة من لوحة المدير وارفع ملف PDF من جديد.</p></div><div class="row-actions no-print"><button class="secondary" onclick="closeCheckout()">إغلاق</button></div>`;
+    checkoutBox.innerHTML=`<h2>مشاهدة الملزمة</h2><div class="empty-state"><b>تعذر فتح ملف الملزمة</b><p>الملف القديم غير مرتبط بالتخزين الحالي. احذف الملزمة من لوحة المدير وارفع ملف PDF من جديد.</p></div><div class="row-actions no-print"><button class="secondary" data-alin-click="closeCheckout">إغلاق</button></div>`;
     return;
   }
   const url=cleanUrl+'#toolbar=0&navpanes=0&scrollbar=1';
-  checkoutBox.innerHTML=`<h2>مشاهدة الملزمة</h2><div class="pdf-guard"><div class="watermark">${esc(current?.name||'منصة آلين')} — مشاهدة فقط</div><iframe src="${url}" oncontextmenu="return false"></iframe></div><div class="row-actions no-print"><button class="secondary" onclick="closeCheckout()">إغلاق</button></div>`;
+  checkoutBox.innerHTML=`<h2>مشاهدة الملزمة</h2><div class="pdf-guard"><div class="watermark">${esc(current?.name||'منصة آلين')} — مشاهدة فقط</div><iframe src="${url}" data-alin-contextmenu="@prevent"></iframe></div><div class="row-actions no-print"><button class="secondary" data-alin-click="closeCheckout">إغلاق</button></div>`;
 }
 
 function teacherPhoneForBooklet(b){ return b.teacher_phone || teacherObj(b.teacher_id).phone || ''; }
@@ -73,7 +72,7 @@ async function openTeacherRequestSource(id){
   if(!fileName.endsWith('.docx') && String(r.source_file_type||'').toLowerCase()!=='docx'){
     return alert('هذا ملف قديم غير قابل للمعاينة الداخلية. اطلب من المدرس إعادة رفعه بصيغة DOCX.');
   }
-  checkoutBox.innerHTML=`<section class="teacher-word-viewer"><div class="teacher-word-head"><div><h2>معاينة ملف Word</h2><p>${esc(r.title||'ملزمة')} — مشاهدة داخلية فقط</p></div><span>DOCX</span></div><div class="teacher-word-security">لا يوجد زر تنزيل داخل المعاينة. استخدم ملاحظات الإدارة لطلب أي تعديل من المدرس.</div><div id="teacherWordPreview" class="teacher-word-pages"><div class="teacher-word-loading">جاري تجهيز المعاينة...</div></div><div class="row-actions no-print"><button class="secondary" onclick="closeCheckout()">إغلاق</button></div></section>`;
+  checkoutBox.innerHTML=`<section class="teacher-word-viewer"><div class="teacher-word-head"><div><h2>معاينة ملف Word</h2><p>${esc(r.title||'ملزمة')} — مشاهدة داخلية فقط</p></div><span>DOCX</span></div><div class="teacher-word-security">لا يوجد زر تنزيل داخل المعاينة. استخدم ملاحظات الإدارة لطلب أي تعديل من المدرس.</div><div id="teacherWordPreview" class="teacher-word-pages"><div class="teacher-word-loading">جاري تجهيز المعاينة...</div></div><div class="row-actions no-print"><button class="secondary" data-alin-click="closeCheckout">إغلاق</button></div></section>`;
   checkoutModal.classList.remove('hidden');
   try{
     if(typeof window.AlinLoadMammoth!=='function') throw new Error('محمل مكتبة معاينة Word غير متاح');
@@ -87,7 +86,7 @@ async function openTeacherRequestSource(id){
     const result=await window.mammoth.convertToHtml({arrayBuffer},{includeDefaultStyleMap:true});
     const target=document.getElementById('teacherWordPreview');
     if(!target)return;
-    target.innerHTML=`<article class="teacher-word-document" oncontextmenu="return false">${result.value||'<p>الملف لا يحتوي نصاً قابلاً للعرض.</p>'}</article>`;
+    target.innerHTML=`<article class="teacher-word-document" data-alin-contextmenu="@prevent">${result.value||'<p>الملف لا يحتوي نصاً قابلاً للعرض.</p>'}</article>`;
     target.querySelectorAll('a').forEach(a=>{a.removeAttribute('href');a.removeAttribute('download');});
     target.querySelectorAll('img').forEach(img=>img.setAttribute('draggable','false'));
   }catch(e){

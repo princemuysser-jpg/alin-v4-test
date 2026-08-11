@@ -1,0 +1,11 @@
+{
+  "ok": true,
+  "errors": [],
+  "actions": 144,
+  "build_hashes": {
+    "dist/alin-core.v4.js": "4a6c1f03c9c3af0b0e50d7051eeff3d324f97cad83f6f09f21caaf217ecda29f",
+    "alin-app-desktop.v4.1.5.js": "23ae40917fc8b36627ea12ab92a4a86ea9f723d46ff6443070fdc5e356cd5ad1",
+    "alin-app-mobile.v4.1.5.js": "2e92b3fa5e1570ebde027251f6ad665ee9a89bae003dd773df451faa9e5517ec"
+  },
+  "js_files": 102
+}

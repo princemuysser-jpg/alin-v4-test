@@ -7,10 +7,8 @@
   const emptyDb=()=>({
     accounts:{all:[],teachers:[],libraries:[],couriers:[],accountants:[]},
     booklets:[],products:[],categories:[],banners:[],coupons:[],notifications:[],orders:[],
-    permits:[],ledger:[],withdrawals:[],audit:[],auditLogs:[],couriers:[],deliveryAreas:[],
-    teacherRequests:[],teacherPayouts:[],orderItems:[],orderTimeline:[],financialEntries:[],
-    financialPayouts:[],financialReturns:[],librarySettlements:[],teacherSettlements:[],
-    courierSettlements:[],backupLogs:[],systemHealthLogs:[],settings:{storeType:'booklet'}
+    permits:[],ledger:[],settlements:[],withdrawals:[],audit:[],auditLogs:[],couriers:[],deliveryAreas:[],
+    teacherRequests:[],orderTimeline:[],backupLogs:[],systemHealthLogs:[],settings:{storeType:'booklet'}
   });
   let stateDb=window.db&&typeof window.db==='object'?window.db:emptyDb();
   let stateCurrent=window.current||null;
@@ -27,10 +25,6 @@
   expose('pendingRole',()=>statePendingRole,value=>{statePendingRole=String(value||'')});
   expose('checkoutItem',()=>stateCheckoutItem,value=>{stateCheckoutItem=value||null});
   expose('sb',()=>stateClient,value=>{stateClient=value||null});
-  expose('financialEntries',()=>stateDb.financialEntries||stateDb.financial_entries||[],value=>{stateDb.financialEntries=value||[];stateDb.financial_entries=value||[]});
-  expose('financialPayouts',()=>stateDb.financialPayouts||stateDb.financial_payouts||[],value=>{stateDb.financialPayouts=value||[];stateDb.financial_payouts=value||[]});
-  expose('librarySettlements',()=>stateDb.librarySettlements||stateDb.library_settlements||[],value=>{stateDb.librarySettlements=value||[];stateDb.library_settlements=value||[]});
-  expose('courierSettlements',()=>stateDb.courierSettlements||stateDb.delegate_settlements||[],value=>{stateDb.courierSettlements=value||[];stateDb.delegate_settlements=value||[]});
   expose('couriers',()=>stateDb.couriers||stateDb.accounts?.couriers||[],value=>{stateDb.couriers=value||[]});
 
   function validConfig(){
@@ -83,10 +77,10 @@
   }
   async function usePermit(id){
     const permit=(stateDb.permits||[]).find(row=>String(row.id)===String(id));
-    const allowed=Math.max(1,Number(permit?.allowed||permit?.qty||1));
-    if(!permit||Number(permit.used||0)>=allowed){window.toast?.('إذن النسخ منتهي');return false}
-    const used=Number(permit.used||0)+1,status=used>=allowed?'used':'active';
-    await window.update('permits',{used,status},{id});Object.assign(permit,{used,status});await audit('copy',`استخدام إذن نسخة ${id}`);return true;
+    if(!permit){window.toast?.('إذن النسخ غير موجود');return false}
+    const client=window.sb||window.AlinCloud?.client?.();if(!client?.rpc)throw new Error('خدمة أذونات الطباعة غير متاحة');
+    const {data,error}=await client.rpc('alin_use_print_permit',{p_permit_id:String(id)});if(error)throw error;if(!data?.ok)throw new Error(data?.error||'لم يؤكد الخادم استخدام الإذن');
+    if(data.permit)Object.assign(permit,data.permit);await audit('copy',`استخدام إذن نسخة ${id}`);return true;
   }
   function renderAll(){
     try{window.applyBrand?.()}catch(error){console.warn('[ALIN brand]',error)}
@@ -98,11 +92,11 @@
   async function seedData(){throw new Error('البيانات التجريبية معطلة في النسخة المستقرة')}
 
   Object.assign(window,{
-    ALIN_VERSION:'4.0.0',init,requireConnection,audit,renderAll,seedData,
+    ALIN_VERSION:window.ALIN_CONFIG?.version||'4.2.0-rc.7',init,requireConnection,audit,renderAll,seedData,
     teacherName,libIsOpen,libStatusText,activeLibraries,alinOpenLibraries:activeLibraries,
     alinLibOpen:libIsOpen,deliveryFee,isMissingTableError,usePermit
   });
-  window.AlinRuntime=Object.freeze({version:'4.0.0',init,requireConnection,renderAll,getDb:()=>stateDb,getCurrent:()=>stateCurrent});
+  window.AlinRuntime=Object.freeze({version:window.ALIN_CONFIG?.version||'4.2.0-rc.7',init,requireConnection,renderAll,getDb:()=>stateDb,getCurrent:()=>stateCurrent});
 
   /* PLATFORM STEP 1: coupons are owned by modules/store/coupons.js and modules/admin/coupons.js. */
   /* PLATFORM STEP 2: cart and order creation are owned by modules/store/cart.js and modules/store/order-routing.js. */

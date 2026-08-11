@@ -99,7 +99,7 @@
     const editing=Boolean(item.id);
     const type=normalizeType(item.type||item.category_id||'stationery');
     return `<form id="alinProductEditorForm" class="form-grid admin-product-editor" data-id="${escv(item.id||'')}">
-      <select name="type" id="alinProductType" onchange="refreshProductCategories()"><option value="stationery" ${type==='stationery'?'selected':''}>قرطاسية</option><option value="gift" ${type==='gift'?'selected':''}>هدايا</option></select>
+      <select name="type" id="alinProductType" data-alin-change="refreshProductCategories"><option value="stationery" ${type==='stationery'?'selected':''}>قرطاسية</option><option value="gift" ${type==='gift'?'selected':''}>هدايا</option></select>
       <input name="name" value="${escv(item.name||item.title||'')}" placeholder="اسم المنتج" required>
       <select name="category" id="alinProductCategory">${categoryOptions(type,item.category||'')}</select>
       <input name="currentPrice" type="number" min="0" value="${Number(item.sale_price||item.deal_price||item.price||0)}" placeholder="السعر الحالي" required>
@@ -108,7 +108,7 @@
       <input name="lowStockLimit" type="number" min="0" value="${Number(item.low_stock_limit||window.db?.settings?.low_stock_default||5)}" placeholder="حد تنبيه المخزون">
       <textarea name="description" rows="3" placeholder="تفاصيل المنتج">${escv(item.description||item.details||'')}</textarea>
       <label>صورة المنتج<input name="image" type="file" accept="image/*"></label>
-      <div class="row-actions"><button type="button" onclick="saveProduct()">${editing?'حفظ التعديل':'إضافة المنتج'}</button><button type="button" class="secondary" onclick="closeProductEditor()">إلغاء</button></div>
+      <div class="row-actions"><button type="button" data-alin-click="saveProduct">${editing?'حفظ التعديل':'إضافة المنتج'}</button><button type="button" class="secondary" data-alin-click="closeProductEditor">إلغاء</button></div>
     </form>`;
   }
 
@@ -118,7 +118,7 @@
     modal=document.createElement('div');
     modal.id='alinProductEditorModal';
     modal.className='modal hidden';
-    modal.innerHTML='<div class="modal-card"><button class="x" type="button" onclick="closeProductEditor()">×</button><div id="alinProductEditorBody"></div></div>';
+    modal.innerHTML='<div class="modal-card"><button class="x" type="button" data-alin-click="closeProductEditor">×</button><div id="alinProductEditorBody"></div></div>';
     document.body.appendChild(modal);
     return modal;
   }
@@ -232,7 +232,7 @@
         <div class="admin-product-v129-title"><div><small>${typeLabel(item.type)} • ${escv(item.category||'عام')}</small><h3>${escv(item.name||item.title||'منتج')}</h3></div><div class="admin-product-price-pair"><strong>${moneyv(currentPrice)} د.ع</strong>${previousPrice?`<del>${moneyv(previousPrice)} د.ع</del>`:''}</div></div>
         <p>${escv(item.description||item.details||'')}</p>
         <div class="admin-product-v129-meta"><span class="stock ${stockClass}">${stockText}: ${moneyv(stock)}</span><span>الرمز: ${escv(item.id||'—')}</span></div>
-        <div class="admin-product-v129-actions"><button type="button" class="secondary" onclick="editProduct('${escv(item.id)}')">تعديل</button><button type="button" onclick="setProductStatus('${escv(item.id)}','${status==='published'?'hidden':'published'}')">${status==='published'?'إخفاء':'نشر'}</button><button type="button" class="danger" onclick="deleteProduct('${escv(item.id)}')">حذف</button></div>
+        <div class="admin-product-v129-actions"><button type="button" class="secondary" data-alin-click="editProduct" data-alin-click-arg0="${escv(item.id)}">تعديل</button><button type="button" data-alin-click="setProductStatus" data-alin-click-arg0="${escv(item.id)}" data-alin-click-arg1="${status==='published'?'hidden':'published'}">${status==='published'?'إخفاء':'نشر'}</button><button type="button" class="danger" data-alin-click="deleteProduct" data-alin-click-arg0="${escv(item.id)}">حذف</button></div>
       </div>
     </article>`;
   }
@@ -246,7 +246,7 @@
     const low=all.filter(item=>Number(item.stock)>0&&Number(item.stock)<=lowStockLimit(item)).length;
     const out=all.filter(item=>Number(item.stock)<=0).length;
     container.innerHTML=`<section class="admin-products-v129">
-      <header class="admin-products-v129-head"><div><h2>إدارة المنتجات</h2><p>إدارة القرطاسية والهدايا والمخزون من تنفيذ واحد مستقل عن platform.js.</p></div><button type="button" onclick="addProduct()">إضافة منتج</button></header>
+      <header class="admin-products-v129-head"><div><h2>إدارة المنتجات</h2><p>إدارة القرطاسية والهدايا والمخزون من تنفيذ واحد مستقل عن platform.js.</p></div><button type="button" data-alin-click="addProduct">إضافة منتج</button></header>
       <section class="admin-products-v129-stats"><article><small>الإجمالي</small><strong>${all.length}</strong></article><article><small>المنشورة</small><strong>${published}</strong></article><article><small>المخفية</small><strong>${hidden}</strong></article><article class="warn"><small>قليل المخزون</small><strong>${low}</strong></article><article class="danger"><small>النافدة</small><strong>${out}</strong></article></section>
       <section class="admin-products-v129-tools"><input id="alinProductSearch" value="${escv(state.q)}" placeholder="بحث بالاسم أو القسم"><select id="alinProductFilterType"><option value="">كل الأنواع</option><option value="stationery" ${state.type==='stationery'?'selected':''}>قرطاسية</option><option value="gift" ${state.type==='gift'?'selected':''}>هدايا</option></select><select id="alinProductFilterStatus"><option value="">كل الحالات</option><option value="published" ${state.status==='published'?'selected':''}>منشور</option><option value="hidden" ${state.status==='hidden'?'selected':''}>مخفي</option></select><select id="alinProductFilterStock"><option value="">كل المخزون</option><option value="available" ${state.stock==='available'?'selected':''}>متوفر</option><option value="low" ${state.stock==='low'?'selected':''}>قليل</option><option value="out" ${state.stock==='out'?'selected':''}>نافد</option></select><select id="alinProductSort"><option value="newest" ${state.sort==='newest'?'selected':''}>الأحدث</option><option value="name" ${state.sort==='name'?'selected':''}>الاسم</option><option value="priceAsc" ${state.sort==='priceAsc'?'selected':''}>السعر تصاعدي</option><option value="priceDesc" ${state.sort==='priceDesc'?'selected':''}>السعر تنازلي</option><option value="stock" ${state.sort==='stock'?'selected':''}>الأقل مخزونًا</option></select></section>
       <section class="admin-products-v129-grid">${list.length?list.map(productCard).join(''):'<div class="empty">لا توجد منتجات مطابقة.</div>'}</section>
@@ -282,7 +282,7 @@
     return `<article class="admin-category-card ${visible?'':'is-hidden'}">
       ${categoryIconMarkupAdmin(item)}
       <div class="admin-category-copy"><b>${escv(item.name)}</b><small>${escv(categoryTypeLabel(item.type))} • ترتيب ${Number(item.sort_order||0)}${builtIn?' • قسم رئيسي':' • قسم إضافي'}</small></div>
-      <div class="row-actions"><button type="button" class="secondary" onclick="editCategory('${escv(item.id)}')">تعديل</button><button type="button" onclick="toggleCategory('${escv(item.id)}','${visible?'inactive':'active'}')">${visible?'إخفاء':'إظهار'}</button>${builtIn?'':`<button type="button" class="danger" onclick="deleteCategory('${escv(item.id)}')">حذف</button>`}</div>
+      <div class="row-actions"><button type="button" class="secondary" data-alin-click="editCategory" data-alin-click-arg0="${escv(item.id)}">تعديل</button><button type="button" data-alin-click="toggleCategory" data-alin-click-arg0="${escv(item.id)}" data-alin-click-arg1="${visible?'inactive':'active'}">${visible?'إخفاء':'إظهار'}</button>${builtIn?'':`<button type="button" class="danger" data-alin-click="deleteCategory" data-alin-click-arg0="${escv(item.id)}">حذف</button>`}</div>
     </article>`;
   }
 
@@ -296,7 +296,7 @@
         <input name="name" placeholder="اسم القسم الجديد" required>
         <input name="sortOrder" type="number" min="1" value="10" placeholder="ترتيب الظهور">
         <label class="admin-category-file">أيقونة القسم<input name="icon" type="file" accept="image/*"></label>
-        <button type="button" onclick="addCategory()">إضافة القسم</button>
+        <button type="button" data-alin-click="addCategory">إضافة القسم</button>
       </form>
       <div class="admin-category-note">القسم الجديد يظهر في واجهة المتجر، وعند الضغط عليه تفتح صفحة مستقلة تعرض المنتجات المطابقة له.</div>
       <div class="admin-category-list">${rows.length?rows.map(categoryRowHtml).join(''):'<div class="empty">لا توجد أقسام.</div>'}</div>
@@ -326,7 +326,7 @@
     let modal=document.getElementById('alinCategoryEditorModal');
     if(modal)return modal;
     modal=document.createElement('div');modal.id='alinCategoryEditorModal';modal.className='modal hidden';
-    modal.innerHTML='<div class="modal-card"><button class="x" type="button" onclick="closeCategoryEditor()">×</button><div id="alinCategoryEditorBody"></div></div>';
+    modal.innerHTML='<div class="modal-card"><button class="x" type="button" data-alin-click="closeCategoryEditor">×</button><div id="alinCategoryEditorBody"></div></div>';
     document.body.appendChild(modal);return modal;
   }
 
@@ -342,7 +342,7 @@
       <input name="sortOrder" type="number" min="1" value="${Number(item.sort_order||1)}" placeholder="ترتيب الظهور">
       <label>تغيير الأيقونة<input name="icon" type="file" accept="image/*"></label>
       ${categoryIconUrl(item)?`<div class="admin-category-current-icon">${categoryIconMarkupAdmin(item)}<small>الأيقونة الحالية</small></div>`:''}
-      <div class="row-actions"><button type="button" onclick="saveCategoryEdit()">حفظ التعديل</button><button type="button" class="secondary" onclick="closeCategoryEditor()">إلغاء</button></div>
+      <div class="row-actions"><button type="button" data-alin-click="saveCategoryEdit">حفظ التعديل</button><button type="button" class="secondary" data-alin-click="closeCategoryEditor">إلغاء</button></div>
     </form>`;
     modal.classList.remove('hidden');modal.hidden=false;
   }

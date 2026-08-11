@@ -80,15 +80,26 @@
   function stockForm(item){
     openModal(`<h2>أبلغني عند التوفر</h2><p>سنحفظ طلب التنبيه في النظام فقط إذا كانت الخدمة مفعلة.</p><div class="v99-form"><input id="v99StockContact" placeholder="رقم الهاتف"><button data-v99-action="stockSubmit" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">حفظ التنبيه</button><div id="v99FormMsg"></div></div>`);
   }
+  async function publicSubmission(action,payload){
+    const client=window.sb;
+    if(!client?.functions?.invoke)throw new Error('خدمة الإرسال غير متاحة حالياً');
+    const {data,error}=await client.functions.invoke('public-submission',{body:{action,...payload}});
+    if(error){
+      let detail=null;
+      try{if(error.context&&typeof error.context.json==='function')detail=await error.context.json()}catch(_){}
+      throw new Error(detail?.message||error.message||'تعذر إرسال الطلب حالياً');
+    }
+    if(!data?.ok)throw new Error(data?.message||'تعذر إرسال الطلب حالياً');
+    return data;
+  }
   async function stockSubmit(item){
     const contact=$('#v99StockContact')?.value.trim(),message=$('#v99FormMsg');
     if(!contact){if(message)message.innerHTML='<div class="v99-notice error">اكتب رقم الهاتف.</div>';return}
     if(!state.schema.stock_alerts||!hasSb()){if(message)message.innerHTML='<div class="v99-notice error">خدمة التنبيه غير مفعلة على قاعدة البيانات.</div>';return}
     try{
-      const {error}=await window.sb.from('stock_alerts').insert({kind:item.kind,item_id:item.id,contact,status:'pending'});
-      if(error)throw error;
-      if(message)message.innerHTML='<div class="v99-notice success">تم تسجيل طلب التنبيه.</div>';
-    }catch(error){if(message)message.innerHTML=`<div class="v99-notice error">لم يتم الحفظ: ${esc(error.message||'راجع إعدادات الخدمة')}</div>`}
+      const result=await publicSubmission('stock_alert',{kind:item.kind,item_id:item.id,contact});
+      if(message)message.innerHTML=`<div class="v99-notice success">${esc(result.message||'تم تسجيل طلب التنبيه.')}</div>`;
+    }catch(error){if(message)message.innerHTML=`<div class="v99-notice error">${esc(error.message||'تعذر تسجيل التنبيه حالياً')}</div>`}
   }
 
   function reviewForm(item){
@@ -99,10 +110,9 @@
     if(!contact||!comment){if(message)message.innerHTML='<div class="v99-notice error">أكمل رقم الهاتف والتعليق.</div>';return}
     if(!state.schema.product_reviews||!hasSb()){if(message)message.innerHTML='<div class="v99-notice error">خدمة التقييمات غير مفعلة.</div>';return}
     try{
-      const {error}=await window.sb.from('product_reviews').insert({kind:item.kind,item_id:item.id,student_contact:contact,rating,comment,status:'pending'});
-      if(error)throw error;
-      if(message)message.innerHTML='<div class="v99-notice success">تم إرسال تقييمك للمراجعة قبل النشر.</div>';
-    }catch(error){if(message)message.innerHTML=`<div class="v99-notice error">لم يتم الإرسال: ${esc(error.message||'راجع إعدادات الخدمة')}</div>`}
+      const result=await publicSubmission('review',{kind:item.kind,item_id:item.id,contact,rating,comment});
+      if(message)message.innerHTML=`<div class="v99-notice success">${esc(result.message||'تم إرسال تقييمك للمراجعة قبل النشر.')}</div>`;
+    }catch(error){if(message)message.innerHTML=`<div class="v99-notice error">${esc(error.message||'تعذر إرسال التقييم حالياً')}</div>`}
   }
 
   function teacherModal(id){

@@ -51,13 +51,13 @@
           <select id="v146Target" class="full"><option value="">بدون حساب محدد</option>${accountOptions}</select>
           <input id="v146Title" class="full" placeholder="عنوان الإشعار">
           <textarea id="v146Message" class="full" placeholder="اكتب نص الإشعار"></textarea>
-          <button id="v146SendButton" class="admin-v146-send" type="button" onclick="AlinAdminNotifications.send()">إرسال الإشعار</button>
+          <button id="v146SendButton" class="admin-v146-send" type="button" data-alin-click="AlinAdminNotifications.send">إرسال الإشعار</button>
           <div id="v146Status" class="admin-v146-status"></div>
         </div></article>
-        <article class="admin-v146-card"><div class="admin-v146-list-head"><h3>سجل الإشعارات</h3><button type="button" onclick="AlinAdminNotifications.refresh()">تحديث</button></div>
+        <article class="admin-v146-card"><div class="admin-v146-list-head"><h3>سجل الإشعارات</h3><button type="button" data-alin-click="AlinAdminNotifications.refresh">تحديث</button></div>
           <div class="admin-v146-stats"><div><small>الإجمالي</small><b>${all.length}</b></div><div><small>آخر 7 أيام</small><b>${week}</b></div><div><small>النتائج</small><b>${list.length}</b></div></div>
-          <div class="admin-v146-tools"><input placeholder="بحث" value="${escapeHtml(state.query)}" oninput="AlinAdminNotifications.filter('query',this.value)"><select onchange="AlinAdminNotifications.filter('role',this.value)"><option value="">كل الفئات</option>${['all','teacher','library','student','courier','accountant'].map(role=>`<option value="${role}" ${state.role===role?'selected':''}>${roleLabel(role)}</option>`).join('')}</select></div>
-          <div class="admin-v146-list">${list.length?list.map(row=>`<div class="admin-v146-item"><div><h4>${escapeHtml(row.title||'إشعار')}</h4><p>${escapeHtml(row.message||row.text||'')}</p><div class="admin-v146-meta"><span>${roleLabel(row.target_role||row.audience||'all')}</span><span>${escapeHtml(row.priority||'normal')}</span><span>${escapeHtml(dateText(row.created_at))}</span></div></div><button type="button" class="danger" onclick="AlinAdminNotifications.remove('${escapeHtml(row.id)}')">حذف</button></div>`).join(''):'<div class="admin-v146-empty">لا توجد إشعارات حالياً.</div>'}</div>
+          <div class="admin-v146-tools"><input placeholder="بحث" value="${escapeHtml(state.query)}" data-alin-input="AlinAdminNotifications.filter" data-alin-input-arg0="query" data-alin-input-arg1-source="value"><select data-alin-change="AlinAdminNotifications.filter" data-alin-change-arg0="role" data-alin-change-arg1-source="value"><option value="">كل الفئات</option>${['all','teacher','library','student','courier','accountant'].map(role=>`<option value="${role}" ${state.role===role?'selected':''}>${roleLabel(role)}</option>`).join('')}</select></div>
+          <div class="admin-v146-list">${list.length?list.map(row=>`<div class="admin-v146-item"><div><h4>${escapeHtml(row.title||'إشعار')}</h4><p>${escapeHtml(row.message||row.text||'')}</p><div class="admin-v146-meta"><span>${roleLabel(row.target_role||row.audience||'all')}</span><span>${escapeHtml(row.priority||'normal')}</span><span>${escapeHtml(dateText(row.created_at))}</span></div></div><button type="button" class="danger" data-alin-click="AlinAdminNotifications.remove" data-alin-click-arg0="${escapeHtml(row.id)}">حذف</button></div>`).join(''):'<div class="admin-v146-empty">لا توجد إشعارات حالياً.</div>'}</div>
         </article>
       </div>
     </section>`;

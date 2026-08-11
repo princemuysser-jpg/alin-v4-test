@@ -113,30 +113,32 @@
   }
 
   function payoutRows(){
-    const rows=[...arr(db().financial_payouts),...arr(db().financialPayouts),...arr(db().teacherPayouts),...arr(db().teacher_payouts),...arr(db().withdrawals).filter(row=>String(row.status||'').toLowerCase()==='paid')];
+    const rows=[
+      ...arr(db().settlements).filter(row=>['admin','teacher'].includes(String(row.party_role||'').toLowerCase())),
+      ...arr(db().withdrawals).filter(row=>String(row.status||'').toLowerCase()==='paid')
+    ];
     const seen=new Set();
-    return rows.filter(row=>{const key=String(row.id||row.voucher_number||`${row.party_role||row.role}-${row.party_id||row.account_id||row.teacher_id}-${row.created_at}-${row.amount}`);if(!key||seen.has(key))return false;seen.add(key);return true});
+    return rows.filter(row=>{const key=String(row.id||row.receipt_number||`${row.party_role||row.role}-${row.party_id||row.account_id}-${row.created_at}-${row.amount}`);if(!key||seen.has(key))return false;seen.add(key);return true});
   }
   const payoutRole=row=>String(row.party_role||row.role||(row.teacher_id?'teacher':'')||'').toLowerCase().replace('courier','delegate');
   const payoutParty=row=>row.party_id||row.account_id||row.user_id||row.teacher_id||row.library_id||row.delegate_id||row.courier_id||'';
   function payoutValue(row){const status=String(row.status||'paid').toLowerCase();if(['cancelled','canceled','rejected','reversed','pending'].includes(status))return 0;return status==='reversal'?-Math.abs(num(row.amount)):Math.max(0,num(row.amount))}
 
   function librarySettlementRows(id){
-    const seen=new Set();return [...arr(db().library_settlements),...arr(db().librarySettlements)].filter(row=>{if(!same(row.library_id,id))return false;const key=String(row.id||row.receipt_number||`${id}-${row.created_at}-${row.amount}`);if(!key||seen.has(key))return false;seen.add(key);return true});
+    return arr(db().settlements).filter(row=>String(row.party_role||'').toLowerCase()==='library'&&same(row.party_id,id));
   }
   function isConfirmedDelegateSettlement(row){
     if(!row)return false;
+    const role=String(row.party_role||'').toLowerCase().replace('courier','delegate');
     const status=String(row.status||'').toLowerCase();
-    if(!['received','paid'].includes(status))return false;
-    const receipt=String(row.receipt_number||row.voucher_number||'').trim();
-    const id=String(row.id||'').trim();
-    const note=String(row.note||row.notes||'').trim();
-    // Current ALIN finance flow creates STL... / RC-... records only when admin confirms receiving cash.
-    // Legacy cached/order-level rows must never zero a courier debt automatically.
-    return (/^STL/i.test(id)&&/^RC-/i.test(receipt))||/تسوية\s*(ذمة\s*)?(مندوب|المندوب)|تسديد\s*(ذمة\s*)?(مندوب|المندوب)|delegate\s+settlement|courier\s+settlement/i.test(note);
+    return role==='delegate'&&['received','paid'].includes(status);
   }
   function delegateSettlementRows(id){
-    const aliases=delegateAliases(id),seen=new Set();return [...arr(db().delegate_settlements),...arr(db().courierSettlements),...arr(window.courierSettlements)].filter(row=>{if(!aliases.has(String(row.delegate_id||row.courier_id||row.party_id||''))||!isConfirmedDelegateSettlement(row))return false;const key=String(row.id||row.receipt_number||`${id}-${row.created_at}-${row.amount}`);if(!key||seen.has(key))return false;seen.add(key);return true});
+    const aliases=delegateAliases(id),seen=new Set();
+    return arr(db().settlements).filter(row=>{
+      if(!isConfirmedDelegateSettlement(row)||!aliases.has(String(row.party_id||'')))return false;
+      const key=String(row.id||row.receipt_number||`${row.party_id}-${row.created_at}-${row.amount}`);if(!key||seen.has(key))return false;seen.add(key);return true;
+    });
   }
   function settlementValue(row){const status=String(row.status||'').toLowerCase();if(!['received','paid'].includes(status))return 0;return Math.max(0,num(row.amount))}
 
@@ -254,5 +256,5 @@
   window.ensureOrderFinancials=async order=>delivered(order?.status)?transitionOrder(order.id,'completed'):null;
   window.alinV57SettleOrder=async order=>transitionOrder(order.id,'completed');
   window.maybeCreateFinancialEntry=async id=>transitionOrder(id,'completed');
-  window.requestWithdraw=requestWithdraw;window.withdrawStatus=updateWithdrawal;window.alinV68Balance=balance;window.alinV65Balance=balance;window.alinV65Paid=paid;window.alinV65AllPayouts=payoutRows;window.alinV64LibraryDebt=librarySummary;window.alinV64AllSettlements=()=>arr(db().library_settlements).length?arr(db().library_settlements):arr(db().librarySettlements);window.alinV68PayBalance=payBalance;window.alinV65PayBalance=payBalance;window.alinV64AdminSettleLibrary=settleLibrary;window.addTeacherPayoutPrompt=id=>payBalance('teacher',id);window.AlinV120Finance={summary:librarySummary,settle:settleLibrary};
+  window.requestWithdraw=requestWithdraw;window.withdrawStatus=updateWithdrawal;window.alinV68Balance=balance;window.alinV65Balance=balance;window.alinV65Paid=paid;window.alinV65AllPayouts=payoutRows;window.alinV64LibraryDebt=librarySummary;window.alinV64AllSettlements=()=>arr(db().settlements);window.alinV68PayBalance=payBalance;window.alinV65PayBalance=payBalance;window.alinV64AdminSettleLibrary=settleLibrary;window.addTeacherPayoutPrompt=id=>payBalance('teacher',id);window.AlinV120Finance={summary:librarySummary,settle:settleLibrary};
 })();

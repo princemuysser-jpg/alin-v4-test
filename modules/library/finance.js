@@ -29,7 +29,7 @@
 
   function printLibraryStatement(libraryId=currentLibraryId()){
     const data=summary(libraryId);
-    const html=`<div class="receipt"><h2>كشف حساب المكتبة</h2><p>${escv(libraryName(libraryId))}</p><table><thead><tr><th>الطلب</th><th>التاريخ</th><th>المبلغ</th><th>ربح المكتبة</th><th>الذمة</th></tr></thead><tbody>${statementRows(libraryId)}</tbody></table><h3>ربح المكتبة: ${moneyv(data.libraryProfit)} د.ع</h3><h3>المسدد: ${moneyv(data.settled)} د.ع</h3><h3>المتبقي بذمة المكتبة: ${moneyv(data.debtRemaining)} د.ع</h3></div><div class="row-actions no-print"><button onclick="window.print()">طباعة</button><button class="secondary" onclick="closeCheckout()">إغلاق</button></div>`;
+    const html=`<div class="receipt"><h2>كشف حساب المكتبة</h2><p>${escv(libraryName(libraryId))}</p><table><thead><tr><th>الطلب</th><th>التاريخ</th><th>المبلغ</th><th>ربح المكتبة</th><th>الذمة</th></tr></thead><tbody>${statementRows(libraryId)}</tbody></table><h3>ربح المكتبة: ${moneyv(data.libraryProfit)} د.ع</h3><h3>المسدد: ${moneyv(data.settled)} د.ع</h3><h3>المتبقي بذمة المكتبة: ${moneyv(data.debtRemaining)} د.ع</h3></div><div class="row-actions no-print"><button data-alin-click="print">طباعة</button><button class="secondary" data-alin-click="closeCheckout">إغلاق</button></div>`;
     if(window.checkoutBox&&window.checkoutModal){window.checkoutBox.innerHTML=html;window.checkoutModal.classList.remove('hidden');return true}
     return false;
   }
@@ -43,7 +43,7 @@
 
   function printLibrarySettlement(id){
     const row=summary().settlements.find(item=>same(item.id,id)||same(item.receipt_number,id));if(!row)return false;
-    const html=`<div class="receipt"><h2>منصة آلين</h2><h3>سند قبض تسوية مكتبة</h3><p>رقم السند: ${escv(row.receipt_number||row.id)}</p><p>المكتبة: ${escv(libraryName(row.library_id))}</p><p>المبلغ: ${moneyv(row.amount)} د.ع</p><p>طريقة الاستلام: ${escv(row.payment_method||'نقدي')}</p><p>التاريخ: ${escv(String(row.created_at||'').slice(0,10))}</p></div><div class="row-actions no-print"><button onclick="window.print()">طباعة</button><button class="secondary" onclick="closeCheckout()">إغلاق</button></div>`;
+    const html=`<div class="receipt"><h2>منصة آلين</h2><h3>سند قبض تسوية مكتبة</h3><p>رقم السند: ${escv(row.receipt_number||row.id)}</p><p>المكتبة: ${escv(libraryName(row.library_id))}</p><p>المبلغ: ${moneyv(row.amount)} د.ع</p><p>طريقة الاستلام: ${escv(row.payment_method||'نقدي')}</p><p>التاريخ: ${escv(String(row.created_at||'').slice(0,10))}</p></div><div class="row-actions no-print"><button data-alin-click="print">طباعة</button><button class="secondary" data-alin-click="closeCheckout">إغلاق</button></div>`;
     if(window.checkoutBox&&window.checkoutModal){window.checkoutBox.innerHTML=html;window.checkoutModal.classList.remove('hidden');return true}return false;
   }
 
@@ -60,7 +60,7 @@
   function renderLibraryFinance(){
     const root=document.getElementById('libraryV116Content')||document.getElementById('libraryContent');if(!root)return false;
     const id=currentLibraryId(),data=summary(id);
-    root.innerHTML=`<section class="library-v116-finance"><div class="library-v116-finance-cards"><article><small>المبيعات المستلمة</small><b>${moneyv(data.gross)} د.ع</b></article><article><small>ربح المكتبة</small><b>${moneyv(data.libraryProfit)} د.ع</b></article><article><small>المسدد للإدارة</small><b>${moneyv(data.settled)} د.ع</b></article><article><small>المتبقي بذمة المكتبة</small><b>${moneyv(data.debtRemaining)} د.ع</b></article></div><div class="row-actions"><button onclick="printLibraryStatement('${escv(id)}')">طباعة كشف الحساب</button><button class="secondary" onclick="exportLibraryStatement('${escv(id)}')">تصدير CSV</button></div><div class="library-v116-panel"><h3>تفاصيل الحركات</h3><table><thead><tr><th>الطلب</th><th>التاريخ</th><th>المبلغ</th><th>ربح المكتبة</th><th>الذمة</th></tr></thead><tbody>${statementRows(id)}</tbody></table></div></section>`;
+    root.innerHTML=`<section class="library-v116-finance"><div class="library-v116-finance-cards"><article><small>المبيعات المستلمة</small><b>${moneyv(data.gross)} د.ع</b></article><article><small>ربح المكتبة</small><b>${moneyv(data.libraryProfit)} د.ع</b></article><article><small>المسدد للإدارة</small><b>${moneyv(data.settled)} د.ع</b></article><article><small>المتبقي بذمة المكتبة</small><b>${moneyv(data.debtRemaining)} د.ع</b></article></div><div class="row-actions"><button data-alin-click="printLibraryStatement" data-alin-click-arg0="${escv(id)}">طباعة كشف الحساب</button><button class="secondary" data-alin-click="exportLibraryStatement" data-alin-click-arg0="${escv(id)}">تصدير CSV</button></div><div class="library-v116-panel"><h3>تفاصيل الحركات</h3><table><thead><tr><th>الطلب</th><th>التاريخ</th><th>المبلغ</th><th>ربح المكتبة</th><th>الذمة</th></tr></thead><tbody>${statementRows(id)}</tbody></table></div></section>`;
     return true;
   }
 

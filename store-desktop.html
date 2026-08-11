@@ -6,10 +6,10 @@
 <meta content="no-cache" http-equiv="Pragma"/>
 <meta content="0" http-equiv="Expires"/>
 <meta charset="utf-8"/>
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' blob: https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; worker-src 'self' blob: https://cdn.jsdelivr.net; frame-src 'self' blob:;">
-<script>(function(){try{var mode=localStorage.getItem('alin_theme_v234')==='dark'?'dark':'light';document.documentElement.dataset.alinTheme=mode;document.documentElement.dataset.alinThemeMode=mode}catch(_){document.documentElement.dataset.alinTheme='light';document.documentElement.dataset.alinThemeMode='light'}})();</script>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; script-src-elem 'self' https://cdn.jsdelivr.net; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' blob: https://dgaikazhbtyjmswpyvrl.supabase.co wss://dgaikazhbtyjmswpyvrl.supabase.co; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; worker-src 'self' blob: https://cdn.jsdelivr.net; frame-src 'self' blob:;">
+<script src="./core/csp-desktop-inline-1.js?v=4.2.0-rc.7"></script>
 <meta content="width=device-width,initial-scale=1" name="viewport"/>
-<title>متجر آلين v4.2 — RC1</title>
+<title>متجر آلين v4.2 — RC4</title>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
 <meta content="#f8f3e8" name="theme-color"/>
@@ -19,16 +19,18 @@
 <link href="./manifest-desktop.webmanifest" rel="manifest"/>
 <link href="assets/icons/icon-192.png" rel="icon" sizes="192x192" type="image/png"/>
 <link href="assets/icons/icon-192.png" rel="apple-touch-icon"/>
-<link href="./dist/css/desktop.bundle.css?v=4.2.0-rc.3" rel="stylesheet"/>
-<link href="./styles/alin-tokens.css?v=4.2.0-rc.3" rel="stylesheet"/>
-<link href="./styles/alin-shared.css?v=4.2.0-rc.3" rel="stylesheet"/>
-<link href="./styles/alin-branding.css?v=4.2.0-rc.3" rel="stylesheet"/>
-<link href="./styles/alin-i18n.css?v=4.2.0-rc.3" rel="stylesheet"/>
-<link href="./styles/alin-desktop.css?v=4.2.0-rc.3" rel="stylesheet"/>
-<link rel="preload" href="./alin-app-desktop.v4.1.5.js?v=4.2.0-rc.3" as="script">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7" defer onerror="window.__ALIN_CDN_ERROR__=true;console.error('تعذر تحميل Supabase')"></script>
-<script src="./alin-config.js?v=4.2.0-rc.3"></script>
-<script src="./dist/alin-core.v4.js?v=4.2.0-rc.3" defer></script>
+<link href="./dist/css/desktop.bundle.css?v=4.2.0-rc.7" rel="stylesheet"/>
+<link href="./styles/alin-tokens.css?v=4.2.0-rc.7" rel="stylesheet"/>
+<link href="./styles/alin-shared.css?v=4.2.0-rc.7" rel="stylesheet"/>
+<link href="./styles/alin-branding.css?v=4.2.0-rc.7" rel="stylesheet"/>
+<link href="./styles/alin-i18n.css?v=4.2.0-rc.7" rel="stylesheet"/>
+<link href="./styles/alin-desktop.css?v=4.2.0-rc.7" rel="stylesheet"/>
+<link rel="preload" href="./alin-app-desktop.v4.1.5.js?v=4.2.0-rc.7" as="script">
+<script id="alinSupabaseCdnScript" src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7" defer></script>
+<script src="./core/csp-cdn-guard.js?v=4.2.0-rc.7"></script>
+<script src="./alin-config.js?v=4.2.0-rc.7"></script>
+<script src="./core/ui-action-router.js?v=4.2.0-rc.7" defer></script>
+<script src="./dist/alin-core.v4.js?v=4.2.0-rc.7" defer></script>
 
 
 
@@ -73,12 +75,12 @@
 
 
 
-  <link rel="stylesheet" href="./store/banners.css?v=4.2.0-rc.3">
-<link href="./styles/alin-store-responsive-1z4.css?v=4.2.0-rc.3" rel="stylesheet"/>
-<link href="./styles/alin-store-media-1z9.css?v=4.2.0-rc.3" rel="stylesheet"/>
-<link href="./styles/alin-store-details-categories-1z10.css?v=4.2.0-rc.3" rel="stylesheet"/>
+  <link rel="stylesheet" href="./store/banners.css?v=4.2.0-rc.7">
+<link href="./styles/alin-store-responsive-1z4.css?v=4.2.0-rc.7" rel="stylesheet"/>
+<link href="./styles/alin-store-media-1z9.css?v=4.2.0-rc.7" rel="stylesheet"/>
+<link href="./styles/alin-store-details-categories-1z10.css?v=4.2.0-rc.7" rel="stylesheet"/>
 <style id="alinAuthBootStyle">html[data-alin-auth-boot="1"] body>*{visibility:hidden!important}html[data-alin-auth-boot="1"] body::before{content:"جارٍ فتح منصة آلين...";visibility:visible;position:fixed;inset:0;display:grid;place-items:center;background:#f7f9fc;color:#102342;font:800 18px system-ui;z-index:2147483647}</style>
-<script>setTimeout(()=>document.documentElement.removeAttribute('data-alin-auth-boot'),3500)</script>
+<script src="./core/csp-desktop-inline-2.js?v=4.2.0-rc.7"></script>
 
 <style id="alinTrack415SafeStyle">
 /* ALIN 4.1.5 — isolated desktop tracking. No shared modal classes and no SVG. */
@@ -141,16 +143,16 @@ body.store-desktop .alin-track415-button:hover .alin-track415-mark,body.store-de
 <h1>منصة آلين</h1>
 <p>للتصميم والقرطاسية والملازم</p>
 <div class="login-actions">
-<button onclick="openPage('store')">المتجر</button>
-<button onclick="showLogin('teacher')">دخول المدرس</button>
-<button onclick="openLibraryJoinPortal()">لوحة المكتبة</button>
-<button onclick="showLogin('courier')">المندوب</button>
-<button class="admin" onclick="showLogin('admin')">لوحة آلين</button>
+<button data-login-role="store" data-alin-click="openPage" data-alin-click-arg0="store">المتجر</button>
+<button data-login-role="teacher" data-alin-click="showLogin" data-alin-click-arg0="teacher">دخول المدرس</button>
+<button data-login-role="library" data-alin-click="openLibraryJoinPortal">لوحة المكتبة</button>
+<button data-login-role="courier" data-alin-click="showLogin" data-alin-click-arg0="courier">المندوب</button>
+<button class="admin" data-login-role="admin" data-alin-click="showLogin" data-alin-click-arg0="admin">لوحة آلين</button>
 </div>
 <div class="login-form hidden" id="loginForm">
 <input id="loginU" placeholder="اسم الدخول"/>
 <input id="loginPass" placeholder="الرمز السري" type="password"/>
-<button onclick="doLogin()">دخول</button>
+<button data-alin-click="doLogin">دخول</button>
 <div id="loginMsg"></div>
 </div>
 </div>
@@ -159,7 +161,7 @@ body.store-desktop .alin-track415-button:hover .alin-track415-mark,body.store-de
 <header class="topbar">
 <div class="brand"><div class="logo small">آ</div><div><b>آلين</b><small>تصاميم • ملازم • قرطاسية</small></div></div>
 <nav id="activeNav"></nav>
-<button onclick="logout()">خروج</button>
+<button data-alin-click="logout">خروج</button>
 </header>
 <main>
 <section class="page alin-storefront" id="storePage">
@@ -170,35 +172,35 @@ body.store-desktop .alin-track415-button:hover .alin-track415-mark,body.store-de
 </div>
 <label aria-label="البحث في المتجر" class="desktop-header-search">
 <span aria-hidden="true" class="desktop-search-icon"></span>
-<input id="searchInput" oninput="renderStore()" placeholder="ابحث عن ملزمة، مادة، مدرس أو منتج" type="search"/>
+<input id="searchInput" data-alin-input="renderStore" placeholder="ابحث عن ملزمة، مادة، مدرس أو منتج" type="search"/>
 </label>
 <div class="alin98-actions desktop-store-actions">
-<button id="alinTrack415Button" class="desktop-action alin-track415-button" type="button" aria-label="تتبع الطلب" onclick="AlinTrack415Safe.open()"><span class="alin-track415-mark" aria-hidden="true"><i></i></span><small>تتبع الطلب</small></button>
+<button id="alinTrack415Button" class="desktop-action alin-track415-button" type="button" aria-label="تتبع الطلب" data-alin-click="AlinTrack415Safe.open"><span class="alin-track415-mark" aria-hidden="true"><i></i></span><small>تتبع الطلب</small></button>
 <button aria-label="المفضلة" class="desktop-action" data-desktop-control="favorites" data-v99-action="desktopFavorites" type="button"><span aria-hidden="true" class="desktop-favorite-icon"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z"/></svg></span><small>المفضلة</small><span class="desktop-action-count" hidden="" id="v99DesktopFavoriteCount">0</span></button>
-<button aria-label="الإشعارات" class="desktop-action desktop-notification" data-desktop-control="notifications" onclick="AlinStoreNotifications?.open?.()" type="button"><span aria-hidden="true" class="desktop-notification-icon"><svg viewBox="0 0 24 24"><path d="M6.5 9.25a5.5 5.5 0 0 1 11 0c0 4.2 1.15 5.75 2.25 6.9H4.25c1.1-1.15 2.25-2.7 2.25-6.9Z"/><path d="M9.4 19a2.8 2.8 0 0 0 5.2 0"/><path d="M12 3V1.75"/></svg></span><small>الإشعارات</small><span class="alin98-notify-count desktop-action-count" hidden="">0</span></button>
-<button aria-label="سلة المشتريات" class="desktop-action desktop-cart" data-desktop-control="cart" onclick="openCart()" type="button"><svg aria-hidden="true" class="desktop-cart-icon alin-cart-nav-icon" style="stroke:#0b5fa5" viewBox="0 0 28 28"><path d="M2.8 4.5h3.1l2.2 11.1a2.3 2.3 0 0 0 2.3 1.9h10.2a2.3 2.3 0 0 0 2.2-1.8l1.5-7.1H7"/><path d="M10 12.9h12.9"/><circle cx="11" cy="22.2" r="1.7"/><circle cx="21" cy="22.2" r="1.7"/></svg><small>السلة</small><span class="desktop-action-count" hidden="" id="desktopCartCount">0</span></button>
-<button aria-label="خيارات" aria-expanded="false" class="desktop-action desktop-options-button" data-desktop-control="options" id="alinDesktopOptionsButton" onclick="alinToggleDesktopOptions()" type="button"><span aria-hidden="true" class="desktop-options-icon"><svg viewBox="0 0 24 24"><path d="M4 7h10"/><path d="M18 7h2"/><circle cx="16" cy="7" r="2"/><path d="M4 17h2"/><path d="M10 17h10"/><circle cx="8" cy="17" r="2"/></svg></span><small>خيارات</small></button>
-<button aria-label="خروج إلى القائمة الرئيسية" class="desktop-action desktop-exit" data-desktop-control="exit" onclick="logout()" type="button"><span aria-hidden="true" class="desktop-exit-icon"></span><small>خروج</small></button>
+<button aria-label="الإشعارات" class="desktop-action desktop-notification" data-desktop-control="notifications" data-alin-click="AlinStoreNotifications.open" type="button"><span aria-hidden="true" class="desktop-notification-icon"><svg viewBox="0 0 24 24"><path d="M6.5 9.25a5.5 5.5 0 0 1 11 0c0 4.2 1.15 5.75 2.25 6.9H4.25c1.1-1.15 2.25-2.7 2.25-6.9Z"/><path d="M9.4 19a2.8 2.8 0 0 0 5.2 0"/><path d="M12 3V1.75"/></svg></span><small>الإشعارات</small><span class="alin98-notify-count desktop-action-count" hidden="">0</span></button>
+<button aria-label="سلة المشتريات" class="desktop-action desktop-cart" data-desktop-control="cart" data-alin-click="openCart" type="button"><svg aria-hidden="true" class="desktop-cart-icon alin-cart-nav-icon" style="stroke:#0b5fa5" viewBox="0 0 28 28"><path d="M2.8 4.5h3.1l2.2 11.1a2.3 2.3 0 0 0 2.3 1.9h10.2a2.3 2.3 0 0 0 2.2-1.8l1.5-7.1H7"/><path d="M10 12.9h12.9"/><circle cx="11" cy="22.2" r="1.7"/><circle cx="21" cy="22.2" r="1.7"/></svg><small>السلة</small><span class="desktop-action-count" hidden="" id="desktopCartCount">0</span></button>
+<button aria-label="خيارات" aria-expanded="false" class="desktop-action desktop-options-button" data-desktop-control="options" id="alinDesktopOptionsButton" data-alin-click="alinToggleDesktopOptions" type="button"><span aria-hidden="true" class="desktop-options-icon"><svg viewBox="0 0 24 24"><path d="M4 7h10"/><path d="M18 7h2"/><circle cx="16" cy="7" r="2"/><path d="M4 17h2"/><path d="M10 17h10"/><circle cx="8" cy="17" r="2"/></svg></span><small>خيارات</small></button>
+<button aria-label="خروج إلى القائمة الرئيسية" class="desktop-action desktop-exit" data-desktop-control="exit" data-alin-click="logout" type="button"><span aria-hidden="true" class="desktop-exit-icon"></span><small>خروج</small></button>
 </div>
 </header>
 
 <section class="alin-desktop-options-panel" id="alinDesktopOptionsPanel" hidden aria-modal="false" role="dialog" aria-label="خيارات منصة آلين">
   <div class="alin-desktop-options-head">
     <div><h2>خيارات</h2><p>الحساب واللغة ومظهر المنصة</p></div>
-    <button class="alin-desktop-options-close" type="button" onclick="alinToggleDesktopOptions(false)" aria-label="إغلاق">×</button>
+    <button class="alin-desktop-options-close" type="button" data-alin-click="alinToggleDesktopOptions" data-alin-click-arg0="false" data-alin-click-arg0-type="boolean" aria-label="إغلاق">×</button>
   </div>
   <div class="alin-desktop-options-body">
-    <button class="alin-desktop-option-card" type="button" onclick="alinToggleDesktopOptions(false);alinOpenRealAccount?.()"><span class="alin-desktop-option-icon">👤</span><span><b>حسابي</b><small>تسجيل الدخول وإدارة حساب الطالب</small></span><span>‹</span></button>
+    <button class="alin-desktop-option-card" type="button" data-alin-click="@desktop-options-account"><span class="alin-desktop-option-icon">👤</span><span><b>حسابي</b><small>تسجيل الدخول وإدارة حساب الطالب</small></span><span>‹</span></button>
     <div class="alin-desktop-option-row">
       <div><span class="alin-desktop-option-icon">🌐</span><span><b>اللغة</b><small>اختر لغة واجهة المنصة</small></span></div>
-      <div class="alin-desktop-choice-group"><button class="alin-desktop-choice" data-lang="ar" type="button" onclick="alinSetLanguage?.('ar')">العربية</button><button class="alin-desktop-choice" data-lang="ku" type="button" onclick="alinSetLanguage?.('ku')">کوردی</button><button class="alin-desktop-choice" data-lang="en" type="button" onclick="alinSetLanguage?.('en')">English</button></div>
+      <div class="alin-desktop-choice-group"><button class="alin-desktop-choice" data-lang="ar" type="button" data-alin-click="alinSetLanguage" data-alin-click-arg0="ar">العربية</button><button class="alin-desktop-choice" data-lang="ku" type="button" data-alin-click="alinSetLanguage" data-alin-click-arg0="ku">کوردی</button><button class="alin-desktop-choice" data-lang="en" type="button" data-alin-click="alinSetLanguage" data-alin-click-arg0="en">English</button></div>
     </div>
     <div class="alin-desktop-option-row">
       <div><span class="alin-desktop-option-icon">◐</span><span><b>المظهر</b><small>الوضع النهاري أو الليلي</small></span></div>
-      <div class="alin-desktop-choice-group theme"><button class="alin-desktop-choice" data-theme="light" type="button" onclick="alinSetTheme?.('light')">نهاري</button><button class="alin-desktop-choice" data-theme="dark" type="button" onclick="alinSetTheme?.('dark')">ليلي</button></div>
+      <div class="alin-desktop-choice-group theme"><button class="alin-desktop-choice" data-theme="light" type="button" data-alin-click="alinSetTheme" data-alin-click-arg0="light">نهاري</button><button class="alin-desktop-choice" data-theme="dark" type="button" data-alin-click="alinSetTheme" data-alin-click-arg0="dark">ليلي</button></div>
     </div>
-    <button class="alin-desktop-option-card" type="button" onclick="alinToggleDesktopOptions(false);alinAboutPlatform?.()"><span class="alin-desktop-option-icon">آ</span><span><b>حول المنصة</b><small>معلومات عن منصة آلين</small></span><span>‹</span></button>
-    <button class="alin-desktop-option-card" type="button" onclick="alinToggleDesktopOptions(false);alinContactUs?.()"><span class="alin-desktop-option-icon">💬</span><span><b>تواصل معنا</b><small>للاستفسار والدعم</small></span><span>‹</span></button>
+    <button class="alin-desktop-option-card" type="button" data-alin-click="@desktop-options-about"><span class="alin-desktop-option-icon">آ</span><span><b>حول المنصة</b><small>معلومات عن منصة آلين</small></span><span>‹</span></button>
+    <button class="alin-desktop-option-card" type="button" data-alin-click="@desktop-options-contact"><span class="alin-desktop-option-icon">💬</span><span><b>تواصل معنا</b><small>للاستفسار والدعم</small></span><span>‹</span></button>
   </div>
 </section>
 <section id="alinStoreBanners" class="alin-store-banners" aria-label="إعلانات منصة آلين" hidden></section>
@@ -226,15 +228,15 @@ body.store-desktop .alin-track415-button:hover .alin-track415-mark,body.store-de
 <h2>لوحة المدرس</h2>
 <div class="stats" id="teacherStats"></div>
 <div class="teacher-tabs">
-<button onclick="teacherTab('dashboard')">الرئيسية</button>
-<button onclick="teacherTab('booklets')">ملازمي</button>
-<button onclick="teacherTab('orders')">الطلبات</button>
-<button onclick="teacherTab('finance')">الأرباح</button>
-<button data-teacher-tab="receipts" onclick="teacherTab('receipts')" type="button">الوصولات</button>
-<button data-teacher-tab="notifications" id="teacherNotificationsTabV160" onclick="teacherTab('notifications')" type="button"><span aria-hidden="true">🔔</span> الإشعارات <span class="teacher-v160-badge" hidden="" id="teacherNotificationsBadgeV160">0</span></button>
-<button onclick="teacherTab('requests')">رفع ملزمة</button>
-<button onclick="teacherTab('review')">طلبات النشر</button>
-<button onclick="teacherTab('profile')">ملفي</button>
+<button data-teacher-tab="dashboard" data-alin-click="teacherTab" data-alin-click-arg0="dashboard">الرئيسية</button>
+<button data-teacher-tab="booklets" data-alin-click="teacherTab" data-alin-click-arg0="booklets">ملازمي</button>
+<button data-teacher-tab="orders" data-alin-click="teacherTab" data-alin-click-arg0="orders">الطلبات</button>
+<button data-teacher-tab="finance" data-alin-click="teacherTab" data-alin-click-arg0="finance">الأرباح</button>
+<button data-teacher-tab="receipts" data-alin-click="teacherTab" data-alin-click-arg0="receipts" type="button">الوصولات</button>
+<button data-teacher-tab="notifications" id="teacherNotificationsTabV160" data-alin-click="teacherTab" data-alin-click-arg0="notifications" type="button"><span aria-hidden="true">🔔</span> الإشعارات <span class="teacher-v160-badge" hidden="" id="teacherNotificationsBadgeV160">0</span></button>
+<button data-teacher-tab="requests" data-alin-click="teacherTab" data-alin-click-arg0="requests">رفع ملزمة</button>
+<button data-teacher-tab="review" data-alin-click="teacherTab" data-alin-click-arg0="review">طلبات النشر</button>
+<button data-teacher-tab="profile" data-alin-click="teacherTab" data-alin-click-arg0="profile">ملفي</button>
 </div>
 <div class="panel" id="teacherContent"></div>
 </section>
@@ -259,33 +261,33 @@ body.store-desktop .alin-track415-button:hover .alin-track415-mark,body.store-de
 </section>
 <section class="page hidden courier-v161-page" id="courierPage">
 <header class="courier-v161-hero"><div><small>صفحة المندوب</small><h1 id="courierV161Name">المندوب</h1><p>مناطق العمل: <span id="courierV161Areas">—</span></p></div><span>منصة آلين للتوصيل</span></header>
-<nav class="courier-v161-tabs"><button class="active" data-courier-tab="home" onclick="renderCourierDashboard('home')">الرئيسية</button><button data-courier-tab="current" onclick="renderCourierDashboard('current')">طلبات التوصيل</button><button data-courier-tab="completed" onclick="renderCourierDashboard('completed')">المكتملة</button><button data-courier-tab="finance" onclick="renderCourierDashboard('finance')">الحسابات</button><button id="courierReceiptsTab" data-courier-tab="receipts" data-alin415-receipts-role="courier" type="button">الوصولات</button><button data-courier-tab="notifications" onclick="renderCourierDashboard('notifications')">الإشعارات</button><button data-courier-tab="profile" onclick="renderCourierDashboard('profile')">حسابي</button></nav>
+<nav class="courier-v161-tabs"><button class="active" data-courier-tab="home" data-alin-click="renderCourierDashboard" data-alin-click-arg0="home">الرئيسية</button><button data-courier-tab="current" data-alin-click="renderCourierDashboard" data-alin-click-arg0="current">طلبات التوصيل</button><button data-courier-tab="completed" data-alin-click="renderCourierDashboard" data-alin-click-arg0="completed">المكتملة</button><button data-courier-tab="finance" data-alin-click="renderCourierDashboard" data-alin-click-arg0="finance">الحسابات</button><button id="courierReceiptsTab" data-courier-tab="receipts" data-alin415-receipts-role="courier" type="button">الوصولات</button><button data-courier-tab="notifications" data-alin-click="renderCourierDashboard" data-alin-click-arg0="notifications">الإشعارات</button><button data-courier-tab="profile" data-alin-click="renderCourierDashboard" data-alin-click-arg0="profile">حسابي</button></nav>
 <main id="courierV161Content"></main>
 </section>
 <section class="page hidden" id="adminPage">
 <div class="admin-heading"><div><h2>لوحة إدارة آلين</h2><p>إدارة المنصة من مكان واحد</p></div><span class="version-badge">v4.2 RC1</span></div>
 <div class="stats" id="adminStats"></div>
 <div class="admin-tabs">
-<button onclick="adminTab('dashboard')">الرئيسية</button>
-<button onclick="adminTab('accounts')">الحسابات</button>
-<button onclick="adminTab('booklets')">الملازم</button>
-<button onclick="adminTab('teacherRequests')">طلبات المدرسين</button>
-<button onclick="adminTab('products')">المنتجات</button>
-<button onclick="adminTab('categories')">الأقسام</button>
-<button onclick="adminTab('orders')">الطلبات</button>
-<button onclick="adminTab('couriers')">إدارة المندوبين</button>
-<button onclick="adminTab('courierAreas')">إدارة المناطق</button>
-<button onclick="adminTab('deliveryOrders')">طلبات التوصيل</button>
-<button onclick="adminTab('courierSettlements')">تسويات المندوبين</button>
-<button onclick="adminTab('finance')">الأرباح</button>
-<button data-admin-tab="receipts" onclick="adminTab('receipts')" type="button">الوصولات</button>
-<button onclick="adminTab('ads')">الإعلانات</button>
-<button onclick="adminTab('coupons')">الكوبونات</button>
-<button onclick="adminTab('notifications')">مركز الإشعارات</button>
-<button onclick="adminTab('audit')">السجل</button>
-<button onclick="adminTab('brandIdentity')">الهوية البصرية</button>
-<button onclick="adminTab('backup')">النسخ الاحتياطي</button>
-<button onclick="adminTab('settings')">الإعدادات</button>
+<button data-admin-tab="dashboard" data-alin-click="adminTab" data-alin-click-arg0="dashboard">الرئيسية</button>
+<button data-admin-tab="accounts" data-alin-click="adminTab" data-alin-click-arg0="accounts">الحسابات</button>
+<button data-admin-tab="booklets" data-alin-click="adminTab" data-alin-click-arg0="booklets">الملازم</button>
+<button data-admin-tab="teacherRequests" data-alin-click="adminTab" data-alin-click-arg0="teacherRequests">طلبات المدرسين</button>
+<button data-admin-tab="products" data-alin-click="adminTab" data-alin-click-arg0="products">المنتجات</button>
+<button data-admin-tab="categories" data-alin-click="adminTab" data-alin-click-arg0="categories">الأقسام</button>
+<button data-admin-tab="orders" data-alin-click="adminTab" data-alin-click-arg0="orders">الطلبات</button>
+<button data-admin-tab="couriers" data-alin-click="adminTab" data-alin-click-arg0="couriers">إدارة المندوبين</button>
+<button data-admin-tab="courierAreas" data-alin-click="adminTab" data-alin-click-arg0="courierAreas">إدارة المناطق</button>
+<button data-admin-tab="deliveryOrders" data-alin-click="adminTab" data-alin-click-arg0="deliveryOrders">طلبات التوصيل</button>
+<button data-admin-tab="courierSettlements" data-alin-click="adminTab" data-alin-click-arg0="courierSettlements">تسويات المندوبين</button>
+<button data-admin-tab="finance" data-alin-click="adminTab" data-alin-click-arg0="finance">الأرباح</button>
+<button data-admin-tab="receipts" data-alin-click="adminTab" data-alin-click-arg0="receipts" type="button">الوصولات</button>
+<button data-admin-tab="ads" data-alin-click="adminTab" data-alin-click-arg0="ads">الإعلانات</button>
+<button data-admin-tab="coupons" data-alin-click="adminTab" data-alin-click-arg0="coupons">الكوبونات</button>
+<button data-admin-tab="notifications" data-alin-click="adminTab" data-alin-click-arg0="notifications">مركز الإشعارات</button>
+<button data-admin-tab="audit" data-alin-click="adminTab" data-alin-click-arg0="audit">السجل</button>
+<button data-admin-tab="brandIdentity" data-alin-click="adminTab" data-alin-click-arg0="brandIdentity">الهوية البصرية</button>
+<button data-admin-tab="backup" data-alin-click="adminTab" data-alin-click-arg0="backup">النسخ الاحتياطي</button>
+<button data-admin-tab="settings" data-alin-click="adminTab" data-alin-click-arg0="settings">الإعدادات</button>
 </div>
 <div class="panel" id="adminContent"></div>
 </section>
@@ -294,13 +296,13 @@ body.store-desktop .alin-track415-button:hover .alin-track415-mark,body.store-de
 </section>
 <div class="modal hidden" id="studentAuthModal">
 <div class="modal-card student-auth-card">
-<button class="x" onclick="closeStudentAuth()">×</button>
+<button class="x" data-alin-click="closeStudentAuth">×</button>
 <div id="studentAuthBox"></div>
 </div>
 </div>
 <div class="modal hidden" id="checkoutModal">
 <div class="modal-card">
-<button class="x" onclick="closeCheckout()">×</button>
+<button class="x" data-alin-click="closeCheckout">×</button>
 <div id="checkoutBox"></div>
 </div>
 </div>
@@ -339,154 +341,32 @@ body.store-desktop .alin-track415-button:hover .alin-track415-mark,body.store-de
   
 
 
-<script src="./core/pwa-register.js?v=4.2.0-rc.3" defer></script>
-<script src="./core/boot-recovery.js?v=4.2.0-rc.3" defer></script>
-<script src="./modules/core/navigation.js?v=4.2.0-rc.3" defer></script>
-<script src="./alin-app-desktop.v4.1.5.js?v=4.2.0-rc.3" defer onload="alinAppBundleLoaded()" onerror="alinAppBundleFailed()"></script>
-<script src="./modules/core/account-admin-service.js?v=4.2.0-rc.3" defer></script>
-<script src="./modules/core/order-bell.js?v=4.2.0-rc.3" defer></script>
-<script src="./modules/teacher/admin-word-download.js?v=4.2.0-rc.3" defer></script>
+<script src="./core/pwa-register.js?v=4.2.0-rc.7" defer></script>
+<script src="./core/boot-recovery.js?v=4.2.0-rc.7" defer></script>
+<script src="./modules/core/navigation.js?v=4.2.0-rc.7" defer></script>
+<script id="alinAppBundleScript" src="./alin-app-desktop.v4.1.5.js?v=4.2.0-rc.7" defer></script>
+<script src="./core/csp-app-bundle-guard.js?v=4.2.0-rc.7"></script>
+<script src="./modules/core/account-admin-service.js?v=4.2.0-rc.7" defer></script>
+<script src="./modules/core/order-bell.js?v=4.2.0-rc.7" defer></script>
+<script src="./modules/teacher/admin-word-download.js?v=4.2.0-rc.7" defer></script>
 
 <div id="alinTrack415Layer" hidden aria-hidden="true">
   <section id="alinTrack415Panel" role="dialog" aria-modal="true" aria-labelledby="alinTrack415Title">
-    <button id="alinTrack415Close" type="button" aria-label="إغلاق" onclick="AlinTrack415Safe.close()">×</button>
+    <button id="alinTrack415Close" type="button" aria-label="إغلاق" data-alin-click="AlinTrack415Safe.close">×</button>
     <header id="alinTrack415Header">
       <span class="alin-track415-mark" aria-hidden="true"><i></i></span>
       <div><h2 id="alinTrack415Title">تتبع الطلب</h2><p>أدخل رقم الطلب حتى تظهر الحالة والتفاصيل الحالية.</p></div>
     </header>
     <div id="alinTrack415Search">
       <label><span>رقم الطلب</span><input id="alinTrack415Input" type="text" autocomplete="off" placeholder="مثال: ALIN-0001"></label>
-      <button type="button" onclick="AlinTrack415Safe.search()">تتبع الآن</button>
+      <button type="button" data-alin-click="AlinTrack415Safe.search">تتبع الآن</button>
     </div>
     <div id="alinTrack415Result" aria-live="polite"></div>
   </section>
 </div>
-<script id="alinTrack415SafeScript">
-(function(){
-  'use strict';
-  const $=id=>document.getElementById(id);
-  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const first=(obj,keys,fallback='—')=>{for(const k of keys){const v=obj?.[k];if(v!==undefined&&v!==null&&String(v).trim()!=='')return v}return fallback};
-  const money=v=>{const n=Number(v);return Number.isFinite(n)?n.toLocaleString('ar-IQ',{maximumFractionDigits:0})+' د.ع':'—'};
-  const date=v=>{if(!v)return '—';const d=new Date(v);return Number.isNaN(d.getTime())?String(v):d.toLocaleString('ar-IQ',{dateStyle:'medium',timeStyle:'short'})};
-  const normalizeStatus=value=>String(value||'new').trim().toLowerCase();
-  const isCourierOrder=row=>{
-    const fulfillment=String(first(row,['fulfillment_type','delivery_type','shipping_type','order_delivery_type'],'')).toLowerCase();
-    return ['home_delivery','delivery','courier','door_delivery'].includes(fulfillment)
-      || Boolean(first(row,['courier_id','assigned_courier_id','courier_name','delivery_area'],''));
-  };
-  const isPrintableOrder=row=>{
-    const kind=String(first(row,['item_type','product_type','category','order_type'],'')).toLowerCase();
-    const title=String(first(row,['title','item_name','product_name','order_title'],'')).toLowerCase();
-    return ['booklet','booklets','print','printing','malzama'].some(token=>kind.includes(token))
-      || /ملزمة|ملازم|طباعة/.test(title);
-  };
-  const flowFor=(row,status)=>{
-    const courier=isCourierOrder(row);
-    const printable=isPrintableOrder(row);
-    const cancelled=['cancelled','canceled','rejected'].includes(status);
-    if(cancelled)return {courier,printable,cancelled:true,index:-1,steps:[]};
-    if(courier){
-      let index=0;
-      if(['assigned','accepted','picked_up','processing','printing','ready'].includes(status))index=1;
-      if(['out_delivery','out_for_delivery'].includes(status))index=2;
-      if(['completed','delivered'].includes(status))index=3;
-      return {courier,printable,cancelled:false,index,steps:['تم الاستلام','تم تعيين المندوب','في الطريق','تم التسليم']};
-    }
-    let index=0;
-    if(['assigned','accepted','processing','printing'].includes(status))index=1;
-    if(['ready','picked_up','out_delivery','out_for_delivery'].includes(status))index=2;
-    if(['completed','delivered'].includes(status))index=3;
-    return {courier,printable,cancelled:false,index,steps:['تم الاستلام',printable?'قيد الطباعة':'قيد التجهيز','جاهز','تم التسليم']};
-  };
-  const statusLabel=(row,status)=>{
-    const flow=flowFor(row,status);
-    if(flow.cancelled)return 'ملغي';
-    if(['completed','delivered'].includes(status))return 'تم التسليم';
-    if(flow.courier){
-      if(['out_delivery','out_for_delivery'].includes(status))return 'في الطريق';
-      if(['accepted','picked_up'].includes(status))return 'استلم المندوب الطلب';
-      if(['assigned','processing','printing','ready'].includes(status))return 'تم تعيين المندوب';
-      return 'تم الاستلام';
-    }
-    if(['ready','picked_up','out_delivery','out_for_delivery'].includes(status))return 'جاهز';
-    if(['assigned','accepted','processing','printing'].includes(status))return flow.printable?'قيد الطباعة':'قيد التجهيز';
-    return 'تم الاستلام';
-  };
-  const empty=()=>'<div class="alin415-track-empty"><span class="symbol">⌖</span><b>جاهز لتتبع طلبك</b><small>أدخل رقم الطلب واضغط «تتبع الآن».</small></div>';
-  const normalize=data=>{if(Array.isArray(data))return data[0]||null;if(data&&typeof data==='object'&&Array.isArray(data.data))return data.data[0]||null;if(data&&typeof data==='object'&&data.data&&typeof data.data==='object')return data.data;return data&&typeof data==='object'?data:null};
-  const candidates=value=>{const raw=String(value||'').trim();return [...new Set([raw,raw.toUpperCase(),raw.toLowerCase()])].filter(Boolean)};
-  const render=(row,typed)=>{
-    const box=$('alinTrack415Result');if(!box)return;
-    const status=normalizeStatus(first(row,['status','order_status'],'new'));
-    const flow=flowFor(row,status);
-    const number=first(row,['order_number','tracking_code','id'],typed);
-    const title=first(row,['title','item_name','product_name','order_title'],'طلب منصة آلين');
-    const notes=first(row,['notes','note','status_note','delivery_notes'],'لا توجد ملاحظات');
-    const created=date(first(row,['created_at','order_date','updated_at'],''));
-    box.innerHTML=`<section class="alin415-track-head"><div><small>رقم الطلب</small><h3>${esc(number)}</h3><p>${esc(title)}</p></div><span class="alin415-track-status ${flow.cancelled?'cancel':flow.index===3?'done':''}">${esc(statusLabel(row,status))}</span></section>
-    <section class="alin415-track-details compact">
-      <article class="alin415-track-detail"><small>التاريخ</small><b>${esc(created)}</b></article>
-      <article class="alin415-track-detail"><small>الملاحظات</small><b>${esc(notes)}</b></article>
-    </section>
-    ${flow.cancelled?'<div class="alin415-track-alert error" style="margin-top:14px">هذا الطلب ملغي.</div>':`<section class="alin415-track-timeline">${flow.steps.map((name,i)=>`<article class="alin415-track-step ${i<flow.index?'done':i===flow.index?'current':''}"><i>${i<flow.index?'✓':i+1}</i><b>${name}</b></article>`).join('')}</section>`}`;
-  };
-  async function search(){
-    const input=$('alinTrack415Input'),box=$('alinTrack415Result');if(!box)return false;
-    const code=String(input?.value||'').trim();
-    if(code.length<4){box.innerHTML='<div class="alin415-track-alert">اكتب رقم الطلب الكامل أولاً.</div>';return false}
-    box.innerHTML='<div class="alin415-track-loading"><i></i><span>جارٍ التحقق من حالة الطلب...</span></div>';
-    try{
-      const client=window.sb||(window.AlinCloud&&window.AlinCloud.client?.());
-      if(!client?.rpc)throw new Error('tracking client unavailable');
-      let row=null,lastError=null;
-      for(const c of candidates(code)){
-        const {data,error}=await client.rpc('alin_track_order',{p_order_number:c});
-        if(error){lastError=error;continue}
-        const candidate=normalize(data);
-        if(candidate && candidate.found!==false){row=candidate;break}
-      }
-      if(!row){if(lastError)console.warn('[ALIN 4.1.5 tracking]',lastError);box.innerHTML='<div class="alin415-track-alert error"><b>لم يتم العثور على الطلب</b><br><small>تأكد من رقم الطلب وأعد المحاولة.</small></div>';return false}
-      render(row,code);return true;
-    }catch(err){console.error('[ALIN 4.1.5 safe tracking]',err);box.innerHTML='<div class="alin415-track-alert error"><b>تعذر التحقق الآن</b><br><small>أعد المحاولة بعد قليل.</small></div>';return false}
-  }
-  function open(){const layer=$('alinTrack415Layer');if(!layer)return;layer.hidden=false;layer.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';$('alinTrack415Result').innerHTML=empty();setTimeout(()=>$('alinTrack415Input')?.focus(),40)}
-  function close(){const layer=$('alinTrack415Layer');if(!layer)return;layer.hidden=true;layer.setAttribute('aria-hidden','true');document.body.style.overflow='';return true}
-  window.AlinTrack415Safe={open,close,search};
-  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('alinTrack415Layer')?.hidden)close();if(e.key==='Enter'&&document.activeElement===$('alinTrack415Input')){e.preventDefault();search()}});
-  document.addEventListener('click',e=>{if(e.target===$('alinTrack415Layer'))close()});
-  document.addEventListener('DOMContentLoaded',()=>{const box=$('alinTrack415Result');if(box)box.innerHTML=empty()});
-})();
-</script>
+<script id="alinTrack415SafeScript" src="./core/csp-desktop-inline-3.js?v=4.2.0-rc.7"></script>
 
-<script id="alinDesktopOptionsController">
-(function(){
-  'use strict';
-  function panel(){return document.getElementById('alinDesktopOptionsPanel')}
-  function trigger(){return document.getElementById('alinDesktopOptionsButton')}
-  function sync(){
-    var lang=(window.AlinI18n&&typeof window.AlinI18n.current==='function'?window.AlinI18n.current():document.documentElement.dataset.alinLanguage)||'ar';
-    var theme=document.documentElement.dataset.alinTheme==='dark'?'dark':'light';
-    document.querySelectorAll('#alinDesktopOptionsPanel [data-lang]').forEach(function(b){var on=b.dataset.lang===lang;b.classList.toggle('active',on);b.setAttribute('aria-pressed',on?'true':'false')});
-    document.querySelectorAll('#alinDesktopOptionsPanel [data-theme]').forEach(function(b){var on=b.dataset.theme===theme;b.classList.toggle('active',on);b.setAttribute('aria-pressed',on?'true':'false')});
-  }
-  window.alinToggleDesktopOptions=function(force){
-    var box=panel(),btn=trigger();if(!box)return;
-    var open=typeof force==='boolean'?force:box.hidden;
-    box.hidden=!open;if(btn)btn.setAttribute('aria-expanded',open?'true':'false');
-    if(open){sync();requestAnimationFrame(function(){box.querySelector('button')?.focus()})}
-  };
-  document.addEventListener('click',function(e){
-    var box=panel(),btn=trigger();if(!box||box.hidden)return;
-    if(box.contains(e.target)||btn&&btn.contains(e.target))return;
-    window.alinToggleDesktopOptions(false);
-  });
-  document.addEventListener('keydown',function(e){if(e.key==='Escape')window.alinToggleDesktopOptions(false)});
-  window.addEventListener('alin:language-applied',sync);
-  window.addEventListener('alin:theme-changed',sync);
-  window.addEventListener('load',sync,{once:true});
-})();
-</script>
+<script id="alinDesktopOptionsController" src="./core/csp-desktop-inline-4.js?v=4.2.0-rc.7"></script>
 
 </body>
 </html>

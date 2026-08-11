@@ -32,12 +32,7 @@
   const moneyv=v=>typeof window.money==='function'?window.money(v):num(v).toLocaleString(window.AlinI18n?.locale?.()||'ar-IQ');
   const root=()=>document.getElementById('adminContent');
 
-  function parseTab(button){
-    if(!button)return'';
-    if(button.dataset.adminTab)return button.dataset.adminTab;
-    const match=(button.getAttribute('onclick')||'').match(/adminTab\('([^']+)'\)/);
-    return match?.[1]||'';
-  }
+  function parseTab(button){return button?.dataset?.adminTab||'';}
 
   function prepareTabs(){
     document.querySelectorAll('#adminPage .admin-tabs button').forEach(button=>{
@@ -65,7 +60,7 @@
   }
 
   function platformIncome(dbx){
-    const rows=arr(window.financialEntries||dbx?.financialEntries||dbx?.financial_entries||dbx?.ledger);
+    const rows=arr(dbx?.ledger);
     return rows.reduce((sum,row)=>sum+num(row.platform_amount||row.alin||row.platform_profit),0);
   }
 

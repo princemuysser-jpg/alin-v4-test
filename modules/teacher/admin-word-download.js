@@ -56,7 +56,7 @@
         button.type='button';
         button.dataset.adminWordDownload='1';
         button.textContent='تنزيل ملف Word للتصميم';
-        button.onclick=()=>downloadTeacherRequestSource(id);
+        button.addEventListener('click',()=>downloadTeacherRequestSource(id));
         actions.prepend(button);
       }
     }

@@ -2,7 +2,7 @@
 // === core/config.js ===
 /* ALIN v4.1.0 Courier Rebuilt — ضع بيانات مشروع Supabase الجديد فقط. */
 window.ALIN_CONFIG=window.ALIN_CONFIG||Object.freeze({
-  version:'4.1.0-courier-rebuilt',
+  version:'4.2.0-rc.7',
   desktopPage:'./store-desktop.html',
   mobilePage:'./store-mobile.html',
   currency:'د.ع',
@@ -22,7 +22,6 @@ window.Alin.helpers={
 };
 
 ;
-
 ;
 
 /* modules/core/i18n-en.js */
@@ -496,7 +495,6 @@ window.Alin.helpers={
   "للاستفسار والدعم": "For inquiries and support"
 });
 })(window);
-
 ;
 
 /* modules/core/i18n-ku.js */
@@ -969,7 +967,6 @@ window.Alin.helpers={
   "للاستفسار والدعم": "بۆ پرسیار و پشتگیری"
 });
 })(window);
-
 ;
 
 /* modules/core/i18n.js */
@@ -1167,7 +1164,6 @@ window.Alin.helpers={
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{applyDocument(current());startObserver()},{once:true});
   else{applyDocument(current());startObserver()}
 })();
-
 ;
 
 /* modules/core/ui.js */
@@ -1214,7 +1210,6 @@ window.Alin.helpers={
 })();
 
 ;
-
 ;
 
 /* modules/core/platform.js */
@@ -1227,10 +1222,8 @@ window.Alin.helpers={
   const emptyDb=()=>({
     accounts:{all:[],teachers:[],libraries:[],couriers:[],accountants:[]},
     booklets:[],products:[],categories:[],banners:[],coupons:[],notifications:[],orders:[],
-    permits:[],ledger:[],withdrawals:[],audit:[],auditLogs:[],couriers:[],deliveryAreas:[],
-    teacherRequests:[],teacherPayouts:[],orderItems:[],orderTimeline:[],financialEntries:[],
-    financialPayouts:[],financialReturns:[],librarySettlements:[],teacherSettlements:[],
-    courierSettlements:[],backupLogs:[],systemHealthLogs:[],settings:{storeType:'booklet'}
+    permits:[],ledger:[],settlements:[],withdrawals:[],audit:[],auditLogs:[],couriers:[],deliveryAreas:[],
+    teacherRequests:[],orderTimeline:[],backupLogs:[],systemHealthLogs:[],settings:{storeType:'booklet'}
   });
   let stateDb=window.db&&typeof window.db==='object'?window.db:emptyDb();
   let stateCurrent=window.current||null;
@@ -1247,10 +1240,6 @@ window.Alin.helpers={
   expose('pendingRole',()=>statePendingRole,value=>{statePendingRole=String(value||'')});
   expose('checkoutItem',()=>stateCheckoutItem,value=>{stateCheckoutItem=value||null});
   expose('sb',()=>stateClient,value=>{stateClient=value||null});
-  expose('financialEntries',()=>stateDb.financialEntries||stateDb.financial_entries||[],value=>{stateDb.financialEntries=value||[];stateDb.financial_entries=value||[]});
-  expose('financialPayouts',()=>stateDb.financialPayouts||stateDb.financial_payouts||[],value=>{stateDb.financialPayouts=value||[];stateDb.financial_payouts=value||[]});
-  expose('librarySettlements',()=>stateDb.librarySettlements||stateDb.library_settlements||[],value=>{stateDb.librarySettlements=value||[];stateDb.library_settlements=value||[]});
-  expose('courierSettlements',()=>stateDb.courierSettlements||stateDb.delegate_settlements||[],value=>{stateDb.courierSettlements=value||[];stateDb.delegate_settlements=value||[]});
   expose('couriers',()=>stateDb.couriers||stateDb.accounts?.couriers||[],value=>{stateDb.couriers=value||[]});
 
   function validConfig(){
@@ -1303,10 +1292,10 @@ window.Alin.helpers={
   }
   async function usePermit(id){
     const permit=(stateDb.permits||[]).find(row=>String(row.id)===String(id));
-    const allowed=Math.max(1,Number(permit?.allowed||permit?.qty||1));
-    if(!permit||Number(permit.used||0)>=allowed){window.toast?.('إذن النسخ منتهي');return false}
-    const used=Number(permit.used||0)+1,status=used>=allowed?'used':'active';
-    await window.update('permits',{used,status},{id});Object.assign(permit,{used,status});await audit('copy',`استخدام إذن نسخة ${id}`);return true;
+    if(!permit){window.toast?.('إذن النسخ غير موجود');return false}
+    const client=window.sb||window.AlinCloud?.client?.();if(!client?.rpc)throw new Error('خدمة أذونات الطباعة غير متاحة');
+    const {data,error}=await client.rpc('alin_use_print_permit',{p_permit_id:String(id)});if(error)throw error;if(!data?.ok)throw new Error(data?.error||'لم يؤكد الخادم استخدام الإذن');
+    if(data.permit)Object.assign(permit,data.permit);await audit('copy',`استخدام إذن نسخة ${id}`);return true;
   }
   function renderAll(){
     try{window.applyBrand?.()}catch(error){console.warn('[ALIN brand]',error)}
@@ -1318,11 +1307,11 @@ window.Alin.helpers={
   async function seedData(){throw new Error('البيانات التجريبية معطلة في النسخة المستقرة')}
 
   Object.assign(window,{
-    ALIN_VERSION:'4.0.0',init,requireConnection,audit,renderAll,seedData,
+    ALIN_VERSION:window.ALIN_CONFIG?.version||'4.2.0-rc.7',init,requireConnection,audit,renderAll,seedData,
     teacherName,libIsOpen,libStatusText,activeLibraries,alinOpenLibraries:activeLibraries,
     alinLibOpen:libIsOpen,deliveryFee,isMissingTableError,usePermit
   });
-  window.AlinRuntime=Object.freeze({version:'4.0.0',init,requireConnection,renderAll,getDb:()=>stateDb,getCurrent:()=>stateCurrent});
+  window.AlinRuntime=Object.freeze({version:window.ALIN_CONFIG?.version||'4.2.0-rc.7',init,requireConnection,renderAll,getDb:()=>stateDb,getCurrent:()=>stateCurrent});
 
   /* PLATFORM STEP 1: coupons are owned by modules/store/coupons.js and modules/admin/coupons.js. */
   /* PLATFORM STEP 2: cart and order creation are owned by modules/store/cart.js and modules/store/order-routing.js. */
@@ -1342,7 +1331,6 @@ window.Alin.helpers={
 })();
 
 ;
-
 ;
 
 /* modules/core/storage.js */
@@ -1597,7 +1585,6 @@ window.Alin.helpers={
     checkFileUrl,resolve:alinResolveStoredFile,parseStoredRef
   });
 })();
-
 ;
 
 /* modules/core/supabase.js */
@@ -1608,14 +1595,12 @@ window.Alin.helpers={
 (function(){
   'use strict';
 
-  const VERSION='4.0.0-clean';
+  const VERSION=window.ALIN_CONFIG?.version||'4.2.0-rc.7';
   const TABLES=[
     'settings','accounts','delivery_areas','couriers','courier_areas','categories',
     'booklets','teacher_requests','teacher_request_versions','products','orders',
-    'order_items','order_timeline','permits','ledger','financial_entries',
-    'financial_payouts','withdrawals','library_settlements','teacher_settlements',
-    'delegate_settlements','admin_settlements','notifications','banners','coupons',
-    'student_profiles','product_reviews','stock_alerts','bundles','bundle_items',
+    'order_timeline','permits','ledger','settlements','withdrawals','notifications',
+    'banners','coupons','product_reviews','stock_alerts','bundles','bundle_items',
     'audit_events','notification_reads','account_permissions','backup_logs','system_health_logs'
   ];
   const PUBLIC_TABLES=[
@@ -1624,40 +1609,31 @@ window.Alin.helpers={
   const ROLE_TABLES={
     admin:TABLES,
     accountant:[
-      'settings','accounts','orders','order_items','order_timeline','ledger','financial_entries','financial_payouts',
-      'withdrawals','library_settlements','teacher_settlements','delegate_settlements','admin_settlements',
+      'settings','accounts','orders','order_timeline','ledger','settlements','withdrawals',
       'notifications','notification_reads','audit_events'
     ],
     teacher:[
-      ...PUBLIC_TABLES,'teacher_requests','teacher_request_versions','orders','order_items','order_timeline','ledger',
-      'financial_entries','financial_payouts','withdrawals','teacher_settlements','notification_reads'
+      ...PUBLIC_TABLES,'teacher_requests','teacher_request_versions','orders','ledger','settlements','withdrawals','notification_reads'
     ],
     library:[
-      ...PUBLIC_TABLES,'orders','order_items','order_timeline','permits','ledger','financial_entries','financial_payouts',
-      'withdrawals','library_settlements','notification_reads'
+      ...PUBLIC_TABLES,'orders','order_timeline','permits','ledger','settlements','withdrawals','notification_reads'
     ],
     courier:[
-      ...PUBLIC_TABLES,'couriers','courier_areas','orders','order_items','order_timeline','ledger','financial_entries',
-      'financial_payouts','withdrawals','delegate_settlements','notification_reads'
+      ...PUBLIC_TABLES,'couriers','courier_areas','orders','order_timeline','ledger','settlements','withdrawals','notification_reads'
     ]
   };
   const TABLE_LIMITS={
-    orders:1000,order_items:2000,order_timeline:2000,notifications:250,audit_events:500,
-    ledger:1500,financial_entries:1500,financial_payouts:750,withdrawals:750,
-    library_settlements:750,teacher_settlements:750,delegate_settlements:750,admin_settlements:750,
+    orders:1000,order_timeline:2000,notifications:250,audit_events:500,
+    ledger:1500,settlements:1000,withdrawals:750,
     teacher_requests:500,teacher_request_versions:750,product_reviews:500,stock_alerts:500,
     backup_logs:100,system_health_logs:250
   };
-  const REQUIRED_TABLES=['settings','accounts','booklets','products','orders','notifications','audit_events'];
-  const SORTED_TABLES=new Set(['orders','notifications','audit_events','order_timeline','financial_entries']);
-  const CRITICAL_TABLES=new Set([
-    'orders','order_items','order_timeline','coupons','products','ledger','financial_entries',
-    'financial_payouts','withdrawals','library_settlements','teacher_settlements',
-    'delegate_settlements','admin_settlements'
-  ]);
+  const REQUIRED_TABLES=['settings','accounts','booklets','products','orders','ledger','settlements','notifications','audit_events'];
+  const SORTED_TABLES=new Set(['orders','notifications','audit_events','order_timeline','settlements']);
+  const CRITICAL_TABLES=new Set(['orders','order_timeline','coupons','products','ledger','settlements','withdrawals']);
   const NO_CLIENT_ID=new Set(['settings','courier_areas']);
-  const QUEUE_KEY='alin_rc5_offline_queue';
-  const DEAD_QUEUE_KEY='alin_rc5_failed_queue';
+  const QUEUE_KEY='alin_rc7_offline_queue';
+  const DEAD_QUEUE_KEY='alin_rc7_failed_queue';
   const SNAPSHOT_KEY='alin_v3_public_snapshot';
   const SESSION_SNAPSHOT_KEY='alin_v3_session_snapshot';
   const STATUS_EVENT='alin:cloud-status';
@@ -1665,15 +1641,12 @@ window.Alin.helpers={
   const MUTATION_EVENT='alin:cloud-mutation';
   const TABLE_TO_DB={
     booklets:'booklets',products:'products',categories:'categories',banners:'banners',orders:'orders',
-    permits:'permits',ledger:'ledger',withdrawals:'withdrawals',audit_events:'audit',couriers:'couriers',
+    permits:'permits',ledger:'ledger',settlements:'settlements',withdrawals:'withdrawals',audit_events:'audit',couriers:'couriers',
     delivery_areas:'deliveryAreas',courier_areas:'courierAreas',notifications:'notifications',
     teacher_requests:'teacherRequests',teacher_request_versions:'teacherRequestVersions',
-    order_items:'orderItems',order_timeline:'orderTimeline',financial_entries:'financialEntries',
-    financial_payouts:'financialPayouts',library_settlements:'librarySettlements',
-    teacher_settlements:'teacherSettlements',delegate_settlements:'courierSettlements',
-    admin_settlements:'adminSettlements',coupons:'coupons',student_profiles:'studentProfiles',
-    product_reviews:'productReviews',stock_alerts:'stockAlerts',bundles:'bundles',bundle_items:'bundleItems',
-    notification_reads:'notificationReads',account_permissions:'accountPermissions',backup_logs:'backupLogs',system_health_logs:'systemHealthLogs'
+    order_timeline:'orderTimeline',coupons:'coupons',product_reviews:'productReviews',stock_alerts:'stockAlerts',
+    bundles:'bundles',bundle_items:'bundleItems',notification_reads:'notificationReads',account_permissions:'accountPermissions',
+    backup_logs:'backupLogs',system_health_logs:'systemHealthLogs'
   };
 
   let realtimeChannel=null;
@@ -1711,12 +1684,7 @@ window.Alin.helpers={
   }
   const connected=()=>!!client()&&navigator.onLine;
 
-  function syncAliases(d){
-    d.financial_entries=d.financialEntries;d.financial_payouts=d.financialPayouts;
-    d.library_settlements=d.librarySettlements;d.teacher_settlements=d.teacherSettlements;
-    d.delegate_settlements=d.courierSettlements;
-    return d;
-  }
+  function syncAliases(d){return d;}
   function ensureDb(){
     if(!window.db||typeof window.db!=='object')window.db={};
     const d=window.db;
@@ -1851,12 +1819,6 @@ window.Alin.helpers={
     if(table==='accounts')return selectAccountsForCurrentSession();
     if(table==='settings')return selectSettingsForCurrentSession();
     if(table==='booklets')return selectBookletsForCurrentSession();
-    if(table==='booklets'){
-      const c=client();
-      const source=!role||['courier','accountant'].includes(role)?'alin_public_booklets':role==='library'?'alin_library_booklets':'booklets';
-      const {data,error}=await c.from(source).select('*');
-      if(error)throw error;return data||[];
-    }
     if(table==='orders'&&role==='teacher'){
       const c=client();let request=c.from('alin_teacher_orders').select('*').order('created_at',{ascending:false});
       const cap=options.limit??limitFor(table,role);if(cap)request=request.limit(cap);
@@ -2011,7 +1973,6 @@ window.Alin.helpers={
       const snapshot=mapCloudToDb(rows);
       window.db=snapshot;
       try{window.couriers=snapshot.couriers||snapshot.accounts?.couriers||[]}catch(_){ }
-      try{window.courierSettlements=snapshot.courierSettlements||[]}catch(_){ }
       persistSnapshot(snapshot);
       lastRefreshErrors=errors;
       window.dispatchEvent(new CustomEvent(REFRESH_EVENT,{detail:{version:VERSION,errors,at:nowIso(),reason:options.reason||'load'}}));
@@ -2062,7 +2023,7 @@ window.Alin.helpers={
   function startRealtime(){
     const c=client();if(!c?.channel||realtimeChannel)return;
     realtimeChannel=c.channel('alin-live-v229');
-    for(const table of ['orders','notifications','booklets','products','accounts','couriers','ledger','financial_entries']){
+    for(const table of ['orders','notifications','booklets','products','accounts','couriers','ledger','settlements']){
       realtimeChannel.on('postgres_changes',{event:'*',schema:'public',table},()=>scheduleReload(300));
     }
     realtimeChannel.subscribe(status=>emit(status==='SUBSCRIBED'?'realtime':'realtime-wait',{realtime:status}));
@@ -2089,7 +2050,6 @@ window.Alin.helpers={
 })();
 
 ;
-
 ;
 
 /* modules/core/notifications.js */
@@ -2284,7 +2244,6 @@ window.Alin.helpers={
 
   window.addEventListener('alin:data-refreshed',()=>emit('data-refreshed'));
 })();
-
 ;
 
 /* core/finance-runtime.js */
@@ -2343,7 +2302,7 @@ window.Alin.helpers={
 
   function delegateAliases(id){
     const set=new Set([String(id??'')].filter(Boolean));
-    const sources=[...arr(db().delegates),...arr(db().accounts?.couriers),...arr(db().couriers)];
+    const sources=[...arr(db().delegates),...arr(db().accounts?.delegates),...arr(db().accounts?.couriers),...arr(db().accounts?.all).filter(row=>['courier','delegate'].includes(String(row?.role||'').toLowerCase())),...arr(db().couriers)];
     let changed=true;
     while(changed){
       changed=false;
@@ -2403,28 +2362,32 @@ window.Alin.helpers={
   }
 
   function payoutRows(){
-    const rows=[...arr(db().financial_payouts),...arr(db().financialPayouts),...arr(db().teacherPayouts),...arr(db().teacher_payouts),...arr(db().withdrawals).filter(row=>String(row.status||'').toLowerCase()==='paid')];
+    const rows=[
+      ...arr(db().settlements).filter(row=>['admin','teacher'].includes(String(row.party_role||'').toLowerCase())),
+      ...arr(db().withdrawals).filter(row=>String(row.status||'').toLowerCase()==='paid')
+    ];
     const seen=new Set();
-    return rows.filter(row=>{const key=String(row.id||row.voucher_number||`${row.party_role||row.role}-${row.party_id||row.account_id||row.teacher_id}-${row.created_at}-${row.amount}`);if(!key||seen.has(key))return false;seen.add(key);return true});
+    return rows.filter(row=>{const key=String(row.id||row.receipt_number||`${row.party_role||row.role}-${row.party_id||row.account_id}-${row.created_at}-${row.amount}`);if(!key||seen.has(key))return false;seen.add(key);return true});
   }
   const payoutRole=row=>String(row.party_role||row.role||(row.teacher_id?'teacher':'')||'').toLowerCase().replace('courier','delegate');
   const payoutParty=row=>row.party_id||row.account_id||row.user_id||row.teacher_id||row.library_id||row.delegate_id||row.courier_id||'';
   function payoutValue(row){const status=String(row.status||'paid').toLowerCase();if(['cancelled','canceled','rejected','reversed','pending'].includes(status))return 0;return status==='reversal'?-Math.abs(num(row.amount)):Math.max(0,num(row.amount))}
 
   function librarySettlementRows(id){
-    const seen=new Set();return [...arr(db().library_settlements),...arr(db().librarySettlements)].filter(row=>{if(!same(row.library_id,id))return false;const key=String(row.id||row.receipt_number||`${id}-${row.created_at}-${row.amount}`);if(!key||seen.has(key))return false;seen.add(key);return true});
+    return arr(db().settlements).filter(row=>String(row.party_role||'').toLowerCase()==='library'&&same(row.party_id,id));
   }
   function isConfirmedDelegateSettlement(row){
     if(!row)return false;
+    const role=String(row.party_role||'').toLowerCase().replace('courier','delegate');
     const status=String(row.status||'').toLowerCase();
-    if(!['received','paid'].includes(status))return false;
-    const receipt=String(row.receipt_number||row.voucher_number||'').trim();
-    const id=String(row.id||'').trim();
-    const note=String(row.note||row.notes||'').trim();
-    return (/^STL/i.test(id)&&/^RC-/i.test(receipt))||/تسوية\s*(ذمة\s*)?(مندوب|المندوب)|تسديد\s*(ذمة\s*)?(مندوب|المندوب)|delegate\s+settlement|courier\s+settlement/i.test(note);
+    return role==='delegate'&&['received','paid'].includes(status);
   }
   function delegateSettlementRows(id){
-    const aliases=delegateAliases(id),seen=new Set();return [...arr(db().delegate_settlements),...arr(db().courierSettlements),...arr(window.courierSettlements)].filter(row=>{if(!aliases.has(String(row.delegate_id||row.courier_id||row.party_id||''))||!isConfirmedDelegateSettlement(row))return false;const key=String(row.id||row.receipt_number||`${id}-${row.created_at}-${row.amount}`);if(!key||seen.has(key))return false;seen.add(key);return true});
+    const aliases=delegateAliases(id),seen=new Set();
+    return arr(db().settlements).filter(row=>{
+      if(!isConfirmedDelegateSettlement(row)||!aliases.has(String(row.party_id||'')))return false;
+      const key=String(row.id||row.receipt_number||`${row.party_id}-${row.created_at}-${row.amount}`);if(!key||seen.has(key))return false;seen.add(key);return true;
+    });
   }
   function settlementValue(row){const status=String(row.status||'').toLowerCase();if(!['received','paid'].includes(status))return 0;return Math.max(0,num(row.amount))}
 
@@ -2542,9 +2505,8 @@ window.Alin.helpers={
   window.ensureOrderFinancials=async order=>delivered(order?.status)?transitionOrder(order.id,'completed'):null;
   window.alinV57SettleOrder=async order=>transitionOrder(order.id,'completed');
   window.maybeCreateFinancialEntry=async id=>transitionOrder(id,'completed');
-  window.requestWithdraw=requestWithdraw;window.withdrawStatus=updateWithdrawal;window.alinV68Balance=balance;window.alinV65Balance=balance;window.alinV65Paid=paid;window.alinV65AllPayouts=payoutRows;window.alinV64LibraryDebt=librarySummary;window.alinV64AllSettlements=()=>arr(db().library_settlements).length?arr(db().library_settlements):arr(db().librarySettlements);window.alinV68PayBalance=payBalance;window.alinV65PayBalance=payBalance;window.alinV64AdminSettleLibrary=settleLibrary;window.addTeacherPayoutPrompt=id=>payBalance('teacher',id);window.AlinV120Finance={summary:librarySummary,settle:settleLibrary};
+  window.requestWithdraw=requestWithdraw;window.withdrawStatus=updateWithdrawal;window.alinV68Balance=balance;window.alinV65Balance=balance;window.alinV65Paid=paid;window.alinV65AllPayouts=payoutRows;window.alinV64LibraryDebt=librarySummary;window.alinV64AllSettlements=()=>arr(db().settlements);window.alinV68PayBalance=payBalance;window.alinV65PayBalance=payBalance;window.alinV64AdminSettleLibrary=settleLibrary;window.addTeacherPayoutPrompt=id=>payBalance('teacher',id);window.AlinV120Finance={summary:librarySummary,settle:settleLibrary};
 })();
-
 ;
 
 /* modules/store/coupons.js */
@@ -2692,7 +2654,6 @@ window.Alin.helpers={
   window.alinApplyCoupon=checkCoupon;
   window.clearAppliedCoupon=clear;
 })();
-
 ;
 
 /* modules/admin/shell.js */
@@ -2730,12 +2691,7 @@ window.Alin.helpers={
   const moneyv=v=>typeof window.money==='function'?window.money(v):num(v).toLocaleString(window.AlinI18n?.locale?.()||'ar-IQ');
   const root=()=>document.getElementById('adminContent');
 
-  function parseTab(button){
-    if(!button)return'';
-    if(button.dataset.adminTab)return button.dataset.adminTab;
-    const match=(button.getAttribute('onclick')||'').match(/adminTab\('([^']+)'\)/);
-    return match?.[1]||'';
-  }
+  function parseTab(button){return button?.dataset?.adminTab||'';}
 
   function prepareTabs(){
     document.querySelectorAll('#adminPage .admin-tabs button').forEach(button=>{
@@ -2763,7 +2719,7 @@ window.Alin.helpers={
   }
 
   function platformIncome(dbx){
-    const rows=arr(window.financialEntries||dbx?.financialEntries||dbx?.financial_entries||dbx?.ledger);
+    const rows=arr(dbx?.ledger);
     return rows.reduce((sum,row)=>sum+num(row.platform_amount||row.alin||row.platform_profit),0);
   }
 
@@ -2874,7 +2830,6 @@ window.Alin.helpers={
 })();
 
 ;
-
 ;
 
 /* modules/admin/accounts.js */
@@ -2928,21 +2883,21 @@ window.Alin.helpers={
     const st=normalizedStatus(x),locked=['admin','accountant'].includes(x.role),phone=x.phone||x.mobile||'',xAreas=accountAreas(x);
     const meta=[x.username?`الدخول: ${escx(x.username)}`:'',phone?escx(phone):'',...xAreas.slice(0,4).map(escx)].filter(Boolean);
     if(xAreas.length>4)meta.push(`+${xAreas.length-4} مناطق`);
-    return `<article class="v131-account-card"><div class="v131-avatar ${escx(x.role)}">${escx(initials(x.name))}</div><div class="v131-account-info"><h3>${escx(x.name||roleLabel[x.role])}</h3><div class="v131-account-meta"><span class="v131-chip">${roleLabel[x.role]||escx(x.role)}</span>${meta.map(m=>`<span class="v131-chip">${m}</span>`).join('')}<span class="v131-status ${st}">${st==='active'?'فعال':st==='pending'?'قيد المراجعة':'موقوف'}</span></div></div><div class="v131-card-actions">${locked?`<button class="secondary" onclick="v131AccountInfo('${escx(x.id)}')">تفاصيل الصلاحية</button>`:`<button class="secondary" onclick="v132OpenAccountEditor('${escx(x.id)}')">تعديل كامل</button><button class="warning" onclick="v132ToggleAccount('${escx(x.id)}','${st==='active'?'inactive':'active'}')">${st==='active'?'إيقاف':'تفعيل'}</button><button class="secondary" onclick="v132OpenActivity('${escx(x.id)}')">النشاط</button><button class="danger" onclick="v132SafeDeleteAccount('${escx(x.id)}')">أرشفة</button>`}</div></article>`;
+    return `<article class="v131-account-card"><div class="v131-avatar ${escx(x.role)}">${escx(initials(x.name))}</div><div class="v131-account-info"><h3>${escx(x.name||roleLabel[x.role])}</h3><div class="v131-account-meta"><span class="v131-chip">${roleLabel[x.role]||escx(x.role)}</span>${meta.map(m=>`<span class="v131-chip">${m}</span>`).join('')}<span class="v131-status ${st}">${st==='active'?'فعال':st==='pending'?'قيد المراجعة':'موقوف'}</span></div></div><div class="v131-card-actions">${locked?`<button class="secondary" data-alin-click="v131AccountInfo" data-alin-click-arg0="${escx(x.id)}">تفاصيل الصلاحية</button>`:`<button class="secondary" data-alin-click="v132OpenAccountEditor" data-alin-click-arg0="${escx(x.id)}">تعديل كامل</button><button class="warning" data-alin-click="v132ToggleAccount" data-alin-click-arg0="${escx(x.id)}" data-alin-click-arg1="${st==='active'?'inactive':'active'}">${st==='active'?'إيقاف':'تفعيل'}</button><button class="secondary" data-alin-click="v132OpenActivity" data-alin-click-arg0="${escx(x.id)}">النشاط</button><button class="danger" data-alin-click="v132SafeDeleteAccount" data-alin-click-arg0="${escx(x.id)}">أرشفة</button>`}</div></article>`;
   }
   function courierAreaPicker(){
     return `<section id="v163CourierAccountFields" class="v163-courier-account-fields" hidden>
       <div class="v163-courier-fields-title"><div><b>بيانات حساب المندوب</b><small>حدد كل المناطق التي يعمل بها المندوب. الطلبات تُطابق حسب منطقة الزبون.</small></div><span>مناطق متعددة</span></div>
-      <div class="form-grid v163-courier-fields-grid"><input id="v163CourierPhone" inputmode="tel" placeholder="رقم هاتف المندوب"><select id="v163CourierAvailability"><option value="available">متاح</option><option value="busy">مشغول</option><option value="offline">غير متصل</option></select></div>
-      <div class="v163-area-toolbar"><h4>مناطق عمل المندوب</h4><div><button type="button" class="secondary" onclick="v131CourierAreasSelectAll()">تحديد الكل</button><button type="button" class="secondary" onclick="v131CourierAreasClear()">إلغاء التحديد</button></div></div>
-      <div id="v163CourierAreaPicker" class="v163-area-picker">${deliveryAreaNames().map(name=>`<label><input type="checkbox" value="${escx(name)}" onchange="v131CourierAreaCount()"><span>${escx(name)}</span></label>`).join('')}</div>
+      <div class="form-grid v163-courier-fields-grid"><select id="v163CourierAvailability"><option value="available">متاح</option><option value="busy">مشغول</option><option value="offline">غير متصل</option></select></div>
+      <div class="v163-area-toolbar"><h4>مناطق عمل المندوب</h4><div><button type="button" class="secondary" data-alin-click="v131CourierAreasSelectAll">تحديد الكل</button><button type="button" class="secondary" data-alin-click="v131CourierAreasClear">إلغاء التحديد</button></div></div>
+      <div id="v163CourierAreaPicker" class="v163-area-picker">${deliveryAreaNames().map(name=>`<label><input type="checkbox" value="${escx(name)}" data-alin-change="v131CourierAreaCount"><span>${escx(name)}</span></label>`).join('')}</div>
       <p class="v163-account-note"><b id="v163CourierAreaCount">0</b> منطقة محددة. بعد الحفظ يظهر المندوب فقط ضمن الطلبات المطابقة لمناطقه.</p>
     </section>`;
   }
   function render(){
     if(!window.adminContent)return;
     const s=stats(),rows=filtered();
-    adminContent.innerHTML=`<section class="v131-accounts"><header class="v131-accounts-head"><div><h2>إدارة الحسابات</h2><p>إدارة المدرسين والمكتبات والمندوبين والصلاحيات من مكان واحد.</p></div><button class="v131-add-account" onclick="v131ToggleAccountForm()">+ إضافة حساب جديد</button></header><section class="v131-account-stats"><article class="v131-account-stat"><small>إجمالي الحسابات</small><b>${s.all}</b></article><article class="v131-account-stat"><small>الحسابات الفعالة</small><b>${s.active}</b></article><article class="v131-account-stat danger"><small>الحسابات الموقوفة</small><b>${s.inactive}</b></article><article class="v131-account-stat"><small>المدرسون</small><b>${s.teachers}</b></article><article class="v131-account-stat"><small>المكتبات</small><b>${s.libraries}</b></article><article class="v131-account-stat"><small>المندوبون</small><b>${s.couriers}</b></article></section><section id="v131AccountForm" class="v131-account-form"><h3>إضافة حساب</h3><div class="form-grid"><select id="aRole" onchange="v131SyncAccountRole()"><option value="teacher">مدرس</option><option value="library">مكتبة</option><option value="courier">مندوب</option><option value="accountant">محاسب</option></select><input id="aName" placeholder="الاسم الكامل"><input id="aUser" placeholder="اسم الدخول"><input id="aPass" type="password" placeholder="كلمة مرور من 12 حرفاً وحروف وأرقام"><input id="aArea" placeholder="المنطقة"><input id="aLandmark" placeholder="أقرب نقطة دالة"></div>${courierAreaPicker()}<div class="form-actions"><button class="secondary" onclick="v131ToggleAccountForm(false)">إلغاء</button><button id="v131SaveAccountButton" onclick="addAccount()">حفظ الحساب</button></div></section><section class="v131-account-tools"><input id="v131AccountSearch" value="${escx(state.query)}" placeholder="ابحث بالاسم أو اسم الدخول أو المنطقة" oninput="v131AccountFilter('query',this.value)"><select onchange="v131AccountFilter('role',this.value)"><option value="all">كل أنواع الحسابات</option>${Object.entries(roleLabel).map(([k,v])=>`<option value="${k}" ${state.role===k?'selected':''}>${v}</option>`).join('')}</select><select onchange="v131AccountFilter('status',this.value)"><option value="all">كل الحالات</option><option value="active" ${state.status==='active'?'selected':''}>فعال</option><option value="inactive" ${state.status==='inactive'?'selected':''}>موقوف</option><option value="pending" ${state.status==='pending'?'selected':''}>قيد المراجعة</option></select><select onchange="v131AccountFilter('area',this.value)"><option value="all">كل المناطق</option>${areas().map(a=>`<option value="${escx(a)}" ${state.area===a?'selected':''}>${escx(a)}</option>`).join('')}</select></section><nav class="v131-role-tabs">${[['all','الكل'],...Object.entries(roleLabel)].map(([k,v])=>`<button class="${state.role===k?'active':''}" onclick="v131AccountFilter('role','${k}')">${v}</button>`).join('')}</nav><section class="v131-account-grid">${rows.map(card).join('')||'<div class="v131-empty">لا توجد حسابات مطابقة للبحث والفلترة.</div>'}</section><section id="v132AccountEditorHost"></section></section>`;
+    adminContent.innerHTML=`<section class="v131-accounts"><header class="v131-accounts-head"><div><h2>إدارة الحسابات</h2><p>إدارة المدرسين والمكتبات والمندوبين والصلاحيات من مكان واحد.</p></div><button type="button" class="v131-add-account" data-alin-click="v131ToggleAccountForm">+ إضافة حساب جديد</button></header><section class="v131-account-stats"><article class="v131-account-stat"><small>إجمالي الحسابات</small><b>${s.all}</b></article><article class="v131-account-stat"><small>الحسابات الفعالة</small><b>${s.active}</b></article><article class="v131-account-stat danger"><small>الحسابات الموقوفة</small><b>${s.inactive}</b></article><article class="v131-account-stat"><small>المدرسون</small><b>${s.teachers}</b></article><article class="v131-account-stat"><small>المكتبات</small><b>${s.libraries}</b></article><article class="v131-account-stat"><small>المندوبون</small><b>${s.couriers}</b></article></section><section id="v131AccountForm" class="v131-account-form"><h3>إضافة حساب</h3><div class="form-grid"><select id="aRole" data-alin-change="v131SyncAccountRole"><option value="teacher">مدرس</option><option value="library">مكتبة</option><option value="courier">مندوب</option><option value="accountant">محاسب</option></select><input id="aName" placeholder="الاسم الكامل"><input id="aUser" placeholder="اسم الدخول"><input id="aPass" type="password" placeholder="كلمة مرور من 12 حرفاً وحروف وأرقام"><input id="aPhone" inputmode="tel" placeholder="رقم الهاتف"><input id="aArea" placeholder="المنطقة"><input id="aLandmark" placeholder="أقرب نقطة دالة"></div>${courierAreaPicker()}<div class="form-actions"><button type="button" class="secondary" data-alin-click="v131ToggleAccountForm" data-alin-click-arg0="false" data-alin-click-arg0-type="boolean">إلغاء</button><button type="button" id="v131SaveAccountButton" data-alin-click="addAccount">حفظ الحساب</button></div></section><section class="v131-account-tools"><input id="v131AccountSearch" value="${escx(state.query)}" placeholder="ابحث بالاسم أو اسم الدخول أو المنطقة" data-alin-input="v131AccountFilter" data-alin-input-arg0="query" data-alin-input-arg1-source="value"><select data-alin-change="v131AccountFilter" data-alin-change-arg0="role" data-alin-change-arg1-source="value"><option value="all">كل أنواع الحسابات</option>${Object.entries(roleLabel).map(([k,v])=>`<option value="${k}" ${state.role===k?'selected':''}>${v}</option>`).join('')}</select><select data-alin-change="v131AccountFilter" data-alin-change-arg0="status" data-alin-change-arg1-source="value"><option value="all">كل الحالات</option><option value="active" ${state.status==='active'?'selected':''}>فعال</option><option value="inactive" ${state.status==='inactive'?'selected':''}>موقوف</option><option value="pending" ${state.status==='pending'?'selected':''}>قيد المراجعة</option></select><select data-alin-change="v131AccountFilter" data-alin-change-arg0="area" data-alin-change-arg1-source="value"><option value="all">كل المناطق</option>${areas().map(a=>`<option value="${escx(a)}" ${state.area===a?'selected':''}>${escx(a)}</option>`).join('')}</select></section><nav class="v131-role-tabs">${[['all','الكل'],...Object.entries(roleLabel)].map(([k,v])=>`<button class="${state.role===k?'active':''}" data-alin-click="v131AccountFilter" data-alin-click-arg0="role" data-alin-click-arg1="${k}">${v}</button>`).join('')}</nav><section class="v131-account-grid">${rows.map(card).join('')||'<div class="v131-empty">لا توجد حسابات مطابقة للبحث والفلترة.</div>'}</section><section id="v132AccountEditorHost"></section></section>`;
     adminContent.dataset.adminModule='accounts';
     adminContent.classList.add('admin-accounts-module');
     window.v131SyncAccountRole();
@@ -2970,7 +2925,6 @@ window.Alin.helpers={
 })();
 
 ;
-
 ;
 
 /* modules/core/features.js */
@@ -3003,7 +2957,6 @@ window.Alin.helpers={
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bindBottomNavigation,{once:true});
   else bindBottomNavigation();
 })();
-
 ;
 
 /* modules/store/student-isolation.js */
@@ -3050,6 +3003,7 @@ window.Alin.helpers={
   window.AlinStudentIsolation=Object.freeze({scope,key,studentId,guestId,refresh,rotateGuest,readJson,writeJson,remove});
 })();
 
+;
 ;
 
 /* modules/store/discovery-core.js */
@@ -3224,6 +3178,7 @@ window.Alin.helpers={
     openModal(`<section class="v99-desktop-favorites"><h2>المفضلة</h2>${rows.length?`<p class="muted">${fmt(rows.length)} مادة محفوظة للعودة إليها بسهولة.</p><div class="v99-rail">${cards}</div>`:`<div class="v99-favorites-empty"><span aria-hidden="true">آ</span><h3>مفضلتك جاهزة لاختياراتك</h3><p>احفظ المواد والمنتجات التي تهمك لتجدها هنا في أي وقت.</p><button type="button" data-v99-action="browseProducts">تصفح المنتجات</button></div>`}</section>`);
   };
 })();
+;
 
 /* modules/store/discovery-catalog.js */
 // === store/discovery-catalog.js ===
@@ -3690,7 +3645,6 @@ window.Alin.helpers={
   window.setStoreType=setStoreType;
   window.AlinStorefront=Object.freeze({render:renderStore,items:canonicalItems,currentItems:currentStoreItems,setType:setStoreType,stats:renderStoreStats,openDetails:(kind,id)=>window.v99OpenDetails?.(kind,id)});
 })();
-
 ;
 
 /* modules/store/discovery-details.js */
@@ -3776,15 +3730,26 @@ window.Alin.helpers={
   function stockForm(item){
     openModal(`<h2>أبلغني عند التوفر</h2><p>سنحفظ طلب التنبيه في النظام فقط إذا كانت الخدمة مفعلة.</p><div class="v99-form"><input id="v99StockContact" placeholder="رقم الهاتف"><button data-v99-action="stockSubmit" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">حفظ التنبيه</button><div id="v99FormMsg"></div></div>`);
   }
+  async function publicSubmission(action,payload){
+    const client=window.sb;
+    if(!client?.functions?.invoke)throw new Error('خدمة الإرسال غير متاحة حالياً');
+    const {data,error}=await client.functions.invoke('public-submission',{body:{action,...payload}});
+    if(error){
+      let detail=null;
+      try{if(error.context&&typeof error.context.json==='function')detail=await error.context.json()}catch(_){}
+      throw new Error(detail?.message||error.message||'تعذر إرسال الطلب حالياً');
+    }
+    if(!data?.ok)throw new Error(data?.message||'تعذر إرسال الطلب حالياً');
+    return data;
+  }
   async function stockSubmit(item){
     const contact=$('#v99StockContact')?.value.trim(),message=$('#v99FormMsg');
     if(!contact){if(message)message.innerHTML='<div class="v99-notice error">اكتب رقم الهاتف.</div>';return}
     if(!state.schema.stock_alerts||!hasSb()){if(message)message.innerHTML='<div class="v99-notice error">خدمة التنبيه غير مفعلة على قاعدة البيانات.</div>';return}
     try{
-      const {error}=await window.sb.from('stock_alerts').insert({kind:item.kind,item_id:item.id,contact,status:'pending'});
-      if(error)throw error;
-      if(message)message.innerHTML='<div class="v99-notice success">تم تسجيل طلب التنبيه.</div>';
-    }catch(error){if(message)message.innerHTML=`<div class="v99-notice error">لم يتم الحفظ: ${esc(error.message||'راجع إعدادات الخدمة')}</div>`}
+      const result=await publicSubmission('stock_alert',{kind:item.kind,item_id:item.id,contact});
+      if(message)message.innerHTML=`<div class="v99-notice success">${esc(result.message||'تم تسجيل طلب التنبيه.')}</div>`;
+    }catch(error){if(message)message.innerHTML=`<div class="v99-notice error">${esc(error.message||'تعذر تسجيل التنبيه حالياً')}</div>`}
   }
 
   function reviewForm(item){
@@ -3795,10 +3760,9 @@ window.Alin.helpers={
     if(!contact||!comment){if(message)message.innerHTML='<div class="v99-notice error">أكمل رقم الهاتف والتعليق.</div>';return}
     if(!state.schema.product_reviews||!hasSb()){if(message)message.innerHTML='<div class="v99-notice error">خدمة التقييمات غير مفعلة.</div>';return}
     try{
-      const {error}=await window.sb.from('product_reviews').insert({kind:item.kind,item_id:item.id,student_contact:contact,rating,comment,status:'pending'});
-      if(error)throw error;
-      if(message)message.innerHTML='<div class="v99-notice success">تم إرسال تقييمك للمراجعة قبل النشر.</div>';
-    }catch(error){if(message)message.innerHTML=`<div class="v99-notice error">لم يتم الإرسال: ${esc(error.message||'راجع إعدادات الخدمة')}</div>`}
+      const result=await publicSubmission('review',{kind:item.kind,item_id:item.id,contact,rating,comment});
+      if(message)message.innerHTML=`<div class="v99-notice success">${esc(result.message||'تم إرسال تقييمك للمراجعة قبل النشر.')}</div>`;
+    }catch(error){if(message)message.innerHTML=`<div class="v99-notice error">${esc(error.message||'تعذر إرسال التقييم حالياً')}</div>`}
   }
 
   function teacherModal(id){
@@ -3827,7 +3791,6 @@ window.Alin.helpers={
   Object.assign(ctx,{reviewsFor,relatedItems,relatedDetailHtml,openDetails,shareItem,stockForm,stockSubmit,reviewForm,reviewSubmit,teacherModal,bundleModal,addBundle});
   window.v99OpenDetails=openDetails;
 })();
-
 ;
 
 /* modules/store/discovery-growth.js */
@@ -3868,11 +3831,11 @@ window.Alin.helpers={
     const orders=student?(window.AlinStudentAuth?.orders?.()||[]).slice(0,5):[];
     if(ctx.isDesktop()||ctx.isMobile()){
       if(!student){root.innerHTML='';return}
-      root.innerHTML=`<div class="v99-section-head"><div><h2>طلباتي الأخيرة</h2><small>إعادة الطلب أو متابعة حالته بسهولة</small></div></div><article class="v99-hub-card desktop-orders-card">${orders.map(order=>`<div class="v99-order-row"><div><b>${esc(order.title||order.order_number||order.id)}</b><small>${esc(order.status||'جديد')}${order.ready_eta?` • جاهز تقريباً ${esc(order.ready_eta)}`:''}</small></div><button type="button" onclick="window.AlinStudentAuth?.track?.('${encodeURIComponent(String(order.order_number||order.id||''))}')">تتبع</button></div>`).join('')||'<p>لا توجد طلبات سابقة.</p>'}</article>`;
+      root.innerHTML=`<div class="v99-section-head"><div><h2>طلباتي الأخيرة</h2><small>إعادة الطلب أو متابعة حالته بسهولة</small></div></div><article class="v99-hub-card desktop-orders-card">${orders.map(order=>`<div class="v99-order-row"><div><b>${esc(order.title||order.order_number||order.id)}</b><small>${esc(order.status||'جديد')}${order.ready_eta?` • جاهز تقريباً ${esc(order.ready_eta)}`:''}</small></div><button type="button" data-alin-click="AlinStudentAuth.track" data-alin-click-arg0="${encodeURIComponent(String(order.order_number||order.id||''))}">تتبع</button></div>`).join('')||'<p>لا توجد طلبات سابقة.</p>'}</article>`;
       return;
     }
     const loyalty=(state.tables.loyalty_accounts||[]).find(row=>student&&row.phone===student.phone);
-    root.innerHTML=`<div class="v99-section-head"><div><h2>مساحة الطالب</h2><small>طلباتك ومكافآتك وخيارات الطلب الجماعي</small></div></div><div class="v99-hub-grid"><article class="v99-hub-card"><h3>آخر الطلبات</h3>${student?(orders.map(order=>`<div class="v99-order-row"><div><b>${esc(order.title||order.order_number||order.id)}</b><small>${esc(order.status||'جديد')}${order.ready_eta?` • جاهز تقريباً ${esc(order.ready_eta)}`:''}</small></div><button type="button" onclick="window.AlinStudentAuth?.track?.('${encodeURIComponent(String(order.order_number||order.id||''))}')">تتبع</button></div>`).join('')||'<p>لا توجد طلبات سابقة.</p>'):'<p>سجل دخول الطالب لرؤية طلباتك.</p>'}</article><article class="v99-hub-card"><h3>نقاط آلين</h3>${loyalty?`<div class="v99-price">${fmt(loyalty.points_balance)} نقطة</div><p>يُحتسب الرصيد من النظام الآمن فقط.</p>`:'<div class="v99-notice">لا يوجد رصيد نقاط متاح. تظهر النقاط هنا بعد تفعيل نظام النقاط وربط الحساب.</div>'}</article><article class="v99-hub-card"><h3>طلب جماعي</h3><p>اجمع طلبات زملائك في مجموعة واحدة عندما تكون الخدمة مفعلة.</p><button data-v99-action="groupOrder">إنشاء أو انضمام</button></article></div>`;
+    root.innerHTML=`<div class="v99-section-head"><div><h2>مساحة الطالب</h2><small>طلباتك ومكافآتك وخيارات الطلب الجماعي</small></div></div><div class="v99-hub-grid"><article class="v99-hub-card"><h3>آخر الطلبات</h3>${student?(orders.map(order=>`<div class="v99-order-row"><div><b>${esc(order.title||order.order_number||order.id)}</b><small>${esc(order.status||'جديد')}${order.ready_eta?` • جاهز تقريباً ${esc(order.ready_eta)}`:''}</small></div><button type="button" data-alin-click="AlinStudentAuth.track" data-alin-click-arg0="${encodeURIComponent(String(order.order_number||order.id||''))}">تتبع</button></div>`).join('')||'<p>لا توجد طلبات سابقة.</p>'):'<p>سجل دخول الطالب لرؤية طلباتك.</p>'}</article><article class="v99-hub-card"><h3>نقاط آلين</h3>${loyalty?`<div class="v99-price">${fmt(loyalty.points_balance)} نقطة</div><p>يُحتسب الرصيد من النظام الآمن فقط.</p>`:'<div class="v99-notice">لا يوجد رصيد نقاط متاح. تظهر النقاط هنا بعد تفعيل نظام النقاط وربط الحساب.</div>'}</article><article class="v99-hub-card"><h3>طلب جماعي</h3><p>اجمع طلبات زملائك في مجموعة واحدة عندما تكون الخدمة مفعلة.</p><button data-v99-action="groupOrder">إنشاء أو انضمام</button></article></div>`;
   }
 
   function groupOrder(){
@@ -3952,7 +3915,7 @@ window.Alin.helpers={
       if(!item)continue;
       const button=document.createElement('button');
       button.type='button';button.dataset.v99Merch='1';button.textContent='إدارة العرض';
-      button.onclick=()=>editMerch(item.kind,item.id);
+      button.addEventListener('click',()=>editMerch(item.kind,item.id));
       (row.querySelector('.row-actions')||row).appendChild(button);
     }
   }
@@ -3960,7 +3923,7 @@ window.Alin.helpers={
   function handoff(id){
     const order=(window.db?.orders||[]).find(row=>String(row.id)===String(id));
     if(!order?.handoff_token)return;
-    openModal(`<h2>رمز تسليم الطلب</h2><p>اعرض هذا الرمز للمكتبة. لا يؤكد التسليم وحده؛ التحقق يتم من النظام المصرّح.</p><div class="v99-print-token">${esc(order.handoff_token)}</div><button onclick="window.print()">طباعة الرمز</button>`);
+    openModal(`<h2>رمز تسليم الطلب</h2><p>اعرض هذا الرمز للمكتبة. لا يؤكد التسليم وحده؛ التحقق يتم من النظام المصرّح.</p><div class="v99-print-token">${esc(order.handoff_token)}</div><button data-alin-click="print">طباعة الرمز</button>`);
   }
 
   function enhanceTracking(event){
@@ -3979,7 +3942,6 @@ window.Alin.helpers={
   window.v99Reorder=reorder;
   window.v99EditMerch=editMerch;
 })();
-
 ;
 
 /* modules/store/discovery.js */
@@ -4215,7 +4177,6 @@ window.Alin.helpers={
   Object.assign(ctx,{setDesktopFilterDrawer,setMobileFilterDrawer,init});
   document.addEventListener('DOMContentLoaded',init,{once:true});
 })();
-
 ;
 
 /* modules/store/cart.js */
@@ -4407,9 +4368,9 @@ window.Alin.helpers={
     return `<section class="v162-gps-box" id="v162GpsBox">
       <div class="v162-gps-head"><div><b>نقطة موقع التوصيل GPS</b><small>تساعد الإدارة والمندوب على الوصول لنقطة التسليم بدقة.</small></div><span id="v162GpsStatus" class="v162-gps-status">غير محدد</span></div>
       <div class="v162-gps-actions">
-        <button type="button" class="v162-gps-primary" onclick="alinV162UseCurrentLocation()"><span aria-hidden="true">⌖</span> استخدام موقعي الحالي</button>
-        <button type="button" id="v162OpenMapBtn" class="secondary" onclick="alinV162OpenSelectedMap()" disabled>فتح الموقع على الخريطة</button>
-        <button type="button" id="v162ClearGpsBtn" class="secondary" onclick="alinV162ClearGps()" hidden>مسح الموقع</button>
+        <button type="button" class="v162-gps-primary" data-alin-click="alinV162UseCurrentLocation"><span aria-hidden="true">⌖</span> استخدام موقعي الحالي</button>
+        <button type="button" id="v162OpenMapBtn" class="secondary" data-alin-click="alinV162OpenSelectedMap" disabled>فتح الموقع على الخريطة</button>
+        <button type="button" id="v162ClearGpsBtn" class="secondary" data-alin-click="alinV162ClearGps" hidden>مسح الموقع</button>
       </div>
       <div id="v162GpsDetails" class="v162-gps-details" hidden></div>
       <input type="hidden" id="deliveryLatitude"><input type="hidden" id="deliveryLongitude"><input type="hidden" id="deliveryLocationUrl"><input type="hidden" id="deliveryLocationAccuracy">
@@ -4421,7 +4382,7 @@ window.Alin.helpers={
     if(hasProducts()){
       return `<section class="alin-fulfillment"><h4>طريقة الاستلام والدفع</h4><div class="alin-delivery-options"><label class="selected"><input type="radio" name="fulfillment" value="home_delivery" checked><span><b>توصيل للبيت</b><small>القرطاسية والهدايا تُسلّم عن طريق المندوب</small></span></label></div><div id="deliveryFields" class="alin-delivery-fields"><div class="form-grid"><select id="deliveryArea" required>${deliveryAreaOptions()}</select><input id="deliveryLandmark" placeholder="أقرب نقطة دالة" required></div>${checkoutGpsHtml()}</div></section>`;
     }
-    return `<section class="alin-fulfillment"><h4>طريقة الاستلام والدفع</h4><div class="alin-delivery-options"><label class="selected"><input type="radio" name="fulfillment" value="pickup" checked onchange="toggleDeliveryFields()"><span><b>استلام من المكتبة</b><small>الدفع عند الاستلام</small></span></label><label><input type="radio" name="fulfillment" value="home_delivery" onchange="toggleDeliveryFields()"><span><b>توصيل للبيت</b><small>الدفع للمندوب</small></span></label></div><div id="pickupFields" class="alin-pickup-fields"><select id="libSelect" onchange="showLibInfo()"><option value="">اختر مكتبة الاستلام</option>${libraryOptions()}</select><div id="libInfo"></div></div><div id="deliveryFields" class="alin-delivery-fields hidden"><div class="form-grid"><select id="deliveryArea" required>${deliveryAreaOptions()}</select><input id="deliveryLandmark" placeholder="أقرب نقطة دالة" required></div>${checkoutGpsHtml()}</div></section>`;
+    return `<section class="alin-fulfillment"><h4>طريقة الاستلام والدفع</h4><div class="alin-delivery-options"><label class="selected"><input type="radio" name="fulfillment" value="pickup" checked data-alin-change="toggleDeliveryFields"><span><b>استلام من المكتبة</b><small>الدفع عند الاستلام</small></span></label><label><input type="radio" name="fulfillment" value="home_delivery" data-alin-change="toggleDeliveryFields"><span><b>توصيل للبيت</b><small>الدفع للمندوب</small></span></label></div><div id="pickupFields" class="alin-pickup-fields"><select id="libSelect" data-alin-change="showLibInfo"><option value="">اختر مكتبة الاستلام</option>${libraryOptions()}</select><div id="libInfo"></div></div><div id="deliveryFields" class="alin-delivery-fields hidden"><div class="form-grid"><select id="deliveryArea" required>${deliveryAreaOptions()}</select><input id="deliveryLandmark" placeholder="أقرب نقطة دالة" required></div>${checkoutGpsHtml()}</div></section>`;
   }
 
   function ensureCartLibrarySummary(){
@@ -4496,13 +4457,13 @@ window.Alin.helpers={
     window.checkoutItem={kind:'cart'};
     const list=rows(),count=cartCount(),pricing=cartPricing(),total=pricing.subtotal;
     if(!list.length){
-      box.innerHTML='<div class="alin-cart-shell"><div class="alin-cart-main"><div class="alin-cart-empty"><div class="alin-empty-icon">🛒</div><h3>السلة فارغة حالياً</h3><p>أضف ملازم أو قرطاسية أو هدايا ثم ارجع لإتمام الطلب.</p><button type="button" onclick="closeCheckout();document.getElementById(\'storeGrid\')?.scrollIntoView({behavior:\'smooth\'})">تصفح المتجر</button></div></div><aside class="alin-cart-side"><h3>ملخص الطلب</h3><div class="alin-summary-card"><div class="alin-summary-rows"><div><span>عدد المواد</span><b>0</b></div><div><span>الإجمالي</span><b>0 د.ع</b></div></div></div></aside></div>';
+      box.innerHTML='<div class="alin-cart-shell"><div class="alin-cart-main"><div class="alin-cart-empty"><div class="alin-empty-icon">🛒</div><h3>السلة فارغة حالياً</h3><p>أضف ملازم أو قرطاسية أو هدايا ثم ارجع لإتمام الطلب.</p><button type="button" data-alin-click="@close-checkout-scroll-store">تصفح المتجر</button></div></div><aside class="alin-cart-side"><h3>ملخص الطلب</h3><div class="alin-summary-card"><div class="alin-summary-rows"><div><span>عدد المواد</span><b>0</b></div><div><span>الإجمالي</span><b>0 د.ع</b></div></div></div></aside></div>';
     }else{
       const itemsHtml=list.map((line,index)=>{
         const source=line.kind==='booklet'?findBooklet(line.id):findProduct(line.id),image=imageFor(source),lineTotal=num(line.price)*num(line.qty);
-        return `<article class="alin-cart-item"><div class="alin-cart-thumb">${image?`<img src="${escText(image)}" alt="${escText(line.title)}">`:`<span>${itemIcon(line.kind)}</span>`}</div><div class="alin-cart-info"><h3 class="alin-cart-title">${escText(line.title)}</h3><div class="alin-cart-meta"><span class="alin-cart-chip">${line.kind==='booklet'?'ملزمة':'منتج'}</span><span class="alin-cart-chip">سعر القطعة: ${formatMoney(line.price)} د.ع</span></div><div class="alin-cart-price">${formatMoney(lineTotal)} د.ع</div></div><div class="alin-cart-controls"><div class="alin-qty-box"><button type="button" aria-label="تقليل الكمية" onclick="cartQty(${index},-1)">−</button><b>${line.qty}</b><button type="button" aria-label="زيادة الكمية" onclick="cartQty(${index},1)">+</button></div><button type="button" class="alin-remove-btn" onclick="cartRemove(${index})">حذف من السلة</button></div></article>`;
+        return `<article class="alin-cart-item"><div class="alin-cart-thumb">${image?`<img src="${escText(image)}" alt="${escText(line.title)}">`:`<span>${itemIcon(line.kind)}</span>`}</div><div class="alin-cart-info"><h3 class="alin-cart-title">${escText(line.title)}</h3><div class="alin-cart-meta"><span class="alin-cart-chip">${line.kind==='booklet'?'ملزمة':'منتج'}</span><span class="alin-cart-chip">سعر القطعة: ${formatMoney(line.price)} د.ع</span></div><div class="alin-cart-price">${formatMoney(lineTotal)} د.ع</div></div><div class="alin-cart-controls"><div class="alin-qty-box"><button type="button" aria-label="تقليل الكمية" data-alin-click="cartQty" data-alin-click-arg0="${index}" data-alin-click-arg1="-1" data-alin-click-arg1-type="number">−</button><b>${line.qty}</b><button type="button" aria-label="زيادة الكمية" data-alin-click="cartQty" data-alin-click-arg0="${index}" data-alin-click-arg1="1" data-alin-click-arg1-type="number">+</button></div><button type="button" class="alin-remove-btn" data-alin-click="cartRemove" data-alin-click-arg0="${index}">حذف من السلة</button></div></article>`;
       }).join('');
-      box.innerHTML=`<div class="alin-cart-shell"><section class="alin-cart-main"><div class="alin-cart-head"><div><h2>سلة آلين</h2><p>راجع المواد والكميات قبل تأكيد الطلب.</p></div><span class="alin-cart-badge">${count}</span></div><div class="alin-cart-list">${itemsHtml}</div></section><aside class="alin-cart-side"><h3>ملخص الطلب</h3><div class="alin-cart-side-content"><div class="alin-summary-card"><div class="alin-summary-rows"><div><span>عدد المواد</span><b>${count}</b></div><div><span>المجموع الفرعي</span><b id="cartSubtotalValue">${formatMoney(pricing.subtotal)} د.ع</b></div><div id="cartDiscountRow" ${pricing.discount>0?'':'hidden'}><span>خصم الكوبون</span><b id="cartDiscountValue">− ${formatMoney(pricing.discount)} د.ع</b></div></div><div class="alin-summary-total"><div>الإجمالي النهائي</div><b id="cartFinalValue">${formatMoney(pricing.total)} د.ع</b></div><div class="coupon-box"><input id="couponInput" value="${escText(pricing.coupon?.code||'')}" placeholder="أدخل كود الخصم"><button type="button" onclick="checkCoupon()">تطبيق</button></div><div id="couponMsg">${pricing.coupon&&pricing.discount>0?`تم تطبيق كوبون ${escText(pricing.coupon.code)} — الخصم ${formatMoney(pricing.discount)} د.ع`:''}</div><div class="alin-cart-form"><h4>بيانات الطالب والاستلام</h4><div class="form-grid"><input id="studentName" placeholder="اسم الطالب الكامل"><input id="studentPhone" placeholder="رقم الهاتف"></div>${fulfillmentHtml()}</div></div><button type="button" class="alin-cart-submit" onclick="confirmCartCheckout()">تأكيد الطلب الآن</button></aside></div>`;
+      box.innerHTML=`<div class="alin-cart-shell"><section class="alin-cart-main"><div class="alin-cart-head"><div><h2>سلة آلين</h2><p>راجع المواد والكميات قبل تأكيد الطلب.</p></div><span class="alin-cart-badge">${count}</span></div><div class="alin-cart-list">${itemsHtml}</div></section><aside class="alin-cart-side"><h3>ملخص الطلب</h3><div class="alin-cart-side-content"><div class="alin-summary-card"><div class="alin-summary-rows"><div><span>عدد المواد</span><b>${count}</b></div><div><span>المجموع الفرعي</span><b id="cartSubtotalValue">${formatMoney(pricing.subtotal)} د.ع</b></div><div id="cartDiscountRow" ${pricing.discount>0?'':'hidden'}><span>خصم الكوبون</span><b id="cartDiscountValue">− ${formatMoney(pricing.discount)} د.ع</b></div></div><div class="alin-summary-total"><div>الإجمالي النهائي</div><b id="cartFinalValue">${formatMoney(pricing.total)} د.ع</b></div><div class="coupon-box"><input id="couponInput" value="${escText(pricing.coupon?.code||'')}" placeholder="أدخل كود الخصم"><button type="button" data-alin-click="checkCoupon">تطبيق</button></div><div id="couponMsg">${pricing.coupon&&pricing.discount>0?`تم تطبيق كوبون ${escText(pricing.coupon.code)} — الخصم ${formatMoney(pricing.discount)} د.ع`:''}</div><div class="alin-cart-form"><h4>بيانات الطالب والاستلام</h4><div class="form-grid"><input id="studentName" placeholder="اسم الطالب الكامل"><input id="studentPhone" placeholder="رقم الهاتف"></div>${fulfillmentHtml()}</div></div><button type="button" class="alin-cart-submit" data-alin-click="confirmCartCheckout">تأكيد الطلب الآن</button></aside></div>`;
     }
     modal.classList.remove('hidden');
     document.body?.classList.add('alin-cart-open');
@@ -4549,7 +4510,6 @@ window.Alin.helpers={
   function install(){normalizeCart();cartSave()}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
 })();
-
 ;
 
 /* modules/store/order-routing.js */
@@ -4630,7 +4590,6 @@ window.Alin.helpers={
 
   Object.assign(window,{alinOrderExtra,confirmCartCheckout,confirmCheckout:confirmCartCheckout,alinConfirmRoutedCart:confirmCartCheckout,alinLegacyCreateOrder:createFallback,alinEmitOrderCreated:emitCreated});
 })();
-
 ;
 
 /* modules/store/student-auth.js */
@@ -4668,14 +4627,14 @@ window.Alin.helpers={
   }
   function form(mode='login'){
     const create=mode==='create',edit=mode==='edit',student=currentStudent()||{};
-    const submit=edit?'saveStudentEdit()':create?'studentCreate()':'studentLogin()';
-    const html=`<h2>${edit?'تعديل حساب الطالب':create?'إنشاء حساب طالب':'تسجيل دخول الطالب'}</h2><p class="muted">الحساب اختياري. بيانات الدخول محفوظة في الخادم ولا تُخزن كلمة المرور داخل المتصفح.</p>${!edit?`<div class="auth-switch"><button type="button" class="${!create?'active':''}" onclick="showStudentAuthForm('login')">تسجيل دخول</button><button type="button" class="${create?'active':''}" onclick="showStudentAuthForm('create')">إنشاء حساب</button></div>`:''}<form class="form-grid" autocomplete="off" onsubmit="event.preventDefault();${submit}">${create||edit?`<input id="studentAuthName" autocomplete="name" placeholder="اسم الطالب" value="${escv(student.name||'')}">`:''}<input id="studentAuthPhone" type="tel" inputmode="numeric" autocomplete="tel" placeholder="رقم الهاتف" value="${escv(cleanPhone(student.phone||''))}" oninput="this.value=this.value.replace(/[^0-9+]/g,'')"><input id="studentAuthPass" type="password" autocomplete="${create||edit?'new-password':'current-password'}" placeholder="الرمز السري — 6 أحرف أو أرقام على الأقل"><button type="submit">${edit?'حفظ التعديل':create?'إنشاء الحساب':'دخول'}</button></form><div id="studentAuthMsg"></div>`;
+    const submit=edit?'saveStudentEdit':create?'studentCreate':'studentLogin';
+    const html=`<h2>${edit?'تعديل حساب الطالب':create?'إنشاء حساب طالب':'تسجيل دخول الطالب'}</h2><p class="muted">الحساب اختياري. بيانات الدخول محفوظة في الخادم ولا تُخزن كلمة المرور داخل المتصفح.</p>${!edit?`<div class="auth-switch"><button type="button" class="${!create?'active':''}" data-alin-click="showStudentAuthForm" data-alin-click-arg0="login">تسجيل دخول</button><button type="button" class="${create?'active':''}" data-alin-click="showStudentAuthForm" data-alin-click-arg0="create">إنشاء حساب</button></div>`:''}<form class="form-grid" autocomplete="off" data-alin-submit="${submit}">${create||edit?`<input id="studentAuthName" autocomplete="name" placeholder="اسم الطالب" value="${escv(student.name||'')}">`:''}<input id="studentAuthPhone" type="tel" inputmode="numeric" autocomplete="tel" placeholder="رقم الهاتف" value="${escv(cleanPhone(student.phone||''))}" data-alin-input="@sanitize-phone"><input id="studentAuthPass" type="password" autocomplete="${create||edit?'new-password':'current-password'}" placeholder="الرمز السري — 6 أحرف أو أرقام على الأقل"><button type="submit">${edit?'حفظ التعديل':create?'إنشاء الحساب':'دخول'}</button></form><div id="studentAuthMsg"></div>`;
     scheduleStudentAutofillGuard();return html;
   }
   function message(text){const el=document.getElementById('studentAuthMsg');if(el)el.textContent=text}
   function openStudentAuth(mode='login'){
     const box=document.getElementById('studentAuthBox');if(!box)return;const student=currentStudent();
-    box.innerHTML=student?`<h2>حساب الطالب</h2><div class="student-profile-box"><b>${escv(student.name)}</b><br><small>${escv(student.phone||'')}</small></div><div class="row-actions"><button onclick="showStudentOrders()">طلباتي</button><button class="secondary" onclick="showStudentAuthForm('edit')">تعديل البيانات</button><button class="danger" onclick="studentLogout()">تسجيل خروج</button></div><div id="studentOrdersBox"></div>`:form(mode);
+    box.innerHTML=student?`<h2>حساب الطالب</h2><div class="student-profile-box"><b>${escv(student.name)}</b><br><small>${escv(student.phone||'')}</small></div><div class="row-actions"><button data-alin-click="showStudentOrders">طلباتي</button><button class="secondary" data-alin-click="showStudentAuthForm" data-alin-click-arg0="edit">تعديل البيانات</button><button class="danger" data-alin-click="studentLogout">تسجيل خروج</button></div><div id="studentOrdersBox"></div>`:form(mode);
     document.getElementById('studentAuthModal')?.classList.remove('hidden');
   }
   function closeStudentAuth(){document.getElementById('studentAuthModal')?.classList.add('hidden')}
@@ -4705,7 +4664,7 @@ window.Alin.helpers={
   async function showStudentOrders(){
     const box=document.getElementById('studentOrdersBox');if(!box||!token())return;box.innerHTML='<p class="muted">جارٍ تحميل الطلبات...</p>';
     try{const loaded=await rpc('alin_student_orders',{p_token:token(),p_device:deviceId()})||[];secureOrders=Array.isArray(loaded)?loaded:[];window.dispatchEvent(new CustomEvent('alin:student-orders',{detail:{orders:secureOrders.slice()}}));
-      box.innerHTML='<h3>طلباتي</h3>'+(secureOrders.length?secureOrders.map(order=>`<div class="row"><div><b>${escv(order.order_number||order.id)}</b><small>${escv(order.item_name||'طلب')} — ${moneyv(order.total)} د.ع — ${escv(order.status||'')}</small></div><button type="button" onclick="AlinStudentAuth.track('${encodeURIComponent(String(order.order_number||order.id||''))}')">تتبع</button></div>`).join(''):window.emptyState?.('لا توجد طلبات بهذا الرقم')||'<div class="empty">لا توجد طلبات.</div>');
+      box.innerHTML='<h3>طلباتي</h3>'+(secureOrders.length?secureOrders.map(order=>`<div class="row"><div><b>${escv(order.order_number||order.id)}</b><small>${escv(order.item_name||'طلب')} — ${moneyv(order.total)} د.ع — ${escv(order.status||'')}</small></div><button type="button" data-alin-click="AlinStudentAuth.track" data-alin-click-arg0="${encodeURIComponent(String(order.order_number||order.id||''))}">تتبع</button></div>`).join(''):window.emptyState?.('لا توجد طلبات بهذا الرقم')||'<div class="empty">لا توجد طلبات.</div>');
     }catch(error){box.innerHTML=`<div class="empty">${escv(error.message||'تعذر تحميل الطلبات')}</div>`}
   }
   async function restoreStudent(){
@@ -4719,7 +4678,6 @@ window.Alin.helpers={
 })();
 
 ;
-
 ;
 
 /* modules/teacher/shell.js */
@@ -4746,8 +4704,8 @@ window.Alin.helpers={
     const orders=arr(database.orders).filter(row=>row.kind==='booklet'&&bookIds.has(String(row.item_id||row.booklet_id||'')));
     const ledger=arr(database.ledger).filter(row=>same(row.teacher_id,id));
     const payouts=[
-      ...arr(database.teacherPayouts).filter(row=>same(row.teacher_id,id)),
-      ...arr(database.withdrawals).filter(row=>row.role==='teacher'&&same(row.account_id||row.user_id,id))
+      ...arr(database.settlements).filter(row=>String(row.party_role||'').toLowerCase()==='teacher'&&same(row.party_id,id)),
+      ...arr(database.withdrawals).filter(row=>row.role==='teacher'&&same(row.account_id||row.user_id,id)&&String(row.status||'').toLowerCase()==='paid')
     ];
     const requests=arr(database.teacherRequests||database.teacher_requests).filter(row=>same(row.teacher_id,id));
     const notifications=window.AlinNotifications?.visible?.({role:'teacher',id})||arr(database.notifications).filter(row=>{
@@ -4761,8 +4719,7 @@ window.Alin.helpers={
 
   function markActive(){
     document.querySelectorAll('#teacherPage .teacher-tabs button').forEach(button=>{
-      const inline=button.getAttribute('onclick')||'';
-      const target=button.dataset.teacherTab||(inline.match(/teacherTab\('([^']+)'\)/)||[])[1]||'';
+      const target=button.dataset.teacherTab||'';
       button.classList.toggle('active-teacher-tab',target===active);
     });
   }
@@ -4830,7 +4787,6 @@ window.Alin.helpers={
     if(window.current?.role==='teacher')requestAnimationFrame(render);
   });
 })();
-
 ;
 
 /* core/runtime-guard.js */
@@ -4854,9 +4810,8 @@ window.Alin.helpers={
   addEventListener('online',()=>document.documentElement.classList.remove('alin-offline'));
   addEventListener('offline',()=>document.documentElement.classList.add('alin-offline'));
   if(!navigator.onLine)document.documentElement.classList.add('alin-offline');
-  window.AlinRuntime=Object.freeze({...window.AlinRuntime,version:'4.0.0',errors:()=>[...(window.__ALIN_RUNTIME_ERRORS__||[])]});
+  window.AlinRuntime=Object.freeze({...window.AlinRuntime,version:window.ALIN_CONFIG?.version||'4.2.0-rc.7',errors:()=>[...(window.__ALIN_RUNTIME_ERRORS__||[])]});
 })();
-
 ;
 
 /* core/app-health.js */
@@ -4888,5 +4843,4 @@ window.Alin.helpers={
   addEventListener('load',()=>setTimeout(check,1200));
   window.AlinHealth=Object.freeze({check,show,hide});
 })();
-
 ;

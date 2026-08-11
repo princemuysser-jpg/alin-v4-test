@@ -47,8 +47,8 @@
         </header>
         <div class="alin-print-v119-toolbar no-print">
           <div><b>معاينة داخل المنصة</b><span>الملف لا يفتح في عارض PDF الأصلي ولا يظهر زر تنزيل.</span></div>
-          <button type="button" class="alin-print-v119-print" onclick="printLibraryCanvasV119()">طباعة ${qty} نسخة</button>
-          <button type="button" class="secondary" onclick="closeCheckout()">إغلاق</button>
+          <button type="button" class="alin-print-v119-print" data-alin-click="printLibraryCanvasV119">طباعة ${qty} نسخة</button>
+          <button type="button" class="secondary" data-alin-click="closeCheckout">إغلاق</button>
         </div>
         <div id="alinPrintCanvasStatus" class="alin-print-v119-status"><span></span><b>جاري تجهيز صفحات الملزمة...</b></div>
         <div id="alinPrintCanvasPages" class="alin-print-v119-pages" aria-label="معاينة صفحات الملزمة"></div>

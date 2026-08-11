@@ -35,11 +35,11 @@
     const orders=student?(window.AlinStudentAuth?.orders?.()||[]).slice(0,5):[];
     if(ctx.isDesktop()||ctx.isMobile()){
       if(!student){root.innerHTML='';return}
-      root.innerHTML=`<div class="v99-section-head"><div><h2>طلباتي الأخيرة</h2><small>إعادة الطلب أو متابعة حالته بسهولة</small></div></div><article class="v99-hub-card desktop-orders-card">${orders.map(order=>`<div class="v99-order-row"><div><b>${esc(order.title||order.order_number||order.id)}</b><small>${esc(order.status||'جديد')}${order.ready_eta?` • جاهز تقريباً ${esc(order.ready_eta)}`:''}</small></div><button type="button" onclick="window.AlinStudentAuth?.track?.('${encodeURIComponent(String(order.order_number||order.id||''))}')">تتبع</button></div>`).join('')||'<p>لا توجد طلبات سابقة.</p>'}</article>`;
+      root.innerHTML=`<div class="v99-section-head"><div><h2>طلباتي الأخيرة</h2><small>إعادة الطلب أو متابعة حالته بسهولة</small></div></div><article class="v99-hub-card desktop-orders-card">${orders.map(order=>`<div class="v99-order-row"><div><b>${esc(order.title||order.order_number||order.id)}</b><small>${esc(order.status||'جديد')}${order.ready_eta?` • جاهز تقريباً ${esc(order.ready_eta)}`:''}</small></div><button type="button" data-alin-click="AlinStudentAuth.track" data-alin-click-arg0="${encodeURIComponent(String(order.order_number||order.id||''))}">تتبع</button></div>`).join('')||'<p>لا توجد طلبات سابقة.</p>'}</article>`;
       return;
     }
     const loyalty=(state.tables.loyalty_accounts||[]).find(row=>student&&row.phone===student.phone);
-    root.innerHTML=`<div class="v99-section-head"><div><h2>مساحة الطالب</h2><small>طلباتك ومكافآتك وخيارات الطلب الجماعي</small></div></div><div class="v99-hub-grid"><article class="v99-hub-card"><h3>آخر الطلبات</h3>${student?(orders.map(order=>`<div class="v99-order-row"><div><b>${esc(order.title||order.order_number||order.id)}</b><small>${esc(order.status||'جديد')}${order.ready_eta?` • جاهز تقريباً ${esc(order.ready_eta)}`:''}</small></div><button type="button" onclick="window.AlinStudentAuth?.track?.('${encodeURIComponent(String(order.order_number||order.id||''))}')">تتبع</button></div>`).join('')||'<p>لا توجد طلبات سابقة.</p>'):'<p>سجل دخول الطالب لرؤية طلباتك.</p>'}</article><article class="v99-hub-card"><h3>نقاط آلين</h3>${loyalty?`<div class="v99-price">${fmt(loyalty.points_balance)} نقطة</div><p>يُحتسب الرصيد من النظام الآمن فقط.</p>`:'<div class="v99-notice">لا يوجد رصيد نقاط متاح. تظهر النقاط هنا بعد تفعيل نظام النقاط وربط الحساب.</div>'}</article><article class="v99-hub-card"><h3>طلب جماعي</h3><p>اجمع طلبات زملائك في مجموعة واحدة عندما تكون الخدمة مفعلة.</p><button data-v99-action="groupOrder">إنشاء أو انضمام</button></article></div>`;
+    root.innerHTML=`<div class="v99-section-head"><div><h2>مساحة الطالب</h2><small>طلباتك ومكافآتك وخيارات الطلب الجماعي</small></div></div><div class="v99-hub-grid"><article class="v99-hub-card"><h3>آخر الطلبات</h3>${student?(orders.map(order=>`<div class="v99-order-row"><div><b>${esc(order.title||order.order_number||order.id)}</b><small>${esc(order.status||'جديد')}${order.ready_eta?` • جاهز تقريباً ${esc(order.ready_eta)}`:''}</small></div><button type="button" data-alin-click="AlinStudentAuth.track" data-alin-click-arg0="${encodeURIComponent(String(order.order_number||order.id||''))}">تتبع</button></div>`).join('')||'<p>لا توجد طلبات سابقة.</p>'):'<p>سجل دخول الطالب لرؤية طلباتك.</p>'}</article><article class="v99-hub-card"><h3>نقاط آلين</h3>${loyalty?`<div class="v99-price">${fmt(loyalty.points_balance)} نقطة</div><p>يُحتسب الرصيد من النظام الآمن فقط.</p>`:'<div class="v99-notice">لا يوجد رصيد نقاط متاح. تظهر النقاط هنا بعد تفعيل نظام النقاط وربط الحساب.</div>'}</article><article class="v99-hub-card"><h3>طلب جماعي</h3><p>اجمع طلبات زملائك في مجموعة واحدة عندما تكون الخدمة مفعلة.</p><button data-v99-action="groupOrder">إنشاء أو انضمام</button></article></div>`;
   }
 
   function groupOrder(){
@@ -119,7 +119,7 @@
       if(!item)continue;
       const button=document.createElement('button');
       button.type='button';button.dataset.v99Merch='1';button.textContent='إدارة العرض';
-      button.onclick=()=>editMerch(item.kind,item.id);
+      button.addEventListener('click',()=>editMerch(item.kind,item.id));
       (row.querySelector('.row-actions')||row).appendChild(button);
     }
   }
@@ -127,7 +127,7 @@
   function handoff(id){
     const order=(window.db?.orders||[]).find(row=>String(row.id)===String(id));
     if(!order?.handoff_token)return;
-    openModal(`<h2>رمز تسليم الطلب</h2><p>اعرض هذا الرمز للمكتبة. لا يؤكد التسليم وحده؛ التحقق يتم من النظام المصرّح.</p><div class="v99-print-token">${esc(order.handoff_token)}</div><button onclick="window.print()">طباعة الرمز</button>`);
+    openModal(`<h2>رمز تسليم الطلب</h2><p>اعرض هذا الرمز للمكتبة. لا يؤكد التسليم وحده؛ التحقق يتم من النظام المصرّح.</p><div class="v99-print-token">${esc(order.handoff_token)}</div><button data-alin-click="print">طباعة الرمز</button>`);
   }
 
   function enhanceTracking(event){
