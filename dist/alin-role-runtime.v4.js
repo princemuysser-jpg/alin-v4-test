@@ -3455,7 +3455,7 @@ window.deleteCoupon = deleteCoupon;
   function resetRefresh(){lastRefresh=0}
 
   window.AlinCourierCore=Object.freeze({
-    version:window.ALIN_CONFIG?.version||'4.2.0-rc.14',$, $$, arr, escv, moneyv, now, notify, currentAccount, dbx,
+    version:window.ALIN_CONFIG?.version||'4.2.0-rc.15',$, $$, arr, escv, moneyv, now, notify, currentAccount, dbx,
     allCouriers, areasOf, areaRows, statusOf, statusLabel, resolveCourier,
     allOrders, courierAliases, orderCourierIds, myOrders, settlements, done, cancelled, active, activeLoad, today, todayDone, financials,
     orderState, friendlyOrderError, mapLink, hasExactGps, phoneLink, waLink, fmtDate,
@@ -3653,7 +3653,7 @@ window.deleteCoupon = deleteCoupon;
 
 
   window.renderCourierDashboard=renderCourierDashboard;
-  window.AlinCourierDashboard=Object.freeze({version:window.ALIN_CONFIG?.version||'4.2.0-rc.14',resolveCourier,myOrders,refreshCourierData,render:renderCourierDashboard});
+  window.AlinCourierDashboard=Object.freeze({version:window.ALIN_CONFIG?.version||'4.2.0-rc.15',resolveCourier,myOrders,refreshCourierData,render:renderCourierDashboard});
 
   window.addEventListener('alin:page-open',event=>{if(event.detail?.page==='courier')renderCourierDashboard('home',{force:true})});
   window.addEventListener('alin:data-refreshed',()=>{if($('#courierPage:not(.hidden)'))renderCourierDashboard($('.courier-v161-tabs .active')?.dataset.courierTab||'home',{refresh:false})});
@@ -4175,8 +4175,8 @@ window.AlinCourierModules['recordCourierSettlementForOrder']=typeof recordCourie
   if(window.__ALIN_ORDER_BELL__)return;
   window.__ALIN_ORDER_BELL__=true;
 
-  const VERSION='4.2.0-rc.14';
-  const SOUND_URL='./assets/audio/alin-order-chime.wav?v=4.2.0-rc.14';
+  const VERSION='4.2.0-rc.15';
+  const SOUND_URL='./assets/audio/alin-order-chime.wav?v=4.2.0-rc.15';
   const ROLE_PAGES={admin:'adminPage',library:'libraryPage',courier:'courierPage'};
   const roleState=new Map();
   const sessionSeen=new Set();

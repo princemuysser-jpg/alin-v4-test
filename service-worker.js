@@ -1,8 +1,8 @@
-const VERSION='alin-4.2.0-rc.14';
+const VERSION='alin-4.2.0-rc.15';
 const STATIC_CACHE=`${VERSION}-static`;
 const RUNTIME_CACHE=`${VERSION}-runtime`;
 
-// RC14 stability rule:
+// RC15 stability rule:
 // Cloudflare Pages owns HTML/navigation delivery and redirects.
 // The Service Worker NEVER calls respondWith() for top-level navigations.
 // This prevents a controlled page from turning a normal Pages navigation into
@@ -18,7 +18,8 @@ const CORE_ASSETS=[
   './core/boot-recovery.js',
   './core/supabase-sdk-loader.js',
   './core/csp-app-bundle-guard.js',
-  './styles/alin-splash.css'
+  './styles/alin-splash.css',
+  './assets/images/alin-splash-mark.webp'
 ];
 
 const cacheable=response=>!!response&&(response.ok||response.type==='opaque');

@@ -1,4 +1,4 @@
-/* ALIN v4.2.0 RC14 — fast entry screen; routing starts immediately on slow networks. */
+/* ALIN v4.2.0 RC15 — approved branded splash; fixed 3-second entry, independent of network speed. */
 (()=>{
   'use strict';
   const root=document.getElementById('alinSplash');
@@ -10,8 +10,8 @@
     leaving=true;
     root.classList.add('is-leaving');
     root.setAttribute('aria-hidden','true');
-    setTimeout(route.go,90);
   };
-  requestAnimationFrame(()=>setTimeout(leave,80));
-  setTimeout(leave,350);
+  // Keep the approved splash visible for a total of 3 seconds.
+  setTimeout(leave,2740);
+  setTimeout(route.go,3000);
 })();

@@ -1,7 +1,7 @@
 // === core/config.js ===
 /* ALIN v4.1.0 Courier Rebuilt — ضع بيانات مشروع Supabase الجديد فقط. */
 window.ALIN_CONFIG=window.ALIN_CONFIG||Object.freeze({
-  version:'4.2.0-rc.14',
+  version:'4.2.0-rc.15',
   desktopPage:'./store-desktop.html',
   mobilePage:'./store-mobile.html',
   currency:'د.ع',

@@ -1,4 +1,4 @@
-/* ALIN v4.2.0 RC14 — idle PWA registration for weak-network startup. */
+/* ALIN v4.2.0 RC15 — idle PWA registration for weak-network startup. */
 (function(){
   'use strict';
   try{localStorage.removeItem('alin_v121_accountant_pass');localStorage.removeItem('alin_v121_accountant_user')}catch(_){ }
@@ -13,7 +13,7 @@
 
   window.addEventListener('load',()=>schedule(async()=>{
     try{
-      const registration=await navigator.serviceWorker.register('./service-worker.js?v=4.2.0-rc.14',{scope:'./',updateViaCache:'none'});
+      const registration=await navigator.serviceWorker.register('./service-worker.js?v=4.2.0-rc.15',{scope:'./',updateViaCache:'none'});
       registration.addEventListener('updatefound',()=>{
         const worker=registration.installing;
         if(!worker)return;
