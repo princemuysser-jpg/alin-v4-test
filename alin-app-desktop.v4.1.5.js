@@ -682,7 +682,7 @@
     root.innerHTML=`
       <header class="ab235-head">
         <div><span class="ab235-eyebrow">إعدادات المظهر</span><h2>الهوية البصرية</h2><p>غيّر هوية المنصة بأمان. القالب لا يغيّر الوضع النهاري أو الليلي.</p></div>
-        <span class="ab235-version">v${esc(window.ALIN_CONFIG?.version||'4.2.0-rc.15')}</span>
+        <span class="ab235-version">v${esc(window.ALIN_CONFIG?.version||'4.2.0-rc.16')}</span>
       </header>
       <div class="ab235-layout">
         <main class="ab235-main">

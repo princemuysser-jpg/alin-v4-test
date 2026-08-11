@@ -1,8 +1,8 @@
-const VERSION='alin-4.2.0-rc.15';
+const VERSION='alin-4.2.0-rc.16';
 const STATIC_CACHE=`${VERSION}-static`;
 const RUNTIME_CACHE=`${VERSION}-runtime`;
 
-// RC15 stability rule:
+// RC16 stability rule:
 // Cloudflare Pages owns HTML/navigation delivery and redirects.
 // The Service Worker NEVER calls respondWith() for top-level navigations.
 // This prevents a controlled page from turning a normal Pages navigation into

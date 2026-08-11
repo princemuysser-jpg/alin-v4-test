@@ -2,7 +2,7 @@
 // === core/config.js ===
 /* ALIN v4.1.0 Courier Rebuilt — ضع بيانات مشروع Supabase الجديد فقط. */
 window.ALIN_CONFIG=window.ALIN_CONFIG||Object.freeze({
-  version:'4.2.0-rc.15',
+  version:'4.2.0-rc.16',
   desktopPage:'./store-desktop.html',
   mobilePage:'./store-mobile.html',
   currency:'د.ع',
@@ -1307,11 +1307,11 @@ window.Alin.helpers={
   async function seedData(){throw new Error('البيانات التجريبية معطلة في النسخة المستقرة')}
 
   Object.assign(window,{
-    ALIN_VERSION:window.ALIN_CONFIG?.version||'4.2.0-rc.15',init,requireConnection,audit,renderAll,seedData,
+    ALIN_VERSION:window.ALIN_CONFIG?.version||'4.2.0-rc.16',init,requireConnection,audit,renderAll,seedData,
     teacherName,libIsOpen,libStatusText,activeLibraries,alinOpenLibraries:activeLibraries,
     alinLibOpen:libIsOpen,deliveryFee,isMissingTableError,usePermit
   });
-  window.AlinRuntime=Object.freeze({version:window.ALIN_CONFIG?.version||'4.2.0-rc.15',init,requireConnection,renderAll,getDb:()=>stateDb,getCurrent:()=>stateCurrent});
+  window.AlinRuntime=Object.freeze({version:window.ALIN_CONFIG?.version||'4.2.0-rc.16',init,requireConnection,renderAll,getDb:()=>stateDb,getCurrent:()=>stateCurrent});
 
   /* PLATFORM STEP 1: coupons are owned by modules/store/coupons.js and modules/admin/coupons.js. */
   /* PLATFORM STEP 2: cart and order creation are owned by modules/store/cart.js and modules/store/order-routing.js. */
@@ -1595,7 +1595,7 @@ window.Alin.helpers={
 (function(){
   'use strict';
 
-  const VERSION=window.ALIN_CONFIG?.version||'4.2.0-rc.15';
+  const VERSION=window.ALIN_CONFIG?.version||'4.2.0-rc.16';
   const TABLES=[
     'settings','accounts','delivery_areas','couriers','courier_areas','categories',
     'booklets','teacher_requests','teacher_request_versions','products','orders',
@@ -2895,7 +2895,7 @@ window.Alin.helpers={
 
   function categoryIconMarkup(section){
     const icon=categoryIcon(section);
-    if(icon)return `<span class="cat-icon cat-image"><img src="${esc(imageUrl(icon))}" alt="" loading="lazy"></span>`;
+    if(icon)return `<span class="cat-icon cat-image"><img src="${esc(imageUrl(icon))}" alt="" loading="lazy" decoding="async"></span>`;
     return `<span class="cat-icon cat-default-icon ${esc(section.iconClass||'cat-custom')}">${defaultCategorySvg(section)}</span>`;
   }
 
@@ -2967,7 +2967,7 @@ window.Alin.helpers={
     const price=effectivePrice(item);
     return `<article class="v99-product-card" data-v99-item="${esc(ctx.stableKey(item.kind,item.id))}">
       <button class="v99-fav" type="button" data-v99-action="favorite" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}" aria-label="المفضلة">${isFavorite(item)?'♥':'♡'}</button>
-      <button class="v99-product-media" type="button" data-v99-action="details" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}" aria-label="عرض تفاصيل ${esc(item.title)}"${item.image?` style='--alin-media-image:url("${esc(imageUrl(item.image))}")'`:''}>${item.image?`<img class="alin-product-image-fit" src="${esc(imageUrl(item.image))}" alt="" loading="lazy" style="width:100%!important;height:100%!important;object-fit:contain!important;object-position:center!important;padding:0!important;margin:0!important;position:relative!important;z-index:2!important;">`:'<span class="v99-placeholder" aria-hidden="true">آ</span>'}</button>
+      <button class="v99-product-media" type="button" data-v99-action="details" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}" aria-label="عرض تفاصيل ${esc(item.title)}"${item.image?` style='--alin-media-image:url("${esc(imageUrl(item.image))}")'`:''}>${item.image?`<img class="alin-product-image-fit" src="${esc(imageUrl(item.image))}" alt="" loading="lazy" decoding="async" style="width:100%!important;height:100%!important;object-fit:contain!important;object-position:center!important;padding:0!important;margin:0!important;position:relative!important;z-index:2!important;">`:'<span class="v99-placeholder" aria-hidden="true">آ</span>'}</button>
       <div class="v99-product-body"><div class="v99-badges">${badges(item).map(label=>`<span class="v99-badge ${label==='كمية محدودة'?'stock':''}">${esc(label)}</span>`).join('')}</div>
         <h3><button class="v99-title-button" type="button" data-v99-action="details" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">${esc(item.title)}</button></h3>
         <p>${esc([item.teacher,item.subject,item.grade].filter(Boolean).join(' • '))}</p>
@@ -3063,7 +3063,7 @@ window.Alin.helpers={
 
   function miniCard(item){
     const current=effectivePrice(item),hasPrevious=activeDeal(item)&&item.price>current;
-    return `<article class="v99-mini-card"><div class="v99-mini-media"${item.image?` style='--alin-media-image:url("${esc(imageUrl(item.image))}")'`:''}>${item.image?`<img class="alin-product-image-fit" src="${esc(imageUrl(item.image))}" alt="" style="width:100%!important;height:100%!important;object-fit:contain!important;object-position:center!important;padding:0!important;margin:0!important;position:relative!important;z-index:2!important;">`:'<span class="v99-placeholder">آ</span>'}</div><div class="v99-mini-body"><div class="v99-badges">${badges(item).slice(0,2).map(label=>`<span class="v99-badge">${esc(label)}</span>`).join('')}</div><h3>${esc(item.title)}</h3><p>${esc([item.teacher,item.subject,item.grade].filter(Boolean).join(' • '))}</p><div class="v99-card-price"><strong>${fmt(current)} د.ع</strong>${hasPrevious?`<del>${fmt(item.price)} د.ع</del>`:''}</div><button data-v99-action="details" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">عرض</button></div></article>`;
+    return `<article class="v99-mini-card"><div class="v99-mini-media"${item.image?` style='--alin-media-image:url("${esc(imageUrl(item.image))}")'`:''}>${item.image?`<img class="alin-product-image-fit" src="${esc(imageUrl(item.image))}" alt="" loading="lazy" decoding="async" style="width:100%!important;height:100%!important;object-fit:contain!important;object-position:center!important;padding:0!important;margin:0!important;position:relative!important;z-index:2!important;">`:'<span class="v99-placeholder">آ</span>'}</div><div class="v99-mini-body"><div class="v99-badges">${badges(item).slice(0,2).map(label=>`<span class="v99-badge">${esc(label)}</span>`).join('')}</div><h3>${esc(item.title)}</h3><p>${esc([item.teacher,item.subject,item.grade].filter(Boolean).join(' • '))}</p><div class="v99-card-price"><strong>${fmt(current)} د.ع</strong>${hasPrevious?`<del>${fmt(item.price)} د.ع</del>`:''}</div><button data-v99-action="details" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">عرض</button></div></article>`;
   }
 
   function rail(rootSelector,title,subtitle,rows){
@@ -3111,7 +3111,7 @@ window.Alin.helpers={
     if(!root)return;
     if(isDesktop()||isMobile()){root.innerHTML='';root.hidden=true;return}
     if(!rows.length){root.innerHTML='';return}
-    root.innerHTML=`<div class="v99-section-head"><div><h2>مدرسون مميزون</h2><small>تعرّف على المدرس وملزماته</small></div></div><div class="v99-rail">${rows.slice(0,10).map(teacher=>`<article class="v99-teacher-card" data-v99-action="teacher" data-id="${esc(teacher.id)}"><span class="v99-avatar">${teacher.avatar_path||teacher.image_path?`<img src="${esc(imageUrl(teacher.avatar_path||teacher.image_path))}" alt="">`:esc((teacher.name||'آ').slice(0,1))}</span><span><b>${esc(teacher.name)}</b><small>${esc(teacher.specialty||teacher.subject||'مدرس معتمد')}</small></span></article>`).join('')}</div>`;
+    root.innerHTML=`<div class="v99-section-head"><div><h2>مدرسون مميزون</h2><small>تعرّف على المدرس وملزماته</small></div></div><div class="v99-rail">${rows.slice(0,10).map(teacher=>`<article class="v99-teacher-card" data-v99-action="teacher" data-id="${esc(teacher.id)}"><span class="v99-avatar">${teacher.avatar_path||teacher.image_path?`<img src="${esc(imageUrl(teacher.avatar_path||teacher.image_path))}" alt="" loading="lazy" decoding="async">`:esc((teacher.name||'آ').slice(0,1))}</span><span><b>${esc(teacher.name)}</b><small>${esc(teacher.specialty||teacher.subject||'مدرس معتمد')}</small></span></article>`).join('')}</div>`;
   }
 
   function renderBundles(){
@@ -4439,12 +4439,12 @@ window.Alin.helpers={
 ;
 
 /* core/role-runtime-loader.js */
-/* ALIN v4.2.0 RC15 — role runtime lazy loader. Public storefront never downloads staff dashboards until needed. */
+/* ALIN v4.2.0 RC16 — role runtime lazy loader. Public storefront never downloads staff dashboards until needed. */
 (function(){
   'use strict';
   let state='idle';
   let promise=null;
-  const version=window.ALIN_CONFIG?.version||'4.2.0-rc.15';
+  const version=window.ALIN_CONFIG?.version||'4.2.0-rc.16';
   const needsRole=role=>!['','store','student'].includes(String(role||'').toLowerCase());
   function ensure(role){
     if(!needsRole(role))return Promise.resolve(false);
@@ -4500,7 +4500,7 @@ window.Alin.helpers={
   addEventListener('online',()=>document.documentElement.classList.remove('alin-offline'));
   addEventListener('offline',()=>document.documentElement.classList.add('alin-offline'));
   if(!navigator.onLine)document.documentElement.classList.add('alin-offline');
-  window.AlinRuntime=Object.freeze({...window.AlinRuntime,version:window.ALIN_CONFIG?.version||'4.2.0-rc.15',errors:()=>[...(window.__ALIN_RUNTIME_ERRORS__||[])]});
+  window.AlinRuntime=Object.freeze({...window.AlinRuntime,version:window.ALIN_CONFIG?.version||'4.2.0-rc.16',errors:()=>[...(window.__ALIN_RUNTIME_ERRORS__||[])]});
 })();
 ;
 
