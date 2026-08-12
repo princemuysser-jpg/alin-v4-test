@@ -3,7 +3,7 @@
   'use strict';
   let state='idle';
   let promise=null;
-  const version=window.ALIN_CONFIG?.version||'4.2.0-rc.21';
+  const version=window.ALIN_CONFIG?.version||'4.2.0-rc.24';
   const needsRole=role=>!['','store','student'].includes(String(role||'').toLowerCase());
   function ensure(role){
     if(!needsRole(role))return Promise.resolve(false);

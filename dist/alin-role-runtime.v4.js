@@ -3455,7 +3455,7 @@ window.deleteCoupon = deleteCoupon;
   function resetRefresh(){lastRefresh=0}
 
   window.AlinCourierCore=Object.freeze({
-    version:window.ALIN_CONFIG?.version||'4.2.0-rc.21',$, $$, arr, escv, moneyv, now, notify, currentAccount, dbx,
+    version:window.ALIN_CONFIG?.version||'4.2.0-rc.24',$, $$, arr, escv, moneyv, now, notify, currentAccount, dbx,
     allCouriers, areasOf, areaRows, statusOf, statusLabel, resolveCourier,
     allOrders, courierAliases, orderCourierIds, myOrders, settlements, done, cancelled, active, activeLoad, today, todayDone, financials,
     orderState, friendlyOrderError, mapLink, hasExactGps, phoneLink, waLink, fmtDate,
@@ -3653,7 +3653,7 @@ window.deleteCoupon = deleteCoupon;
 
 
   window.renderCourierDashboard=renderCourierDashboard;
-  window.AlinCourierDashboard=Object.freeze({version:window.ALIN_CONFIG?.version||'4.2.0-rc.21',resolveCourier,myOrders,refreshCourierData,render:renderCourierDashboard});
+  window.AlinCourierDashboard=Object.freeze({version:window.ALIN_CONFIG?.version||'4.2.0-rc.24',resolveCourier,myOrders,refreshCourierData,render:renderCourierDashboard});
 
   window.addEventListener('alin:page-open',event=>{if(event.detail?.page==='courier')renderCourierDashboard('home',{force:true})});
   window.addEventListener('alin:data-refreshed',()=>{if($('#courierPage:not(.hidden)'))renderCourierDashboard($('.courier-v161-tabs .active')?.dataset.courierTab||'home',{refresh:false})});
@@ -4175,16 +4175,14 @@ window.AlinCourierModules['recordCourierSettlementForOrder']=typeof recordCourie
   if(window.__ALIN_ORDER_BELL__)return;
   window.__ALIN_ORDER_BELL__=true;
 
-  const VERSION='4.2.0-rc.21';
-  const SOUND_URL='./assets/audio/alin-order-chime.wav?v=4.2.0-rc.21';
+  const VERSION='4.2.0-rc.24';
+  const SOUND_URL='./assets/audio/alin-order-chime.wav?v=4.2.0-rc.24';
   const ROLE_PAGES={admin:'adminPage',library:'libraryPage',courier:'courierPage'};
   const roleState=new Map();
   const sessionSeen=new Set();
   let audioContext=null;
   let audioBuffer=null;
   let audioLoading=null;
-  let realtimeChannel=null;
-  let realtimeRetry=null;
   let toastTimer=null;
 
   const text=value=>String(value??'').trim();
@@ -4437,30 +4435,10 @@ window.AlinCourierModules['recordCourierSettlementForOrder']=typeof recordCourie
     roleState.set(currentRole,current);
   }
 
-  function scheduleRealtimeRetry(){
-    clearTimeout(realtimeRetry);
-    realtimeRetry=setTimeout(()=>{realtimeChannel=null;startRealtime()},900);
-  }
-
-  function startRealtime(){
-    const client=window.sb||window.AlinCloud?.client?.()||null;
-    if(!client?.channel||realtimeChannel)return;
-    try{
-      realtimeChannel=client.channel(`alin-order-bell-${Math.random().toString(36).slice(2,8)}`)
-        .on('postgres_changes',{event:'INSERT',schema:'public',table:'orders'},handleRealtime)
-        .on('postgres_changes',{event:'UPDATE',schema:'public',table:'orders'},handleRealtime)
-        .subscribe(status=>{
-          if(status==='CHANNEL_ERROR'||status==='TIMED_OUT'||status==='CLOSED'){
-            try{client.removeChannel?.(realtimeChannel)}catch(_){ }
-            realtimeChannel=null;
-            scheduleRealtimeRetry();
-          }
-        });
-    }catch(error){
-      realtimeChannel=null;
-      console.warn('[ALIN order bell] realtime',error);
-      scheduleRealtimeRetry();
-    }
+  function handleSharedRealtime(event){
+    const detail=event?.detail||{};
+    if(text(detail.table).toLowerCase()!=='orders')return;
+    handleRealtime({eventType:detail.eventType,new:detail.new,old:detail.old});
   }
 
   function resetRoleState(){
@@ -4475,12 +4453,13 @@ window.AlinCourierModules['recordCourierSettlementForOrder']=typeof recordCourie
   ['pointerdown','touchstart','keydown'].forEach(type=>document.addEventListener(type,unlockAudio,{capture:true,once:true,passive:true}));
   window.addEventListener('alin:data-refreshed',compareSnapshot);
   window.addEventListener('alin:cloud-mutation',event=>{if(text(event?.detail?.table)==='orders')setTimeout(compareSnapshot,0)});
+  window.addEventListener('alin:realtime-change',handleSharedRealtime);
   window.addEventListener('alin:logout',()=>{roleState.clear();sessionSeen.clear()});
-  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){resetRoleState();startRealtime()}});
-  document.addEventListener('DOMContentLoaded',()=>{setTimeout(()=>{resetRoleState();startRealtime()},500)},{once:true});
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')resetRoleState()});
+  document.addEventListener('DOMContentLoaded',()=>{setTimeout(resetRoleState,500)},{once:true});
 
-  // Fast fallback only when realtime/data events are unavailable.
-  setInterval(()=>{if(role()){startRealtime();compareSnapshot()}},1500);
+  // Local comparison is intentionally network-free; the shared AlinCloud channel owns Realtime.
+  setInterval(()=>{if(role())compareSnapshot()},3000);
 
   window.AlinOrderBell=Object.freeze({version:VERSION,ring:bell,check:compareSnapshot,notify,enabled:()=>Boolean(role())});
 })();

@@ -1,4 +1,4 @@
-/* ALIN v4.2.0 RC21 — non-blocking lifecycle-only PWA registration. */
+/* ALIN v4.2.0 RC24 — non-blocking lifecycle-only PWA registration. */
 (function(){
   'use strict';
   try{localStorage.removeItem('alin_v121_accountant_pass');localStorage.removeItem('alin_v121_accountant_user')}catch(_){ }
@@ -7,7 +7,7 @@
   window.addEventListener('load',()=>{
     setTimeout(async()=>{
       try{
-        const registration=await navigator.serviceWorker.register('./service-worker.js?v=4.2.0-rc.21',{
+        const registration=await navigator.serviceWorker.register('./service-worker.js?v=4.2.0-rc.24',{
           scope:'./',
           updateViaCache:'none'
         });

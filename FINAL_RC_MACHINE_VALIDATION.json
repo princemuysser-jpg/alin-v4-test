@@ -1,12 +1,34 @@
 {
+  "version": "4.2.0-rc.24",
   "ok": true,
-  "errors": [],
+  "js_files": 107,
   "actions": 145,
+  "audit_errors": [],
   "build_hashes": {
-    "dist/alin-core.v4.js": "fe967059401cc34737905b61840ffaa877774dcde875f1633900c41a6f22d570",
-    "alin-app-desktop.v4.1.5.js": "a06e4a01c66d5e6965828d56b62e4e35df32b129fb17e74478d92f5842d9c592",
-    "alin-app-mobile.v4.1.5.js": "f67e45705fa116e85f20baba417e4c8ed527489f411d75b60a4fe0eac0c2fc6d",
-    "dist/alin-role-runtime.v4.js": "b4436ca30fdc40c67aa513b9eef625d097ba09ca0ba8b2d9dc4bb1f1647c46ce"
+    "dist/alin-core.v4.js": "8d1e25fdc3021dbb3bbdc32ecf3d3c939b301d98bd06b51e5a688ded9497a4a4",
+    "alin-app-desktop.v4.1.5.js": "3eb1fe7b95fe303d3e8f15ac66324f42137bff415f359cee596467b4308c4c92",
+    "alin-app-mobile.v4.1.5.js": "6c257265c2916487e8a344a0f34d5877f34386fe293cb303a86e39321968a481",
+    "dist/alin-role-runtime.v4.js": "e6d32ebf7c68a0d2937c54a74b8a4b2115ebd90652a538f7a458d590e3385816"
   },
-  "js_files": 107
+  "realtime_architecture": {
+    "source_channel_creators": 1,
+    "order_bell_channel_creators": 0,
+    "public_guard_before_client": true,
+    "login_reconfigure_listener": true,
+    "restore_reconfigure_listener": true,
+    "logout_stops_realtime": true,
+    "order_bell_consumes_shared_event": true
+  },
+  "cache_policy": {
+    "service_worker_fetch_handler": false,
+    "cache_epoch_intentionally_rc21": true
+  },
+  "release_version_alignment": {
+    "VERSION_file": "4.2.0-rc.24",
+    "config_rc24": true,
+    "service_worker_rc24": true,
+    "mobile_manifest_rc24": true,
+    "desktop_manifest_rc24": true,
+    "html_asset_queries_rc24": true
+  }
 }

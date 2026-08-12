@@ -5,7 +5,7 @@
 (function(){
   'use strict';
 
-  const VERSION=window.ALIN_CONFIG?.version||'4.2.0-rc.21';
+  const VERSION=window.ALIN_CONFIG?.version||'4.2.0-rc.24';
   const TABLES=[
     'settings','accounts','delivery_areas','couriers','courier_areas','categories',
     'booklets','teacher_requests','teacher_request_versions','products','orders',
@@ -60,6 +60,8 @@
   };
 
   let realtimeChannel=null;
+  let realtimeRole='';
+  let realtimeRetryTimer=null;
   let reloadTimer=null;
   let snapshotPromise=null;
   let flushing=false;
@@ -471,38 +473,120 @@
     return {ok:schema.ok,latency_ms:Math.round(performance.now()-started),online:navigator.onLine,queue:readQueue().length,schema,version:VERSION,checked_at:nowIso()};
   }
 
-  function startRealtime(){
-    const c=client();if(!c?.channel||realtimeChannel)return;
-    realtimeChannel=c.channel('alin-live-v229');
-    for(const table of ['orders','notifications','booklets','products','accounts','couriers','ledger','settlements']){
-      realtimeChannel.on('postgres_changes',{event:'*',schema:'public',table},()=>scheduleReload(300));
+  const REALTIME_EVENT='alin:realtime-change';
+  const STAFF_REALTIME_TABLES=Object.freeze({
+    admin:['orders','notifications','booklets','products','accounts','couriers','ledger','settlements'],
+    accountant:['orders','notifications','accounts','ledger','settlements'],
+    teacher:['orders','notifications','booklets','ledger','settlements'],
+    library:['orders','notifications','booklets','ledger','settlements'],
+    courier:['orders','notifications','couriers','ledger','settlements']
+  });
+
+  function realtimeTables(role=activeRole()){
+    return STAFF_REALTIME_TABLES[role]||[];
+  }
+  function dispatchRealtime(table,payload={}){
+    const detail={
+      table,
+      eventType:String(payload?.eventType||payload?.event||''),
+      new:payload?.new||payload?.record||null,
+      old:payload?.old||null,
+      commitTimestamp:payload?.commit_timestamp||payload?.commitTimestamp||null,
+      role:activeRole(),
+      at:nowIso()
+    };
+    window.dispatchEvent(new CustomEvent(REALTIME_EVENT,{detail}));
+  }
+  function stopRealtime(reason=''){
+    clearTimeout(realtimeRetryTimer);realtimeRetryTimer=null;
+    const channel=realtimeChannel;
+    realtimeChannel=null;realtimeRole='';
+    if(channel){
+      try{
+        const c=window.sb||null;
+        if(c?.removeChannel)c.removeChannel(channel);
+        else channel.unsubscribe?.();
+      }catch(error){console.warn('[ALIN realtime stop]',error)}
     }
-    realtimeChannel.subscribe(status=>emit(status==='SUBSCRIBED'?'realtime':'realtime-wait',{realtime:status}));
+    if(reason)emit('online',{role:activeRole()||'public',realtime:'off',reason});
+  }
+  function scheduleRealtimeRetry(delay=1800){
+    clearTimeout(realtimeRetryTimer);
+    if(!realtimeTables().length)return;
+    realtimeRetryTimer=setTimeout(()=>{realtimeRetryTimer=null;startRealtime()},delay);
+  }
+  function startRealtime(){
+    const role=activeRole();
+    const tables=realtimeTables(role);
+    // Public/student storefront is intentionally HTTP-only. Realtime is reserved for staff.
+    if(!tables.length){stopRealtime();return false}
+    const c=client();if(!c?.channel)return false;
+    if(realtimeChannel&&realtimeRole===role)return true;
+    if(realtimeChannel)stopRealtime('role-change');
+    realtimeRole=role;
+    try{
+      let channel=c.channel(`alin-staff-${role}-${String(window.current?.id||'session')}`);
+      for(const table of tables){
+        channel=channel.on('postgres_changes',{event:'*',schema:'public',table},payload=>{
+          dispatchRealtime(table,payload);
+          scheduleReload(300);
+        });
+      }
+      realtimeChannel=channel.subscribe(status=>{
+        if(status==='SUBSCRIBED'){
+          emit('realtime',{realtime:status,role,tables:tables.length});
+          return;
+        }
+        emit('realtime-wait',{realtime:status,role});
+        if(status==='CHANNEL_ERROR'||status==='TIMED_OUT'||status==='CLOSED'){
+          const failed=realtimeChannel;
+          realtimeChannel=null;realtimeRole='';
+          try{if(failed)c.removeChannel?.(failed)}catch(_){ }
+          scheduleRealtimeRetry();
+        }
+      });
+      return true;
+    }catch(error){
+      realtimeChannel=null;realtimeRole='';
+      console.warn('[ALIN staff realtime]',error);
+      scheduleRealtimeRetry();
+      return false;
+    }
+  }
+  function reconfigureRealtime(){
+    const role=activeRole();
+    if(!realtimeTables(role).length){stopRealtime();return false}
+    if(realtimeChannel&&realtimeRole!==role)stopRealtime('role-change');
+    return startRealtime();
   }
 
   Object.assign(window,{query,insert,update,removeRow,load:loadCloudSnapshot});
   window.AlinCloud=Object.freeze({
     version:VERSION,client,connected,selectAll,query,insert,update,remove:removeRow,tablesForRole,
-    flushQueue,loadCloudSnapshot,loadCachedSnapshot,refresh,schemaCheck,verify,health,startRealtime,
+    flushQueue,loadCloudSnapshot,loadCachedSnapshot,refresh,schemaCheck,verify,health,startRealtime,stopRealtime,reconfigureRealtime,
+    realtimeEnabled:()=>realtimeTables().length>0,
     queueSize:()=>readQueue().length,failedQueueSize:()=>readDeadQueue().length,clearPrivateCache
   });
   window.AlinRepository=Object.freeze({version:VERSION,client,online:connected,fetchTable,refresh,verify,schemaCheck,health});
 
-  window.addEventListener('online',()=>{flushQueue();startRealtime();if(window.ALIN_CONFIG?.authEnabled!==true)loadCloudSnapshot({force:true,reason:'online'}).catch(()=>{})});
+  window.addEventListener('online',()=>{flushQueue();reconfigureRealtime();if(window.ALIN_CONFIG?.authEnabled!==true)loadCloudSnapshot({force:true,reason:'online'}).catch(()=>{})});
   window.addEventListener('offline',()=>emit('offline'));
-  window.addEventListener('alin:logout',clearPrivateCache);
+  window.addEventListener('alin:logout',()=>{clearPrivateCache();stopRealtime()});
+  window.addEventListener('alin:auth-login',reconfigureRealtime);
+  window.addEventListener('alin:auth-restored',reconfigureRealtime);
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')reconfigureRealtime()});
   document.addEventListener('DOMContentLoaded',async()=>{
     // Paint the last known catalog immediately, even while the network/SDK is still waking up.
     const cached=loadCachedSnapshot();
     if(cached){try{requestAnimationFrame(()=>window.renderAll?.())}catch(_){ }}
     try{
-      await flushQueue();startRealtime();
+      await flushQueue();reconfigureRealtime();
       if(window.ALIN_CONFIG?.authEnabled!==true&&client())await loadCloudSnapshot({reason:'boot'});
     }catch(error){console.warn('[ALIN cloud init]',error)}
   },{once:true});
 
   window.addEventListener('alin:supabase-ready',()=>{
-    try{startRealtime()}catch(_){ }
+    try{reconfigureRealtime()}catch(_){ }
     flushQueue().catch(()=>{});
   });
 })();
