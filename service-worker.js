@@ -1,8 +1,8 @@
-/* ALIN v4.2.0 RC24 — lifecycle-only Service Worker.
+/* ALIN v4.2.0 Stable — lifecycle-only Service Worker.
    Runtime assets are NOT intercepted or cached by the Service Worker.
    Cloudflare Pages + the browser HTTP cache own HTML/CSS/JS/image delivery.
-   This prevents stale RC assets from surviving on phones/tablets. */
-const VERSION='alin-4.2.0-rc.24';
+   This prevents stale release assets from surviving on phones/tablets. */
+const VERSION='alin-4.2.0';
 
 self.addEventListener('install',event=>{
   event.waitUntil(self.skipWaiting());

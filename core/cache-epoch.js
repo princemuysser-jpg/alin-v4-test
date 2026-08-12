@@ -1,8 +1,8 @@
-/* ALIN v4.2.0 RC21 — one-time stale Service Worker/CacheStorage cleanup.
+/* ALIN v4.2.0 Stable — one-time stale Service Worker/CacheStorage cleanup.
    Does NOT touch cart, account, auth, language, theme, IndexedDB or app data. */
 (function(){
   'use strict';
-  const EPOCH='4.2.0-rc.21';
+  const EPOCH='4.2.0-stable-cache-1';
   const KEY='alin_cache_epoch';
   const PARAM='__alin_clean';
 

@@ -65,7 +65,7 @@ for storefront in ['store-desktop.html','store-mobile.html']:
  runtime_missing=unresolved_loaded_actions(storefront)
  if runtime_missing: errors.append(f'{storefront}: unresolved loaded actions: '+', '.join(runtime_missing))
 
-files=['dist/alin-core.v4.js','alin-app-desktop.v4.1.5.js','alin-app-mobile.v4.1.5.js','dist/alin-role-runtime.v4.js']
+files=['dist/alin-core.v4.js','alin-app-desktop.v4.2.0.js','alin-app-mobile.v4.2.0.js','dist/alin-role-runtime.v4.js']
 before={f:hashlib.sha256((root/f).read_bytes()).hexdigest() for f in files}
 subprocess.run([sys.executable,str(root/'scripts/build-runtime.py')],cwd=root,check=True,stdout=subprocess.DEVNULL)
 after={f:hashlib.sha256((root/f).read_bytes()).hexdigest() for f in files}
