@@ -222,7 +222,7 @@ html[data-alin-device="tablet"] body.store-mobile .v99-rail{grid-auto-columns:mi
 /* Narrow phones still keep two clean product columns. */
 @media(max-width:380px){
   body.store-mobile #storeGrid .v99-product-media{height:112px!important;min-height:112px!important}
-  body.store-mobile #storeGrid .v99-actions{grid-template-columns:1fr!important}
+  body.store-mobile #storeGrid .v99-actions{grid-template-columns:1fr 1fr!important;gap:5px!important}
   body.store-mobile .v99-rail{grid-auto-columns:48%!important}
 }
 

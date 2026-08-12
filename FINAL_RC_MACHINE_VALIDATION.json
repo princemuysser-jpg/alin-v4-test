@@ -3,7 +3,7 @@
   "errors": [],
   "actions": 145,
   "build_hashes": {
-    "dist/alin-core.v4.js": "f5f98518c878f3bf818c9eeeaffa3fee59c3939157495d4a22765e594328288c",
+    "dist/alin-core.v4.js": "fe967059401cc34737905b61840ffaa877774dcde875f1633900c41a6f22d570",
     "alin-app-desktop.v4.1.5.js": "a06e4a01c66d5e6965828d56b62e4e35df32b129fb17e74478d92f5842d9c592",
     "alin-app-mobile.v4.1.5.js": "f67e45705fa116e85f20baba417e4c8ed527489f411d75b60a4fe0eac0c2fc6d",
     "dist/alin-role-runtime.v4.js": "b4436ca30fdc40c67aa513b9eef625d097ba09ca0ba8b2d9dc4bb1f1647c46ce"
