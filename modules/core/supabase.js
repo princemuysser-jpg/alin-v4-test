@@ -5,7 +5,7 @@
 (function(){
   'use strict';
 
-  const VERSION=window.ALIN_CONFIG?.version||'4.2.0-rc.20';
+  const VERSION=window.ALIN_CONFIG?.version||'4.2.0-rc.21';
   const TABLES=[
     'settings','accounts','delivery_areas','couriers','courier_areas','categories',
     'booklets','teacher_requests','teacher_request_versions','products','orders',

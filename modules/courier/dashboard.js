@@ -48,7 +48,7 @@
 
 
   window.renderCourierDashboard=renderCourierDashboard;
-  window.AlinCourierDashboard=Object.freeze({version:window.ALIN_CONFIG?.version||'4.2.0-rc.20',resolveCourier,myOrders,refreshCourierData,render:renderCourierDashboard});
+  window.AlinCourierDashboard=Object.freeze({version:window.ALIN_CONFIG?.version||'4.2.0-rc.21',resolveCourier,myOrders,refreshCourierData,render:renderCourierDashboard});
 
   window.addEventListener('alin:page-open',event=>{if(event.detail?.page==='courier')renderCourierDashboard('home',{force:true})});
   window.addEventListener('alin:data-refreshed',()=>{if($('#courierPage:not(.hidden)'))renderCourierDashboard($('.courier-v161-tabs .active')?.dataset.courierTab||'home',{refresh:false})});

@@ -1,4 +1,4 @@
-/* ALIN v4.2.0 RC20 — phone splash reduced to 1 second; tablet/desktop remain 3 seconds. */
+/* ALIN v4.2.0 RC21 — phone splash remains 1 second; tablet/desktop remain 3 seconds. */
 (()=>{
   'use strict';
   const root=document.getElementById('alinSplash');

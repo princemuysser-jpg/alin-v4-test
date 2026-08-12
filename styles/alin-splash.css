@@ -64,5 +64,5 @@ body{font-family:Tahoma,"Segoe UI",Arial,sans-serif}
 @keyframes alinSplashFloat{from{transform:translateY(-4px) rotate(-8deg)}to{transform:translateY(6px) rotate(-3deg)}}
 @keyframes alinSplashProgress{from{transform:scaleX(.03)}to{transform:scaleX(1)}}
 @keyframes alinSplashExit{to{opacity:0;transform:scale(1.008)}}
-/* RC20: phone entry is intentionally short; tablet/desktop keep the approved 3s splash. */
+/* RC21: phone entry remains intentionally short; tablet/desktop keep the approved 3s splash. */
 @media(max-width:760px){.alin-splash__progress>i{animation-duration:.74s}}
