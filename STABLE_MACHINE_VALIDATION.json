@@ -1,7 +1,18 @@
 {
-  "release": "Alin v4.2.0 Stable",
+  "release": "Alin v4.2.0 Stable — Splash 2s Maintenance Fix",
   "version": "4.2.0",
-  "base": "RC24 Staff Realtime Centralized",
+  "base": "Alin v4.2.0 Stable",
+  "maintenance_scope": "mobile/tablet/iPad entry splash only",
+  "splash_touch_duration_ms": 2000,
+  "splash_touch_single_controller": true,
+  "splash_touch_layouts": [
+    "phone portrait",
+    "phone landscape",
+    "tablet portrait",
+    "tablet landscape",
+    "iPad portrait",
+    "iPad landscape"
+  ],
   "audit_ok": true,
   "audit_errors": [],
   "actions": 145,
@@ -12,12 +23,6 @@
     "alin-app-mobile.v4.2.0.js": "8a7120ee5eac73edf3023390068dd4da60afc29c95d4fc3bb3bab37de7671b0a",
     "dist/alin-role-runtime.v4.js": "2e24486095d94963768ccfce1588872a385dd53a9b04f71ef5e1fd6a35e123be"
   },
-  "realtime_source_channel_creation_count": 1,
-  "realtime_source_channel_locations": [
-    "modules/core/supabase.js:528"
-  ],
-  "order_bell_direct_channel_count": 0,
-  "current_release_surfaces_with_rc_labels": [],
-  "sql_required_for_stable_promotion": false,
-  "stable_cache_epoch": "4.2.0-stable-cache-1"
+  "sql_changed": false,
+  "runtime_business_logic_changed": false
 }

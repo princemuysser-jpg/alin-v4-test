@@ -9,7 +9,7 @@
 <meta charset="utf-8"/>
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; script-src-elem 'self' https://cdn.jsdelivr.net; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' blob: https://dgaikazhbtyjmswpyvrl.supabase.co wss://dgaikazhbtyjmswpyvrl.supabase.co; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; worker-src 'self' blob: https://cdn.jsdelivr.net; frame-src 'self' blob:;">
 <script src="./core/cache-epoch.js?v=4.2.0"></script>
-<script src="./core/csp-mobile-inline-1.js?v=4.2.0"></script>
+<script src="./core/csp-mobile-inline-1.js?v=4.2.0-splash2"></script>
 <script id="alinOrientationBootstrap" src="./core/csp-mobile-inline-2.js?v=4.2.0"></script>
 <script id="alinOrientationClassBootstrap" src="./core/csp-mobile-inline-3.js?v=4.2.0"></script>
 <script id="alinIPadStandaloneOrientationRecovery" src="./core/csp-mobile-inline-4.js?v=4.2.0"></script>
@@ -33,7 +33,7 @@
 <link href="./styles/alin-shared.css?v=4.2.0" rel="stylesheet"/>
 <link href="./styles/alin-branding.css?v=4.2.0" rel="stylesheet"/>
 <link href="./styles/alin-i18n.css?v=4.2.0" rel="stylesheet"/>
-<link href="./styles/alin-mobile.css?v=4.2.0" rel="stylesheet"/>
+<link href="./styles/alin-mobile.css?v=4.2.0-splash2" rel="stylesheet"/>
 <link href="./store/mobile-navigation.css?v=4.2.0" rel="stylesheet"/>
 <link rel="preload" href="./alin-app-mobile.v4.2.0.js?v=4.2.0" as="script">
 <script src="./alin-config.js?v=4.2.0"></script>
@@ -697,12 +697,12 @@ html[data-alin-device="tablet"] body.store-mobile #alinCategoryEditForm .row-act
 <body class="store-mobile">
 <div id="alinMobileEntrySplash" class="alin-mobile-entry-splash" aria-hidden="true">
   <div class="alin-mobile-entry-splash__inner">
-    <div class="alin-mobile-entry-splash__mark">A</div>
+    <img class="alin-mobile-entry-splash__mark" src="./assets/images/alin-splash-mark.webp" alt="" width="260" height="220" decoding="async"/>
     <strong class="alin-mobile-entry-splash__latin">ALIN</strong>
     <span class="alin-mobile-entry-splash__platform">PLATFORM</span>
     <h1>منصة آلين</h1>
     <p>ملازم • قرطاسية • هدايا</p>
-    <i class="alin-mobile-entry-splash__bar"></i>
+    <span class="alin-mobile-entry-splash__progress"><i class="alin-mobile-entry-splash__bar"></i></span>
   </div>
 </div>
 <section class="login hidden" id="login">

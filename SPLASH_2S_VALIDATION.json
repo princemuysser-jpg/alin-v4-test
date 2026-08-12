@@ -1,0 +1,8 @@
+{
+  "single_css_cycle": true,
+  "duration_2s": true,
+  "no_old_1s_splash": true,
+  "single_splash_markup": true,
+  "real_logo_asset": true,
+  "controller_2s_fallback": true
+}

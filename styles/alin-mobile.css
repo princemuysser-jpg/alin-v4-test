@@ -408,39 +408,150 @@ html[data-alin-orientation="landscape"] body.store-mobile .alin98-bottom{max-wid
 }
 
 
-/* ALIN RC22 — mobile/tablet entry splash.
-   Visual overlay only: it never blocks HTML, JS, Supabase or store rendering. */
+/* ALIN v4.2.0 Stable — unified 2-second touch-device entry splash.
+   One responsive layout for phone, Android tablet and iPad; no duplicate timing rules. */
 .alin-mobile-entry-splash{
-  position:fixed;inset:0;z-index:2147483000;
-  display:grid;place-items:center;
-  padding:max(18px,env(safe-area-inset-top)) max(18px,env(safe-area-inset-right)) max(18px,env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left));
-  overflow:hidden;pointer-events:none;
-  background:radial-gradient(circle at 50% 22%,rgba(74,174,255,.15),transparent 30%),linear-gradient(180deg,#fff 0%,#f7fbff 68%,#eaf5ff 100%);
+  --alin-entry-total:2s;
+  position:fixed;
+  inset:0;
+  z-index:2147483000;
+  display:grid;
+  place-items:center;
+  width:100%;
+  min-width:0;
+  height:100dvh;
+  min-height:100%;
+  padding:
+    max(20px,env(safe-area-inset-top))
+    max(20px,env(safe-area-inset-right))
+    max(20px,env(safe-area-inset-bottom))
+    max(20px,env(safe-area-inset-left));
+  overflow:hidden;
+  touch-action:none;
+  overscroll-behavior:none;
+  background:
+    radial-gradient(circle at 50% 18%,rgba(38,149,241,.14),transparent 32%),
+    radial-gradient(circle at 12% 82%,rgba(34,132,223,.08),transparent 27%),
+    linear-gradient(180deg,#ffffff 0%,#f7fbff 70%,#e9f4ff 100%);
   color:#082b5a;
-  animation:alinMobileEntrySplashCycle 1s ease both;
+  opacity:1;
+  visibility:visible;
+  animation:alinMobileEntrySplashCycle var(--alin-entry-total) ease both;
   will-change:opacity;
   contain:layout paint style;
 }
-.alin-mobile-entry-splash__inner{width:min(430px,88vw);display:grid;justify-items:center;text-align:center;transform:translateY(-1.5vh)}
-.alin-mobile-entry-splash__mark{width:72px;height:72px;display:grid;place-items:center;border-radius:22px;background:linear-gradient(145deg,#0a5fd0,#24a7f4);color:#fff;font:900 44px/1 Arial,sans-serif;box-shadow:0 13px 28px rgba(11,93,190,.2)}
-.alin-mobile-entry-splash__latin{margin-top:10px;font:950 34px/1 Arial,sans-serif;letter-spacing:.13em;text-indent:.13em;color:#08285d}
-.alin-mobile-entry-splash__platform{margin-top:5px;font:800 10px/1.2 Arial,sans-serif;letter-spacing:.28em;text-indent:.28em;color:#1674d6}
-.alin-mobile-entry-splash h1{margin:17px 0 0!important;font-size:clamp(30px,8vw,42px)!important;line-height:1.15!important;color:#082b5a!important}
-.alin-mobile-entry-splash p{margin:7px 0 0!important;font-size:clamp(13px,3.8vw,17px)!important;font-weight:800;color:#176fc9!important}
-.alin-mobile-entry-splash__bar{display:block;width:min(250px,64vw);height:5px;margin-top:22px;border-radius:999px;background:linear-gradient(90deg,#0b61d8,#1ea6f1,#3bc4ff);transform-origin:right center;animation:alinMobileEntrySplashBar .78s linear both}
-@media(min-width:761px) and (max-width:1180px){
-  .alin-mobile-entry-splash__inner{width:min(520px,76vw);transform:none}
-  .alin-mobile-entry-splash__mark{width:82px;height:82px;border-radius:25px;font-size:50px}
-  .alin-mobile-entry-splash__latin{font-size:40px}
-  .alin-mobile-entry-splash h1{font-size:44px!important}
-  .alin-mobile-entry-splash p{font-size:17px!important}
+.alin-mobile-entry-splash__inner{
+  width:min(390px,86vw);
+  max-width:100%;
+  display:grid;
+  justify-items:center;
+  align-content:center;
+  text-align:center;
+  margin:0 auto;
+  padding:12px 0;
 }
+.alin-mobile-entry-splash__mark{
+  width:clamp(108px,29vw,138px);
+  height:auto;
+  max-height:25dvh;
+  display:block;
+  object-fit:contain;
+  border-radius:24px;
+  filter:drop-shadow(0 14px 26px rgba(15,91,184,.16));
+}
+.alin-mobile-entry-splash__latin{
+  margin-top:10px;
+  font:950 clamp(31px,9vw,40px)/1 Arial,sans-serif;
+  letter-spacing:.13em;
+  text-indent:.13em;
+  color:#08285d;
+}
+.alin-mobile-entry-splash__platform{
+  margin-top:5px;
+  font:800 clamp(9px,2.8vw,11px)/1.2 Arial,sans-serif;
+  letter-spacing:.28em;
+  text-indent:.28em;
+  color:#1674d6;
+}
+.alin-mobile-entry-splash h1{
+  margin:18px 0 0!important;
+  font-size:clamp(30px,8.5vw,40px)!important;
+  line-height:1.15!important;
+  color:#082b5a!important;
+  white-space:nowrap;
+}
+.alin-mobile-entry-splash p{
+  margin:7px 0 0!important;
+  font-size:clamp(13px,3.7vw,17px)!important;
+  line-height:1.5!important;
+  font-weight:800;
+  color:#176fc9!important;
+  white-space:nowrap;
+}
+.alin-mobile-entry-splash__progress{
+  width:min(255px,66vw);
+  height:6px;
+  margin-top:24px;
+  overflow:hidden;
+  border-radius:999px;
+  background:#d6e4f1;
+  box-shadow:inset 0 1px 2px rgba(4,48,96,.08);
+}
+.alin-mobile-entry-splash__bar{
+  display:block;
+  width:100%;
+  height:100%;
+  border-radius:inherit;
+  background:linear-gradient(90deg,#0b61d8,#1ea6f1,#3bc4ff);
+  transform:scaleX(.035);
+  transform-origin:right center;
+  animation:alinMobileEntrySplashBar 1.72s linear both;
+}
+
+/* Tablet + iPad portrait/landscape: scale the same composition instead of switching designs. */
+@media (min-width:600px){
+  .alin-mobile-entry-splash__inner{width:min(560px,74vw);padding:18px 0}
+  .alin-mobile-entry-splash__mark{width:clamp(138px,18vw,172px);max-height:24dvh;border-radius:30px}
+  .alin-mobile-entry-splash__latin{margin-top:13px;font-size:46px}
+  .alin-mobile-entry-splash__platform{font-size:12px}
+  .alin-mobile-entry-splash h1{margin-top:20px!important;font-size:46px!important}
+  .alin-mobile-entry-splash p{font-size:18px!important}
+  .alin-mobile-entry-splash__progress{width:min(330px,48vw);height:7px;margin-top:27px}
+}
+
+/* Short landscape screens (phones and compact tablets): keep everything centered and inside the viewport. */
+@media (orientation:landscape) and (max-height:700px){
+  .alin-mobile-entry-splash{padding-block:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-bottom))}
+  .alin-mobile-entry-splash__inner{width:min(520px,72vw);padding:4px 0}
+  .alin-mobile-entry-splash__mark{width:clamp(76px,13vh,112px);max-height:20dvh;border-radius:20px}
+  .alin-mobile-entry-splash__latin{margin-top:6px;font-size:clamp(28px,7vh,38px)}
+  .alin-mobile-entry-splash__platform{margin-top:3px;font-size:9px}
+  .alin-mobile-entry-splash h1{margin-top:9px!important;font-size:clamp(27px,6.4vh,38px)!important}
+  .alin-mobile-entry-splash p{margin-top:4px!important;font-size:clamp(12px,3vh,16px)!important}
+  .alin-mobile-entry-splash__progress{width:min(280px,43vw);height:5px;margin-top:12px}
+}
+
+/* Very narrow phones: avoid text or logo clipping. */
+@media (max-width:360px){
+  .alin-mobile-entry-splash__inner{width:90vw}
+  .alin-mobile-entry-splash__mark{width:96px;border-radius:20px}
+  .alin-mobile-entry-splash__latin{font-size:29px}
+  .alin-mobile-entry-splash h1{font-size:29px!important}
+  .alin-mobile-entry-splash p{font-size:12.5px!important}
+  .alin-mobile-entry-splash__progress{margin-top:20px}
+}
+
 @keyframes alinMobileEntrySplashCycle{
-  0%,72%{opacity:1;visibility:visible}
+  0%,86%{opacity:1;visibility:visible}
   100%{opacity:0;visibility:hidden}
 }
-@keyframes alinMobileEntrySplashBar{from{transform:scaleX(.04)}to{transform:scaleX(1)}}
-@media(prefers-reduced-motion:reduce){
-  .alin-mobile-entry-splash{animation-duration:1s!important}
-  .alin-mobile-entry-splash__bar{animation:none!important;transform:scaleX(1)}
+@keyframes alinMobileEntrySplashBar{from{transform:scaleX(.035)}to{transform:scaleX(1)}}
+@media (prefers-reduced-motion:reduce){
+  .alin-mobile-entry-splash{animation:alinMobileEntrySplashReduced var(--alin-entry-total) linear both!important}
+  .alin-mobile-entry-splash__bar{animation:none!important;transform:scaleX(1)!important}
 }
+@keyframes alinMobileEntrySplashReduced{
+  0%,99%{opacity:1;visibility:visible}
+  100%{opacity:0;visibility:hidden}
+}
+
