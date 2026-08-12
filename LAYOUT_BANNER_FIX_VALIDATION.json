@@ -1,0 +1,13 @@
+{
+  "header_rotation_fix": true,
+  "tested_devices": [
+    "phone landscape 844x390",
+    "phone portrait 390x844",
+    "tablet landscape 1024x768",
+    "tablet portrait 768x1024"
+  ],
+  "overlap_failures": 0,
+  "banner_dots_removed_from_source_and_bundles": true,
+  "banner_rotation_timer_preserved_ms": 6500,
+  "audit_ok": true
+}

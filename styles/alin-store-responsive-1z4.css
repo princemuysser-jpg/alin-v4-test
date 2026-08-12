@@ -34,7 +34,6 @@
 .alin-store-banner h2{font-size:clamp(18px,1.65vw,26px)!important;color:#0b3158!important}
 .alin-store-banner p{font-size:clamp(12px,1vw,14px)!important;line-height:1.7!important}
 .alin-store-banner__cta{background:#0b4f89!important;box-shadow:0 7px 16px rgba(11,79,137,.18)!important}
-.alin-store-banner__dots button.active{background:#c89526!important}
 
 /* Category carousel: replace the pink palette with ALIN navy / soft blue / warm gold and make cards more compact. */
 .alin-category-showcase{

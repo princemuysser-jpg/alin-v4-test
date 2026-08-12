@@ -83,8 +83,7 @@
           </div>
           ${link?`<span class="alin-store-banner__cta" aria-hidden="true">عرض الإعلان <b>←</b></span>`:''}
         </div>`:''}
-      </article>
-      ${visible.length>1?`<div class="alin-store-banner__dots" aria-label="اختيار الإعلان">${visible.map((_,index)=>`<button type="button" class="${index===state.index?'active':''}" data-banner-index="${index}" aria-label="الإعلان ${index+1}"></button>`).join('')}</div>`:''}`;
+      </article>`;
 
     const article=q('.alin-store-banner',box);
     if(article&&link){
@@ -101,11 +100,6 @@
       if(media)media.innerHTML='<span class="alin-store-banner__placeholder" aria-hidden="true">آ</span>';
       article?.classList.add('without-image');
     },{once:true});
-    box.querySelectorAll('[data-banner-index]').forEach(button=>button.addEventListener('click',()=>{
-      state.index=Number(button.dataset.bannerIndex)||0;
-      renderStorefront();
-      restartRotation();
-    }));
   }
 
   function restartRotation(){

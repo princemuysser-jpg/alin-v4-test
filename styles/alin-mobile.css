@@ -354,14 +354,16 @@ html[data-alin-orientation="landscape"] body.store-mobile .alin98-bottom{max-wid
 @media (orientation:landscape) and (max-height:620px){
   html[data-alin-device="mobile"] body.store-mobile #app>main{padding:8px 10px calc(86px + env(safe-area-inset-bottom))!important}
   html[data-alin-device="mobile"] body.store-mobile .alin-mobile-premium-header{
-    grid-template-columns:auto minmax(0,1fr) auto!important;grid-template-areas:none!important;
-    gap:8px!important;margin:0 0 8px!important;padding:8px 10px!important;border-radius:16px!important;
+    grid-template-columns:minmax(145px,190px) minmax(0,1fr) auto!important;
+    grid-template-areas:"brand search actions"!important;
+    align-items:center!important;gap:8px!important;margin:0 0 8px!important;padding:8px 10px!important;border-radius:16px!important;
   }
-  html[data-alin-device="mobile"] body.store-mobile .alin-mobile-brand{min-width:0!important}
+  html[data-alin-device="mobile"] body.store-mobile .alin-mobile-brand{grid-area:brand!important;min-width:0!important;width:auto!important;max-width:190px!important;overflow:hidden!important}
   html[data-alin-device="mobile"] body.store-mobile .alin-mobile-brand strong{font-size:17px!important}
   html[data-alin-device="mobile"] body.store-mobile .alin-mobile-brand small{font-size:8px!important}
-  html[data-alin-device="mobile"] body.store-mobile .mobile-search-premium{grid-column:auto!important;grid-row:auto!important;margin:0!important;min-width:0!important}
+  html[data-alin-device="mobile"] body.store-mobile .mobile-search-premium{grid-area:search!important;grid-column:auto!important;grid-row:auto!important;margin:0!important;min-width:0!important;width:100%!important}
   html[data-alin-device="mobile"] body.store-mobile .mobile-search-premium label{height:44px!important}
+  html[data-alin-device="mobile"] body.store-mobile .mobile-header-actions{grid-area:actions!important;justify-self:start!important;display:flex!important;flex-wrap:nowrap!important;min-width:max-content!important}
   html[data-alin-device="mobile"] body.store-mobile .mobile-header-actions>.mobile-header-icon-btn{height:44px!important;min-height:44px!important}
   html[data-alin-device="mobile"] body.store-mobile .alin-store-banners{margin:6px 0 10px!important;padding-inline:0!important}
   html[data-alin-device="mobile"] body.store-mobile .alin-store-banner{border-radius:15px!important}

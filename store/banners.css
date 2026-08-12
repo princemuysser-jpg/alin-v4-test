@@ -17,9 +17,6 @@
 .alin-store-banner__cta{flex:0 0 auto;display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:12px;background:#ff7a18;color:#fff;font-size:14px;font-weight:900;white-space:nowrap;box-shadow:0 8px 18px rgba(255,122,24,.22)}
 .alin-store-banner__cta b{font-size:18px;line-height:1}
 .alin-store-banner.no-copy .alin-store-banner__media{border-radius:inherit}
-.alin-store-banner__dots{display:flex;justify-content:center;gap:7px}
-.alin-store-banner__dots button{width:8px;height:8px;min-width:8px;padding:0;border:0;border-radius:50%;background:#cbd5e1;box-shadow:none}
-.alin-store-banner__dots button.active{width:24px;border-radius:999px;background:#ff7a18}
 
 .alin-banner-admin{display:grid;gap:18px}
 .alin-banner-admin__heading{display:flex;align-items:center;justify-content:space-between;gap:16px}

@@ -1,28 +1,35 @@
 {
-  "release": "Alin v4.2.0 Stable — Splash 2s Maintenance Fix",
+  "release": "Alin v4.2.0 Stable — Landscape Header + Banner Indicators Fix",
   "version": "4.2.0",
-  "base": "Alin v4.2.0 Stable",
-  "maintenance_scope": "mobile/tablet/iPad entry splash only",
-  "splash_touch_duration_ms": 2000,
-  "splash_touch_single_controller": true,
-  "splash_touch_layouts": [
-    "phone portrait",
-    "phone landscape",
-    "tablet portrait",
-    "tablet landscape",
-    "iPad portrait",
-    "iPad landscape"
+  "base": "Alin v4.2.0 Stable — Splash 2s Fixed",
+  "maintenance_scope": [
+    "phone landscape storefront header",
+    "banner storefront indicators"
   ],
+  "phone_landscape_header_single_grid": true,
+  "phone_landscape_header_overlap_test": true,
+  "layout_test_cases": [
+    "phone landscape 844x390",
+    "phone portrait 390x844",
+    "tablet landscape 1024x768",
+    "tablet portrait 768x1024"
+  ],
+  "layout_overlap_failures": 0,
+  "banner_indicators_rendered": false,
+  "banner_auto_rotation_enabled": true,
+  "banner_auto_rotation_ms": 6500,
+  "splash_touch_duration_ms": 2000,
   "audit_ok": true,
   "audit_errors": [],
   "actions": 145,
   "js_files": 107,
   "build_hashes": {
     "dist/alin-core.v4.js": "caa74a54a0e2bd43123122ab7698edcb76c6d167fa41165361899c993bede848",
-    "alin-app-desktop.v4.2.0.js": "b7cc620b8908c473e15bab9dd5f787423857c08c99dfa3c36c5d46705eb33fdb",
-    "alin-app-mobile.v4.2.0.js": "8a7120ee5eac73edf3023390068dd4da60afc29c95d4fc3bb3bab37de7671b0a",
+    "alin-app-desktop.v4.2.0.js": "ffd3a0db8feb4f698e1ab93f6f8e97bc3ed6f1ded0621c6e477f342bc0d75fcb",
+    "alin-app-mobile.v4.2.0.js": "48d44bed43cfd3670bdd6810ac154bfc7c553c4a8d9f87f32bcde8280c702cfe",
     "dist/alin-role-runtime.v4.js": "2e24486095d94963768ccfce1588872a385dd53a9b04f71ef5e1fd6a35e123be"
   },
   "sql_changed": false,
-  "runtime_business_logic_changed": false
+  "supabase_changed": false,
+  "cart_orders_finance_changed": false
 }
