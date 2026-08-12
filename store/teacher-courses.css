@@ -1,0 +1,300 @@
+/* ALIN Teacher Courses — isolated storefront section.
+   Safe standalone module: remove this file + the HTML placeholders + teacher-courses.js to disable it.
+*/
+.alin-teacher-courses[hidden],
+.alin-teacher-courses-modal[hidden]{display:none!important}
+
+.alin-teacher-courses{
+  --alin-course-primary:#0e4f8a;
+  --alin-course-primary-2:#0b5fa5;
+  --alin-course-accent:#d9a31b;
+  --alin-course-surface:#ffffff;
+  --alin-course-surface-2:#f5f8fc;
+  --alin-course-border:#dbe4f0;
+  --alin-course-text:#14324b;
+  --alin-course-muted:#6a7a8f;
+  margin:18px 0 22px;
+  padding:0;
+}
+
+.alin-teacher-courses__head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin:0 0 14px;
+}
+.alin-teacher-courses__title{min-width:0}
+.alin-teacher-courses__title small{
+  display:block;
+  margin:0 0 4px;
+  color:var(--alin-course-accent);
+  font-weight:800;
+  font-size:12px;
+}
+.alin-teacher-courses__title h2{
+  margin:0;
+  color:var(--alin-course-text);
+  font-size:clamp(22px,2vw,32px);
+  line-height:1.2;
+}
+.alin-teacher-courses__head button{
+  border:0;
+  background:transparent;
+  color:var(--alin-course-primary-2);
+  font-weight:800;
+  cursor:pointer;
+  padding:8px 0;
+}
+
+.alin-teacher-courses__viewport{
+  display:grid;
+  grid-auto-flow:column;
+  grid-auto-columns:minmax(248px, 1fr);
+  gap:14px;
+  overflow:auto;
+  padding:4px 2px 8px;
+  scroll-snap-type:x proximity;
+  scrollbar-width:thin;
+}
+.alin-teacher-courses__viewport::-webkit-scrollbar{height:8px}
+.alin-teacher-courses__viewport::-webkit-scrollbar-thumb{background:#c2d2e2;border-radius:999px}
+
+.alin-course-card{
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  min-width:0;
+  background:linear-gradient(180deg,#fff 0%,#fbfdff 100%);
+  border:1px solid var(--alin-course-border);
+  border-radius:24px;
+  overflow:hidden;
+  box-shadow:0 14px 34px rgba(11, 53, 97, .08);
+  scroll-snap-align:start;
+}
+.alin-course-card__hero{
+  position:relative;
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:10px;
+  min-height:176px;
+  padding:18px;
+  background:
+    radial-gradient(circle at 12% 18%, rgba(255,255,255,.24), transparent 34%),
+    radial-gradient(circle at 88% 14%, rgba(255,255,255,.16), transparent 28%),
+    linear-gradient(135deg, var(--course-grad-a,#184e88), var(--course-grad-b,#0f74b8));
+}
+.alin-course-card__status{
+  position:absolute;
+  top:14px;
+  right:14px;
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:7px 12px;
+  border-radius:999px;
+  background:rgba(255,255,255,.95);
+  color:#1b7d38;
+  font-weight:800;
+  font-size:12px;
+  box-shadow:0 8px 18px rgba(8,34,59,.12);
+}
+.alin-course-card__status.is-soon{color:#ba6b04}
+.alin-course-card__status.is-full{color:#8a1d2c}
+.alin-course-card__avatar{
+  width:88px;
+  height:88px;
+  border-radius:22px;
+  background:rgba(255,255,255,.18);
+  border:1px solid rgba(255,255,255,.28);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.24);
+  backdrop-filter:blur(4px);
+  display:grid;
+  place-items:center;
+  color:#fff;
+  font-weight:900;
+  font-size:28px;
+  flex:0 0 auto;
+}
+.alin-course-card__subject{
+  min-width:0;
+  color:#fff;
+}
+.alin-course-card__subject small{
+  display:block;
+  margin:0 0 6px;
+  opacity:.9;
+  font-size:12px;
+}
+.alin-course-card__subject h3{
+  margin:0;
+  font-size:28px;
+  line-height:1;
+}
+.alin-course-card__body{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  padding:16px 16px 18px;
+  min-height:0;
+  flex:1 1 auto;
+}
+.alin-course-card__name{
+  margin:0;
+  color:var(--alin-course-text);
+  font-size:21px;
+  line-height:1.35;
+}
+.alin-course-card__teacher{
+  margin:-6px 0 0;
+  color:var(--alin-course-muted);
+  font-weight:700;
+}
+.alin-course-card__meta{
+  display:grid;
+  gap:9px;
+  color:var(--alin-course-text);
+  font-size:14px;
+}
+.alin-course-card__meta span{
+  display:flex;
+  align-items:flex-start;
+  gap:8px;
+}
+.alin-course-card__meta b{
+  color:var(--alin-course-accent);
+  font-size:14px;
+}
+.alin-course-card__price{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding-top:4px;
+}
+.alin-course-card__price strong{
+  color:var(--alin-course-primary);
+  font-size:30px;
+  line-height:1;
+}
+.alin-course-card__price small{color:var(--alin-course-muted)}
+.alin-course-card__actions{
+  display:flex;
+  gap:10px;
+  margin-top:auto;
+}
+.alin-course-card__actions button,
+.alin-course-card__actions a{
+  flex:1 1 0;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:44px;
+  border-radius:14px;
+  font-weight:800;
+  text-decoration:none;
+  cursor:pointer;
+  transition:transform .15s ease, box-shadow .15s ease, background .15s ease;
+}
+.alin-course-card__actions button:hover,
+.alin-course-card__actions a:hover{transform:translateY(-1px)}
+.alin-course-card__details{
+  border:1px solid var(--alin-course-border);
+  background:#fff;
+  color:var(--alin-course-primary);
+}
+.alin-course-card__reserve{
+  border:0;
+  background:linear-gradient(135deg, var(--alin-course-primary), var(--alin-course-primary-2));
+  color:#fff;
+  box-shadow:0 12px 24px rgba(12,79,138,.24);
+}
+
+.alin-teacher-courses-modal{
+  position:fixed;
+  inset:0;
+  z-index:5000;
+  background:rgba(5,23,42,.46);
+  backdrop-filter:blur(4px);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+}
+.alin-teacher-courses-modal__panel{
+  width:min(980px, 100%);
+  max-height:min(88dvh, 900px);
+  overflow:auto;
+  background:#fff;
+  border:1px solid #dae4ef;
+  border-radius:28px;
+  box-shadow:0 30px 70px rgba(4,20,36,.18);
+  padding:22px;
+}
+.alin-teacher-courses-modal__head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:16px;
+  margin:0 0 16px;
+}
+.alin-teacher-courses-modal__head h3{margin:0;color:var(--alin-course-text);font-size:28px}
+.alin-teacher-courses-modal__head p{margin:4px 0 0;color:var(--alin-course-muted)}
+.alin-teacher-courses-modal__close{
+  border:0;
+  width:44px;
+  height:44px;
+  border-radius:14px;
+  background:#eef4fa;
+  color:var(--alin-course-primary);
+  font-size:28px;
+  line-height:1;
+  cursor:pointer;
+}
+.alin-teacher-courses-modal__grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:14px;
+}
+
+body.store-mobile .alin-store-home-view .alin-teacher-courses{
+  margin-top:8px;
+}
+body.store-mobile .alin-teacher-courses__viewport{
+  grid-auto-columns:minmax(260px, 84vw);
+  margin-inline:-2px;
+}
+body.store-mobile .alin-course-card__hero{min-height:168px}
+body.store-mobile .alin-course-card__subject h3{font-size:24px}
+body.store-mobile .alin-course-card__name{font-size:19px}
+body.store-mobile .alin-course-card__price strong{font-size:28px}
+body.store-mobile .alin-teacher-courses-modal{
+  align-items:flex-end;
+  padding:12px;
+}
+body.store-mobile .alin-teacher-courses-modal__panel{
+  width:100%;
+  max-height:min(92dvh, 920px);
+  border-radius:26px 26px 18px 18px;
+  padding:18px 16px 18px;
+}
+body.store-mobile .alin-teacher-courses-modal__grid{grid-template-columns:1fr}
+
+body.store-desktop .alin-teacher-courses{
+  margin-top:18px;
+}
+body.store-desktop .alin-teacher-courses__viewport{
+  grid-auto-columns:minmax(270px,1fr);
+}
+
+@media (min-width:720px){
+  body.store-mobile .alin-teacher-courses__viewport{grid-auto-columns:minmax(280px, 46vw)}
+}
+@media (min-width:960px){
+  .alin-teacher-courses__viewport{grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-flow:unset;overflow:visible}
+}
+@media (max-width:420px){
+  .alin-course-card__actions{flex-direction:column}
+  .alin-course-card__price{align-items:flex-start;flex-direction:column}
+}
