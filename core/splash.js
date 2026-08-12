@@ -1,15 +1,18 @@
-/* ALIN v4.2.0 RC21 — phone splash remains 1 second; tablet/desktop remain 3 seconds. */
+/* ALIN v4.2.0 RC22 — mobile/tablet route immediately.
+   Their 1s splash lives inside store-mobile so loading continues behind it. */
 (()=>{
   'use strict';
   const root=document.getElementById('alinSplash');
   const route=window.AlinEntryRoute;
   if(!root||!route||typeof route.go!=='function')return;
 
-  const ua=String(navigator.userAgent||'');
-  const width=Math.max(1,Math.round((window.visualViewport&&window.visualViewport.width)||window.innerWidth||document.documentElement.clientWidth||1024));
-  const phoneUA=/iPhone|iPod|Android.+Mobile|Windows Phone|Mobile/i.test(ua);
-  const isPhone=route.view==='mobile'&&(phoneUA||width<=760);
-  const totalMs=isPhone?1000:3000;
+  if(route.view==='mobile'){
+    document.documentElement.dataset.alinSplashDuration='0';
+    route.go();
+    return;
+  }
+
+  const totalMs=3000;
   const fadeMs=260;
   const fadeAt=Math.max(0,totalMs-fadeMs);
   let leaving=false;

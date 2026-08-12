@@ -406,3 +406,41 @@ html[data-alin-orientation="landscape"] body.store-mobile .alin98-bottom{max-wid
   html[data-alin-device="tablet"] body.store-mobile .alin-mobile-premium-header{width:100%!important;max-width:none!important}
   html[data-alin-device="tablet"] body.store-mobile .alin-store-banners{width:100%!important;max-width:none!important}
 }
+
+
+/* ALIN RC22 — mobile/tablet entry splash.
+   Visual overlay only: it never blocks HTML, JS, Supabase or store rendering. */
+.alin-mobile-entry-splash{
+  position:fixed;inset:0;z-index:2147483000;
+  display:grid;place-items:center;
+  padding:max(18px,env(safe-area-inset-top)) max(18px,env(safe-area-inset-right)) max(18px,env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left));
+  overflow:hidden;pointer-events:none;
+  background:radial-gradient(circle at 50% 22%,rgba(74,174,255,.15),transparent 30%),linear-gradient(180deg,#fff 0%,#f7fbff 68%,#eaf5ff 100%);
+  color:#082b5a;
+  animation:alinMobileEntrySplashCycle 1s ease both;
+  will-change:opacity;
+  contain:layout paint style;
+}
+.alin-mobile-entry-splash__inner{width:min(430px,88vw);display:grid;justify-items:center;text-align:center;transform:translateY(-1.5vh)}
+.alin-mobile-entry-splash__mark{width:72px;height:72px;display:grid;place-items:center;border-radius:22px;background:linear-gradient(145deg,#0a5fd0,#24a7f4);color:#fff;font:900 44px/1 Arial,sans-serif;box-shadow:0 13px 28px rgba(11,93,190,.2)}
+.alin-mobile-entry-splash__latin{margin-top:10px;font:950 34px/1 Arial,sans-serif;letter-spacing:.13em;text-indent:.13em;color:#08285d}
+.alin-mobile-entry-splash__platform{margin-top:5px;font:800 10px/1.2 Arial,sans-serif;letter-spacing:.28em;text-indent:.28em;color:#1674d6}
+.alin-mobile-entry-splash h1{margin:17px 0 0!important;font-size:clamp(30px,8vw,42px)!important;line-height:1.15!important;color:#082b5a!important}
+.alin-mobile-entry-splash p{margin:7px 0 0!important;font-size:clamp(13px,3.8vw,17px)!important;font-weight:800;color:#176fc9!important}
+.alin-mobile-entry-splash__bar{display:block;width:min(250px,64vw);height:5px;margin-top:22px;border-radius:999px;background:linear-gradient(90deg,#0b61d8,#1ea6f1,#3bc4ff);transform-origin:right center;animation:alinMobileEntrySplashBar .78s linear both}
+@media(min-width:761px) and (max-width:1180px){
+  .alin-mobile-entry-splash__inner{width:min(520px,76vw);transform:none}
+  .alin-mobile-entry-splash__mark{width:82px;height:82px;border-radius:25px;font-size:50px}
+  .alin-mobile-entry-splash__latin{font-size:40px}
+  .alin-mobile-entry-splash h1{font-size:44px!important}
+  .alin-mobile-entry-splash p{font-size:17px!important}
+}
+@keyframes alinMobileEntrySplashCycle{
+  0%,72%{opacity:1;visibility:visible}
+  100%{opacity:0;visibility:hidden}
+}
+@keyframes alinMobileEntrySplashBar{from{transform:scaleX(.04)}to{transform:scaleX(1)}}
+@media(prefers-reduced-motion:reduce){
+  .alin-mobile-entry-splash{animation-duration:1s!important}
+  .alin-mobile-entry-splash__bar{animation:none!important;transform:scaleX(1)}
+}
