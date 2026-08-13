@@ -7,6 +7,8 @@
   const moneyv=value=>typeof window.money==='function'?window.money(value):Number(value||0).toLocaleString(window.AlinI18n?.locale?.()||'ar-IQ');
   const products=()=>Array.isArray(window.db?.products)?window.db.products:[];
   const categories=()=>Array.isArray(window.db?.categories)?window.db.categories:[];
+  const subcategories=()=>Array.isArray(window.db?.productSubcategories)?window.db.productSubcategories:[];
+  const subcategoryById=id=>subcategories().find(item=>String(item.id)===String(id))||null;
   const orders=()=>Array.isArray(window.db?.orders)?window.db.orders:[];
   const root=()=>window.adminContent||document.getElementById('adminContent');
   const normalizeType=value=>{
@@ -24,6 +26,16 @@
     if(typeof uploader!=='function')throw new Error('خدمة رفع الصور غير متاحة');
     return uploader('products',file,{type:'image'});
   };
+
+  const normalizeImages=item=>{
+    const rows=[];
+    const add=value=>{value=String(value||'').trim();if(value&&!rows.includes(value))rows.push(value)};
+    if(Array.isArray(item?.images))item.images.forEach(add);
+    else if(typeof item?.images==='string'){try{const parsed=JSON.parse(item.images);if(Array.isArray(parsed))parsed.forEach(add)}catch(_){add(item.images)}}
+    add(item?.image_path);
+    return rows.slice(0,8);
+  };
+  const imagePreviewUrl=path=>{try{return typeof window.mediaUrl==='function'?window.mediaUrl(path):path}catch(_){return path||''}};
 
   const CATEGORY_ICON_PREFIX='store_category_icon_';
   const SECTION_VISIBLE_PREFIX='store_section_visible_';
@@ -95,19 +107,36 @@
     return options||`<option value="${escv(selected||'عام')}">${escv(selected||'عام')}</option>`;
   }
 
+  function subcategoryOptions(type,categoryName,selected=''){
+    const categoryRow=categories().find(item=>normalizeType(item.type)===normalizeType(type)&&String(item.name||'')===String(categoryName||''));
+    const list=categoryRow?subcategories().filter(item=>String(item.parent_category_id)===String(categoryRow.id)&&String(item.status||'active')==='active').sort((a,b)=>Number(a.sort_order||0)-Number(b.sort_order||0)||String(a.name||'').localeCompare(String(b.name||''),'ar')):[];
+    return `<option value="">بدون شعبة</option>`+list.map(item=>`<option value="${escv(item.id)}" ${String(selected)===String(item.id)?'selected':''}>${escv(item.name)}</option>`).join('');
+  }
+
   function productForm(item={}){
     const editing=Boolean(item.id);
     const type=normalizeType(item.type||item.category_id||'stationery');
+    const unitPrice=Number(item.unit_price??item.sale_price??item.deal_price??item.price??0);
+    const previousPrice=Number((item.sale_price||item.deal_price)?item.price:0);
+    const packPrice=Number(item.pack_price||0);
+    const packSize=Number(item.pack_size||0);
+    const existingImages=normalizeImages(item);
+    const gallery=existingImages.length?`<div class="admin-product-existing-images">${existingImages.map((path,index)=>`<label class="admin-product-existing-image"><img src="${escv(imagePreviewUrl(path))}" alt="صورة ${index+1}"><span><input type="checkbox" name="removeImage" value="${escv(path)}"> حذف</span>${index===0?'<em>رئيسية</em>':''}</label>`).join('')}</div>`:'<small class="muted">لا توجد صور محفوظة حالياً.</small>';
     return `<form id="alinProductEditorForm" class="form-grid admin-product-editor" data-id="${escv(item.id||'')}">
       <select name="type" id="alinProductType" data-alin-change="refreshProductCategories"><option value="stationery" ${type==='stationery'?'selected':''}>قرطاسية</option><option value="gift" ${type==='gift'?'selected':''}>هدايا</option></select>
       <input name="name" value="${escv(item.name||item.title||'')}" placeholder="اسم المنتج" required>
-      <select name="category" id="alinProductCategory">${categoryOptions(type,item.category||'')}</select>
-      <input name="currentPrice" type="number" min="0" value="${Number(item.sale_price||item.deal_price||item.price||0)}" placeholder="السعر الحالي" required>
-      <input name="previousPrice" type="number" min="0" value="${Number((item.sale_price||item.deal_price)?item.price:0)}" placeholder="السعر السابق (اختياري)">
-      <input name="stock" type="number" min="0" value="${Number(item.stock||0)}" placeholder="المخزون" required>
+      <select name="category" id="alinProductCategory" data-alin-change="refreshProductSubcategories">${categoryOptions(type,item.category||'')}</select>
+      <select name="subcategoryId" id="alinProductSubcategory">${subcategoryOptions(type,item.category||'',item.subcategory_id||'')}</select>
+      <input name="unitPrice" type="number" min="0" step="1" value="${unitPrice}" placeholder="سعر المفرد" required>
+      <input name="previousPrice" type="number" min="0" step="1" value="${previousPrice}" placeholder="سعر المفرد السابق (اختياري)">
+      <input name="packPrice" type="number" min="0" step="1" value="${packPrice||''}" placeholder="سعر الباكيت (اختياري)">
+      <input name="packSize" type="number" min="2" step="1" value="${packSize>=2?packSize:''}" placeholder="عدد القطع داخل الباكيت">
+      <input name="stock" type="number" min="0" value="${Number(item.stock||0)}" placeholder="المخزون بالقطع" required>
       <input name="lowStockLimit" type="number" min="0" value="${Number(item.low_stock_limit||window.db?.settings?.low_stock_default||5)}" placeholder="حد تنبيه المخزون">
       <textarea name="description" rows="3" placeholder="تفاصيل المنتج">${escv(item.description||item.details||'')}</textarea>
-      <label>صورة المنتج<input name="image" type="file" accept="image/*"></label>
+      <label class="admin-product-images-field"><span>صور المنتج — يمكنك اختيار عدة صور (حد أقصى 8)</span><input name="images" type="file" accept="image/*" multiple></label>
+      ${gallery}
+      <small class="muted">أول صورة محفوظة تكون الصورة الرئيسية في بطاقة المتجر.</small>
       <div class="row-actions"><button type="button" data-alin-click="saveProduct">${editing?'حفظ التعديل':'إضافة المنتج'}</button><button type="button" class="secondary" data-alin-click="closeProductEditor">إلغاء</button></div>
     </form>`;
   }
@@ -149,26 +178,41 @@
     const type=normalizeType(data.get('type'));
     const category=String(data.get('category')||'عام').trim()||'عام';
     const categoryRow=categories().find(item=>normalizeType(item.type)===type&&String(item.name||'')===category)||null;
-    const currentPrice=Number(data.get('currentPrice')||0);
+    const subcategoryId=String(data.get('subcategoryId')||'').trim();
+    const subcategoryRow=subcategoryId?subcategories().find(item=>String(item.id)===subcategoryId&&String(item.parent_category_id)===String(categoryRow?.id||'')):null;
+    if(subcategoryId&&!subcategoryRow)return alert('الشعبة المختارة لا تتبع هذا القسم');
+    const unitPrice=Number(data.get('unitPrice')||0);
     const previousPrice=Number(data.get('previousPrice')||0);
+    const packPriceRaw=String(data.get('packPrice')||'').trim();
+    const packSizeRaw=String(data.get('packSize')||'').trim();
+    const packPrice=packPriceRaw===''?null:Number(packPriceRaw);
+    const packSize=packSizeRaw===''?null:Number(packSizeRaw);
     const stock=Number(data.get('stock')||0);
     const lowStockLimit=Number(data.get('lowStockLimit')||5);
     const description=String(data.get('description')||'').trim();
     if(!name)return alert('اكتب اسم المنتج');
-    if(!Number.isFinite(currentPrice)||currentPrice<0)return alert('السعر الحالي غير صحيح');
-    if(previousPrice&&(!Number.isFinite(previousPrice)||previousPrice<=currentPrice))return alert('السعر السابق يجب أن يكون أعلى من السعر الحالي');
+    if(!Number.isFinite(unitPrice)||unitPrice<0)return alert('سعر المفرد غير صحيح');
+    if(previousPrice&&(!Number.isFinite(previousPrice)||previousPrice<=unitPrice))return alert('السعر السابق يجب أن يكون أعلى من سعر المفرد');
+    if((packPrice===null)!=(packSize===null))return alert('أدخل سعر الباكيت وعدد القطع معاً أو اتركهما فارغين');
+    if(packPrice!==null&&(!Number.isFinite(packPrice)||packPrice<=0))return alert('سعر الباكيت غير صحيح');
+    if(packSize!==null&&(!Number.isInteger(packSize)||packSize<2))return alert('عدد قطع الباكيت يجب أن يكون 2 أو أكثر');
     if(!Number.isFinite(stock)||stock<0)return alert('المخزون غير صحيح');
     try{
-      const imageFile=data.get('image');
-      const uploaded=imageFile&&imageFile.name?await uploadImage(imageFile):'';
+      const removed=new Set(data.getAll('removeImage').map(value=>String(value||'').trim()).filter(Boolean));
+      const kept=normalizeImages(existing||{}).filter(path=>!removed.has(path));
+      const files=Array.from(form.querySelector('input[name="images"]')?.files||[]).slice(0,Math.max(0,8-kept.length));
+      const uploaded=[];
+      for(const file of files){const path=await uploadImage(file);if(path)uploaded.push(String(path))}
+      const images=[...kept,...uploaded].filter(Boolean).slice(0,8);
       const payload={
-        name,title:name,type,category,category_id:categoryRow?.id||null,
-        price:previousPrice>currentPrice?previousPrice:currentPrice,
-        sale_price:previousPrice>currentPrice?currentPrice:null,stock,
+        name,title:name,type,category,category_id:categoryRow?.id||null,subcategory_id:subcategoryRow?.id||null,
+        unit_price:unitPrice,pack_price:packPrice,pack_size:packSize,
+        price:previousPrice>unitPrice?previousPrice:unitPrice,
+        sale_price:previousPrice>unitPrice?unitPrice:null,stock,
         low_stock_limit:Math.max(0,lowStockLimit||0),description,details:description,
+        images,image_path:images[0]||null,
         status:existing?.status||'published',updated_at:new Date().toISOString()
       };
-      if(uploaded)payload.image_path=uploaded;
       if(existing){
         await window.update('products',payload,{id});
         if(typeof window.audit==='function')await window.audit('product',`تعديل المنتج ${name}`);
@@ -225,11 +269,12 @@
     const low=lowStockLimit(item);
     const stockClass=stock<=0?'out':stock<=low?'low':'ok';
     const stockText=stock<=0?'نافد':stock<=low?'مخزون قليل':'متوفر';
-    const currentPrice=Number(item.sale_price||item.deal_price||item.price||0),previousPrice=currentPrice<Number(item.price||0)?Number(item.price||0):0;
+    const currentPrice=Number(item.unit_price??item.sale_price??item.deal_price??item.price??0),previousPrice=currentPrice<Number(item.price||0)?Number(item.price||0):0;
+    const packPrice=Number(item.pack_price||0),packSize=Number(item.pack_size||0);
     return `<article class="admin-product-v129-card">
       <div class="admin-product-v129-image">${image?`<img src="${escv(image)}" alt="${escv(item.name||'منتج')}">`:`<span>${normalizeType(item.type)==='gift'?'🎁':'✏️'}</span>`}<em class="status ${escv(status)}">${statusLabel(status)}</em></div>
       <div class="admin-product-v129-body">
-        <div class="admin-product-v129-title"><div><small>${typeLabel(item.type)} • ${escv(item.category||'عام')}</small><h3>${escv(item.name||item.title||'منتج')}</h3></div><div class="admin-product-price-pair"><strong>${moneyv(currentPrice)} د.ع</strong>${previousPrice?`<del>${moneyv(previousPrice)} د.ع</del>`:''}</div></div>
+        <div class="admin-product-v129-title"><div><small>${typeLabel(item.type)} • ${escv(item.category||'عام')}${item.subcategory_id&&subcategoryById(item.subcategory_id)?` • ${escv(subcategoryById(item.subcategory_id).name)}`:''}</small><h3>${escv(item.name||item.title||'منتج')}</h3></div><div class="admin-product-price-pair"><strong>مفرد: ${moneyv(currentPrice)} د.ع</strong>${packPrice>0&&packSize>=2?`<small>باكيت (${moneyv(packSize)}): ${moneyv(packPrice)} د.ع</small>`:''}${previousPrice?`<del>${moneyv(previousPrice)} د.ع</del>`:''}</div></div>
         <p>${escv(item.description||item.details||'')}</p>
         <div class="admin-product-v129-meta"><span class="stock ${stockClass}">${stockText}: ${moneyv(stock)}</span><span>الرمز: ${escv(item.id||'—')}</span></div>
         <div class="admin-product-v129-actions"><button type="button" class="secondary" data-alin-click="editProduct" data-alin-click-arg0="${escv(item.id)}">تعديل</button><button type="button" data-alin-click="setProductStatus" data-alin-click-arg0="${escv(item.id)}" data-alin-click-arg1="${status==='published'?'hidden':'published'}">${status==='published'?'إخفاء':'نشر'}</button><button type="button" class="danger" data-alin-click="deleteProduct" data-alin-click-arg0="${escv(item.id)}">حذف</button></div>
@@ -261,6 +306,16 @@
     if(!select)return;
     const previous=select.value;
     select.innerHTML=categoryOptions(type,previous);
+    refreshProductSubcategories();
+  }
+
+  function refreshProductSubcategories(){
+    const type=document.getElementById('alinProductType')?.value||'stationery';
+    const category=document.getElementById('alinProductCategory')?.value||'';
+    const select=document.getElementById('alinProductSubcategory');
+    if(!select)return;
+    const previous=select.value;
+    select.innerHTML=subcategoryOptions(type,category,previous);
   }
 
   function categoryAdminRows(){
@@ -300,7 +355,53 @@
       </form>
       <div class="admin-category-note">القسم الجديد يظهر في واجهة المتجر، وعند الضغط عليه تفتح صفحة مستقلة تعرض المنتجات المطابقة له.</div>
       <div class="admin-category-list">${rows.length?rows.map(categoryRowHtml).join(''):'<div class="empty">لا توجد أقسام.</div>'}</div>
+    </section>${subcategoryAdminHtml()}`;
+  }
+
+  function productCategoryChoices(){
+    return categories().filter(item=>['stationery','gift'].includes(normalizeType(item.type))&&String(item.status||'active')==='active').sort((a,b)=>Number(a.sort_order||0)-Number(b.sort_order||0)||String(a.name||'').localeCompare(String(b.name||''),'ar'));
+  }
+
+  function subcategoryAdminHtml(){
+    const parentRows=productCategoryChoices();
+    const rows=[...subcategories()].sort((a,b)=>String(a.parent_category_id||'').localeCompare(String(b.parent_category_id||''))||Number(a.sort_order||0)-Number(b.sort_order||0)||String(a.name||'').localeCompare(String(b.name||''),'ar'));
+    const parentName=id=>categories().find(item=>String(item.id)===String(id))?.name||'قسم غير معروف';
+    return `<section class="admin-subcategories-v1"><header><div><h2>شُعب المنتجات</h2><p>مثلاً: أقلام، دفاتر، ألوان. كل شعبة تظهر كرف مستقل داخل القسم مع زر «عرض المزيد».</p></div></header>
+      <form id="alinSubcategoryForm" class="form-grid admin-subcategory-create">
+        <select name="parentCategoryId" required>${parentRows.map(item=>`<option value="${escv(item.id)}">${escv(item.name)}</option>`).join('')}</select>
+        <input name="name" placeholder="اسم الشعبة، مثال: أقلام" required>
+        <input name="sortOrder" type="number" min="0" value="10" placeholder="ترتيب الظهور">
+        <button type="button" data-alin-click="addProductSubcategory">إضافة الشعبة</button>
+      </form>
+      <div class="admin-subcategory-list">${rows.length?rows.map(item=>`<article class="admin-subcategory-card ${String(item.status||'active')==='active'?'':'is-hidden'}"><div><b>${escv(item.name)}</b><small>${escv(parentName(item.parent_category_id))} • ترتيب ${Number(item.sort_order||0)}</small></div><div class="row-actions"><button type="button" class="secondary" data-alin-click="editProductSubcategory" data-alin-click-arg0="${escv(item.id)}">تعديل</button><button type="button" data-alin-click="toggleProductSubcategory" data-alin-click-arg0="${escv(item.id)}">${String(item.status||'active')==='active'?'إخفاء':'إظهار'}</button><button type="button" class="danger" data-alin-click="deleteProductSubcategory" data-alin-click-arg0="${escv(item.id)}">حذف</button></div></article>`).join(''):'<div class="empty">لا توجد شعب بعد.</div>'}</div>
     </section>`;
+  }
+
+  async function addProductSubcategory(){
+    const form=document.getElementById('alinSubcategoryForm');if(!form)return;
+    const data=new FormData(form),parentCategoryId=String(data.get('parentCategoryId')||''),name=String(data.get('name')||'').trim(),sortOrder=Math.max(0,Number(data.get('sortOrder')||10));
+    if(!parentCategoryId||!name)return alert('اختر القسم واكتب اسم الشعبة');
+    if(subcategories().some(item=>String(item.parent_category_id)===parentCategoryId&&String(item.name||'').trim().toLowerCase()===name.toLowerCase()))return alert('هذه الشعبة موجودة مسبقاً داخل القسم');
+    try{await window.insert('product_subcategories',{parent_category_id:parentCategoryId,name,status:'active',sort_order:sortOrder,created_at:new Date().toISOString(),updated_at:new Date().toISOString()});await reloadAndRender(renderCategoriesAdmin);window.renderStore?.();window.toast?.('تمت إضافة الشعبة');}catch(error){alert(error?.message||'تعذر إضافة الشعبة')}
+  }
+
+  async function editProductSubcategory(id){
+    const item=subcategoryById(id);if(!item)return;
+    const name=prompt('اسم الشعبة',item.name||'');if(name===null)return;const clean=String(name).trim();if(!clean)return alert('اكتب اسم الشعبة');
+    const orderText=prompt('ترتيب الظهور',String(item.sort_order||10));if(orderText===null)return;const sortOrder=Math.max(0,Number(orderText||0));
+    try{await window.update('product_subcategories',{name:clean,sort_order:sortOrder,updated_at:new Date().toISOString()},{id:item.id});await reloadAndRender(renderCategoriesAdmin);window.renderStore?.();window.toast?.('تم تعديل الشعبة');}catch(error){alert(error?.message||'تعذر تعديل الشعبة')}
+  }
+
+  async function toggleProductSubcategory(id){
+    const item=subcategoryById(id);if(!item)return;const status=String(item.status||'active')==='active'?'inactive':'active';
+    try{await window.update('product_subcategories',{status,updated_at:new Date().toISOString()},{id:item.id});await reloadAndRender(renderCategoriesAdmin);window.renderStore?.();window.toast?.(status==='active'?'تم إظهار الشعبة':'تم إخفاء الشعبة');}catch(error){alert(error?.message||'تعذر تغيير حالة الشعبة')}
+  }
+
+  async function deleteProductSubcategory(id){
+    const item=subcategoryById(id);if(!item)return;const linked=products().filter(product=>String(product.subcategory_id||'')===String(item.id));
+    if(linked.length)return alert(`لا يمكن حذف الشعبة لأنها مرتبطة بـ ${linked.length} منتج. انقل المنتجات أو أخفِ الشعبة.`);
+    if(!confirm(`حذف شعبة ${item.name||''}؟`))return;
+    try{await window.removeRow('product_subcategories',{id:item.id});await reloadAndRender(renderCategoriesAdmin);window.renderStore?.();window.toast?.('تم حذف الشعبة');}catch(error){alert(error?.message||'تعذر حذف الشعبة')}
   }
 
   async function addCategory(){
@@ -407,6 +508,7 @@
   window.renderProductsAdmin=renderProductsAdmin;
   window.renderCategoriesAdmin=renderCategoriesAdmin;
   window.refreshProductCategories=refreshProductCategories;
+  window.refreshProductSubcategories=refreshProductSubcategories;
   window.addProduct=()=>openProductEditor('');
   window.editProduct=openProductEditor;
   window.saveProduct=saveProduct;
@@ -419,6 +521,10 @@
   window.closeCategoryEditor=closeCategoryEditor;
   window.toggleCategory=toggleCategory;
   window.deleteCategory=deleteCategory;
+  window.addProductSubcategory=addProductSubcategory;
+  window.editProductSubcategory=editProductSubcategory;
+  window.toggleProductSubcategory=toggleProductSubcategory;
+  window.deleteProductSubcategory=deleteProductSubcategory;
   // Compatibility aliases point to the same implementation, not wrappers.
   window.alinV73AddProduct=window.addProduct;
   window.alinV73EditProduct=window.editProduct;

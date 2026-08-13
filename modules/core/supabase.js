@@ -7,14 +7,14 @@
 
   const VERSION=window.ALIN_CONFIG?.version||'4.2.0';
   const TABLES=[
-    'settings','accounts','delivery_areas','couriers','courier_areas','categories',
+    'settings','accounts','delivery_areas','couriers','courier_areas','categories','product_subcategories',
     'booklets','teacher_requests','teacher_request_versions','products','orders',
     'order_timeline','permits','ledger','settlements','withdrawals','notifications',
     'banners','coupons','product_reviews','stock_alerts','bundles','bundle_items',
     'audit_events','notification_reads','account_permissions','backup_logs','system_health_logs'
   ];
   const PUBLIC_TABLES=[
-    'settings','accounts','delivery_areas','categories','booklets','products','banners','coupons','notifications'
+    'settings','accounts','delivery_areas','categories','product_subcategories','booklets','products','banners','coupons','notifications'
   ];
   const ROLE_TABLES={
     admin:TABLES,
@@ -50,7 +50,7 @@
   const REFRESH_EVENT='alin:data-refreshed';
   const MUTATION_EVENT='alin:cloud-mutation';
   const TABLE_TO_DB={
-    booklets:'booklets',products:'products',categories:'categories',banners:'banners',orders:'orders',
+    booklets:'booklets',products:'products',categories:'categories',product_subcategories:'productSubcategories',banners:'banners',orders:'orders',
     permits:'permits',ledger:'ledger',settlements:'settlements',withdrawals:'withdrawals',audit_events:'audit',couriers:'couriers',
     delivery_areas:'deliveryAreas',courier_areas:'courierAreas',notifications:'notifications',
     teacher_requests:'teacherRequests',teacher_request_versions:'teacherRequestVersions',
@@ -73,7 +73,7 @@
   const readJson=(key,fallback,storage=localStorage)=>{try{return JSON.parse(storage.getItem(key)||'null')??fallback}catch(_){return fallback}};
   const writeJson=(key,value,storage=localStorage)=>{try{storage.setItem(key,JSON.stringify(value))}catch(_){}};
   function publicSnapshot(snapshot){
-    return {booklets:snapshot.booklets||[],products:snapshot.products||[],categories:snapshot.categories||[],banners:snapshot.banners||[],coupons:snapshot.coupons||[],deliveryAreas:snapshot.deliveryAreas||[],settings:snapshot.settings||{storeType:'booklet'},accounts:{all:[],teachers:snapshot.accounts?.teachers||[],libraries:snapshot.accounts?.libraries||[],couriers:[],accountants:[]},notifications:[]};
+    return {booklets:snapshot.booklets||[],products:snapshot.products||[],categories:snapshot.categories||[],productSubcategories:snapshot.productSubcategories||[],banners:snapshot.banners||[],coupons:snapshot.coupons||[],deliveryAreas:snapshot.deliveryAreas||[],settings:snapshot.settings||{storeType:'booklet'},accounts:{all:[],teachers:snapshot.accounts?.teachers||[],libraries:snapshot.accounts?.libraries||[],couriers:[],accountants:[]},notifications:[]};
   }
   function persistSnapshot(snapshot){
     if(window.current?.id){writeJson(SESSION_SNAPSHOT_KEY,{at:nowIso(),snapshot},sessionStorage);return}
@@ -377,6 +377,7 @@
       },
       deliveryAreas:Array.isArray(raw.deliveryAreas)?raw.deliveryAreas:[],
       categories:Array.isArray(raw.categories)?raw.categories:[],
+      productSubcategories:Array.isArray(raw.productSubcategories)?raw.productSubcategories:[],
       booklets:Array.isArray(raw.booklets)?raw.booklets:[],
       products:Array.isArray(raw.products)?raw.products:[],
       banners:Array.isArray(raw.banners)?raw.banners:[],

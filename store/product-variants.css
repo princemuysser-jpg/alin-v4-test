@@ -1,0 +1,13 @@
+/* ALIN product variants: multi-image gallery + unit/pack pricing. */
+.admin-product-images-field{grid-column:1/-1;display:grid;gap:8px}
+.admin-product-existing-images{grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:10px}
+.admin-product-existing-image{position:relative;display:grid;gap:5px;padding:7px;border:1px solid #dbe4ef;border-radius:14px;background:#fff}
+.admin-product-existing-image img{width:100%;aspect-ratio:1/1;object-fit:contain;border-radius:10px;background:#f6f8fb}
+.admin-product-existing-image span{font-size:12px}.admin-product-existing-image em{position:absolute;top:10px;right:10px;background:#0b5fa5;color:#fff;border-radius:999px;padding:3px 7px;font-size:10px;font-style:normal}
+.admin-product-price-pair{display:flex;flex-direction:column;align-items:flex-end;gap:3px}.admin-product-price-pair small{font-weight:800;color:#8b6112}
+.v99-card-price{display:flex!important;flex-direction:column;gap:3px}.v99-card-price small{font-size:12px;color:#7a5b16;font-weight:800}
+.alin-product-gallery{display:grid;gap:10px;min-width:0}.alin-product-thumbs{display:flex;gap:8px;overflow:auto;padding:2px 1px 5px;scrollbar-width:thin}.alin-product-thumbs button{flex:0 0 58px;width:58px;height:58px;border:1px solid #dbe4ef;border-radius:11px;background:#fff;padding:3px;cursor:pointer}.alin-product-thumbs button.active{outline:2px solid #0b5fa5;outline-offset:1px}.alin-product-thumbs img{width:100%;height:100%;object-fit:contain;border-radius:8px}
+.alin-pack-price{display:block!important;margin-top:5px;color:#8b6112!important}.alin-pack-price small{font-size:.75em;font-weight:700}
+.alin-purchase-type{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0}.alin-purchase-type label{display:flex;align-items:center;gap:8px;padding:10px 11px;border:1px solid #dbe4ef;border-radius:12px;background:#fff;cursor:pointer}.alin-purchase-type label:has(input:checked){border-color:#0b5fa5;background:#eef6fd}.alin-purchase-type span{font-weight:800;color:#14324b;font-size:13px}
+#orderNotes{width:100%;box-sizing:border-box;resize:vertical;min-height:58px;margin-top:8px}
+@media(max-width:600px){.alin-purchase-type{grid-template-columns:1fr}.alin-product-thumbs button{flex-basis:50px;width:50px;height:50px}.admin-product-existing-images{grid-template-columns:repeat(3,minmax(0,1fr))}}

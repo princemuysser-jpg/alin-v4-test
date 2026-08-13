@@ -1,0 +1,3 @@
+-- Applied to production Supabase: add_product_subcategories_shelf_system
+-- product_subcategories + products.subcategory_id + public bootstrap inclusion.
+-- See Supabase migration history for authoritative SQL.

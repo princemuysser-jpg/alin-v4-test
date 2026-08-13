@@ -43,17 +43,20 @@
     const current=effectivePrice(item),hasPrevious=activeDeal(item)&&item.price>current;
     const discount=hasPrevious?Math.max(1,Math.round((1-current/item.price)*100)):0;
     const reviewRows=reviews.slice(0,8).map(review=>`<article class="v99-review-card"><div class="v99-review-stars" aria-label="تقييم ${fmt(review.rating)} من 5">${starText(review.rating)}</div><p>${esc(review.comment||'تقييم بدون تعليق')}</p><small>تقييم موثّق في منصة آلين</small></article>`).join('');
+    const gallery=[...(item.images||[]),item.image].map(String).filter(Boolean).filter((value,index,array)=>array.indexOf(value)===index);
+    const galleryHtml=gallery.length?`<div class="alin-product-gallery"><div class="v99-detail-media"><img id="alinProductMainImage" src="${esc(imageUrl(gallery[0]))}" alt="${esc(item.title)}">${discount?`<span class="v99-detail-discount">خصم ${fmt(discount)}%</span>`:''}</div>${gallery.length>1?`<div class="alin-product-thumbs">${gallery.map((path,index)=>`<button type="button" class="${index===0?'active':''}" data-v99-action="imageThumb" data-src="${esc(imageUrl(path))}" aria-label="الصورة ${index+1}"><img src="${esc(imageUrl(path))}" alt=""></button>`).join('')}</div>`:''}</div>`:'<div class="v99-detail-media"><span class="v99-placeholder">ALIN</span></div>';
     openModal(`<section class="v99-detail-premium">
       <div class="v99-detail-main">
-        <div class="v99-detail-media">${item.image?`<img src="${esc(imageUrl(item.image))}" alt="${esc(item.title)}">`:'<span class="v99-placeholder">ALIN</span>'}${discount?`<span class="v99-detail-discount">خصم ${fmt(discount)}%</span>`:''}</div>
+        ${galleryHtml}
         <div class="v99-detail-copy">
           <div class="v99-badges">${badges(item).map(label=>`<span class="v99-badge">${esc(label)}</span>`).join('')}</div>
           <h2>${esc(item.title)}</h2>
           <p class="v99-detail-meta-line">${esc([item.teacher,item.subject,item.grade,item.category].filter(Boolean).join(' • '))}</p>
           <div class="v99-detail-rating-summary"><span class="v99-rating-stars" aria-label="متوسط التقييم ${average.toFixed(1)} من 5">${starText(average)}</span><b>${reviews.length?average.toFixed(1):'جديد'}</b><small>${reviews.length?`${fmt(reviews.length)} تقييم`:'لا توجد تقييمات منشورة بعد'}</small></div>
           ${item.description?`<p class="v99-detail-description">${esc(item.description)}</p>`:''}
-          <div class="v99-detail-price"><strong>${fmt(current)} د.ع</strong>${hasPrevious?`<del>${fmt(item.price)} د.ع</del><span>وفّر ${fmt(item.price-current)} د.ع</span>`:''}</div>
-          <div class="v99-detail-facts v99-detail-facts-stock-only"><span>${out?'غير متوفر حالياً':item.stock===null?'متاح للطلب':`متوفر: ${fmt(item.stock)}`}</span></div>
+          <div class="v99-detail-price"><strong>سعر المفرد: ${fmt(current)} د.ع</strong>${hasPrevious?`<del>${fmt(item.price)} د.ع</del><span>وفّر ${fmt(item.price-current)} د.ع</span>`:''}${item.packPrice>0&&item.packSize>=2?`<strong class="alin-pack-price">سعر الباكيت: ${fmt(item.packPrice)} د.ع <small>(${fmt(item.packSize)} قطع)</small></strong>`:''}</div>
+          <div class="v99-detail-facts v99-detail-facts-stock-only"><span>${out?'غير متوفر حالياً':item.stock===null?'متاح للطلب':`المخزون: ${fmt(item.stock)} قطعة`}</span></div>
+          ${item.kind!=='booklet'&&item.packPrice>0&&item.packSize>=2?`<div class="alin-purchase-type"><label><input type="radio" name="v99PurchaseType" value="unit" checked> <span>مفرد — ${fmt(current)} د.ع</span></label><label><input type="radio" name="v99PurchaseType" value="pack"> <span>باكيت ${fmt(item.packSize)} قطع — ${fmt(item.packPrice)} د.ع</span></label></div>`:''}
           <div class="v99-qty"><label for="v99DetailQty">الكمية</label><input id="v99DetailQty" type="number" min="1" max="99" value="1"></div>
           <div class="v99-actions">${out?`<button data-v99-action="stockForm" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">أبلغني عند التوفر</button>`:`<button data-v99-action="cartQty" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">أضف للسلة</button>`}<button class="v99-ghost" data-v99-action="favorite" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">${isFavorite(item)?'إزالة من المفضلة':'حفظ بالمفضلة'}</button><button class="v99-ghost" data-v99-action="share" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">مشاركة</button></div>
         </div>

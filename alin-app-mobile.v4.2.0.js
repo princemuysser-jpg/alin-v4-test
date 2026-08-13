@@ -1102,7 +1102,8 @@
       }
       // إصلاح السلة القديمة محلياً حتى لا يتكرر الخطأ في الطلب التالي.
       line.id=id;line.kind=canonical;
-      return {kind:canonical,id,qty:Math.max(1,Math.min(100,Number(line?.qty)||1))};
+      const purchaseType=canonical==='product'&&String(line?.purchase_type||line?.purchaseType||'unit')==='pack'?'pack':'unit';
+      return {kind:canonical,id,qty:Math.max(1,Math.min(100,Number(line?.qty)||1)),purchase_type:purchaseType};
     });
   }
 
@@ -1173,17 +1174,18 @@
       const signedStudent=window.AlinStudentAuth?.current?.()||null;
       const name=(signedStudent?.name||document.getElementById('studentName')?.value||'').trim();
       const phone=(signedStudent?.phone||document.getElementById('studentPhone')?.value||'').trim().replace(/\s+/g,'');
+      const notes=(document.getElementById('orderNotes')?.value||'').trim().slice(0,1000);
       if(name.length<2)throw new Error('اكتب اسم الطالب بصورة صحيحة');
       if(!/^\+?[0-9٠-٩]{7,15}$/.test(phone))throw new Error('اكتب رقم هاتف صحيح');
       const fulfillment=normalizeFulfillment(typeof alinOrderExtra==='function'?alinOrderExtra():{});
       const coupon=(window.AlinCoupons?.getAppliedCode?.()||document.getElementById('couponInput')?.value||'').trim();
       const cartSnapshot=cart.map(item=>({...item}));
       const items=normalizeCheckoutItems(cart);
-      const fingerprint=JSON.stringify({items,customer:{name,phone},student:signedStudent?.id||null,fulfillment,coupon:coupon.toLowerCase()});
+      const fingerprint=JSON.stringify({items,customer:{name,phone,notes},student:signedStudent?.id||null,fulfillment,coupon:coupon.toLowerCase()});
       const attempt=checkoutAttempt(fingerprint);
       if(typeof cartSave==='function')cartSave();
       const guestArgs={
-        p_items:items,p_customer:{name,phone},p_fulfillment:fulfillment,p_coupon_code:coupon||null,
+        p_items:items,p_customer:{name,phone,notes},p_fulfillment:fulfillment,p_coupon_code:coupon||null,
         p_request_key:attempt.requestKey,p_device_id:deviceId()
       };
       const studentArgs={

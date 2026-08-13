@@ -49,8 +49,10 @@
     });
     const products=(window.db?.products||[]).filter(row=>statusVisible(row.status)).map(row=>({
       kind:row.type||'product',id:String(row.id),raw:row,title:row.name||row.title||'منتج',teacher:row.teacher||'',teacherId:row.teacher_id||'',
-      subject:row.subject||row.category||'',grade:row.grade||'',category:row.category||row.type||'',price:num(row.price),originalPrice:num(row.original_price),
-      stock:row.stock==null?null:num(row.stock),image:row.image_path||row.cover_path||'',cover:row.image_path||row.cover_path||'',created:row.created_at||'',
+      subject:row.subject||row.category||'',grade:row.grade||'',category:row.category||row.type||'',categoryId:row.category_id||'',subcategoryId:row.subcategory_id||'',price:num(row.unit_price??row.price),originalPrice:num(row.original_price),
+      unitPrice:num(row.unit_price??row.sale_price??row.price),packPrice:num(row.pack_price),packSize:num(row.pack_size),
+      images:(Array.isArray(row.images)?row.images:[]).map(String).filter(Boolean),
+      stock:row.stock==null?null:num(row.stock),image:(Array.isArray(row.images)&&row.images[0])||row.image_path||row.cover_path||'',cover:(Array.isArray(row.images)&&row.images[0])||row.image_path||row.cover_path||'',created:row.created_at||'',
       sold:num(row.sales_count)||counts[`${row.type||'product'}:${row.id}`]||counts[`product:${row.id}`]||0,badge:row.badge||'',prep:num(row.prep_minutes),
       dealPrice:num(row.deal_price||row.sale_price),dealStart:row.deal_start,dealEnd:row.deal_end,description:row.description||'',status:row.status
     }));

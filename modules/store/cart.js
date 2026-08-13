@@ -26,8 +26,9 @@
   function products(){return Array.isArray(window.db?.products)?window.db.products:[]}
   function findBooklet(id){return booklets().find(item=>same(item.id,id))||null}
   function findProduct(id){return products().find(item=>same(item.id,id))||null}
-  function itemCurrentPrice(item){
-    const base=num(item?.price);
+  function itemCurrentPrice(item,purchaseType='unit'){
+    if(purchaseType==='pack'&&num(item?.pack_price)>0&&num(item?.pack_size)>=2)return num(item.pack_price);
+    const base=num(item?.unit_price??item?.price);
     const sale=num(item?.sale_price??item?.deal_price);
     const start=item?.deal_start?Date.parse(item.deal_start):0;
     const end=item?.deal_end?Date.parse(item.deal_end):0;
@@ -51,12 +52,16 @@
     const normalized=normalizeKindAndId(line?.kind,line?.id);
     if(!normalized.kind||!normalized.id)return null;
     const source=normalized.item;
+    const purchaseType=normalized.kind==='product'&&String(line?.purchase_type||line?.purchaseType||'unit')==='pack'&&num(source?.pack_price)>0&&num(source?.pack_size)>=2?'pack':'unit';
+    const packSize=purchaseType==='pack'?Math.floor(num(source?.pack_size)||0):null;
     return {
       kind:normalized.kind,
       id:normalized.id,
       title:String(source?.title||source?.name||line?.title||`العنصر ${index+1}`),
-      price:source?itemCurrentPrice(source):num(line?.price),
-      qty:Math.max(1,Math.min(100,Math.floor(num(line?.qty)||1)))
+      price:source?itemCurrentPrice(source,purchaseType):num(line?.price),
+      qty:Math.max(1,Math.min(100,Math.floor(num(line?.qty)||1))),
+      purchase_type:purchaseType,
+      pack_size:packSize
     };
   }
 
@@ -151,21 +156,25 @@
     renderCartBadge();
   }
 
-  function addToCart(kind,id,qty=1){
+  function addToCart(kind,id,qty=1,purchaseType='unit'){
     const normalized=normalizeKindAndId(kind,id);
     if(!normalized.item){
       if(typeof window.toast==='function')window.toast('تعذر العثور على المادة في المتجر');
       return false;
     }
     const amount=Math.max(1,Math.min(100,Math.floor(num(qty)||1)));
+    const type=normalized.kind==='product'&&purchaseType==='pack'&&num(normalized.item.pack_price)>0&&num(normalized.item.pack_size)>=2?'pack':'unit';
+    const packSize=type==='pack'?Math.floor(num(normalized.item.pack_size)):null;
+    const unitsPerQty=type==='pack'?packSize:1;
     if(normalized.kind==='product'&&num(normalized.item.stock)<=0){alert('المنتج نافد');return false}
-    const current=rows().find(line=>line.kind===normalized.kind&&same(line.id,normalized.id));
+    const current=rows().find(line=>line.kind===normalized.kind&&same(line.id,normalized.id)&&String(line.purchase_type||'unit')===type);
     const nextQty=(current?.qty||0)+amount;
-    if(normalized.kind==='product'&&num(normalized.item.stock)<nextQty){alert('الكمية المطلوبة غير متوفرة');return false}
-    if(current){current.qty=nextQty;current.title=normalized.item.title||normalized.item.name||current.title;current.price=itemCurrentPrice(normalized.item)}
-    else rows().push({kind:normalized.kind,id:normalized.id,title:normalized.item.title||normalized.item.name||'مادة',price:itemCurrentPrice(normalized.item),qty:amount});
+    if(normalized.kind==='product'&&num(normalized.item.stock)<nextQty*unitsPerQty){alert('الكمية المطلوبة غير متوفرة');return false}
+    const price=itemCurrentPrice(normalized.item,type);
+    if(current){current.qty=nextQty;current.title=normalized.item.title||normalized.item.name||current.title;current.price=price;current.purchase_type=type;current.pack_size=packSize}
+    else rows().push({kind:normalized.kind,id:normalized.id,title:normalized.item.title||normalized.item.name||'مادة',price,qty:amount,purchase_type:type,pack_size:packSize});
     cartSave();
-    if(typeof window.toast==='function')window.toast('تمت الإضافة إلى السلة');
+    if(typeof window.toast==='function')window.toast(type==='pack'?'تمت إضافة الباكيت إلى السلة':'تمت الإضافة إلى السلة');
     return true;
   }
 
@@ -173,7 +182,8 @@
     const line=rows()[index];if(!line)return;
     const next=Math.max(1,Math.min(100,num(line.qty)+num(delta)));
     const source=line.kind==='booklet'?findBooklet(line.id):findProduct(line.id);
-    if(line.kind==='product'&&source&&num(source.stock)<next){alert('الكمية المطلوبة غير متوفرة');return}
+    const unitsPerQty=line.purchase_type==='pack'?Math.max(2,num(line.pack_size||source?.pack_size)):1;
+    if(line.kind==='product'&&source&&num(source.stock)<next*unitsPerQty){alert('الكمية المطلوبة غير متوفرة');return}
     line.qty=next;cartSave();openCart({kind:line.kind,id:line.id});
   }
 
@@ -279,9 +289,9 @@
     }else{
       const itemsHtml=list.map((line,index)=>{
         const source=line.kind==='booklet'?findBooklet(line.id):findProduct(line.id),image=imageFor(source),lineTotal=num(line.price)*num(line.qty);
-        return `<article class="alin-cart-item"><div class="alin-cart-thumb">${image?`<img src="${escText(image)}" alt="${escText(line.title)}">`:`<span>${itemIcon(line.kind)}</span>`}</div><div class="alin-cart-info"><h3 class="alin-cart-title">${escText(line.title)}</h3><div class="alin-cart-meta"><span class="alin-cart-chip">${line.kind==='booklet'?'ملزمة':'منتج'}</span><span class="alin-cart-chip">سعر القطعة: ${formatMoney(line.price)} د.ع</span></div><div class="alin-cart-price">${formatMoney(lineTotal)} د.ع</div></div><div class="alin-cart-controls"><div class="alin-qty-box"><button type="button" aria-label="تقليل الكمية" data-alin-click="cartQty" data-alin-click-arg0="${index}" data-alin-click-arg1="-1" data-alin-click-arg1-type="number">−</button><b>${line.qty}</b><button type="button" aria-label="زيادة الكمية" data-alin-click="cartQty" data-alin-click-arg0="${index}" data-alin-click-arg1="1" data-alin-click-arg1-type="number">+</button></div><button type="button" class="alin-remove-btn" data-alin-click="cartRemove" data-alin-click-arg0="${index}">حذف من السلة</button></div></article>`;
+        return `<article class="alin-cart-item"><div class="alin-cart-thumb">${image?`<img src="${escText(image)}" alt="${escText(line.title)}">`:`<span>${itemIcon(line.kind)}</span>`}</div><div class="alin-cart-info"><h3 class="alin-cart-title">${escText(line.title)}</h3><div class="alin-cart-meta"><span class="alin-cart-chip">${line.kind==='booklet'?'ملزمة':line.purchase_type==='pack'?`باكيت ${formatMoney(line.pack_size)} قطع`:'مفرد'}</span><span class="alin-cart-chip">السعر: ${formatMoney(line.price)} د.ع</span></div><div class="alin-cart-price">${formatMoney(lineTotal)} د.ع</div></div><div class="alin-cart-controls"><div class="alin-qty-box"><button type="button" aria-label="تقليل الكمية" data-alin-click="cartQty" data-alin-click-arg0="${index}" data-alin-click-arg1="-1" data-alin-click-arg1-type="number">−</button><b>${line.qty}</b><button type="button" aria-label="زيادة الكمية" data-alin-click="cartQty" data-alin-click-arg0="${index}" data-alin-click-arg1="1" data-alin-click-arg1-type="number">+</button></div><button type="button" class="alin-remove-btn" data-alin-click="cartRemove" data-alin-click-arg0="${index}">حذف من السلة</button></div></article>`;
       }).join('');
-      box.innerHTML=`<div class="alin-cart-shell"><section class="alin-cart-main"><div class="alin-cart-head"><div><h2>سلة آلين</h2><p>راجع المواد والكميات قبل تأكيد الطلب.</p></div><span class="alin-cart-badge">${count}</span></div><div class="alin-cart-list">${itemsHtml}</div></section><aside class="alin-cart-side"><h3>ملخص الطلب</h3><div class="alin-cart-side-content"><div class="alin-summary-card"><div class="alin-summary-rows"><div><span>عدد المواد</span><b>${count}</b></div><div><span>المجموع الفرعي</span><b id="cartSubtotalValue">${formatMoney(pricing.subtotal)} د.ع</b></div><div id="cartDiscountRow" ${pricing.discount>0?'':'hidden'}><span>خصم الكوبون</span><b id="cartDiscountValue">− ${formatMoney(pricing.discount)} د.ع</b></div></div><div class="alin-summary-total"><div>الإجمالي النهائي</div><b id="cartFinalValue">${formatMoney(pricing.total)} د.ع</b></div><div class="coupon-box"><input id="couponInput" value="${escText(pricing.coupon?.code||'')}" placeholder="أدخل كود الخصم"><button type="button" data-alin-click="checkCoupon">تطبيق</button></div><div id="couponMsg">${pricing.coupon&&pricing.discount>0?`تم تطبيق كوبون ${escText(pricing.coupon.code)} — الخصم ${formatMoney(pricing.discount)} د.ع`:''}</div><div class="alin-cart-form"><h4>بيانات الطالب والاستلام</h4><div class="form-grid"><input id="studentName" placeholder="اسم الطالب الكامل"><input id="studentPhone" placeholder="رقم الهاتف"></div>${fulfillmentHtml()}</div></div><button type="button" class="alin-cart-submit" data-alin-click="confirmCartCheckout">تأكيد الطلب الآن</button></aside></div>`;
+      box.innerHTML=`<div class="alin-cart-shell"><section class="alin-cart-main"><div class="alin-cart-head"><div><h2>سلة آلين</h2><p>راجع المواد والكميات قبل تأكيد الطلب.</p></div><span class="alin-cart-badge">${count}</span></div><div class="alin-cart-list">${itemsHtml}</div></section><aside class="alin-cart-side"><h3>ملخص الطلب</h3><div class="alin-cart-side-content"><div class="alin-summary-card"><div class="alin-summary-rows"><div><span>عدد المواد</span><b>${count}</b></div><div><span>المجموع الفرعي</span><b id="cartSubtotalValue">${formatMoney(pricing.subtotal)} د.ع</b></div><div id="cartDiscountRow" ${pricing.discount>0?'':'hidden'}><span>خصم الكوبون</span><b id="cartDiscountValue">− ${formatMoney(pricing.discount)} د.ع</b></div></div><div class="alin-summary-total"><div>الإجمالي النهائي</div><b id="cartFinalValue">${formatMoney(pricing.total)} د.ع</b></div><div class="coupon-box"><input id="couponInput" value="${escText(pricing.coupon?.code||'')}" placeholder="أدخل كود الخصم"><button type="button" data-alin-click="checkCoupon">تطبيق</button></div><div id="couponMsg">${pricing.coupon&&pricing.discount>0?`تم تطبيق كوبون ${escText(pricing.coupon.code)} — الخصم ${formatMoney(pricing.discount)} د.ع`:''}</div><div class="alin-cart-form"><h4>بيانات الطالب والاستلام</h4><div class="form-grid"><input id="studentName" placeholder="اسم الطالب الكامل"><input id="studentPhone" placeholder="رقم الهاتف"></div><textarea id="orderNotes" rows="2" maxlength="1000" placeholder="ملاحظات على الطلب (اختياري)"></textarea>${fulfillmentHtml()}</div></div><button type="button" class="alin-cart-submit" data-alin-click="confirmCartCheckout">تأكيد الطلب الآن</button></aside></div>`;
     }
     modal.classList.remove('hidden');
     document.body?.classList.add('alin-cart-open');
