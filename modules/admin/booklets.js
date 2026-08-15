@@ -13,6 +13,15 @@
   const statusLabel=status=>({published:'منشورة',hidden:'مخفية',draft:'مسودة',review:'قيد المراجعة',pending:'قيد المراجعة',archived:'مؤرشفة'}[String(status||'draft').toLowerCase()]||String(status||'مسودة'));
   const teacherName=id=>teachers().find(item=>String(item.id)===String(id))?.name||'مدرس غير محدد';
   const unique=values=>[...new Set(values.map(value=>String(value||'').trim()).filter(Boolean))];
+  const pct=value=>{const n=Number(value);return Number.isFinite(n)?Math.max(0,Math.min(100,n)):0};
+  const sharesFor=book=>{
+    if(!book?.id)return {platform:20,teacher:50,library:30};
+    const teacher=pct(book.teacher_share_percent);
+    const library=pct(book.library_share_percent);
+    const platform=book.platform_share_percent==null?pct(100-teacher-library):pct(book.platform_share_percent);
+    return {platform,teacher,library};
+  };
+  const shareTotal=shares=>Number((shares.platform+shares.teacher+shares.library).toFixed(2));
   const orderCount=id=>orders().filter(order=>{
     const itemId=order.item_id||order.booklet_id||order.item?.id;
     const kind=String(order.kind||order.item_kind||order.item_type||'booklet').toLowerCase();
@@ -67,6 +76,7 @@
   }
 
   function formHtml(book={}){
+    const shares=sharesFor(book);
     return `<form id="alinBookletEditorForm" class="form-grid" data-id="${escv(book.id||'')}">
       <input name="title" value="${escv(book.title||'')}" placeholder="اسم الملزمة" required>
       <select name="teacherId" required><option value="">اختر المدرس</option>${teachers().filter(item=>String(item.status||'active')==='active'||String(item.id)===String(book.teacher_id)).map(item=>`<option value="${escv(item.id)}" ${String(item.id)===String(book.teacher_id)?'selected':''}>${escv(item.name)}</option>`).join('')}</select>
@@ -75,7 +85,12 @@
       <input name="term" value="${escv(book.term||'')}" placeholder="الفصل">
       <input name="edition" value="${escv(book.edition||book.year||'')}" placeholder="الإصدار أو السنة">
       <input name="price" type="number" min="0" value="${Number(book.price||0)}" placeholder="السعر" required>
-      <input name="teacherShare" type="number" min="0" max="100" value="${Number(book.teacher_share_percent||0)}" placeholder="نسبة المدرس %">
+      <fieldset class="alin-booklet-shares"><legend>تقسيم أرباح هذه الملزمة</legend>
+        <label>حصة المنصة %<input name="platformShare" data-booklet-share="platform" type="number" min="0" max="100" step="0.01" value="${shares.platform}" required></label>
+        <label>حصة المدرس %<input name="teacherShare" data-booklet-share="teacher" type="number" min="0" max="100" step="0.01" value="${shares.teacher}" required></label>
+        <label>حصة المكتبة %<input name="libraryShare" data-booklet-share="library" type="number" min="0" max="100" step="0.01" value="${shares.library}" required></label>
+        <div id="alinBookletShareSummary" class="alin-booklet-share-summary" aria-live="polite"></div>
+      </fieldset>
       <label>غلاف الملزمة<input name="cover" type="file" accept="image/*"></label>
       <label>ملف PDF ${book.file_path?'(اتركه فارغًا للاحتفاظ بالحالي)':''}<input name="bookletFile" type="file" accept=".pdf,application/pdf" ${book.file_path?'':'required'}></label>
       <textarea name="adminNote" rows="3" placeholder="ملاحظة داخلية">${escv(book.admin_note||'')}</textarea>
@@ -83,11 +98,26 @@
     </form>`;
   }
 
+  function updateBookletShareSummary(){
+    const form=document.getElementById('alinBookletEditorForm');if(!form)return;
+    const data=new FormData(form);
+    const shares={platform:pct(data.get('platformShare')),teacher:pct(data.get('teacherShare')),library:pct(data.get('libraryShare'))};
+    const total=shareTotal(shares);
+    const price=Math.max(0,Number(data.get('price')||0));
+    const summary=document.getElementById('alinBookletShareSummary');if(!summary)return;
+    const ok=Math.abs(total-100)<0.001;
+    const amounts={platform:Math.round(price*shares.platform/100),teacher:Math.round(price*shares.teacher/100),library:Math.round(price*shares.library/100)};
+    summary.classList.toggle('ok',ok);summary.classList.toggle('err',!ok);
+    summary.innerHTML=`<b>المجموع: ${total}% ${ok?'✓':'— يجب أن يساوي 100%'}</b><small>على سعر ${moneyv(price)} د.ع تقريباً: المنصة ${moneyv(amounts.platform)} • المدرس ${moneyv(amounts.teacher)} • المكتبة ${moneyv(amounts.library)}</small>`;
+  }
+
   function openBookletEditor(id=''){
     const book=id?books().find(item=>String(item.id)===String(id)):{};
     if(id&&!book)return;
     const modal=ensureModal();
     modal.querySelector('#alinBookletEditorBody').innerHTML=`<h2>${id?'تعديل الملزمة':'إضافة ملزمة'}</h2>${formHtml(book||{})}`;
+    modal.querySelectorAll('[data-booklet-share], input[name="price"]').forEach(input=>input.addEventListener('input',updateBookletShareSummary));
+    updateBookletShareSummary();
     modal.classList.remove('hidden');
     modal.hidden=false;
   }
@@ -109,9 +139,11 @@
     const title=String(data.get('title')||'').trim();
     const teacherId=String(data.get('teacherId')||'').trim();
     const price=Number(data.get('price')||0);
+    const shares={platform:pct(data.get('platformShare')),teacher:pct(data.get('teacherShare')),library:pct(data.get('libraryShare'))};
     if(!title)return alert('اكتب اسم الملزمة');
     if(!teacherId)return alert('اختر المدرس');
     if(!Number.isFinite(price)||price<0)return alert('السعر غير صحيح');
+    if(Math.abs(shareTotal(shares)-100)>=0.001)return alert('مجموع نسب المنصة والمدرس والمكتبة يجب أن يساوي 100% بالضبط');
     try{
       const coverFile=data.get('cover');
       const pdfFile=data.get('bookletFile');
@@ -129,7 +161,9 @@
         edition:String(data.get('edition')||'').trim(),
         year:String(data.get('edition')||'').trim(),
         price,
-        teacher_share_percent:Math.max(0,Math.min(100,Number(data.get('teacherShare')||0))),
+        platform_share_percent:shares.platform,
+        teacher_share_percent:shares.teacher,
+        library_share_percent:shares.library,
         admin_note:String(data.get('adminNote')||'').trim(),
         cover_path:coverPath,file_path:filePath,file_name:fileName,
         updated_at:new Date().toISOString(),
@@ -199,7 +233,8 @@
   function card(book){
     const status=statusValue(book);
     const cover=coverUrl(book);
-    return `<article class="admin-v128-card"><div class="admin-v128-cover">${cover?`<img src="${escv(cover)}" alt="غلاف ${escv(book.title||'الملزمة')}">`:'<span>آ</span>'}<em class="admin-v128-status ${escv(status)}">${statusLabel(status)}</em></div><div class="admin-v128-card-body"><h3>${escv(book.title||'ملزمة بدون اسم')}</h3><div class="admin-v128-card-meta"><div><small>المدرس</small><b>${escv(teacherName(book.teacher_id))}</b></div><div><small>المادة / الصف</small><b>${escv(book.subject||'—')} • ${escv(book.grade||'—')}</b></div><div><small>الإصدار</small><b>${escv(book.edition||book.year||'—')}</b></div><div><small>الطلبات</small><b>${orderCount(book.id)}</b></div><div><small>السعر</small><b class="price">${moneyv(book.price)} د.ع</b></div></div><div class="admin-v128-card-actions"><button type="button" class="secondary" data-alin-click="previewBooklet" data-alin-click-arg0="${escv(book.id)}">معاينة</button><button type="button" class="secondary" data-alin-click="editBooklet" data-alin-click-arg0="${escv(book.id)}">تعديل</button><button type="button" class="warning" data-alin-click="setBookStatus" data-alin-click-arg0="${escv(book.id)}" data-alin-click-arg1="${status==='published'?'hidden':'published'}">${status==='published'?'إخفاء':'نشر'}</button><button type="button" class="danger" data-alin-click="deleteBooklet" data-alin-click-arg0="${escv(book.id)}">حذف</button></div></div></article>`;
+    const shares=sharesFor(book);
+    return `<article class="admin-v128-card"><div class="admin-v128-cover">${cover?`<img src="${escv(cover)}" alt="غلاف ${escv(book.title||'الملزمة')}">`:'<span>آ</span>'}<em class="admin-v128-status ${escv(status)}">${statusLabel(status)}</em></div><div class="admin-v128-card-body"><h3>${escv(book.title||'ملزمة بدون اسم')}</h3><div class="admin-v128-card-meta"><div><small>المدرس</small><b>${escv(teacherName(book.teacher_id))}</b></div><div><small>المادة / الصف</small><b>${escv(book.subject||'—')} • ${escv(book.grade||'—')}</b></div><div><small>الإصدار</small><b>${escv(book.edition||book.year||'—')}</b></div><div><small>الطلبات</small><b>${orderCount(book.id)}</b></div><div><small>توزيع الربح</small><b>منصة ${shares.platform}% • مدرس ${shares.teacher}% • مكتبة ${shares.library}%</b></div><div><small>السعر</small><b class="price">${moneyv(book.price)} د.ع</b></div></div><div class="admin-v128-card-actions"><button type="button" class="secondary" data-alin-click="previewBooklet" data-alin-click-arg0="${escv(book.id)}">معاينة</button><button type="button" class="secondary" data-alin-click="editBooklet" data-alin-click-arg0="${escv(book.id)}">تعديل</button><button type="button" class="warning" data-alin-click="setBookStatus" data-alin-click-arg0="${escv(book.id)}" data-alin-click-arg1="${status==='published'?'hidden':'published'}">${status==='published'?'إخفاء':'نشر'}</button><button type="button" class="danger" data-alin-click="deleteBooklet" data-alin-click-arg0="${escv(book.id)}">حذف</button></div></div></article>`;
   }
 
   function renderBookletsAdmin(){

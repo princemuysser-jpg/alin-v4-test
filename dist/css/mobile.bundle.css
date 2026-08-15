@@ -2374,3 +2374,6 @@ body.store-mobile .alin-cloud-rc53{left:12px!important;bottom:calc(var(--alin-mo
 @media(min-width:651px) and (max-width:1100px){
   #v99NewArrivals .v99-mini-media{min-height:300px}
 }
+
+/* ALIN per-booklet profit split */
+.alin-booklet-shares{grid-column:1/-1;margin:2px 0;padding:12px;border:1px solid #dbe3ed;border-radius:16px;background:#fbfcfe;display:grid;grid-template-columns:1fr;gap:10px}.alin-booklet-shares legend{padding:0 8px;font-weight:900;color:#17345d}.alin-booklet-shares label{display:grid;gap:6px;font-size:12px;font-weight:800;color:#304765}.alin-booklet-shares input{width:100%;height:44px;border:1px solid #dce4ed;border-radius:12px;background:#fff;padding:0 11px;font:inherit}.alin-booklet-share-summary{padding:10px 12px;border-radius:12px;background:#fff5dc;color:#825a0c;display:grid;gap:3px}.alin-booklet-share-summary.ok{background:#edf9f2;color:#12633c}.alin-booklet-share-summary.err{background:#fff0ef;color:#9d2922}.alin-booklet-share-summary small{font-weight:700;opacity:.85}

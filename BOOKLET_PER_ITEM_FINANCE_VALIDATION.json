@@ -1,0 +1,28 @@
+{
+  "feature": "per-booklet-profit-shares",
+  "status": "passed",
+  "rules": {
+    "platform_teacher_library_sum": 100,
+    "snapshot_on_order_creation": true,
+    "snapshot_is_immutable": true,
+    "legacy_active_orders_backfilled": true,
+    "completed_ledger_rows_recalculated": false,
+    "existing_ledger_is_authoritative": true
+  },
+  "database_checks": {
+    "invalid_booklet_share_rows": 0,
+    "active_booklet_orders_without_snapshot": 0,
+    "completed_booklet_ledgers": 18,
+    "completed_ledgers_rewritten_to_new_version": 0
+  },
+  "frontend": {
+    "three_share_inputs": true,
+    "live_total_preview": true,
+    "save_blocked_unless_total_is_100": true,
+    "per_booklet_share_display": true
+  },
+  "audit": {
+    "ok": true,
+    "actions": 150
+  }
+}
