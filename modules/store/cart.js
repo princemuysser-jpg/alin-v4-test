@@ -24,8 +24,11 @@
   function rows(){return Array.isArray(window.cart)?window.cart:(window.cart=[])}
   function booklets(){return Array.isArray(window.db?.booklets)?window.db.booklets:[]}
   function products(){return Array.isArray(window.db?.products)?window.db.products:[]}
+  function productVariants(){return Array.isArray(window.db?.productVariants)?window.db.productVariants:[]}
   function findBooklet(id){return booklets().find(item=>same(item.id,id))||null}
   function findProduct(id){return products().find(item=>same(item.id,id))||null}
+  function variantsForProduct(id){return productVariants().filter(item=>same(item.product_id,id)&&String(item.status||'active')==='active').sort((a,b)=>num(a.sort_order)-num(b.sort_order)||String(a.code||'').localeCompare(String(b.code||''),'ar'))}
+  function findVariant(productId,variantId){return variantsForProduct(productId).find(item=>same(item.id,variantId))||null}
   function itemCurrentPrice(item,purchaseType='unit'){
     if(purchaseType==='pack'&&num(item?.pack_price)>0&&num(item?.pack_size)>=2)return num(item.pack_price);
     const base=num(item?.unit_price??item?.price);
@@ -54,6 +57,10 @@
     const source=normalized.item;
     const purchaseType=normalized.kind==='product'&&String(line?.purchase_type||line?.purchaseType||'unit')==='pack'&&num(source?.pack_price)>0&&num(source?.pack_size)>=2?'pack':'unit';
     const packSize=purchaseType==='pack'?Math.floor(num(source?.pack_size)||0):null;
+    const variants=normalized.kind==='product'?variantsForProduct(normalized.id):[];
+    const variantId=String(line?.variant_id||line?.variantId||'').trim();
+    const variant=variantId?findVariant(normalized.id,variantId):null;
+    if(variants.length&&!variant)return null;
     return {
       kind:normalized.kind,
       id:normalized.id,
@@ -61,7 +68,11 @@
       price:source?itemCurrentPrice(source,purchaseType):num(line?.price),
       qty:Math.max(1,Math.min(100,Math.floor(num(line?.qty)||1))),
       purchase_type:purchaseType,
-      pack_size:packSize
+      pack_size:packSize,
+      variant_id:variant?String(variant.id):'',
+      variant_code:variant?String(variant.code||''):'',
+      variant_name:variant?String(variant.name||variant.code||''):'',
+      variant_image_path:variant?String(variant.image_path||''):''
     };
   }
 
@@ -156,7 +167,7 @@
     renderCartBadge();
   }
 
-  function addToCart(kind,id,qty=1,purchaseType='unit'){
+  function addToCart(kind,id,qty=1,purchaseType='unit',variantId=''){
     const normalized=normalizeKindAndId(kind,id);
     if(!normalized.item){
       if(typeof window.toast==='function')window.toast('تعذر العثور على المادة في المتجر');
@@ -166,15 +177,21 @@
     const type=normalized.kind==='product'&&purchaseType==='pack'&&num(normalized.item.pack_price)>0&&num(normalized.item.pack_size)>=2?'pack':'unit';
     const packSize=type==='pack'?Math.floor(num(normalized.item.pack_size)):null;
     const unitsPerQty=type==='pack'?packSize:1;
-    if(normalized.kind==='product'&&num(normalized.item.stock)<=0){alert('المنتج نافد');return false}
-    const current=rows().find(line=>line.kind===normalized.kind&&same(line.id,normalized.id)&&String(line.purchase_type||'unit')===type);
+    const variants=normalized.kind==='product'?variantsForProduct(normalized.id):[];
+    const variant=variants.length?findVariant(normalized.id,variantId):null;
+    if(variants.length&&!variant){alert('اختر تصميم المنتج قبل إضافته إلى السلة');return false}
+    const availableStock=variant?num(variant.stock):num(normalized.item.stock);
+    if(normalized.kind==='product'&&availableStock<=0){alert(variant?'هذا التصميم نافد حالياً':'المنتج نافد');return false}
+    const variantKey=variant?String(variant.id):'';
+    const current=rows().find(line=>line.kind===normalized.kind&&same(line.id,normalized.id)&&String(line.purchase_type||'unit')===type&&String(line.variant_id||'')===variantKey);
     const nextQty=(current?.qty||0)+amount;
-    if(normalized.kind==='product'&&num(normalized.item.stock)<nextQty*unitsPerQty){alert('الكمية المطلوبة غير متوفرة');return false}
+    if(normalized.kind==='product'&&availableStock<nextQty*unitsPerQty){alert(variant?'الكمية المطلوبة من هذا التصميم غير متوفرة':'الكمية المطلوبة غير متوفرة');return false}
     const price=itemCurrentPrice(normalized.item,type);
-    if(current){current.qty=nextQty;current.title=normalized.item.title||normalized.item.name||current.title;current.price=price;current.purchase_type=type;current.pack_size=packSize}
-    else rows().push({kind:normalized.kind,id:normalized.id,title:normalized.item.title||normalized.item.name||'مادة',price,qty:amount,purchase_type:type,pack_size:packSize});
+    const variantData=variant?{variant_id:String(variant.id),variant_code:String(variant.code||''),variant_name:String(variant.name||variant.code||''),variant_image_path:String(variant.image_path||'')}:{variant_id:'',variant_code:'',variant_name:'',variant_image_path:''};
+    if(current){Object.assign(current,{qty:nextQty,title:normalized.item.title||normalized.item.name||current.title,price,purchase_type:type,pack_size:packSize,...variantData})}
+    else rows().push({kind:normalized.kind,id:normalized.id,title:normalized.item.title||normalized.item.name||'مادة',price,qty:amount,purchase_type:type,pack_size:packSize,...variantData});
     cartSave();
-    if(typeof window.toast==='function')window.toast(type==='pack'?'تمت إضافة الباكيت إلى السلة':'تمت الإضافة إلى السلة');
+    if(typeof window.toast==='function')window.toast(variant?`تمت إضافة التصميم ${variant.code||variant.name} إلى السلة`:(type==='pack'?'تمت إضافة الباكيت إلى السلة':'تمت الإضافة إلى السلة'));
     return true;
   }
 
@@ -183,7 +200,9 @@
     const next=Math.max(1,Math.min(100,num(line.qty)+num(delta)));
     const source=line.kind==='booklet'?findBooklet(line.id):findProduct(line.id);
     const unitsPerQty=line.purchase_type==='pack'?Math.max(2,num(line.pack_size||source?.pack_size)):1;
-    if(line.kind==='product'&&source&&num(source.stock)<next*unitsPerQty){alert('الكمية المطلوبة غير متوفرة');return}
+    const variant=line.kind==='product'&&line.variant_id?findVariant(line.id,line.variant_id):null;
+    const availableStock=variant?num(variant.stock):num(source?.stock);
+    if(line.kind==='product'&&source&&availableStock<next*unitsPerQty){alert(variant?'الكمية المطلوبة من هذا التصميم غير متوفرة':'الكمية المطلوبة غير متوفرة');return}
     line.qty=next;cartSave();openCart({kind:line.kind,id:line.id});
   }
 
@@ -288,8 +307,9 @@
       box.innerHTML='<div class="alin-cart-shell"><div class="alin-cart-main"><div class="alin-cart-empty"><div class="alin-empty-icon">🛒</div><h3>السلة فارغة حالياً</h3><p>أضف ملازم أو قرطاسية أو هدايا ثم ارجع لإتمام الطلب.</p><button type="button" data-alin-click="@close-checkout-scroll-store">تصفح المتجر</button></div></div><aside class="alin-cart-side"><h3>ملخص الطلب</h3><div class="alin-summary-card"><div class="alin-summary-rows"><div><span>عدد المواد</span><b>0</b></div><div><span>الإجمالي</span><b>0 د.ع</b></div></div></div></aside></div>';
     }else{
       const itemsHtml=list.map((line,index)=>{
-        const source=line.kind==='booklet'?findBooklet(line.id):findProduct(line.id),image=imageFor(source),lineTotal=num(line.price)*num(line.qty);
-        return `<article class="alin-cart-item"><div class="alin-cart-thumb">${image?`<img src="${escText(image)}" alt="${escText(line.title)}">`:`<span>${itemIcon(line.kind)}</span>`}</div><div class="alin-cart-info"><h3 class="alin-cart-title">${escText(line.title)}</h3><div class="alin-cart-meta"><span class="alin-cart-chip">${line.kind==='booklet'?'ملزمة':line.purchase_type==='pack'?`باكيت ${formatMoney(line.pack_size)} قطع`:'مفرد'}</span><span class="alin-cart-chip">السعر: ${formatMoney(line.price)} د.ع</span></div><div class="alin-cart-price">${formatMoney(lineTotal)} د.ع</div></div><div class="alin-cart-controls"><div class="alin-qty-box"><button type="button" aria-label="تقليل الكمية" data-alin-click="cartQty" data-alin-click-arg0="${index}" data-alin-click-arg1="-1" data-alin-click-arg1-type="number">−</button><b>${line.qty}</b><button type="button" aria-label="زيادة الكمية" data-alin-click="cartQty" data-alin-click-arg0="${index}" data-alin-click-arg1="1" data-alin-click-arg1-type="number">+</button></div><button type="button" class="alin-remove-btn" data-alin-click="cartRemove" data-alin-click-arg0="${index}">حذف من السلة</button></div></article>`;
+        const source=line.kind==='booklet'?findBooklet(line.id):findProduct(line.id),image=line.variant_image_path?imageFor({image_path:line.variant_image_path}):imageFor(source),lineTotal=num(line.price)*num(line.qty);
+        const variantMeta=line.variant_id?`<span class="alin-cart-chip alin-cart-variant-chip">التصميم: ${escText([line.variant_code,line.variant_name].filter(Boolean).join(' — '))}</span>`:'';
+        return `<article class="alin-cart-item"><div class="alin-cart-thumb">${image?`<img src="${escText(image)}" alt="${escText(line.title)}">`:`<span>${itemIcon(line.kind)}</span>`}</div><div class="alin-cart-info"><h3 class="alin-cart-title">${escText(line.title)}</h3><div class="alin-cart-meta"><span class="alin-cart-chip">${line.kind==='booklet'?'ملزمة':line.purchase_type==='pack'?`باكيت ${formatMoney(line.pack_size)} قطع`:'مفرد'}</span>${variantMeta}<span class="alin-cart-chip">السعر: ${formatMoney(line.price)} د.ع</span></div><div class="alin-cart-price">${formatMoney(lineTotal)} د.ع</div></div><div class="alin-cart-controls"><div class="alin-qty-box"><button type="button" aria-label="تقليل الكمية" data-alin-click="cartQty" data-alin-click-arg0="${index}" data-alin-click-arg1="-1" data-alin-click-arg1-type="number">−</button><b>${line.qty}</b><button type="button" aria-label="زيادة الكمية" data-alin-click="cartQty" data-alin-click-arg0="${index}" data-alin-click-arg1="1" data-alin-click-arg1-type="number">+</button></div><button type="button" class="alin-remove-btn" data-alin-click="cartRemove" data-alin-click-arg0="${index}">حذف من السلة</button></div></article>`;
       }).join('');
       box.innerHTML=`<div class="alin-cart-shell"><section class="alin-cart-main"><div class="alin-cart-head"><div><h2>سلة آلين</h2><p>راجع المواد والكميات قبل تأكيد الطلب.</p></div><span class="alin-cart-badge">${count}</span></div><div class="alin-cart-list">${itemsHtml}</div></section><aside class="alin-cart-side"><h3>ملخص الطلب</h3><div class="alin-cart-side-content"><div class="alin-summary-card"><div class="alin-summary-rows"><div><span>عدد المواد</span><b>${count}</b></div><div><span>المجموع الفرعي</span><b id="cartSubtotalValue">${formatMoney(pricing.subtotal)} د.ع</b></div><div id="cartDiscountRow" ${pricing.discount>0?'':'hidden'}><span>خصم الكوبون</span><b id="cartDiscountValue">− ${formatMoney(pricing.discount)} د.ع</b></div></div><div class="alin-summary-total"><div>الإجمالي النهائي</div><b id="cartFinalValue">${formatMoney(pricing.total)} د.ع</b></div><div class="coupon-box"><input id="couponInput" value="${escText(pricing.coupon?.code||'')}" placeholder="أدخل كود الخصم"><button type="button" data-alin-click="checkCoupon">تطبيق</button></div><div id="couponMsg">${pricing.coupon&&pricing.discount>0?`تم تطبيق كوبون ${escText(pricing.coupon.code)} — الخصم ${formatMoney(pricing.discount)} د.ع`:''}</div><div class="alin-cart-form"><h4>بيانات الطالب والاستلام</h4><div class="form-grid"><input id="studentName" placeholder="اسم الطالب الكامل"><input id="studentPhone" placeholder="رقم الهاتف"></div><textarea id="orderNotes" rows="2" maxlength="1000" placeholder="ملاحظات على الطلب (اختياري)"></textarea>${fulfillmentHtml()}</div></div><button type="button" class="alin-cart-submit" data-alin-click="confirmCartCheckout">تأكيد الطلب الآن</button></aside></div>`;
     }

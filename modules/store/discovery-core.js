@@ -20,6 +20,8 @@
   const now=()=>Date.now();
   const imageUrl=path=>{try{return path?(typeof mediaUrl==='function'?mediaUrl(path):path):''}catch(_){return path||''}};
   const teacherBy=id=>(window.db?.accounts?.teachers||[]).find(row=>String(row.id)===String(id));
+  const productVariants=()=>Array.isArray(window.db?.productVariants)?window.db.productVariants:[];
+  const variantsForProduct=id=>productVariants().filter(row=>String(row.product_id)===String(id)&&String(row.status||'active')==='active').sort((a,b)=>num(a.sort_order)-num(b.sort_order)||String(a.code||'').localeCompare(String(b.code||''),'ar'));
   const statusVisible=status=>!['hidden','inactive','deleted','archived','draft'].includes(String(status||'published'));
   const hasSb=()=>typeof window.sb!=='undefined'&&!!window.sb;
   const isDesktop=()=>document.body.classList.contains('store-desktop');
@@ -47,15 +49,21 @@
         dealPrice:num(row.deal_price||row.sale_price),dealStart:row.deal_start,dealEnd:row.deal_end,description:row.description||'',status:row.status
       };
     });
-    const products=(window.db?.products||[]).filter(row=>statusVisible(row.status)).map(row=>({
-      kind:row.type||'product',id:String(row.id),raw:row,title:row.name||row.title||'منتج',teacher:row.teacher||'',teacherId:row.teacher_id||'',
-      subject:row.subject||row.category||'',grade:row.grade||'',category:row.category||row.type||'',categoryId:row.category_id||'',subcategoryId:row.subcategory_id||'',price:num(row.unit_price??row.price),originalPrice:num(row.original_price),
-      unitPrice:num(row.unit_price??row.sale_price??row.price),packPrice:num(row.pack_price),packSize:num(row.pack_size),
-      images:(Array.isArray(row.images)?row.images:[]).map(String).filter(Boolean),
-      stock:row.stock==null?null:num(row.stock),image:(Array.isArray(row.images)&&row.images[0])||row.image_path||row.cover_path||'',cover:(Array.isArray(row.images)&&row.images[0])||row.image_path||row.cover_path||'',created:row.created_at||'',
-      sold:num(row.sales_count)||counts[`${row.type||'product'}:${row.id}`]||counts[`product:${row.id}`]||0,badge:row.badge||'',prep:num(row.prep_minutes),
-      dealPrice:num(row.deal_price||row.sale_price),dealStart:row.deal_start,dealEnd:row.deal_end,description:row.description||'',status:row.status
-    }));
+    const products=(window.db?.products||[]).filter(row=>statusVisible(row.status)).map(row=>{
+      const variants=variantsForProduct(row.id).map(variant=>({
+        id:String(variant.id),code:String(variant.code||''),name:String(variant.name||variant.code||'تصميم'),
+        image:String(variant.image_path||''),stock:num(variant.stock),sortOrder:num(variant.sort_order),status:String(variant.status||'active')
+      }));
+      return {
+        kind:row.type||'product',id:String(row.id),raw:row,title:row.name||row.title||'منتج',teacher:row.teacher||'',teacherId:row.teacher_id||'',
+        subject:row.subject||row.category||'',grade:row.grade||'',category:row.category||row.type||'',categoryId:row.category_id||'',subcategoryId:row.subcategory_id||'',price:num(row.unit_price??row.price),originalPrice:num(row.original_price),
+        unitPrice:num(row.unit_price??row.sale_price??row.price),packPrice:num(row.pack_price),packSize:num(row.pack_size),variants,
+        images:(Array.isArray(row.images)?row.images:[]).map(String).filter(Boolean),
+        stock:row.stock==null?null:num(row.stock),image:(Array.isArray(row.images)&&row.images[0])||row.image_path||row.cover_path||variants[0]?.image||'',cover:(Array.isArray(row.images)&&row.images[0])||row.image_path||row.cover_path||variants[0]?.image||'',created:row.created_at||'',
+        sold:num(row.sales_count)||counts[`${row.type||'product'}:${row.id}`]||counts[`product:${row.id}`]||0,badge:row.badge||'',prep:num(row.prep_minutes),
+        dealPrice:num(row.deal_price||row.sale_price),dealStart:row.deal_start,dealEnd:row.deal_end,description:row.description||'',status:row.status
+      };
+    });
     return [...booklets,...products];
   }
 
@@ -149,7 +157,7 @@
     if(status)status.textContent=student?`مرحباً ${student.name}`:'التسجيل اختياري';
   }
 
-  const api={get FAV_KEY(){return favoriteStorageKey()},favoriteStorageKey,profileStorageKey,saveFavoriteKeys,state,$,$$,esc,num,fmt,now,imageUrl,teacherBy,statusVisible,hasSb,isDesktop,isMobile,stableKey,canonicalItems,activeDeal,effectivePrice,badges,findItem,favoriteKeys,favoriteItems,isFavorite,openModal,closeModal,studentProfile,updateDesktopHeader,updateMobileHeader};
+  const api={get FAV_KEY(){return favoriteStorageKey()},favoriteStorageKey,profileStorageKey,saveFavoriteKeys,state,$,$$,esc,num,fmt,now,imageUrl,teacherBy,statusVisible,hasSb,isDesktop,isMobile,stableKey,productVariants,variantsForProduct,canonicalItems,activeDeal,effectivePrice,badges,findItem,favoriteKeys,favoriteItems,isFavorite,openModal,closeModal,studentProfile,updateDesktopHeader,updateMobileHeader};
   window.AlinStoreDiscovery=api;
 
   window.v99ToggleFavorite=(kind,id)=>{

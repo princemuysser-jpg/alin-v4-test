@@ -6,7 +6,7 @@
   const config=window.ALIN_CONFIG||{};
   const emptyDb=()=>({
     accounts:{all:[],teachers:[],libraries:[],couriers:[],accountants:[]},
-    booklets:[],products:[],categories:[],productSubcategories:[],banners:[],coupons:[],notifications:[],orders:[],
+    booklets:[],products:[],productVariants:[],categories:[],productSubcategories:[],banners:[],coupons:[],notifications:[],orders:[],
     permits:[],ledger:[],settlements:[],withdrawals:[],audit:[],auditLogs:[],couriers:[],deliveryAreas:[],
     teacherRequests:[],orderTimeline:[],backupLogs:[],systemHealthLogs:[],settings:{storeType:'booklet'}
   });

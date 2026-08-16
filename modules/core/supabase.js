@@ -8,13 +8,13 @@
   const VERSION=window.ALIN_CONFIG?.version||'4.2.0';
   const TABLES=[
     'settings','accounts','delivery_areas','couriers','courier_areas','categories','product_subcategories',
-    'booklets','teacher_requests','teacher_request_versions','products','orders',
+    'booklets','teacher_requests','teacher_request_versions','products','product_variants','orders',
     'order_timeline','permits','ledger','settlements','withdrawals','notifications',
     'banners','coupons','product_reviews','stock_alerts','bundles','bundle_items',
     'audit_events','notification_reads','account_permissions','backup_logs','system_health_logs'
   ];
   const PUBLIC_TABLES=[
-    'settings','accounts','delivery_areas','categories','product_subcategories','booklets','products','banners','coupons','notifications'
+    'settings','accounts','delivery_areas','categories','product_subcategories','booklets','products','product_variants','banners','coupons','notifications'
   ];
   const ROLE_TABLES={
     admin:TABLES,
@@ -40,7 +40,7 @@
   };
   const REQUIRED_TABLES=['settings','accounts','booklets','products','orders','ledger','settlements','notifications','audit_events'];
   const SORTED_TABLES=new Set(['orders','notifications','audit_events','order_timeline','settlements']);
-  const CRITICAL_TABLES=new Set(['orders','order_timeline','coupons','products','ledger','settlements','withdrawals']);
+  const CRITICAL_TABLES=new Set(['orders','order_timeline','coupons','products','product_variants','ledger','settlements','withdrawals']);
   const NO_CLIENT_ID=new Set(['settings','courier_areas']);
   const QUEUE_KEY='alin_rc7_offline_queue';
   const DEAD_QUEUE_KEY='alin_rc7_failed_queue';
@@ -50,7 +50,7 @@
   const REFRESH_EVENT='alin:data-refreshed';
   const MUTATION_EVENT='alin:cloud-mutation';
   const TABLE_TO_DB={
-    booklets:'booklets',products:'products',categories:'categories',product_subcategories:'productSubcategories',banners:'banners',orders:'orders',
+    booklets:'booklets',products:'products',product_variants:'productVariants',categories:'categories',product_subcategories:'productSubcategories',banners:'banners',orders:'orders',
     permits:'permits',ledger:'ledger',settlements:'settlements',withdrawals:'withdrawals',audit_events:'audit',couriers:'couriers',
     delivery_areas:'deliveryAreas',courier_areas:'courierAreas',notifications:'notifications',
     teacher_requests:'teacherRequests',teacher_request_versions:'teacherRequestVersions',
@@ -73,7 +73,7 @@
   const readJson=(key,fallback,storage=localStorage)=>{try{return JSON.parse(storage.getItem(key)||'null')??fallback}catch(_){return fallback}};
   const writeJson=(key,value,storage=localStorage)=>{try{storage.setItem(key,JSON.stringify(value))}catch(_){}};
   function publicSnapshot(snapshot){
-    return {booklets:snapshot.booklets||[],products:snapshot.products||[],categories:snapshot.categories||[],productSubcategories:snapshot.productSubcategories||[],banners:snapshot.banners||[],coupons:snapshot.coupons||[],deliveryAreas:snapshot.deliveryAreas||[],settings:snapshot.settings||{storeType:'booklet'},accounts:{all:[],teachers:snapshot.accounts?.teachers||[],libraries:snapshot.accounts?.libraries||[],couriers:[],accountants:[]},notifications:[]};
+    return {booklets:snapshot.booklets||[],products:snapshot.products||[],productVariants:snapshot.productVariants||[],categories:snapshot.categories||[],productSubcategories:snapshot.productSubcategories||[],banners:snapshot.banners||[],coupons:snapshot.coupons||[],deliveryAreas:snapshot.deliveryAreas||[],settings:snapshot.settings||{storeType:'booklet'},accounts:{all:[],teachers:snapshot.accounts?.teachers||[],libraries:snapshot.accounts?.libraries||[],couriers:[],accountants:[]},notifications:[]};
   }
   function persistSnapshot(snapshot){
     if(window.current?.id){writeJson(SESSION_SNAPSHOT_KEY,{at:nowIso(),snapshot},sessionStorage);return}
@@ -380,6 +380,7 @@
       productSubcategories:Array.isArray(raw.productSubcategories)?raw.productSubcategories:[],
       booklets:Array.isArray(raw.booklets)?raw.booklets:[],
       products:Array.isArray(raw.products)?raw.products:[],
+      productVariants:Array.isArray(raw.productVariants)?raw.productVariants:[],
       banners:Array.isArray(raw.banners)?raw.banners:[],
       coupons:Array.isArray(raw.coupons)?raw.coupons:[],
       notifications:[]
@@ -476,7 +477,7 @@
 
   const REALTIME_EVENT='alin:realtime-change';
   const STAFF_REALTIME_TABLES=Object.freeze({
-    admin:['orders','notifications','booklets','products','accounts','couriers','ledger','settlements'],
+    admin:['orders','notifications','booklets','products','product_variants','accounts','couriers','ledger','settlements'],
     accountant:['orders','notifications','accounts','ledger','settlements'],
     teacher:['orders','notifications','booklets','ledger','settlements'],
     library:['orders','notifications','booklets','ledger','settlements'],

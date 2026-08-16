@@ -1082,9 +1082,11 @@
   function normalizeCheckoutItems(lines){
     const booklets=Array.isArray(window.db?.booklets)?window.db.booklets:[];
     const products=Array.isArray(window.db?.products)?window.db.products:[];
+    const productVariants=Array.isArray(window.db?.productVariants)?window.db.productVariants:[];
     const same=(a,b)=>String(a??'')===String(b??'');
     const findBooklet=id=>booklets.find(x=>same(x.id,id))||null;
     const findProduct=id=>products.find(x=>same(x.id,id))||null;
+    const variantsForProduct=id=>productVariants.filter(x=>same(x.product_id,id)&&String(x.status||'active')==='active');
     const aliases={booklet:'booklet',booklets:'booklet','ملزمة':'booklet','ملازم':'booklet',product:'product',products:'product',stationery:'product',stationary:'product',gift:'product',gifts:'product',deal:'product',booklet_product:'product'};
     return lines.map((line,index)=>{
       let id=String(line?.id??'').trim();
@@ -1103,7 +1105,12 @@
       // إصلاح السلة القديمة محلياً حتى لا يتكرر الخطأ في الطلب التالي.
       line.id=id;line.kind=canonical;
       const purchaseType=canonical==='product'&&String(line?.purchase_type||line?.purchaseType||'unit')==='pack'?'pack':'unit';
-      return {kind:canonical,id,qty:Math.max(1,Math.min(100,Number(line?.qty)||1)),purchase_type:purchaseType};
+      const variantId=canonical==='product'?String(line?.variant_id||line?.variantId||'').trim():'';
+      if(canonical==='product'&&variantsForProduct(id).length&&!variantsForProduct(id).some(x=>same(x.id,variantId))){
+        const title=String(line?.title||product?.name||product?.title||`العنصر ${index+1}`).trim();
+        throw new Error(`اختر تصميمًا متاحًا للمنتج «${title}» قبل تأكيد الطلب`);
+      }
+      return {kind:canonical,id,qty:Math.max(1,Math.min(100,Number(line?.qty)||1)),purchase_type:purchaseType,variant_id:variantId||null};
     });
   }
 

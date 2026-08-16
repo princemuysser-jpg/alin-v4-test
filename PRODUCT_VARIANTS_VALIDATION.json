@@ -1,0 +1,25 @@
+{
+  "feature": "product_models_variants",
+  "status": "passed",
+  "database": {
+    "product_variants_table": true,
+    "order_variant_snapshot": true,
+    "checkout_variant_validation": true,
+    "variant_stock_reservation": true,
+    "variant_stock_restore_on_cancel": true,
+    "public_bootstrap_variants": true
+  },
+  "ui": {
+    "admin_variant_editor": true,
+    "variant_code_name_image_stock": true,
+    "store_variant_required": true,
+    "cart_variant_snapshot": true,
+    "admin_order_variant_visible": true,
+    "courier_variant_visible": true
+  },
+  "audit": {
+    "ok": true,
+    "errors": 0,
+    "actions": 150
+  }
+}

@@ -8,7 +8,9 @@
   const products=()=>Array.isArray(window.db?.products)?window.db.products:[];
   const categories=()=>Array.isArray(window.db?.categories)?window.db.categories:[];
   const subcategories=()=>Array.isArray(window.db?.productSubcategories)?window.db.productSubcategories:[];
+  const productVariants=()=>Array.isArray(window.db?.productVariants)?window.db.productVariants:[];
   const subcategoryById=id=>subcategories().find(item=>String(item.id)===String(id))||null;
+  const variantsForProduct=id=>productVariants().filter(item=>String(item.product_id)===String(id)).sort((a,b)=>Number(a.sort_order||0)-Number(b.sort_order||0)||String(a.code||'').localeCompare(String(b.code||''),'ar'));
   const orders=()=>Array.isArray(window.db?.orders)?window.db.orders:[];
   const root=()=>window.adminContent||document.getElementById('adminContent');
   const normalizeType=value=>{
@@ -113,6 +115,81 @@
     return `<option value="">بدون شعبة</option>`+list.map(item=>`<option value="${escv(item.id)}" ${String(selected)===String(item.id)?'selected':''}>${escv(item.name)}</option>`).join('');
   }
 
+  function variantRowHtml(variant={},index=0){
+    const id=String(variant.id||'');
+    const active=String(variant.status||'active')==='active';
+    const image=String(variant.image_path||'');
+    return `<article class="admin-product-variant-row" data-variant-id="${escv(id)}" data-current-image="${escv(image)}">
+      <div class="admin-product-variant-preview">${image?`<img src="${escv(imagePreviewUrl(image))}" alt="${escv(variant.name||variant.code||'تصميم')}">`:'<span>صورة</span>'}</div>
+      <div class="admin-product-variant-fields">
+        <label><span>كود التصميم</span><input class="alin-variant-code" maxlength="40" value="${escv(variant.code||'')}" placeholder="مثال D01"></label>
+        <label><span>اسم التصميم</span><input class="alin-variant-name" maxlength="120" value="${escv(variant.name||'')}" placeholder="مثال قمر بنفسجي"></label>
+        <label><span>المخزون</span><input class="alin-variant-stock" type="number" min="0" step="1" value="${Number(variant.stock||0)}"></label>
+        <label><span>الترتيب</span><input class="alin-variant-sort" type="number" min="0" step="1" value="${Number(variant.sort_order??index+1)}"></label>
+        <label class="admin-product-variant-file"><span>صورة التصميم</span><input class="alin-variant-image" type="file" accept="image/*"></label>
+        <label class="admin-product-variant-active"><input class="alin-variant-active-input" type="checkbox" ${active?'checked':''}><span>فعال في المتجر</span></label>
+      </div>
+      <button class="danger admin-product-variant-remove" type="button">إزالة</button>
+    </article>`;
+  }
+
+  function variantsEditorHtml(item={}){
+    const rows=item.id?variantsForProduct(item.id):[];
+    return `<section class="admin-product-variants-editor">
+      <header><div><b>تصاميم / موديلات المنتج</b><small>لكل تصميم كود وصورة ومخزون مستقل. إذا أضفت موديلات، مخزون المنتج يُحسب تلقائياً من مجموعها.</small></div><button id="alinAddProductVariant" type="button" class="secondary">+ إضافة تصميم</button></header>
+      <div id="alinProductVariantRows">${rows.map(variantRowHtml).join('')}</div>
+      <div class="admin-product-variants-note">مثال: <b>D01 — قمر بنفسجي</b>. هذا الاختيار يظهر للطالب في التفاصيل والسلة والطلب النهائي.</div>
+    </section>`;
+  }
+
+  function bindVariantEditor(){
+    const rows=document.getElementById('alinProductVariantRows'),add=document.getElementById('alinAddProductVariant'),form=document.getElementById('alinProductEditorForm');
+    if(!rows||!form)return;
+    if(!form.dataset.removedVariantIds)form.dataset.removedVariantIds='[]';
+    add?.addEventListener('click',()=>{rows.insertAdjacentHTML('beforeend',variantRowHtml({},rows.children.length));rows.lastElementChild?.querySelector('.alin-variant-code')?.focus()});
+    rows.addEventListener('click',event=>{
+      const button=event.target.closest('.admin-product-variant-remove');if(!button)return;
+      const row=button.closest('.admin-product-variant-row');if(!row)return;
+      const id=String(row.dataset.variantId||'');
+      if(id){let removed=[];try{removed=JSON.parse(form.dataset.removedVariantIds||'[]')}catch(_){removed=[]}if(!removed.includes(id))removed.push(id);form.dataset.removedVariantIds=JSON.stringify(removed)}
+      row.remove();
+    });
+  }
+
+  function collectVariantDrafts(form){
+    const rows=[...form.querySelectorAll('.admin-product-variant-row')];
+    const drafts=[];const codes=new Set();
+    for(const [index,row] of rows.entries()){
+      const code=String(row.querySelector('.alin-variant-code')?.value||'').trim();
+      const name=String(row.querySelector('.alin-variant-name')?.value||'').trim();
+      const stock=Number(row.querySelector('.alin-variant-stock')?.value||0);
+      const sortOrder=Math.max(0,Number(row.querySelector('.alin-variant-sort')?.value||index+1));
+      const active=Boolean(row.querySelector('.alin-variant-active-input')?.checked);
+      const file=row.querySelector('.alin-variant-image')?.files?.[0]||null;
+      const currentImage=String(row.dataset.currentImage||'');
+      if(!code&&!name&&!file&&!row.dataset.variantId)continue;
+      if(!code)throw new Error(`اكتب كود التصميم رقم ${index+1}`);
+      if(!name)throw new Error(`اكتب اسم التصميم ${code}`);
+      if(!Number.isFinite(stock)||stock<0)throw new Error(`مخزون التصميم ${code} غير صحيح`);
+      const key=code.toLocaleLowerCase('en-US');if(codes.has(key))throw new Error(`كود التصميم ${code} مكرر داخل نفس المنتج`);codes.add(key);
+      drafts.push({id:String(row.dataset.variantId||''),code,name,stock,sort_order:sortOrder,status:active?'active':'inactive',file,currentImage});
+    }
+    let removed=[];try{removed=JSON.parse(form.dataset.removedVariantIds||'[]')}catch(_){removed=[]}
+    return {drafts,removed:[...new Set(removed.map(String).filter(Boolean))]};
+  }
+
+  async function saveProductVariants(productId,drafts,removed){
+    const existing=variantsForProduct(productId);const existingById=new Map(existing.map(row=>[String(row.id),row]));
+    for(const draft of drafts){
+      let imagePath=draft.currentImage;
+      if(draft.file?.name)imagePath=String(await uploadImage(draft.file)||imagePath||'');
+      const payload={product_id:productId,code:draft.code,name:draft.name,stock:draft.stock,sort_order:draft.sort_order,status:draft.status,image_path:imagePath||null,updated_at:new Date().toISOString()};
+      if(draft.id&&existingById.has(draft.id))await window.update('product_variants',payload,{id:draft.id});
+      else await window.insert('product_variants',{id:typeof window.uid==='function'?window.uid('PV'):`PV-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,...payload,created_at:new Date().toISOString()});
+    }
+    for(const id of removed){if(existingById.has(String(id)))await window.update('product_variants',{status:'inactive',updated_at:new Date().toISOString()},{id:String(id)})}
+  }
+
   function productForm(item={}){
     const editing=Boolean(item.id);
     const type=normalizeType(item.type||item.category_id||'stationery');
@@ -137,6 +214,7 @@
       <label class="admin-product-images-field"><span>صور المنتج — يمكنك اختيار عدة صور (حد أقصى 8)</span><input name="images" type="file" accept="image/*" multiple></label>
       ${gallery}
       <small class="muted">أول صورة محفوظة تكون الصورة الرئيسية في بطاقة المتجر.</small>
+      ${variantsEditorHtml(item)}
       <div class="row-actions"><button type="button" data-alin-click="saveProduct">${editing?'حفظ التعديل':'إضافة المنتج'}</button><button type="button" class="secondary" data-alin-click="closeProductEditor">إلغاء</button></div>
     </form>`;
   }
@@ -159,6 +237,7 @@
     modal.querySelector('#alinProductEditorBody').innerHTML=`<h2>${id?'تعديل المنتج':'إضافة منتج جديد'}</h2>${productForm(item||{})}`;
     modal.classList.remove('hidden');
     modal.hidden=false;
+    bindVariantEditor();
   }
 
   function closeProductEditor(){
@@ -190,6 +269,7 @@
     const stock=Number(data.get('stock')||0);
     const lowStockLimit=Number(data.get('lowStockLimit')||5);
     const description=String(data.get('description')||'').trim();
+    let variantState;try{variantState=collectVariantDrafts(form)}catch(error){return alert(error.message||'بيانات التصاميم غير صحيحة')}
     if(!name)return alert('اكتب اسم المنتج');
     if(!Number.isFinite(unitPrice)||unitPrice<0)return alert('سعر المفرد غير صحيح');
     if(previousPrice&&(!Number.isFinite(previousPrice)||previousPrice<=unitPrice))return alert('السعر السابق يجب أن يكون أعلى من سعر المفرد');
@@ -213,15 +293,17 @@
         images,image_path:images[0]||null,
         status:existing?.status||'published',updated_at:new Date().toISOString()
       };
+      let productId=id;
       if(existing){
         await window.update('products',payload,{id});
         if(typeof window.audit==='function')await window.audit('product',`تعديل المنتج ${name}`);
       }else{
-        payload.id=typeof window.uid==='function'?window.uid('PR'):`PR-${Date.now()}`;
+        productId=payload.id=typeof window.uid==='function'?window.uid('PR'):`PR-${Date.now()}`;
         payload.created_at=new Date().toISOString();
         await window.insert('products',payload);
         if(typeof window.audit==='function')await window.audit('product',`إضافة المنتج ${name}`);
       }
+      await saveProductVariants(productId,variantState.drafts,variantState.removed);
       closeProductEditor();
       await reloadAndRender(renderProductsAdmin);
       if(typeof window.renderStore==='function')window.renderStore();
@@ -271,12 +353,13 @@
     const stockText=stock<=0?'نافد':stock<=low?'مخزون قليل':'متوفر';
     const currentPrice=Number(item.unit_price??item.sale_price??item.deal_price??item.price??0),previousPrice=currentPrice<Number(item.price||0)?Number(item.price||0):0;
     const packPrice=Number(item.pack_price||0),packSize=Number(item.pack_size||0);
+    const variants=variantsForProduct(item.id),activeVariants=variants.filter(row=>String(row.status||'active')==='active');
     return `<article class="admin-product-v129-card">
       <div class="admin-product-v129-image">${image?`<img src="${escv(image)}" alt="${escv(item.name||'منتج')}">`:`<span>${normalizeType(item.type)==='gift'?'🎁':'✏️'}</span>`}<em class="status ${escv(status)}">${statusLabel(status)}</em></div>
       <div class="admin-product-v129-body">
         <div class="admin-product-v129-title"><div><small>${typeLabel(item.type)} • ${escv(item.category||'عام')}${item.subcategory_id&&subcategoryById(item.subcategory_id)?` • ${escv(subcategoryById(item.subcategory_id).name)}`:''}</small><h3>${escv(item.name||item.title||'منتج')}</h3></div><div class="admin-product-price-pair"><strong>مفرد: ${moneyv(currentPrice)} د.ع</strong>${packPrice>0&&packSize>=2?`<small>باكيت (${moneyv(packSize)}): ${moneyv(packPrice)} د.ع</small>`:''}${previousPrice?`<del>${moneyv(previousPrice)} د.ع</del>`:''}</div></div>
         <p>${escv(item.description||item.details||'')}</p>
-        <div class="admin-product-v129-meta"><span class="stock ${stockClass}">${stockText}: ${moneyv(stock)}</span><span>الرمز: ${escv(item.id||'—')}</span></div>
+        <div class="admin-product-v129-meta"><span class="stock ${stockClass}">${stockText}: ${moneyv(stock)}</span>${variants.length?`<span>${activeVariants.length} تصميم فعال من ${variants.length}</span>`:''}<span>الرمز: ${escv(item.id||'—')}</span></div>
         <div class="admin-product-v129-actions"><button type="button" class="secondary" data-alin-click="editProduct" data-alin-click-arg0="${escv(item.id)}">تعديل</button><button type="button" data-alin-click="setProductStatus" data-alin-click-arg0="${escv(item.id)}" data-alin-click-arg1="${status==='published'?'hidden':'published'}">${status==='published'?'إخفاء':'نشر'}</button><button type="button" class="danger" data-alin-click="deleteProduct" data-alin-click-arg0="${escv(item.id)}">حذف</button></div>
       </div>
     </article>`;

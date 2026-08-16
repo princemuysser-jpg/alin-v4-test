@@ -61,8 +61,8 @@
     else if(action==='subcategoryMore')ctx.openProductSubcategory?.(button.dataset.subcategoryId);
     else if(action==='details'&&item)window.v99OpenDetails?.(item.kind,item.id);
     else if(action==='favorite'&&item)window.v99ToggleFavorite?.(item.kind,item.id);
-    else if(action==='cart'&&item){if(item.stock!==null&&item.stock<=0)ctx.stockForm(item);else window.addToCart?.(item.kind,item.id)}
-    else if(action==='cartQty'&&item){const quantity=Math.max(1,num($('#v99DetailQty')?.value));const purchaseType=document.querySelector('input[name="v99PurchaseType"]:checked')?.value||'unit';window.addToCart?.(item.kind,item.id,quantity,purchaseType);ctx.updateDesktopHeader();ctx.updateMobileHeader()}
+    else if(action==='cart'&&item){if(item.stock!==null&&item.stock<=0)ctx.stockForm(item);else if(Array.isArray(item.variants)&&item.variants.length){window.v99OpenDetails?.(item.kind,item.id);if(typeof window.toast==='function')window.toast('اختر التصميم ثم أضفه إلى السلة')}else window.addToCart?.(item.kind,item.id)}
+    else if(action==='cartQty'&&item){const quantity=Math.max(1,num($('#v99DetailQty')?.value));const purchaseType=document.querySelector('input[name="v99PurchaseType"]:checked')?.value||'unit';const variantInput=document.querySelector('input[name="v99Variant"]:checked');if(Array.isArray(item.variants)&&item.variants.length&&!variantInput){const hint=$('#v99VariantHint');if(hint){hint.textContent='اختر التصميم المطلوب أولاً.';hint.classList.add('is-error')}document.querySelector('.alin-product-model-picker')?.scrollIntoView?.({behavior:'smooth',block:'center'});return}window.addToCart?.(item.kind,item.id,quantity,purchaseType,variantInput?.value||'');ctx.updateDesktopHeader();ctx.updateMobileHeader()}
     else if(action==='imageThumb'){const image=$('#alinProductMainImage');if(image&&button.dataset.src){image.src=button.dataset.src;button.parentElement?.querySelectorAll('button').forEach(node=>node.classList.toggle('active',node===button))}}
     else if(action==='share'&&item)ctx.shareItem(item);
     else if(action==='stockForm'&&item)ctx.stockForm(item);
@@ -112,6 +112,12 @@
     document.addEventListener('change',event=>{
       if(event.target.matches('[data-filter]')){state.filters[event.target.dataset.filter]=event.target.value;ctx.renderEffectiveStore()}
       if(event.target.id==='v99GradeSelect')ctx.saveGrade(event.target.value);
+      if(event.target.matches('input[name="v99Variant"]')){
+        document.querySelectorAll('.alin-product-model').forEach(label=>label.classList.toggle('is-selected',label.contains(event.target)));
+        const image=$('#alinProductMainImage'),src=event.target.dataset.image||'';if(image&&src)image.src=src;
+        const hint=$('#v99VariantHint');if(hint){hint.textContent=`تم اختيار ${event.target.dataset.code||''}${event.target.dataset.name?` — ${event.target.dataset.name}`:''}`;hint.classList.remove('is-error');hint.classList.add('is-selected')}
+        const stock=$('.v99-detail-facts-stock-only span');if(stock)stock.textContent=`مخزون التصميم المختار: ${event.target.dataset.stock||0} قطعة`;
+      }
     });
 
     document.addEventListener('input',event=>{
