@@ -4,7 +4,7 @@
   'use strict';
   const ctx=window.AlinStoreDiscovery;
   if(!ctx)throw new Error('AlinStoreDiscovery core must load before details');
-  const {$,esc,num,fmt,imageUrl,state,canonicalItems,activeDeal,effectivePrice,badges,findItem,isFavorite,openModal,hasSb,stableKey}=ctx;
+  const {$,esc,num,fmt,imageUrl,state,canonicalItems,activeDeal,effectivePrice,comparisonPrice,badges,findItem,isFavorite,openModal,hasSb,stableKey}=ctx;
 
   const reviewsFor=item=>(state.tables.product_reviews||[]).filter(row=>row.kind===item.kind&&String(row.item_id)===item.id&&['approved','published'].includes(row.status||'approved'));
   const clampRating=value=>Math.max(0,Math.min(5,num(value)));
@@ -41,8 +41,8 @@
     const average=reviews.length?reviews.reduce((sum,row)=>sum+clampRating(row.rating),0)/reviews.length:0;
     const variants=Array.isArray(item.variants)?item.variants:[];
     const out=item.stock!==null&&item.stock<=0;
-    const current=effectivePrice(item),hasPrevious=activeDeal(item)&&item.price>current;
-    const discount=hasPrevious?Math.max(1,Math.round((1-current/item.price)*100)):0;
+    const current=effectivePrice(item),previous=comparisonPrice(item),hasPrevious=activeDeal(item)&&previous>current;
+    const discount=hasPrevious?Math.max(1,Math.round((1-current/previous)*100)):0;
     const reviewRows=reviews.slice(0,8).map(review=>`<article class="v99-review-card"><div class="v99-review-stars" aria-label="تقييم ${fmt(review.rating)} من 5">${starText(review.rating)}</div><p>${esc(review.comment||'تقييم بدون تعليق')}</p><small>تقييم موثّق في منصة آلين</small></article>`).join('');
     const gallery=[...(item.images||[]),item.image,...variants.map(row=>row.image)].map(String).filter(Boolean).filter((value,index,array)=>array.indexOf(value)===index);
     const galleryHtml=gallery.length?`<div class="alin-product-gallery"><div class="v99-detail-media"><img id="alinProductMainImage" src="${esc(imageUrl(gallery[0]))}" alt="${esc(item.title)}">${discount?`<span class="v99-detail-discount">خصم ${fmt(discount)}%</span>`:''}</div>${gallery.length>1?`<div class="alin-product-thumbs">${gallery.map((path,index)=>`<button type="button" class="${index===0?'active':''}" data-v99-action="imageThumb" data-src="${esc(imageUrl(path))}" aria-label="الصورة ${index+1}"><img src="${esc(imageUrl(path))}" alt=""></button>`).join('')}</div>`:''}</div>`:'<div class="v99-detail-media"><span class="v99-placeholder">ALIN</span></div>';
@@ -56,7 +56,7 @@
           <p class="v99-detail-meta-line">${esc([item.teacher,item.subject,item.grade,item.category].filter(Boolean).join(' • '))}</p>
           <div class="v99-detail-rating-summary"><span class="v99-rating-stars" aria-label="متوسط التقييم ${average.toFixed(1)} من 5">${starText(average)}</span><b>${reviews.length?average.toFixed(1):'جديد'}</b><small>${reviews.length?`${fmt(reviews.length)} تقييم`:'لا توجد تقييمات منشورة بعد'}</small></div>
           ${item.description?`<p class="v99-detail-description">${esc(item.description)}</p>`:''}
-          <div class="v99-detail-price"><strong>سعر المفرد: ${fmt(current)} د.ع</strong>${hasPrevious?`<del>${fmt(item.price)} د.ع</del><span>وفّر ${fmt(item.price-current)} د.ع</span>`:''}${item.packPrice>0&&item.packSize>=2?`<strong class="alin-pack-price">سعر الباكيت: ${fmt(item.packPrice)} د.ع <small>(${fmt(item.packSize)} قطع)</small></strong>`:''}</div>
+          <div class="v99-detail-price"><strong>سعر المفرد: ${fmt(current)} د.ع</strong>${hasPrevious?`<del>${fmt(previous)} د.ع</del><span>وفّر ${fmt(previous-current)} د.ع</span>`:''}${item.packPrice>0&&item.packSize>=2?`<strong class="alin-pack-price">سعر الباكيت: ${fmt(item.packPrice)} د.ع <small>(${fmt(item.packSize)} قطع)</small></strong>`:''}</div>
           <div class="v99-detail-facts v99-detail-facts-stock-only"><span>${out?'غير متوفر حالياً':item.stock===null?'متاح للطلب':`المخزون الكلي: ${fmt(item.stock)} قطعة`}</span></div>
           ${variantSelector}
           ${item.kind!=='booklet'&&item.packPrice>0&&item.packSize>=2?`<div class="alin-purchase-type"><label><input type="radio" name="v99PurchaseType" value="unit" checked> <span>مفرد — ${fmt(current)} د.ع</span></label><label><input type="radio" name="v99PurchaseType" value="pack"> <span>باكيت ${fmt(item.packSize)} قطع — ${fmt(item.packPrice)} د.ع</span></label></div>`:''}

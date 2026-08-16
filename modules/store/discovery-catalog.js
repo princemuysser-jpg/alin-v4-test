@@ -4,7 +4,7 @@
   'use strict';
   const ctx=window.AlinStoreDiscovery;
   if(!ctx)throw new Error('AlinStoreDiscovery core must load before catalog');
-  const {$,$$,esc,num,fmt,imageUrl,state,canonicalItems,activeDeal,effectivePrice,badges,isFavorite,statusVisible,isDesktop,isMobile,studentProfile,updateDesktopHeader,updateMobileHeader}=ctx;
+  const {$,$$,esc,num,fmt,imageUrl,state,canonicalItems,activeDeal,effectivePrice,comparisonPrice,badges,isFavorite,statusVisible,isDesktop,isMobile,studentProfile,updateDesktopHeader,updateMobileHeader}=ctx;
 
   const CATEGORY_ICON_PREFIX='store_category_icon_';
   const SECTION_VISIBLE_PREFIX='store_section_visible_';
@@ -134,6 +134,8 @@
   function card(item){
     const out=item.stock!==null&&item.stock<=0;
     const price=effectivePrice(item);
+    const previous=comparisonPrice(item);
+    const hasPrevious=activeDeal(item)&&previous>price;
     return `<article class="v99-product-card" data-v99-item="${esc(ctx.stableKey(item.kind,item.id))}">
       <button class="v99-fav" type="button" data-v99-action="favorite" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}" aria-label="المفضلة">${isFavorite(item)?'♥':'♡'}</button>
       <button class="v99-product-media" type="button" data-v99-action="details" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}" aria-label="عرض تفاصيل ${esc(item.title)}"${item.image?` style='--alin-media-image:url("${esc(imageUrl(item.image))}")'`:''}>${item.image?`<img class="alin-product-image-fit" src="${esc(imageUrl(item.image))}" alt="" loading="lazy" style="width:100%!important;height:100%!important;object-fit:contain!important;object-position:center!important;padding:0!important;margin:0!important;position:relative!important;z-index:2!important;">`:'<span class="v99-placeholder" aria-hidden="true">آ</span>'}</button>
@@ -141,7 +143,7 @@
         <h3><button class="v99-title-button" type="button" data-v99-action="details" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">${esc(item.title)}</button></h3>
         <p>${esc([item.teacher,item.subject,item.grade].filter(Boolean).join(' • '))}</p>
         <div class="v99-card-meta"><span class="v99-stock ${out?'out':''}">${item.stock===null?'متاح':out?'نافد':`متوفر: ${fmt(item.stock)}`}</span>${item.prep?`<span>تجهيز ${fmt(item.prep)} د</span>`:''}</div>
-        <div class="v99-card-price"><span>مفرد: ${fmt(price)} د.ع ${activeDeal(item)?`<del>${fmt(item.price)}</del>`:''}</span>${item.packPrice>0&&item.packSize>=2?`<small>باكيت ${fmt(item.packSize)} قطع: ${fmt(item.packPrice)} د.ع</small>`:''}</div>
+        <div class="v99-card-price"><span class="alin-current-price">مفرد: <strong>${fmt(price)} د.ع</strong>${hasPrevious?`<del title="السعر السابق">${fmt(previous)} د.ع</del>`:''}</span>${item.packPrice>0&&item.packSize>=2?`<small>باكيت ${fmt(item.packSize)} قطع: ${fmt(item.packPrice)} د.ع</small>`:''}</div>
         <div class="v99-actions"><button class="${out?'v99-alert-action':''}" data-v99-action="${out?'cart':(Array.isArray(item.variants)&&item.variants.length?'details':'cart')}" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">${out?'أبلغني':(Array.isArray(item.variants)&&item.variants.length?'اختر التصميم':'أضف للسلة')}</button><button class="v99-secondary" data-v99-action="details" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">التفاصيل</button></div>
       </div></article>`;
   }
@@ -232,8 +234,8 @@
   }
 
   function miniCard(item){
-    const current=effectivePrice(item),hasPrevious=activeDeal(item)&&item.price>current;
-    return `<article class="v99-mini-card"><div class="v99-mini-media"${item.image?` style='--alin-media-image:url("${esc(imageUrl(item.image))}")'`:''}>${item.image?`<img class="alin-product-image-fit" src="${esc(imageUrl(item.image))}" alt="" style="width:100%!important;height:100%!important;object-fit:contain!important;object-position:center!important;padding:0!important;margin:0!important;position:relative!important;z-index:2!important;">`:'<span class="v99-placeholder">آ</span>'}</div><div class="v99-mini-body"><div class="v99-badges">${badges(item).slice(0,2).map(label=>`<span class="v99-badge">${esc(label)}</span>`).join('')}</div><h3>${esc(item.title)}</h3><p>${esc([item.teacher,item.subject,item.grade].filter(Boolean).join(' • '))}</p><div class="v99-card-price"><strong>${fmt(current)} د.ع</strong>${hasPrevious?`<del>${fmt(item.price)} د.ع</del>`:''}</div><button data-v99-action="details" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">عرض</button></div></article>`;
+    const current=effectivePrice(item),previous=comparisonPrice(item),hasPrevious=activeDeal(item)&&previous>current;
+    return `<article class="v99-mini-card"><div class="v99-mini-media"${item.image?` style='--alin-media-image:url("${esc(imageUrl(item.image))}")'`:''}>${item.image?`<img class="alin-product-image-fit" src="${esc(imageUrl(item.image))}" alt="" style="width:100%!important;height:100%!important;object-fit:contain!important;object-position:center!important;padding:0!important;margin:0!important;position:relative!important;z-index:2!important;">`:'<span class="v99-placeholder">آ</span>'}</div><div class="v99-mini-body"><div class="v99-badges">${badges(item).slice(0,2).map(label=>`<span class="v99-badge">${esc(label)}</span>`).join('')}</div><h3>${esc(item.title)}</h3><p>${esc([item.teacher,item.subject,item.grade].filter(Boolean).join(' • '))}</p><div class="v99-card-price"><strong>${fmt(current)} د.ع</strong>${hasPrevious?`<del>${fmt(previous)} د.ع</del>`:''}</div><button data-v99-action="details" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">عرض</button></div></article>`;
   }
 
   function rail(rootSelector,title,subtitle,rows){
@@ -268,7 +270,7 @@
     if(!root)return;
     const item=canonicalItems().filter(activeDeal).sort((a,b)=>(b.price-b.dealPrice)-(a.price-a.dealPrice))[0];
     if(!item){root.innerHTML='';return}
-    root.innerHTML=`<article class="v99-deal-feature"><div class="v99-deal-media">${item.image?`<img src="${esc(imageUrl(item.image))}" alt="${esc(item.title)}">`:'<span class="v99-placeholder">ALIN</span>'}</div><div class="v99-deal-copy"><span class="v99-kicker">عرض اليوم</span><h2>${esc(item.title)}</h2><p>${esc([item.teacher,item.subject,item.grade].filter(Boolean).join(' • '))}</p><div class="v99-price">${fmt(item.dealPrice)} د.ع <del>${fmt(item.price)}</del></div><div class="v99-countdown" data-deal-end="${esc(item.dealEnd||'')}"></div><div class="v99-actions"><button data-v99-action="cart" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">أضف للسلة</button><button class="v99-secondary" data-v99-action="share" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">مشاركة</button></div></div></article>`;
+    root.innerHTML=`<article class="v99-deal-feature"><div class="v99-deal-media">${item.image?`<img src="${esc(imageUrl(item.image))}" alt="${esc(item.title)}">`:'<span class="v99-placeholder">ALIN</span>'}</div><div class="v99-deal-copy"><span class="v99-kicker">عرض اليوم</span><h2>${esc(item.title)}</h2><p>${esc([item.teacher,item.subject,item.grade].filter(Boolean).join(' • '))}</p><div class="v99-price">${fmt(item.dealPrice)} د.ع <del>${fmt(comparisonPrice(item))}</del></div><div class="v99-countdown" data-deal-end="${esc(item.dealEnd||'')}"></div><div class="v99-actions"><button data-v99-action="cart" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">أضف للسلة</button><button class="v99-secondary" data-v99-action="share" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">مشاركة</button></div></div></article>`;
     updateCountdowns();
   }
 

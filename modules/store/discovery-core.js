@@ -43,7 +43,7 @@
       const teacher=teacherBy(row.teacher_id)||{};
       return {
         kind:'booklet',id:String(row.id),raw:row,title:row.title||'ملزمة',teacher:teacher.name||'',teacherId:row.teacher_id||'',
-        subject:row.subject||'',grade:row.grade||'',category:'ملازم',price:num(row.price),originalPrice:num(row.original_price),
+        subject:row.subject||'',grade:row.grade||'',category:'ملازم',price:num(row.price),unitPrice:num(row.price),listPrice:num(row.original_price||row.price),originalPrice:num(row.original_price),
         stock:row.stock==null?null:num(row.stock),image:row.cover_path||row.image_path||'',cover:row.cover_path||row.image_path||'',
         created:row.created_at||'',sold:num(row.sales_count)||counts[`booklet:${row.id}`]||0,badge:row.badge||'',prep:num(row.prep_minutes),
         dealPrice:num(row.deal_price||row.sale_price),dealStart:row.deal_start,dealEnd:row.deal_end,description:row.description||'',status:row.status
@@ -56,7 +56,7 @@
       }));
       return {
         kind:row.type||'product',id:String(row.id),raw:row,title:row.name||row.title||'منتج',teacher:row.teacher||'',teacherId:row.teacher_id||'',
-        subject:row.subject||row.category||'',grade:row.grade||'',category:row.category||row.type||'',categoryId:row.category_id||'',subcategoryId:row.subcategory_id||'',price:num(row.unit_price??row.price),originalPrice:num(row.original_price),
+        subject:row.subject||row.category||'',grade:row.grade||'',category:row.category||row.type||'',categoryId:row.category_id||'',subcategoryId:row.subcategory_id||'',price:num(row.unit_price??row.sale_price??row.price),listPrice:num(row.price??row.unit_price??row.sale_price),originalPrice:num(row.original_price),
         unitPrice:num(row.unit_price??row.sale_price??row.price),packPrice:num(row.pack_price),packSize:num(row.pack_size),variants,
         images:(Array.isArray(row.images)?row.images:[]).map(String).filter(Boolean),
         stock:row.stock==null?null:num(row.stock),image:(Array.isArray(row.images)&&row.images[0])||row.image_path||row.cover_path||variants[0]?.image||'',cover:(Array.isArray(row.images)&&row.images[0])||row.image_path||row.cover_path||variants[0]?.image||'',created:row.created_at||'',
@@ -67,13 +67,15 @@
     return [...booklets,...products];
   }
 
+  const comparisonPrice=item=>num(item?.listPrice||item?.price);
   function activeDeal(item){
     const time=now();
     const start=item.dealStart?Date.parse(item.dealStart):0;
     const end=item.dealEnd?Date.parse(item.dealEnd):0;
-    return item.dealPrice>0&&item.dealPrice<item.price&&(!start||start<=time)&&(!end||end>=time);
+    const previous=comparisonPrice(item);
+    return item.dealPrice>0&&previous>0&&item.dealPrice<previous&&(!start||start<=time)&&(!end||end>=time);
   }
-  const effectivePrice=item=>activeDeal(item)?item.dealPrice:item.price;
+  const effectivePrice=item=>activeDeal(item)?item.dealPrice:num(item?.unitPrice||item?.price);
   const badges=item=>[
     item.badge,activeDeal(item)?'عرض اليوم':'',item.sold>=5?'الأكثر طلباً':'',
     item.created&&Date.now()-Date.parse(item.created)<30*864e5?'جديد':'',
@@ -157,7 +159,7 @@
     if(status)status.textContent=student?`مرحباً ${student.name}`:'التسجيل اختياري';
   }
 
-  const api={get FAV_KEY(){return favoriteStorageKey()},favoriteStorageKey,profileStorageKey,saveFavoriteKeys,state,$,$$,esc,num,fmt,now,imageUrl,teacherBy,statusVisible,hasSb,isDesktop,isMobile,stableKey,productVariants,variantsForProduct,canonicalItems,activeDeal,effectivePrice,badges,findItem,favoriteKeys,favoriteItems,isFavorite,openModal,closeModal,studentProfile,updateDesktopHeader,updateMobileHeader};
+  const api={get FAV_KEY(){return favoriteStorageKey()},favoriteStorageKey,profileStorageKey,saveFavoriteKeys,state,$,$$,esc,num,fmt,now,imageUrl,teacherBy,statusVisible,hasSb,isDesktop,isMobile,stableKey,productVariants,variantsForProduct,canonicalItems,activeDeal,effectivePrice,comparisonPrice,badges,findItem,favoriteKeys,favoriteItems,isFavorite,openModal,closeModal,studentProfile,updateDesktopHeader,updateMobileHeader};
   window.AlinStoreDiscovery=api;
 
   window.v99ToggleFavorite=(kind,id)=>{

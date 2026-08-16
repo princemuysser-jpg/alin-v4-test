@@ -1,0 +1,22 @@
+{
+  "ok": true,
+  "checks": {
+    "shelf_css_exists": true,
+    "desktop_links_shelf_css": true,
+    "mobile_links_shelf_css": true,
+    "desktop_fixed_card_width": true,
+    "old_shelf_layout_removed": true,
+    "price_list_normalized": true,
+    "price_comparison_helper": true,
+    "card_previous_price": true,
+    "details_previous_price": true,
+    "cache_bumped": true
+  },
+  "example": {
+    "db_price": 3000,
+    "db_sale_price": 2500,
+    "db_unit_price": 2500,
+    "expected_store_current": 2500,
+    "expected_store_previous": 3000
+  }
+}
