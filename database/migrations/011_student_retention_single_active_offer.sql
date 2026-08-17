@@ -1,0 +1,3 @@
+-- Applied to production as migration: student_retention_single_active_offer.
+-- Replaces alin_admin_create_student_offer so a student has only one active unused personal offer at a time.
+-- Older active personal offers are marked inactive before the new offer is created.

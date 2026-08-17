@@ -11,7 +11,10 @@
   }
 
   function rows(){
-    return Array.isArray(window.db?.coupons) ? window.db.coupons : [];
+    const publicRows=Array.isArray(window.db?.coupons)?window.db.coupons:[];
+    const personal=Array.isArray(window.AlinPersonalOffers?.rows?.())?window.AlinPersonalOffers.rows():[];
+    const seen=new Set();
+    return [...personal,...publicRows].filter(row=>{const key=String(row?.id||row?.code||'');if(!key||seen.has(key))return false;seen.add(key);return true});
   }
 
   async function refresh(){
@@ -26,6 +29,7 @@
     if(!normalized)return null;
     const coupon=rows().find(row=>normalizeCode(row.code)===normalized);
     if(!coupon||String(coupon.status||'active')!=='active')return null;
+    if(coupon.bound_student_id&&String(window.AlinStudentAuth?.current?.()?.id||'')!==String(coupon.bound_student_id))return null;
     if(coupon.expires_at&&new Date(coupon.expires_at).getTime()<Date.now())return null;
     const limit=Number(coupon.max_uses??coupon.usage_limit??0);
     const used=Number(coupon.used_count??coupon.usage_count??0);
@@ -33,17 +37,33 @@
     return coupon;
   }
 
+  function appliesToLine(coupon,line){
+    const scope=String(coupon?.applies_to||'all').toLowerCase();
+    const kind=String(line?.kind||line?.type||'product').toLowerCase();
+    if(scope==='all'||scope==='')return true;
+    if(scope==='product')return kind!=='booklet';
+    return scope===kind;
+  }
+
   function lineDiscount(coupon,amount){
     const total=Math.max(0,Number(amount||0));
     if(!coupon)return 0;
     const value=Math.max(0,Number(coupon.discount_value||0));
     if(String(coupon.discount_type||'percent')==='fixed')return Math.min(total,value);
-    return Math.min(total,Math.round(total*Math.min(value,100)/100));
+    let discount=Math.min(total,Math.round(total*Math.min(value,100)/100));
+    const cap=Math.max(0,Number(coupon.max_discount||0));
+    if(cap>0)discount=Math.min(discount,cap);
+    return discount;
   }
 
   function cartDiscount(coupon,lines=window.cart){
     if(!coupon||!Array.isArray(lines))return 0;
-    return lines.reduce((sum,line)=>sum+lineDiscount(coupon,Number(line?.price||0)*Math.max(1,Number(line?.qty||1))),0);
+    const eligible=lines.filter(line=>appliesToLine(coupon,line));
+    const eligibleTotal=eligible.reduce((sum,line)=>sum+Number(line?.price||0)*Math.max(1,Number(line?.qty||1)),0);
+    const cartTotal=lines.reduce((sum,line)=>sum+Number(line?.price||0)*Math.max(1,Number(line?.qty||1)),0);
+    if(Number(coupon.min_order||0)>0&&cartTotal<Number(coupon.min_order||0))return 0;
+    if(String(coupon.discount_type||'percent')==='fixed')return Math.min(eligibleTotal,Math.max(0,Number(coupon.discount_value||0)));
+    return eligible.reduce((sum,line)=>sum+lineDiscount(coupon,Number(line?.price||0)*Math.max(1,Number(line?.qty||1))),0);
   }
 
   function persist(code){

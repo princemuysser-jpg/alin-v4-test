@@ -1,0 +1,14 @@
+-- ALIN v4.2.0 — Student retention/personal offers.
+-- Applied to production Supabase project dgaikazhbtyjmswpyvrl as migration: student_retention_personal_offers.
+-- Adds student_profiles.last_login_at / last_active_at / last_offer_at.
+-- Adds private coupon ownership via coupons.bound_student_id + personal_offer metadata.
+-- Personal coupons are excluded from public storefront bootstrap/RLS.
+-- Server RPCs added:
+--   alin_student_touch_activity(token, device)
+--   alin_student_personal_offers(token, device)
+--   alin_student_mark_offer_seen(token, device, coupon_id)
+--   alin_admin_student_retention(days, search)
+--   alin_admin_create_student_offer(student_id, discount_type, value, days, applies_to, title, message)
+-- A secure 8-argument checkout overload validates a registered student session before invoking checkout.
+-- An orders BEFORE INSERT guard rejects any private coupon unless alin.checkout_student_id matches its owner.
+-- student_sessions INSERT stamps last_login_at and last_active_at.

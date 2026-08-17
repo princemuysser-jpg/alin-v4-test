@@ -79,8 +79,20 @@
     if(button){button.disabled=true;button.textContent='جارٍ الإرسال...'}
     try{
       const result=await service().send({title,message,role,target_id:targetId||null,priority,from_user:'admin'});
+      let push=null;
+      if(result.remote&&(role==='all'||role==='student')){
+        try{
+          const invoke=window.ALINAuthRuntime?.invokeAdmin;
+          if(typeof invoke==='function')push=await invoke('admin-send-push',{notification_id:result.id,title,message,role,target_id:targetId||null,url:'./store-mobile.html'});
+        }catch(pushError){console.warn('[ALIN push send]',pushError);push={ok:false,error:pushError?.message||'تعذر إرسال Push'}}
+      }
       if(typeof window.audit==='function')await window.audit('notification',`إرسال إشعار ${title}`);
-      if(status)status.textContent=result.remote?'تم إرسال الإشعار بنجاح.':'تم حفظ الإشعار محليًا، وتعذر رفعه إلى الخادم.';
+      if(status){
+        if(!result.remote)status.textContent='تم حفظ الإشعار محليًا، وتعذر رفعه إلى الخادم.';
+        else if(push?.ok)status.textContent=`تم إرسال الإشعار. وصل Push إلى ${Number(push.sent||0)} جهاز${push.failed?`، وتعذر ${push.failed}`:''}.`;
+        else if(role==='all'||role==='student')status.textContent=`تم حفظ الإشعار داخل المنصة${push?.error?'، لكن Push الخارجي تعذر: '+push.error:''}.`;
+        else status.textContent='تم إرسال الإشعار داخل المنصة بنجاح.';
+      }
       render();
       return true;
     }catch(error){

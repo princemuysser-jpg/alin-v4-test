@@ -1,0 +1,10 @@
+{
+  "ok": true,
+  "feature": "web_push_external_notifications",
+  "service_worker_push": true,
+  "store_opt_in_script": true,
+  "admin_push_send": true,
+  "retention_push_send": true,
+  "pwa_cache_bust": true,
+  "audit_actions": 150
+}
