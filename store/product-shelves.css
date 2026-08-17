@@ -1,120 +1,42 @@
-/* ALIN product subcategory shelves v2 — isolated layout for category shelves. */
-#storeGrid.alin-product-shelves.store-product-grid{
-  display:block!important;
+/* ALIN product subcategory shelves — canonical layout. */
+#storeGrid.alin-product-shelves{
+  display:grid!important;
+  grid-template-columns:1fr!important;
+  gap:20px!important;
   width:100%!important;
-  max-width:none!important;
   min-width:0!important;
-  grid-template-columns:none!important;
 }
-.alin-product-shelf{
-  display:block!important;
-  width:100%!important;
+#storeGrid.alin-product-shelves>.alin-product-shelf{
   min-width:0!important;
-  margin:0 0 24px!important;
-  padding:0!important;
+  width:100%!important;
+  padding:14px!important;
+  border:1px solid var(--alin-store-line,#e2e9f0)!important;
+  border-radius:20px!important;
+  background:var(--alin-store-card,#fff)!important;
+  box-shadow:var(--alin-store-shadow,0 12px 34px rgba(14,52,86,.08))!important;
+  box-sizing:border-box!important;
 }
 .alin-product-shelf>header{
-  display:flex!important;
-  align-items:center!important;
-  justify-content:space-between!important;
-  gap:14px!important;
-  width:100%!important;
-  margin:0 0 12px!important;
+  display:flex!important;align-items:end!important;justify-content:space-between!important;gap:12px!important;
+  margin-bottom:12px!important;padding:0 2px!important
 }
-.alin-product-shelf>header>div{min-width:0!important}
-.alin-product-shelf>header h2{margin:0!important;font-size:20px!important;line-height:1.35!important;color:#0b3158!important}
-.alin-product-shelf>header small{display:block!important;margin-top:3px!important;color:#64748b!important;font-size:11px!important}
-.alin-shelf-more{
-  flex:0 0 auto!important;
-  border:0!important;
-  border-radius:999px!important;
-  padding:9px 16px!important;
-  font-weight:800!important;
-  cursor:pointer!important;
-  background:#376f91!important;
-  color:#fff!important;
-  min-height:38px!important;
-}
+.alin-product-shelf>header>div{min-width:0!important}.alin-product-shelf>header h2{margin:0!important;color:var(--alin-store-ink,#12395e)!important;font-size:19px!important;line-height:1.3!important;font-weight:900!important}.alin-product-shelf>header small{display:block!important;margin-top:3px!important;color:var(--alin-store-muted,#6d7c8b)!important;font-size:10px!important}
+.alin-shelf-more{flex:0 0 auto!important;min-height:36px!important;padding:0 11px!important;border:1px solid var(--alin-store-line,#e2e9f0)!important;border-radius:10px!important;background:var(--alin-store-soft,#f5f8fb)!important;color:var(--alin-store-brand,#0b4d83)!important;font-size:10px!important;font-weight:900!important;box-shadow:none!important}
 .alin-product-shelf-rail{
   display:grid!important;
-  grid-template-columns:repeat(auto-fit,minmax(190px,220px))!important;
-  justify-content:start!important;
+  grid-template-columns:repeat(5,minmax(0,1fr))!important;
+  gap:12px!important;
+  min-width:0!important;
   align-items:stretch!important;
-  gap:14px!important;
-  width:100%!important;
-  min-width:0!important;
 }
-#storeGrid.alin-product-shelves .alin-product-shelf-rail>.v99-product-card{
-  width:100%!important;
-  min-width:190px!important;
-  max-width:220px!important;
-  min-height:350px!important;
-  height:100%!important;
-}
-#storeGrid.alin-product-shelves .alin-product-shelf-rail .v99-product-media{
-  width:100%!important;
-  min-width:0!important;
-  height:180px!important;
-  min-height:180px!important;
-  max-height:180px!important;
-}
-#storeGrid.alin-product-shelves .alin-product-shelf-rail .v99-product-body{
-  min-width:0!important;
-  width:100%!important;
-}
-#storeGrid.alin-product-shelves .alin-product-shelf-rail .v99-product-body h3,
-#storeGrid.alin-product-shelves .alin-product-shelf-rail .v99-product-body p,
-#storeGrid.alin-product-shelves .alin-product-shelf-rail .v99-card-meta,
-#storeGrid.alin-product-shelves .alin-product-shelf-rail .v99-card-price{
-  overflow-wrap:normal!important;
-  word-break:normal!important;
-}
-.v99-card-price .alin-current-price{display:flex!important;align-items:baseline!important;flex-wrap:wrap!important;gap:5px!important}
-.v99-card-price .alin-current-price strong{font:inherit!important;font-weight:900!important;color:inherit!important}
-.v99-card-price .alin-current-price del{font-size:11px!important;color:#8b95a5!important;font-weight:700!important;text-decoration-thickness:1.5px!important}
-
-@media(max-width:900px){
-  .alin-product-shelf{margin-bottom:18px!important}
-  .alin-product-shelf>header{margin-bottom:9px!important}
-  .alin-product-shelf>header h2{font-size:17px!important}
-  .alin-shelf-more{padding:7px 12px!important;font-size:12px!important;min-height:34px!important}
-  .alin-product-shelf-rail{
-    display:flex!important;
-    overflow-x:auto!important;
-    overflow-y:hidden!important;
-    scroll-snap-type:x proximity!important;
-    gap:9px!important;
-    padding-bottom:5px!important;
-    scrollbar-width:none!important;
-  }
-  .alin-product-shelf-rail::-webkit-scrollbar{display:none!important}
-  #storeGrid.alin-product-shelves .alin-product-shelf-rail>.v99-product-card{
-    flex:0 0 min(44vw,180px)!important;
-    width:min(44vw,180px)!important;
-    min-width:min(44vw,180px)!important;
-    max-width:min(44vw,180px)!important;
-    scroll-snap-align:start!important;
-    min-height:300px!important;
-  }
-  #storeGrid.alin-product-shelves .alin-product-shelf-rail .v99-product-media{
-    height:142px!important;
-    min-height:142px!important;
-    max-height:142px!important;
-  }
-}
-@media(max-width:520px){
-  #storeGrid.alin-product-shelves .alin-product-shelf-rail>.v99-product-card{
-    flex-basis:43vw!important;
-    width:43vw!important;
-    min-width:43vw!important;
-    max-width:43vw!important;
-  }
-}
-@media(max-width:380px){
-  #storeGrid.alin-product-shelves .alin-product-shelf-rail>.v99-product-card{
-    flex-basis:45vw!important;
-    width:45vw!important;
-    min-width:45vw!important;
-    max-width:45vw!important;
-  }
+#storeGrid.alin-product-shelves .alin-product-shelf-rail>.v99-product-card{min-width:0!important;width:100%!important;max-width:none!important;height:auto!important}
+@media(max-width:1250px){.alin-product-shelf-rail{grid-template-columns:repeat(4,minmax(0,1fr))!important}}
+@media(max-width:1000px){.alin-product-shelf-rail{grid-template-columns:repeat(3,minmax(0,1fr))!important}}
+@media(max-width:700px){
+  #storeGrid.alin-product-shelves{gap:14px!important}
+  #storeGrid.alin-product-shelves>.alin-product-shelf{padding:10px!important;border-radius:16px!important}
+  .alin-product-shelf>header{margin-bottom:9px!important}.alin-product-shelf>header h2{font-size:16px!important}.alin-shelf-more{min-height:32px!important;font-size:9px!important}
+  .alin-product-shelf-rail{display:flex!important;gap:8px!important;overflow-x:auto!important;scroll-snap-type:x proximity!important;scrollbar-width:none!important;padding-bottom:5px!important}
+  .alin-product-shelf-rail::-webkit-scrollbar{display:none}
+  #storeGrid.alin-product-shelves .alin-product-shelf-rail>.v99-product-card{flex:0 0 min(44vw,180px)!important;scroll-snap-align:start!important}
 }

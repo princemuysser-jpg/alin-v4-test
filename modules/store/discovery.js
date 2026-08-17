@@ -59,7 +59,8 @@
     }
     else if(action==='clearFilters')resetFilters();
     else if(action==='subcategoryMore')ctx.openProductSubcategory?.(button.dataset.subcategoryId);
-    else if(action==='details'&&item)window.v99OpenDetails?.(item.kind,item.id);
+    else if(action==='subcategoryBack'){state.subcategoryId='';state.categoryQuery='';ctx.renderStore?.()}
+    else if(action==='details'&&item){const suggestions=button.closest('.alin-search-suggestions');if(suggestions)suggestions.hidden=true;window.v99OpenDetails?.(item.kind,item.id)}
     else if(action==='favorite'&&item)window.v99ToggleFavorite?.(item.kind,item.id);
     else if(action==='cart'&&item){if(item.stock!==null&&item.stock<=0)ctx.stockForm(item);else if(Array.isArray(item.variants)&&item.variants.length){window.v99OpenDetails?.(item.kind,item.id);if(typeof window.toast==='function')window.toast('اختر التصميم ثم أضفه إلى السلة')}else window.addToCart?.(item.kind,item.id)}
     else if(action==='cartQty'&&item){const quantity=Math.max(1,num($('#v99DetailQty')?.value));const purchaseType=document.querySelector('input[name="v99PurchaseType"]:checked')?.value||'unit';const variantInput=document.querySelector('input[name="v99Variant"]:checked');if(Array.isArray(item.variants)&&item.variants.length&&!variantInput){const hint=$('#v99VariantHint');if(hint){hint.textContent='اختر التصميم المطلوب أولاً.';hint.classList.add('is-error')}document.querySelector('.alin-product-model-picker')?.scrollIntoView?.({behavior:'smooth',block:'center'});return}window.addToCart?.(item.kind,item.id,quantity,purchaseType,variantInput?.value||'');ctx.updateDesktopHeader();ctx.updateMobileHeader()}
@@ -95,12 +96,15 @@
 
   function installEventRouting(){
     document.addEventListener('click',event=>{
+      const suggestions=$('.alin-search-suggestions');
+      if(suggestions&&!event.target.closest('.alin-search-host'))suggestions.hidden=true;
       if(event.target.classList.contains('v99-modal')){closeModal();return}
       const button=event.target.closest('[data-v99-action]');
       if(button)handleAction(button);
     });
 
     document.addEventListener('keydown',event=>{
+      if(event.key==='Escape'&&!$('.alin-search-suggestions')?.hidden){$('.alin-search-suggestions').hidden=true;return}
       if(event.key==='Escape'&&isDesktop()&&$('#v99DiscoveryTools')?.classList.contains('open')){setDesktopFilterDrawer(false);return}
       if(event.key==='Escape'&&isDesktop()&&!$('#studentAuthModal')?.classList.contains('hidden')){window.closeStudentAuth?.();return}
       const dialog=$('.v99-modal [role="dialog"]');

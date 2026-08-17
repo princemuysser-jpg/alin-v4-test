@@ -1,0 +1,75 @@
+{
+  "release": "Alin v4.2.0 Stable — Storefront UI 9.5 Polish",
+  "date": "2026-08-17",
+  "base": "Alin_v4_2_0_Stable_Push_Later_Reappears.zip",
+  "scope": [
+    "store home hierarchy",
+    "product cards",
+    "subcategory shelves",
+    "search suggestions",
+    "product details",
+    "cart visual consistency",
+    "responsive mobile/tablet/desktop"
+  ],
+  "audit_ok": true,
+  "audit_errors": [],
+  "actions": 150,
+  "js_files": 113,
+  "build_hashes": {
+    "dist/alin-core.v4.js": "7a539c091f20379adf1d2c0664290057566defbf84383288f43ed9e8008dd243",
+    "alin-app-desktop.v4.2.0.js": "150bcaff8733270d444f88f69ae96a7c4561c3acbbbd314e71f220d1912d9136",
+    "alin-app-mobile.v4.2.0.js": "3a572425f9ce965755a0ea7e5430c198aa3a7ef418c4f18733991268000421fc",
+    "dist/alin-role-runtime.v4.js": "a3b1c3618046e0975b79602d044d5f9037fa3f5daf5b32d7763f85781c96c78c"
+  },
+  "css_parse_errors": [],
+  "html_checks": {
+    "store-mobile.html": {
+      "single_search_input": true,
+      "single_store_grid": true,
+      "deals_rail_present": true,
+      "home_sections_order": [
+        "alinStoreCategories",
+        "v99DealsRail",
+        "alinTeacherCoursesSection",
+        "v99Featured",
+        "v99NewArrivals",
+        "v99TopTen"
+      ],
+      "canonical_store_css_loaded": true,
+      "shelf_css_cache_busted": true
+    },
+    "store-desktop.html": {
+      "single_search_input": true,
+      "single_store_grid": true,
+      "deals_rail_present": true,
+      "home_sections_order": [
+        "alinStoreCategories",
+        "v99DealsRail",
+        "alinTeacherCoursesSection",
+        "v99Featured",
+        "v99NewArrivals",
+        "v99TopTen"
+      ],
+      "canonical_store_css_loaded": true,
+      "shelf_css_cache_busted": true
+    }
+  },
+  "mobile_catalog_columns": 2,
+  "tablet_catalog_columns": 3,
+  "desktop_catalog_min_card_px": 215,
+  "search_suggestions": true,
+  "details_mobile_sticky_buy_action": true,
+  "old_price_display_independent_of_deal_badge": true,
+  "hidden_subcategory_products_fallback_to_other": true,
+  "protected_logic_files_unchanged": {
+    "modules/store/cart.js": true,
+    "modules/core/checkout-service.js": true,
+    "modules/store/order-routing.js": true,
+    "modules/admin/finance.js": true,
+    "core/finance-runtime.js": true,
+    "service-worker.js": true
+  },
+  "database_tree_unchanged": true,
+  "supabase_tree_unchanged": true,
+  "no_finance_or_checkout_schema_change": true
+}

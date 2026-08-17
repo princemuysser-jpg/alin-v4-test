@@ -1,35 +1,37 @@
 {
-  "release": "Alin v4.2.0 Stable — Landscape Header + Banner Indicators Fix",
+  "release": "Alin v4.2.0 Stable — Storefront UI 9.5 Polish",
   "version": "4.2.0",
-  "base": "Alin v4.2.0 Stable — Splash 2s Fixed",
+  "base": "Alin_v4_2_0_Stable_Push_Later_Reappears.zip",
   "maintenance_scope": [
-    "phone landscape storefront header",
-    "banner storefront indicators"
+    "store home hierarchy",
+    "product cards",
+    "subcategory shelves",
+    "search suggestions",
+    "product details",
+    "cart visual consistency",
+    "responsive mobile/tablet/desktop"
   ],
-  "phone_landscape_header_single_grid": true,
-  "phone_landscape_header_overlap_test": true,
-  "layout_test_cases": [
-    "phone landscape 844x390",
-    "phone portrait 390x844",
-    "tablet landscape 1024x768",
-    "tablet portrait 768x1024"
-  ],
-  "layout_overlap_failures": 0,
-  "banner_indicators_rendered": false,
-  "banner_auto_rotation_enabled": true,
-  "banner_auto_rotation_ms": 6500,
-  "splash_touch_duration_ms": 2000,
   "audit_ok": true,
   "audit_errors": [],
-  "actions": 145,
-  "js_files": 107,
+  "actions": 150,
+  "js_files": 113,
   "build_hashes": {
-    "dist/alin-core.v4.js": "caa74a54a0e2bd43123122ab7698edcb76c6d167fa41165361899c993bede848",
-    "alin-app-desktop.v4.2.0.js": "ffd3a0db8feb4f698e1ab93f6f8e97bc3ed6f1ded0621c6e477f342bc0d75fcb",
-    "alin-app-mobile.v4.2.0.js": "48d44bed43cfd3670bdd6810ac154bfc7c553c4a8d9f87f32bcde8280c702cfe",
-    "dist/alin-role-runtime.v4.js": "2e24486095d94963768ccfce1588872a385dd53a9b04f71ef5e1fd6a35e123be"
+    "dist/alin-core.v4.js": "7a539c091f20379adf1d2c0664290057566defbf84383288f43ed9e8008dd243",
+    "alin-app-desktop.v4.2.0.js": "150bcaff8733270d444f88f69ae96a7c4561c3acbbbd314e71f220d1912d9136",
+    "alin-app-mobile.v4.2.0.js": "3a572425f9ce965755a0ea7e5430c198aa3a7ef418c4f18733991268000421fc",
+    "dist/alin-role-runtime.v4.js": "a3b1c3618046e0975b79602d044d5f9037fa3f5daf5b32d7763f85781c96c78c"
   },
-  "sql_changed": false,
+  "css_parse_errors": 0,
+  "storefront_html_checks_ok": true,
+  "database_changed": false,
   "supabase_changed": false,
-  "cart_orders_finance_changed": false
+  "cart_checkout_logic_changed": false,
+  "protected_logic_files_unchanged": {
+    "modules/store/cart.js": true,
+    "modules/core/checkout-service.js": true,
+    "modules/store/order-routing.js": true,
+    "modules/admin/finance.js": true,
+    "core/finance-runtime.js": true,
+    "service-worker.js": true
+  }
 }

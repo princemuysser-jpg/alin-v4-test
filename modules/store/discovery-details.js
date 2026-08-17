@@ -41,27 +41,32 @@
     const average=reviews.length?reviews.reduce((sum,row)=>sum+clampRating(row.rating),0)/reviews.length:0;
     const variants=Array.isArray(item.variants)?item.variants:[];
     const out=item.stock!==null&&item.stock<=0;
-    const current=effectivePrice(item),previous=comparisonPrice(item),hasPrevious=activeDeal(item)&&previous>current;
+    const current=effectivePrice(item),previous=comparisonPrice(item),hasPrevious=previous>current;
     const discount=hasPrevious?Math.max(1,Math.round((1-current/previous)*100)):0;
     const reviewRows=reviews.slice(0,8).map(review=>`<article class="v99-review-card"><div class="v99-review-stars" aria-label="تقييم ${fmt(review.rating)} من 5">${starText(review.rating)}</div><p>${esc(review.comment||'تقييم بدون تعليق')}</p><small>تقييم موثّق في منصة آلين</small></article>`).join('');
     const gallery=[...(item.images||[]),item.image,...variants.map(row=>row.image)].map(String).filter(Boolean).filter((value,index,array)=>array.indexOf(value)===index);
     const galleryHtml=gallery.length?`<div class="alin-product-gallery"><div class="v99-detail-media"><img id="alinProductMainImage" src="${esc(imageUrl(gallery[0]))}" alt="${esc(item.title)}">${discount?`<span class="v99-detail-discount">خصم ${fmt(discount)}%</span>`:''}</div>${gallery.length>1?`<div class="alin-product-thumbs">${gallery.map((path,index)=>`<button type="button" class="${index===0?'active':''}" data-v99-action="imageThumb" data-src="${esc(imageUrl(path))}" aria-label="الصورة ${index+1}"><img src="${esc(imageUrl(path))}" alt=""></button>`).join('')}</div>`:''}</div>`:'<div class="v99-detail-media"><span class="v99-placeholder">ALIN</span></div>';
-    const variantSelector=variants.length?`<section class="alin-product-model-picker"><div class="alin-product-model-picker__head"><div><h3>اختر التصميم</h3><small>اختيار التصميم مطلوب حتى يوصل الطلب للمخزن بصورة واضحة.</small></div><span>${fmt(variants.length)} موديل</span></div><div class="alin-product-model-list">${variants.map(variant=>{const variantOut=num(variant.stock)<=0;const image=variant.image?imageUrl(variant.image):'';return `<label class="alin-product-model ${variantOut?'is-out':''}"><input type="radio" name="v99Variant" value="${esc(variant.id)}" data-code="${esc(variant.code)}" data-name="${esc(variant.name)}" data-stock="${fmt(variant.stock)}" data-image="${esc(image)}" ${variantOut?'disabled':''}><span class="alin-product-model__image">${image?`<img src="${esc(image)}" alt="${esc(variant.name)}">`:'<i>آ</i>'}</span><span class="alin-product-model__copy"><b>${esc(variant.code||'—')}</b><strong>${esc(variant.name||'تصميم')}</strong><small>${variantOut?'نافد':`متوفر ${fmt(variant.stock)} قطعة`}</small></span>${variantOut?'<em>نافد</em>':''}</label>`}).join('')}</div><p id="v99VariantHint" class="alin-product-model-hint">اختر أحد التصاميم أعلاه قبل الإضافة للسلة.</p></section>`:'';
+    const variantSelector=variants.length?`<section class="alin-product-model-picker"><div class="alin-product-model-picker__head"><div><h3>اختر التصميم</h3><small>اختيار التصميم مطلوب حتى يوصل الطلب للمخزن بصورة واضحة.</small></div><span>${fmt(variants.length)} تصميم</span></div><div class="alin-product-model-list">${variants.map(variant=>{const variantOut=num(variant.stock)<=0;const image=variant.image?imageUrl(variant.image):'';return `<label class="alin-product-model ${variantOut?'is-out':''}"><input type="radio" name="v99Variant" value="${esc(variant.id)}" data-code="${esc(variant.code)}" data-name="${esc(variant.name)}" data-stock="${fmt(variant.stock)}" data-image="${esc(image)}" ${variantOut?'disabled':''}><span class="alin-product-model__image">${image?`<img src="${esc(image)}" alt="${esc(variant.name)}">`:'<i>آ</i>'}</span><span class="alin-product-model__copy"><b>${esc(variant.code||'—')}</b><strong>${esc(variant.name||'تصميم')}</strong><small>${variantOut?'نافد':`متوفر ${fmt(variant.stock)} قطعة`}</small></span>${variantOut?'<em>نافد</em>':''}</label>`}).join('')}</div><p id="v99VariantHint" class="alin-product-model-hint">اختر أحد التصاميم أعلاه قبل الإضافة للسلة.</p></section>`:'';
     openModal(`<section class="v99-detail-premium">
       <div class="v99-detail-main">
-        ${galleryHtml}
+        <div class="v99-detail-visual">
+          ${galleryHtml}
+          <div class="v99-detail-trust"><span>✓ صور واضحة</span><span>✓ السعر قبل الطلب</span><span>✓ اختيار التصميم محفوظ بالطلب</span></div>
+        </div>
         <div class="v99-detail-copy">
-          <div class="v99-badges">${badges(item).map(label=>`<span class="v99-badge">${esc(label)}</span>`).join('')}</div>
+          <div class="v99-detail-topline"><span class="v99-detail-kind">${esc(item.kind==='booklet'?'ملزمة':item.kind==='gift'?'هدية':'منتج')}</span><div class="v99-badges">${badges(item).slice(0,2).map(label=>`<span class="v99-badge">${esc(label)}</span>`).join('')}</div></div>
           <h2>${esc(item.title)}</h2>
-          <p class="v99-detail-meta-line">${esc([item.teacher,item.subject,item.grade,item.category].filter(Boolean).join(' • '))}</p>
+          ${[item.teacher,item.subject,item.grade,item.category].filter(Boolean).length?`<p class="v99-detail-meta-line">${esc([item.teacher,item.subject,item.grade,item.category].filter(Boolean).join(' • '))}</p>`:''}
           <div class="v99-detail-rating-summary"><span class="v99-rating-stars" aria-label="متوسط التقييم ${average.toFixed(1)} من 5">${starText(average)}</span><b>${reviews.length?average.toFixed(1):'جديد'}</b><small>${reviews.length?`${fmt(reviews.length)} تقييم`:'لا توجد تقييمات منشورة بعد'}</small></div>
           ${item.description?`<p class="v99-detail-description">${esc(item.description)}</p>`:''}
-          <div class="v99-detail-price"><strong>سعر المفرد: ${fmt(current)} د.ع</strong>${hasPrevious?`<del>${fmt(previous)} د.ع</del><span>وفّر ${fmt(previous-current)} د.ع</span>`:''}${item.packPrice>0&&item.packSize>=2?`<strong class="alin-pack-price">سعر الباكيت: ${fmt(item.packPrice)} د.ع <small>(${fmt(item.packSize)} قطع)</small></strong>`:''}</div>
-          <div class="v99-detail-facts v99-detail-facts-stock-only"><span>${out?'غير متوفر حالياً':item.stock===null?'متاح للطلب':`المخزون الكلي: ${fmt(item.stock)} قطعة`}</span></div>
-          ${variantSelector}
-          ${item.kind!=='booklet'&&item.packPrice>0&&item.packSize>=2?`<div class="alin-purchase-type"><label><input type="radio" name="v99PurchaseType" value="unit" checked> <span>مفرد — ${fmt(current)} د.ع</span></label><label><input type="radio" name="v99PurchaseType" value="pack"> <span>باكيت ${fmt(item.packSize)} قطع — ${fmt(item.packPrice)} د.ع</span></label></div>`:''}
-          <div class="v99-qty"><label for="v99DetailQty">الكمية</label><input id="v99DetailQty" type="number" min="1" max="99" value="1"></div>
-          <div class="v99-actions">${out?`<button data-v99-action="stockForm" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">أبلغني عند التوفر</button>`:`<button data-v99-action="cartQty" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">أضف للسلة</button>`}<button class="v99-ghost" data-v99-action="favorite" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">${isFavorite(item)?'إزالة من المفضلة':'حفظ بالمفضلة'}</button><button class="v99-ghost" data-v99-action="share" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">مشاركة</button></div>
+          <section class="v99-detail-buybox" aria-label="خيارات الشراء">
+            <div class="v99-detail-price"><div><small>السعر الحالي</small><strong>${fmt(current)} د.ع</strong>${hasPrevious?`<del>${fmt(previous)} د.ع</del>`:''}</div>${hasPrevious?`<span class="v99-detail-saving">توفير ${fmt(previous-current)} د.ع</span>`:''}${item.packPrice>0&&item.packSize>=2?`<div class="alin-pack-price"><small>سعر الباكيت</small><strong>${fmt(item.packPrice)} د.ع</strong><span>${fmt(item.packSize)} قطع</span></div>`:''}</div>
+            <div class="v99-detail-facts v99-detail-facts-stock-only"><span class="${out?'is-out':''}">${out?'غير متوفر حالياً':item.stock===null?'متاح للطلب':`متوفر بالمخزن: ${fmt(item.stock)} قطعة`}</span></div>
+            ${variantSelector}
+            ${item.kind!=='booklet'&&item.packPrice>0&&item.packSize>=2?`<div class="alin-purchase-type"><label><input type="radio" name="v99PurchaseType" value="unit" checked> <span><b>مفرد</b><small>${fmt(current)} د.ع</small></span></label><label><input type="radio" name="v99PurchaseType" value="pack"> <span><b>باكيت ${fmt(item.packSize)} قطع</b><small>${fmt(item.packPrice)} د.ع</small></span></label></div>`:''}
+            <div class="v99-qty"><label for="v99DetailQty">الكمية</label><input id="v99DetailQty" type="number" min="1" max="99" value="1" inputmode="numeric"></div>
+            <div class="v99-actions v99-detail-actions">${out?`<button class="v99-detail-primary" data-v99-action="stockForm" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">أبلغني عند التوفر</button>`:`<button class="v99-detail-primary" data-v99-action="cartQty" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">أضف للسلة</button>`}<button class="v99-ghost" data-v99-action="favorite" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}"><span class="v99-ghost-icon" aria-hidden="true">${isFavorite(item)?'♥':'♡'}</span><span class="v99-ghost-label">${isFavorite(item)?'محفوظ':'المفضلة'}</span></button><button class="v99-ghost" data-v99-action="share" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}"><span class="v99-ghost-icon" aria-hidden="true">↗</span><span class="v99-ghost-label">مشاركة</span></button></div>
+          </section>
         </div>
       </div>
       <section class="v99-reviews v99-reviews-premium"><div class="v99-reviews-head"><div><span>آراء العملاء</span><h3>التقييمات بالنجوم</h3></div><button data-v99-action="reviewForm" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">أضف تقييمك</button></div>
@@ -70,6 +75,7 @@
       </section>
       ${relatedDetailHtml(item)}
     </section>`);
+
   }
 
   async function shareItem(item){

@@ -8,7 +8,7 @@
 <meta content="0" http-equiv="Expires"/>
 <meta charset="utf-8"/>
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; script-src-elem 'self' https://cdn.jsdelivr.net; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' blob: https://dgaikazhbtyjmswpyvrl.supabase.co wss://dgaikazhbtyjmswpyvrl.supabase.co; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; worker-src 'self' blob: https://cdn.jsdelivr.net; frame-src 'self' blob:;">
-<script src="./core/cache-epoch.js?v=4.2.0-retention1"></script>
+<script src="./core/cache-epoch.js?v=4.2.0-ui95"></script>
 <script src="./core/csp-mobile-inline-1.js?v=4.2.0-splash2"></script>
 <script id="alinOrientationBootstrap" src="./core/csp-mobile-inline-2.js?v=4.2.0"></script>
 <script id="alinOrientationClassBootstrap" src="./core/csp-mobile-inline-3.js?v=4.2.0"></script>
@@ -35,12 +35,12 @@
 <link href="./styles/alin-i18n.css?v=4.2.0" rel="stylesheet"/>
 <link href="./styles/alin-mobile.css?v=4.2.0-display2" rel="stylesheet"/>
 <link href="./store/mobile-navigation.css?v=4.2.0" rel="stylesheet"/>
-<link rel="preload" href="./alin-app-mobile.v4.2.0.js?v=4.2.0-retention1" as="script">
+<link rel="preload" href="./alin-app-mobile.v4.2.0.js?v=4.2.0-ui95" as="script">
 <script src="./alin-config.js?v=4.2.0"></script>
 <script src="./core/public-store-bootstrap.js?v=4.2.0"></script>
 <script src="./core/supabase-sdk-loader.js?v=4.2.0" defer></script>
 <script src="./core/ui-action-router.js?v=4.2.0" defer></script>
-<script src="./dist/alin-core.v4.js?v=4.2.0-retention1" defer></script>
+<script src="./dist/alin-core.v4.js?v=4.2.0-ui95" defer></script>
 
 
 
@@ -86,9 +86,6 @@
 
 
   <link rel="stylesheet" href="./store/banners.css?v=4.2.0-display2">
-<link href="./styles/alin-store-responsive-1z4.css?v=4.2.0-display2" rel="stylesheet"/>
-<link href="./styles/alin-store-media-1z9.css?v=4.2.0" rel="stylesheet"/>
-<link href="./styles/alin-store-details-categories-1z10.css?v=4.2.0" rel="stylesheet"/>
 <link rel="stylesheet" href="./store/teacher-courses.css?v=4.2.0-courses3">
 
 <script src="./core/csp-mobile-inline-6.js?v=4.2.0"></script>
@@ -695,7 +692,10 @@ html[data-alin-device="tablet"] body.store-mobile #alinCategoryEditForm .row-act
 #loginMsg[data-role]{min-height:24px;margin-top:10px;font-weight:800;color:#0b3158;text-align:center}
 </style>
 <link rel="stylesheet" href="./store/product-variants.css?v=4.2.0-display2">
-<link rel="stylesheet" href="./store/product-shelves.css?v=4.2.0-shelves2">
+<link rel="stylesheet" href="./store/product-shelves.css?v=4.2.0-ui95">
+<link href="./styles/alin-store-responsive-1z4.css?v=4.2.0-ui95" rel="stylesheet"/>
+<link href="./styles/alin-store-media-1z9.css?v=4.2.0-ui95" rel="stylesheet"/>
+<link href="./styles/alin-store-details-categories-1z10.css?v=4.2.0-ui95" rel="stylesheet"/>
 </head>
 <body class="store-mobile">
 <div id="alinMobileEntrySplash" class="alin-mobile-entry-splash" aria-hidden="true">
@@ -752,10 +752,11 @@ html[data-alin-device="tablet"] body.store-mobile #alinCategoryEditForm .row-act
 <section id="alinStoreBanners" class="alin-store-banners" aria-label="إعلانات منصة آلين" hidden></section>
 <span aria-live="polite" class="mobile-account-status" id="studentAuthStatus">التسجيل اختياري</span>
 <section class="alin-store-home-view" id="alinStoreHomeView">
-<section id="alinTeacherCoursesSection" class="alin-teacher-courses" aria-label="دورات المدرسين" hidden></section>
 <section class="alin98-cats" id="alinStoreCategories" aria-label="أقسام متجر آلين"></section>
-<section class="v99-rail-root" id="v99NewArrivals"></section>
+<section class="v99-rail-root" id="v99DealsRail"></section>
+<section id="alinTeacherCoursesSection" class="alin-teacher-courses" aria-label="دورات المدرسين" hidden></section>
 <section class="v99-rail-root" id="v99Featured"></section>
+<section class="v99-rail-root" id="v99NewArrivals"></section>
 <section class="v99-rail-root" id="v99TopTen"></section>
 </section>
 <div class="store-shell">
@@ -919,7 +920,7 @@ html[data-alin-device="tablet"] body.store-mobile #alinCategoryEditForm .row-act
 <script src="./core/push-notifications.js?v=4.2.0-push4" defer></script>
 <script src="./core/boot-recovery.js?v=4.2.0" defer></script>
 <script src="./modules/core/navigation.js?v=4.2.0" defer></script>
-<script id="alinAppBundleScript" src="./alin-app-mobile.v4.2.0.js?v=4.2.0-retention1" defer></script>
+<script id="alinAppBundleScript" src="./alin-app-mobile.v4.2.0.js?v=4.2.0-ui95" defer></script>
 <script src="./store/teacher-courses.js?v=4.2.0-courses3" defer></script>
 <script src="./modules/teacher/courses-management.js?v=4.2.0-courses3" defer></script>
 <script src="./modules/admin/courses-management.js?v=4.2.0-courses3" defer></script>
