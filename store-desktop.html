@@ -8,7 +8,7 @@
 <meta content="0" http-equiv="Expires"/>
 <meta charset="utf-8"/>
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; script-src-elem 'self' https://cdn.jsdelivr.net; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' blob: https://dgaikazhbtyjmswpyvrl.supabase.co wss://dgaikazhbtyjmswpyvrl.supabase.co; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; worker-src 'self' blob: https://cdn.jsdelivr.net; frame-src 'self' blob:;">
-<script src="./core/cache-epoch.js?v=4.2.0-fix4"></script>
+<script src="./core/cache-epoch.js?v=4.2.0-clean1"></script>
 <script src="./core/csp-desktop-inline-1.js?v=4.2.0"></script>
 <meta content="width=device-width,initial-scale=1" name="viewport"/>
 <title>منصة آلين v4.2.0 Stable</title>
@@ -25,16 +25,17 @@
 <link href="assets/icons/icon-192.png" rel="apple-touch-icon"/>
 <link href="./dist/css/desktop.bundle.css?v=4.2.0" rel="stylesheet"/>
 <link href="./styles/alin-tokens.css?v=4.2.0" rel="stylesheet"/>
-<link href="./styles/alin-shared.css?v=4.2.0-fix4" rel="stylesheet"/>
+<link href="./styles/alin-shared.css?v=4.2.0-clean1" rel="stylesheet"/>
 <link href="./styles/alin-branding.css?v=4.2.0" rel="stylesheet"/>
 <link href="./styles/alin-i18n.css?v=4.2.0" rel="stylesheet"/>
-<link href="./styles/alin-desktop.css?v=4.2.0-fix4" rel="stylesheet"/>
-<link rel="preload" href="./alin-app-desktop.v4.2.0.js?v=4.2.0-fix4" as="script">
+<link href="./styles/alin-desktop.css?v=4.2.0-clean1" rel="stylesheet"/>
+<link href="./styles/alin-desktop-tracking.css?v=4.2.0-clean1" rel="stylesheet"/>
+<link rel="preload" href="./alin-app-desktop.v4.2.0.js?v=4.2.0-clean1" as="script">
 <script src="./alin-config.js?v=4.2.0"></script>
 <script src="./core/public-store-bootstrap.js?v=4.2.0"></script>
 <script src="./core/supabase-sdk-loader.js?v=4.2.0" defer></script>
 <script src="./core/ui-action-router.js?v=4.2.0" defer></script>
-<script src="./dist/alin-core.v4.js?v=4.2.0-fix4" defer></script>
+<script src="./dist/alin-core.v4.js?v=4.2.0-clean1" defer></script>
 
 
 
@@ -84,64 +85,11 @@
 
 <script src="./core/csp-desktop-inline-2.js?v=4.2.0"></script>
 
-<style id="alinTrack415SafeStyle">
-/* ALIN 4.1.5 — isolated desktop tracking. No shared modal classes and no SVG. */
-#alinTrack415Layer[hidden]{display:none!important}
-#alinTrack415Layer{position:fixed!important;inset:0!important;z-index:2147482000!important;display:grid!important;place-items:center!important;padding:24px!important;background:rgba(3,16,34,.72)!important;backdrop-filter:blur(6px)!important;font-family:Tahoma,Arial,sans-serif!important;direction:rtl!important}
-#alinTrack415Panel{position:relative!important;width:min(920px,calc(100vw - 48px))!important;max-height:92vh!important;overflow:auto!important;border:1px solid #dce5ef!important;border-radius:26px!important;background:#f6f8fb!important;box-shadow:0 30px 90px rgba(0,0,0,.38)!important;color:#102b50!important}
-#alinTrack415Close{position:absolute!important;top:16px!important;left:16px!important;z-index:5!important;width:42px!important;height:42px!important;padding:0!important;border:1px solid #d8e2ec!important;border-radius:13px!important;background:#fff!important;color:#173a61!important;font-size:25px!important;line-height:1!important;box-shadow:0 8px 20px rgba(8,36,70,.13)!important}
-#alinTrack415Header{display:flex!important;align-items:center!important;gap:18px!important;padding:30px 74px 27px 28px!important;border-radius:25px 25px 0 0!important;background:linear-gradient(135deg,#082d57,#105487)!important;color:#fff!important}
-#alinTrack415Header .alin-track415-mark{width:66px!important;height:66px!important;min-width:66px!important;border-radius:20px!important;background:linear-gradient(145deg,#fff8df,#e2b852)!important;color:#0a315a!important;box-shadow:0 14px 30px rgba(0,0,0,.18)!important}
-#alinTrack415Header h2{margin:0 0 6px!important;color:#fff!important;font-size:29px!important}
-#alinTrack415Header p{margin:0!important;color:rgba(255,255,255,.84)!important;font-size:14px!important}
-#alinTrack415Search{display:grid!important;grid-template-columns:minmax(0,1fr) 165px!important;gap:12px!important;padding:21px 26px!important;background:#fff!important;border-bottom:1px solid #e3e9f0!important}
-#alinTrack415Search label{display:grid!important;gap:7px!important}
-#alinTrack415Search label span{color:#43546a!important;font-size:12px!important;font-weight:800!important}
-#alinTrack415Input{width:100%!important;height:53px!important;padding:0 15px!important;border:1px solid #cbd7e4!important;border-radius:14px!important;background:#fbfcfe!important;color:#102b50!important;font:700 16px Tahoma,Arial!important;text-align:left!important;direction:ltr!important}
-#alinTrack415Input:focus{outline:3px solid rgba(214,166,51,.24)!important;border-color:#d4a63c!important}
-#alinTrack415Search button{align-self:end!important;height:53px!important;border:0!important;border-radius:14px!important;background:linear-gradient(135deg,#0a315a,#155b91)!important;color:#fff!important;font:800 15px Tahoma,Arial!important;box-shadow:0 10px 22px rgba(8,47,88,.19)!important}
-#alinTrack415Result{min-height:180px!important;padding:24px 26px 28px!important;background:#f6f8fb!important}
-.alin415-track-empty{min-height:132px!important;display:grid!important;place-items:center!important;align-content:center!important;gap:7px!important;border:1px dashed #cbd7e4!important;border-radius:19px!important;background:#fff!important;text-align:center!important;color:#64748b!important}
-.alin415-track-empty .symbol{width:44px!important;height:44px!important;display:grid!important;place-items:center!important;border-radius:14px!important;background:#fff3cf!important;color:#9a6b12!important;font-size:24px!important;font-weight:900!important}
-.alin415-track-empty b{color:#173a61!important;font-size:17px!important}
-.alin415-track-loading{min-height:132px!important;display:flex!important;align-items:center!important;justify-content:center!important;gap:12px!important;color:#173a61!important;font-weight:800!important}
-.alin415-track-loading i{width:27px!important;height:27px!important;border:3px solid #dce5ee!important;border-top-color:#d4a43b!important;border-radius:50%!important;animation:alinTrack415Spin .75s linear infinite!important}
-@keyframes alinTrack415Spin{to{transform:rotate(360deg)}}
-.alin415-track-alert{padding:18px!important;border:1px solid #efcf7c!important;border-radius:16px!important;background:#fff7df!important;color:#80580f!important;text-align:center!important}
-.alin415-track-alert.error{border-color:#efc2bd!important;background:#fff2f1!important;color:#a52b22!important}
-.alin415-track-head{display:flex!important;align-items:flex-start!important;justify-content:space-between!important;gap:18px!important;padding:18px 20px!important;border:1px solid #e0e7ef!important;border-radius:19px!important;background:#fff!important;box-shadow:0 8px 22px rgba(10,38,72,.05)!important}
-.alin415-track-head small{display:block!important;color:#7b8797!important;font-size:11px!important}
-.alin415-track-head h3{margin:5px 0 4px!important;color:#0b3158!important;font-size:22px!important;overflow-wrap:anywhere!important}
-.alin415-track-head p{margin:0!important;color:#667085!important}
-.alin415-track-status{flex:0 0 auto!important;padding:8px 12px!important;border:1px solid #efd28c!important;border-radius:999px!important;background:#fff1cf!important;color:#8a6114!important;font-size:12px!important;font-weight:900!important}
-.alin415-track-status.done{border-color:#bce5cd!important;background:#e9f8ef!important;color:#16794a!important}
-.alin415-track-status.cancel{border-color:#f0c4c0!important;background:#fff0ef!important;color:#b42318!important}
-.alin415-track-details{display:grid!important;grid-template-columns:minmax(210px,.42fr) minmax(0,1fr)!important;gap:10px!important;margin-top:12px!important}
-.alin415-track-detail{min-width:0!important;padding:13px 14px!important;border:1px solid #e1e8f0!important;border-radius:16px!important;background:#fff!important}
-.alin415-track-detail small{display:block!important;margin-bottom:6px!important;color:#7c8898!important;font-size:11px!important}
-.alin415-track-detail b{display:block!important;color:#203b5d!important;font-size:14px!important;line-height:1.65!important;overflow-wrap:anywhere!important}
-.alin415-track-timeline{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:8px!important;margin-top:16px!important;padding:18px 12px!important;border:1px solid #e0e8f1!important;border-radius:19px!important;background:#fff!important}
-.alin415-track-step{display:grid!important;justify-items:center!important;gap:7px!important;text-align:center!important;color:#8491a0!important;min-width:0!important}
-.alin415-track-step i{width:38px!important;height:38px!important;display:grid!important;place-items:center!important;border-radius:50%!important;background:#eef2f6!important;color:#788595!important;font-style:normal!important;font-weight:900!important}
-.alin415-track-step.done i{background:#0d477b!important;color:#fff!important}.alin415-track-step.current i{background:#d8ad48!important;color:#102b50!important;box-shadow:0 0 0 4px rgba(216,173,72,.18)!important}
-.alin415-track-step b{color:#536276!important;font-size:11px!important;line-height:1.5!important}.alin415-track-step.done b,.alin415-track-step.current b{color:#173a61!important}
-.alin415-track-summary{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:10px!important;margin-top:13px!important}
-.alin415-track-summary article{padding:13px 15px!important;border-radius:15px!important;background:#0b3158!important;color:#fff!important}.alin415-track-summary small{display:block!important;margin-bottom:5px!important;color:#c7d5e4!important;font-size:10px!important}.alin415-track-summary b{color:#fff!important;font-size:16px!important;overflow-wrap:anywhere!important}
-.alin-track415-button{position:relative!important}.alin-track415-mark{position:relative!important;width:36px!important;height:36px!important;min-width:36px!important;display:block!important;border:1px solid rgba(204,160,63,.55)!important;border-radius:12px!important;background:linear-gradient(145deg,#fff8e7,#f1d99e)!important;box-shadow:0 7px 16px rgba(7,38,73,.10)!important;overflow:hidden!important}
-.alin-track415-mark:before{content:""!important;position:absolute!important;width:15px!important;height:12px!important;right:7px!important;bottom:6px!important;border:2px solid #0b3158!important;border-radius:3px!important;background:transparent!important;box-sizing:border-box!important}
-.alin-track415-mark:after{content:""!important;position:absolute!important;width:9px!important;height:9px!important;left:7px!important;top:5px!important;border:3px solid #b98214!important;border-radius:50% 50% 50% 0!important;background:#fff7df!important;transform:rotate(-45deg)!important;box-sizing:border-box!important}
-.alin-track415-mark i{position:absolute!important;width:2px!important;height:9px!important;right:14px!important;bottom:8px!important;background:#0b3158!important;transform:rotate(90deg)!important}
-body.store-desktop .alin-track415-button:hover .alin-track415-mark,body.store-desktop .alin-track415-button:focus-visible .alin-track415-mark{background:linear-gradient(145deg,#0b3158,#155487)!important}.alin-track415-button:hover .alin-track415-mark:before,.alin-track415-button:focus-visible .alin-track415-mark:before{border-color:#fff!important}.alin-track415-button:hover .alin-track415-mark i,.alin-track415-button:focus-visible .alin-track415-mark i{background:#fff!important}
-@media(max-width:850px){#alinTrack415Layer{padding:10px!important}#alinTrack415Panel{width:100%!important;max-height:95vh!important;border-radius:20px!important}#alinTrack415Header{padding:24px 60px 22px 18px!important}#alinTrack415Header .alin-track415-mark{width:56px!important;height:56px!important;min-width:56px!important}#alinTrack415Search{grid-template-columns:1fr!important;padding:16px!important}#alinTrack415Result{padding:16px!important}.alin415-track-details{grid-template-columns:1fr!important}.alin415-track-timeline{overflow-x:auto!important;grid-template-columns:repeat(4,135px)!important;justify-content:start!important}}
-
-.login-actions button.active-login-role{outline:3px solid rgba(20,109,180,.24);box-shadow:0 0 0 2px rgba(255,255,255,.85) inset;transform:translateY(-1px)}
-#loginMsg[data-role]{min-height:24px;margin-top:10px;font-weight:800;color:#0b3158;text-align:center}
-</style>
 <link rel="stylesheet" href="./store/product-variants.css?v=4.2.0-display2">
-<link rel="stylesheet" href="./store/product-shelves.css?v=4.2.0-fix4">
-<link href="./styles/alin-store-responsive-1z4.css?v=4.2.0-fix4" rel="stylesheet"/>
-<link href="./styles/alin-store-media-1z9.css?v=4.2.0-fix4" rel="stylesheet"/>
-<link href="./styles/alin-store-details-categories-1z10.css?v=4.2.0-fix4" rel="stylesheet"/>
+<link rel="stylesheet" href="./store/product-shelves.css?v=4.2.0-clean1">
+<link href="./styles/alin-store-responsive-1z4.css?v=4.2.0-clean1" rel="stylesheet"/>
+<link href="./styles/alin-store-media-1z9.css?v=4.2.0-clean1" rel="stylesheet"/>
+<link href="./styles/alin-store-details-categories-1z10.css?v=4.2.0-clean1" rel="stylesheet"/>
 </head>
 <body class="store-desktop">
 <section class="login hidden" id="login">
@@ -350,11 +298,11 @@ body.store-desktop .alin-track415-button:hover .alin-track415-mark,body.store-de
   
 
 
-<script src="./core/pwa-register.js?v=4.2.0" defer></script>
+<script src="./core/pwa-register.js?v=4.2.0-clean1" defer></script>
 <script src="./core/push-notifications.js?v=4.2.0-push4" defer></script>
 <script src="./core/boot-recovery.js?v=4.2.0" defer></script>
 <script src="./modules/core/navigation.js?v=4.2.0" defer></script>
-<script id="alinAppBundleScript" src="./alin-app-desktop.v4.2.0.js?v=4.2.0-fix4" defer></script>
+<script id="alinAppBundleScript" src="./alin-app-desktop.v4.2.0.js?v=4.2.0-clean1" defer></script>
 <script src="./store/teacher-courses.js?v=4.2.0-courses3" defer></script>
 <script src="./modules/teacher/courses-management.js?v=4.2.0-courses3" defer></script>
 <script src="./modules/admin/courses-management.js?v=4.2.0-courses3" defer></script>

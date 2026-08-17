@@ -1,0 +1,11 @@
+{
+  "inline_mobile_style_blocks_removed": true,
+  "tablet_css_owner": "styles/alin-tablet.css",
+  "shelf_catalogue_isolation": true,
+  "arabic_midword_break_disabled": true,
+  "mobile_html_splash_removed": true,
+  "push_later_scope": "current_page_lifetime",
+  "denied_push_prompt_removed": true,
+  "student_session_persistent_days": 30,
+  "runtime_rebuild_required": true
+}

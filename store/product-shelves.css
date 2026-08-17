@@ -37,7 +37,7 @@
 }
 .alin-product-shelf-rail{
   display:grid!important;
-  grid-template-columns:repeat(auto-fit,minmax(190px,220px))!important;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),220px))!important;
   justify-content:start!important;
   align-items:stretch!important;
   gap:14px!important;
@@ -117,4 +117,10 @@
     min-width:45vw!important;
     max-width:45vw!important;
   }
+}
+
+/* CLEAN1 tablet shelf ownership: the shelf component owns cards independently of #storeGrid catalogue columns. */
+@media (min-width:901px) and (max-width:1180px){
+  .alin-product-shelf-rail{grid-template-columns:repeat(auto-fit,minmax(200px,240px))!important;gap:14px!important}
+  #storeGrid.alin-product-shelves .alin-product-shelf-rail>.v99-product-card{min-width:200px!important;max-width:240px!important}
 }

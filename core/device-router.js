@@ -69,7 +69,7 @@
   document.documentElement.dataset.alinEntryView=chosen;
   window.dispatchEvent(new CustomEvent('alin:entry-route-ready',{detail:{view:chosen,target:destination}}));
 
-  // Phones/tablets/iPads own exactly one splash: the one inside store-mobile.html.
-  // Route before index.html body is parsed so the legacy desktop entry splash never paints first.
+  // Phones/tablets/iPads route before index.html body is parsed. Installed PWAs use the OS launch screen;
+  // browser launches go straight to store-mobile, so two app-owned splash screens can never paint in sequence.
   if(chosen==='mobile')go();
 })();

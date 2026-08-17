@@ -4,14 +4,30 @@
   'use strict';
   const SESSION_KEY='alin_student_secure_session_v3';
   const DEVICE_KEY='alin_device_id_v3';
+  const SESSION_TTL_MS=30*24*60*60*1000;
   const escv=value=>typeof window.esc==='function'?window.esc(value):String(value??'');
   const moneyv=value=>typeof window.money==='function'?window.money(value):String(Number(value)||0);
   const client=()=>window.sb||window.AlinCloud?.client?.()||null;
   const cleanPhone=value=>String(value||'').trim().replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[^0-9+]/g,'');
   let secureOrders=[];
   function deviceId(){try{let v=localStorage.getItem(DEVICE_KEY);if(!v){v=crypto.randomUUID?.()||`${Date.now()}-${Math.random()}`;localStorage.setItem(DEVICE_KEY,v)}return v}catch(_){return'browser-session'}}
-  function readSession(){try{return JSON.parse(sessionStorage.getItem(SESSION_KEY)||'null')}catch(_){return null}}
-  function writeSession(value){try{if(value)sessionStorage.setItem(SESSION_KEY,JSON.stringify(value));else sessionStorage.removeItem(SESSION_KEY)}catch(_){}}
+  function readSession(){
+    try{
+      let raw=localStorage.getItem(SESSION_KEY);
+      if(!raw){raw=sessionStorage.getItem(SESSION_KEY);if(raw){localStorage.setItem(SESSION_KEY,raw);sessionStorage.removeItem(SESSION_KEY)}}
+      const state=JSON.parse(raw||'null');
+      if(!state)return null;
+      if(state.expiresAt&&Date.now()>=Number(state.expiresAt)){localStorage.removeItem(SESSION_KEY);return null}
+      return state;
+    }catch(_){return null}
+  }
+  function writeSession(value){
+    try{
+      sessionStorage.removeItem(SESSION_KEY);
+      if(value)localStorage.setItem(SESSION_KEY,JSON.stringify({...value,savedAt:Date.now(),expiresAt:Date.now()+SESSION_TTL_MS}));
+      else localStorage.removeItem(SESSION_KEY);
+    }catch(_){}
+  }
   function currentStudent(){return readSession()?.student||null}
   function token(){return readSession()?.token||''}
   function orders(){return secureOrders.slice()}

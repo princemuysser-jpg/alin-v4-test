@@ -1,5 +1,5 @@
-/* ALIN v4.2.0 RC22 — mobile/tablet route immediately.
-   Their 1s splash lives inside store-mobile so loading continues behind it. */
+/* ALIN v4.2.0 CLEAN1 — a single app-owned splash for desktop entry only.
+   Phone/tablet/iPad are routed before index body paint; installed PWAs use the OS launch screen. */
 (()=>{
   'use strict';
   const root=document.getElementById('alinSplash');

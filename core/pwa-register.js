@@ -7,7 +7,7 @@
   window.addEventListener('load',()=>{
     setTimeout(async()=>{
       try{
-        const registration=await navigator.serviceWorker.register('./service-worker.js?v=4.2.0-push2',{
+        const registration=await navigator.serviceWorker.register('./service-worker.js?v=4.2.0-clean1',{
           scope:'./',
           updateViaCache:'none'
         });

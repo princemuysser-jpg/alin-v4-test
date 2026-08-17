@@ -5,3 +5,7 @@ verify_jwt = false
 
 [functions.secure-login]
 verify_jwt = false
+
+# Push الإعلاني لا يُستدعى إلا من جلسة مدير صالحة.
+[functions.admin-send-push]
+verify_jwt = true

@@ -11,7 +11,7 @@
   }
   function studentId(){
     try{
-      const state=JSON.parse(sessionStorage.getItem(STUDENT_SESSION_KEY)||'null');
+      const state=JSON.parse(localStorage.getItem(STUDENT_SESSION_KEY)||sessionStorage.getItem(STUDENT_SESSION_KEY)||'null');
       return state?.student?.id?String(state.student.id):'';
     }catch(_){return ''}
   }

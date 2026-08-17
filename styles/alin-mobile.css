@@ -372,7 +372,7 @@ html[data-alin-orientation="landscape"] body.store-mobile .alin98-bottom{max-wid
   html[data-alin-device="mobile"] body.store-mobile .alin-store-banner__content{padding:9px 12px!important;gap:7px!important}
   html[data-alin-device="mobile"] body.store-mobile .alin98-cats{display:flex!important;overflow-x:auto!important;gap:8px!important;margin:8px 0 10px!important;padding-bottom:3px!important}
   html[data-alin-device="mobile"] body.store-mobile .alin98-cats>button{min-width:132px!important;min-height:82px!important;padding:10px!important}
-  html[data-alin-device="mobile"] body.store-mobile #storeGrid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important}
+  html[data-alin-device="mobile"] body.store-mobile #storeGrid:not(.alin-product-shelves){grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important}
   html[data-alin-device="mobile"] body.store-mobile #storeGrid>.v99-product-card:last-child:nth-child(odd){grid-column:auto!important;width:100%!important}
   html[data-alin-device="mobile"] body.store-mobile .alin-mobile-bottom-v103{
     right:max(6px,env(safe-area-inset-right))!important;left:max(6px,env(safe-area-inset-left))!important;
@@ -383,180 +383,327 @@ html[data-alin-orientation="landscape"] body.store-mobile .alin98-bottom{max-wid
   html[data-alin-device="mobile"] body.store-mobile .alin-mobile-sheet{top:8px!important;bottom:8px!important;max-height:none!important}
 }
 
-/* iPad/tablet landscape gets a true wide layout and remains scrollable. */
-@media (orientation:landscape) and (min-width:900px){
-  html[data-alin-device="tablet"] body.store-mobile #app>main{max-width:none!important;padding:14px 20px 110px!important}
-  html[data-alin-device="tablet"] body.store-mobile .alin-mobile-premium-header{grid-template-columns:minmax(180px,230px) minmax(260px,1fr) auto!important;margin-bottom:12px!important}
-  html[data-alin-device="tablet"] body.store-mobile .alin-store-banner__media{aspect-ratio:16/5!important;max-height:320px!important}
-  html[data-alin-device="tablet"] body.store-mobile #storeGrid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
-  html[data-alin-device="tablet"] body.store-mobile #adminPage .admin-tabs,
-  html[data-alin-device="tablet"] body.store-mobile #teacherPage .teacher-tabs{grid-template-columns:repeat(4,minmax(0,1fr))!important}
-  html[data-alin-device="tablet"] body.store-mobile .library-v116-tabs,
-  html[data-alin-device="tablet"] body.store-mobile .courier-v161-tabs{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+/* ALIN v4.2.0 CLEAN1 — canonical mobile structural ownership. */
+/* ALIN v4.1.5 — mobile layout correction, 2026-07-31.
+   Presentation only. No JavaScript, Supabase, cart, order or account logic changes. */
+
+/* Keep the fixed bottom navigation from covering the final content. */
+body.store-mobile #storePage{
+  padding-bottom:calc(132px + env(safe-area-inset-bottom))!important;
+}
+body.store-mobile #storePage .store-shell{
+  padding-bottom:calc(118px + env(safe-area-inset-bottom))!important;
 }
 
-
-/* ALIN v4.1.6 prepublish 1t — installed iPad PWA landscape recovery. */
-@media (orientation:landscape) and (min-width:768px){
-  html[data-alin-device="tablet"] body.store-mobile,
-  html[data-alin-device="tablet"] body.store-mobile #app,
-  html[data-alin-device="tablet"] body.store-mobile #app>main,
-  html[data-alin-device="tablet"] body.store-mobile .page{
-    width:100%!important;max-width:100%!important;min-width:0!important;height:auto!important;min-height:100dvh!important;
-  }
-  html[data-alin-device="tablet"] body.store-mobile #app>main{overflow-x:hidden!important;overflow-y:visible!important}
-  html[data-alin-device="tablet"] body.store-mobile .alin-mobile-premium-header{width:100%!important;max-width:none!important}
-  html[data-alin-device="tablet"] body.store-mobile .alin-store-banners{width:100%!important;max-width:none!important}
+/* The bottom navigation already owns order tracking; remove the duplicated large block. */
+body.store-mobile #orderTrackBox{
+  display:none!important;
 }
 
-
-/* Installed PWA already has the OS launch screen; never paint a second custom splash. */
-html[data-alin-standalone="1"] .alin-mobile-entry-splash{display:none!important}
-
-/* ALIN v4.2.0 Stable — unified 2-second touch-device entry splash.
-   One responsive layout for phone, Android tablet and iPad; no duplicate timing rules. */
-.alin-mobile-entry-splash{
-  --alin-entry-total:2s;
-  position:fixed;
-  inset:0;
-  z-index:2147483000;
-  display:grid;
-  place-items:center;
-  width:100%;
-  min-width:0;
-  height:100dvh;
-  min-height:100%;
-  padding:
-    max(20px,env(safe-area-inset-top))
-    max(20px,env(safe-area-inset-right))
-    max(20px,env(safe-area-inset-bottom))
-    max(20px,env(safe-area-inset-left));
-  overflow:hidden;
-  touch-action:none;
-  overscroll-behavior:none;
-  background:
-    radial-gradient(circle at 50% 18%,rgba(38,149,241,.14),transparent 32%),
-    radial-gradient(circle at 12% 82%,rgba(34,132,223,.08),transparent 27%),
-    linear-gradient(180deg,#ffffff 0%,#f7fbff 70%,#e9f4ff 100%);
-  color:#082b5a;
-  opacity:1;
-  visibility:visible;
-  animation:alinMobileEntrySplashCycle var(--alin-entry-total) ease both;
-  will-change:opacity;
-  contain:layout paint style;
+/* One clean search border instead of a bordered input inside a bordered label. */
+body.store-mobile .mobile-search-premium,
+body.store-mobile .mobile-search-row{
+  min-width:0!important;
 }
-.alin-mobile-entry-splash__inner{
-  width:min(390px,86vw);
-  max-width:100%;
-  display:grid;
-  justify-items:center;
-  align-content:center;
-  text-align:center;
-  margin:0 auto;
-  padding:12px 0;
+body.store-mobile .mobile-search-premium label,
+body.store-mobile .mobile-search-row label{
+  display:flex!important;
+  align-items:center!important;
+  width:100%!important;
+  min-width:0!important;
+  overflow:hidden!important;
 }
-.alin-mobile-entry-splash__mark{
-  width:clamp(108px,29vw,138px);
-  height:auto;
-  max-height:25dvh;
-  display:block;
-  object-fit:contain;
-  border-radius:24px;
-  filter:drop-shadow(0 14px 26px rgba(15,91,184,.16));
+body.store-mobile .mobile-search-premium input,
+body.store-mobile .mobile-search-row input,
+body.store-mobile #searchInput{
+  flex:1 1 auto!important;
+  width:100%!important;
+  min-width:0!important;
+  height:100%!important;
+  margin:0!important;
+  padding:0 8px!important;
+  border:0!important;
+  outline:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  -webkit-appearance:none!important;
+  appearance:none!important;
 }
-.alin-mobile-entry-splash__latin{
-  margin-top:10px;
-  font:950 clamp(31px,9vw,40px)/1 Arial,sans-serif;
-  letter-spacing:.13em;
-  text-indent:.13em;
-  color:#08285d;
-}
-.alin-mobile-entry-splash__platform{
-  margin-top:5px;
-  font:800 clamp(9px,2.8vw,11px)/1.2 Arial,sans-serif;
-  letter-spacing:.28em;
-  text-indent:.28em;
-  color:#1674d6;
-}
-.alin-mobile-entry-splash h1{
-  margin:18px 0 0!important;
-  font-size:clamp(30px,8.5vw,40px)!important;
-  line-height:1.15!important;
-  color:#082b5a!important;
-  white-space:nowrap;
-}
-.alin-mobile-entry-splash p{
-  margin:7px 0 0!important;
-  font-size:clamp(13px,3.7vw,17px)!important;
-  line-height:1.5!important;
-  font-weight:800;
-  color:#176fc9!important;
-  white-space:nowrap;
-}
-.alin-mobile-entry-splash__progress{
-  width:min(255px,66vw);
-  height:6px;
-  margin-top:24px;
-  overflow:hidden;
-  border-radius:999px;
-  background:#d6e4f1;
-  box-shadow:inset 0 1px 2px rgba(4,48,96,.08);
-}
-.alin-mobile-entry-splash__bar{
-  display:block;
-  width:100%;
-  height:100%;
-  border-radius:inherit;
-  background:linear-gradient(90deg,#0b61d8,#1ea6f1,#3bc4ff);
-  transform:scaleX(.035);
-  transform-origin:right center;
-  animation:alinMobileEntrySplashBar 1.72s linear both;
+body.store-mobile #searchInput:focus{
+  border:0!important;
+  outline:0!important;
+  box-shadow:none!important;
 }
 
-/* Tablet + iPad portrait/landscape: scale the same composition instead of switching designs. */
-@media (min-width:600px){
-  .alin-mobile-entry-splash__inner{width:min(560px,74vw);padding:18px 0}
-  .alin-mobile-entry-splash__mark{width:clamp(138px,18vw,172px);max-height:24dvh;border-radius:30px}
-  .alin-mobile-entry-splash__latin{margin-top:13px;font-size:46px}
-  .alin-mobile-entry-splash__platform{font-size:12px}
-  .alin-mobile-entry-splash h1{margin-top:20px!important;font-size:46px!important}
-  .alin-mobile-entry-splash p{font-size:18px!important}
-  .alin-mobile-entry-splash__progress{width:min(330px,48vw);height:7px;margin-top:27px}
+/* Stable two-column catalogue and a centred final card when the count is odd. */
+body.store-mobile #storeGrid:not(.alin-product-shelves){
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  align-items:stretch!important;
+  gap:10px!important;
+  width:100%!important;
+  min-width:0!important;
+}
+body.store-mobile #storeGrid:not(.alin-product-shelves)>.v99-product-card{
+  display:flex!important;
+  flex-direction:column!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  height:100%!important;
+  margin:0!important;
+}
+body.store-mobile #storeGrid:not(.alin-product-shelves)>.v99-product-card:last-child:nth-child(odd){
+  grid-column:1 / -1!important;
+  justify-self:center!important;
+  width:calc((100% - 10px)/2)!important;
+}
+body.store-mobile #storeGrid:not(.alin-product-shelves) .v99-product-body{
+  display:flex!important;
+  flex:1 1 auto!important;
+  flex-direction:column!important;
+  min-width:0!important;
+}
+body.store-mobile #storeGrid:not(.alin-product-shelves) .v99-actions{
+  margin-top:auto!important;
+}
+body.store-mobile #storeGrid:not(.alin-product-shelves) .v99-product-body h3,
+body.store-mobile #storeGrid:not(.alin-product-shelves) .v99-product-body p,
+body.store-mobile #storeGrid:not(.alin-product-shelves) .v99-card-meta span{
+  overflow-wrap:normal!important;word-break:normal!important;hyphens:none!important;
 }
 
-/* Short landscape screens (phones and compact tablets): keep everything centered and inside the viewport. */
-@media (orientation:landscape) and (max-height:700px){
-  .alin-mobile-entry-splash{padding-block:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-bottom))}
-  .alin-mobile-entry-splash__inner{width:min(520px,72vw);padding:4px 0}
-  .alin-mobile-entry-splash__mark{width:clamp(76px,13vh,112px);max-height:20dvh;border-radius:20px}
-  .alin-mobile-entry-splash__latin{margin-top:6px;font-size:clamp(28px,7vh,38px)}
-  .alin-mobile-entry-splash__platform{margin-top:3px;font-size:9px}
-  .alin-mobile-entry-splash h1{margin-top:9px!important;font-size:clamp(27px,6.4vh,38px)!important}
-  .alin-mobile-entry-splash p{margin-top:4px!important;font-size:clamp(12px,3vh,16px)!important}
-  .alin-mobile-entry-splash__progress{width:min(280px,43vw);height:5px;margin-top:12px}
+/* Options sheet: reset legacy generic button/card rules and give every row a clear owner. */
+body.store-mobile #alinAccountSheet{
+  right:10px!important;
+  left:10px!important;
+  bottom:max(8px,env(safe-area-inset-bottom))!important;
+  width:auto!important;
+  max-width:none!important;
+  max-height:calc(100dvh - 18px)!important;
+  padding:10px 14px 20px!important;
+  overflow:auto!important;
+  border-radius:24px 24px 14px 14px!important;
+  box-sizing:border-box!important;
+}
+body.store-mobile #alinAccountSheet .alin-sheet-head{
+  display:flex!important;
+  align-items:flex-start!important;
+  justify-content:space-between!important;
+  gap:12px!important;
+  margin:0 0 12px!important;
+  padding:12px 2px 14px!important;
+  border-bottom:1px solid #dfe5ec!important;
+}
+body.store-mobile #alinAccountSheet .alin-sheet-head>div{
+  min-width:0!important;
+}
+body.store-mobile #alinAccountSheet .alin-sheet-head h2{
+  margin:0!important;
+  font-size:26px!important;
+  line-height:1.25!important;
+}
+body.store-mobile #alinAccountSheet .alin-sheet-head p{
+  margin:5px 0 0!important;
+  font-size:12px!important;
+  line-height:1.55!important;
+}
+body.store-mobile #alinAccountSheet .alin-sheet-head>button{
+  position:static!important;
+  flex:0 0 42px!important;
+  display:grid!important;
+  place-items:center!important;
+  width:42px!important;
+  min-width:42px!important;
+  height:42px!important;
+  margin:0!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:14px!important;
+  background:#0b3a66!important;
+  color:#fff!important;
+  box-shadow:none!important;
+  font-size:27px!important;
+  line-height:1!important;
+}
+body.store-mobile #alinAccountSheet .alin-options-list{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr)!important;
+  gap:10px!important;
+  width:100%!important;
+  min-width:0!important;
+  padding:0!important;
+}
+body.store-mobile #alinAccountSheet .alin-option-action{
+  position:static!important;
+  display:grid!important;
+  grid-template-columns:46px minmax(0,1fr) 18px!important;
+  align-items:center!important;
+  gap:11px!important;
+  width:100%!important;
+  min-width:0!important;
+  min-height:76px!important;
+  height:auto!important;
+  margin:0!important;
+  padding:12px!important;
+  overflow:hidden!important;
+  border:1px solid #dde5ee!important;
+  border-radius:17px!important;
+  background:#fff!important;
+  color:#102f55!important;
+  box-shadow:0 7px 20px rgba(9,39,75,.07)!important;
+  text-align:right!important;
+  line-height:normal!important;
+}
+body.store-mobile #alinAccountSheet .alin-option-action>div{
+  display:grid!important;
+  gap:4px!important;
+  min-width:0!important;
+  text-align:right!important;
+}
+body.store-mobile #alinAccountSheet .alin-option-action b,
+body.store-mobile #alinAccountSheet .alin-option-row b{
+  display:block!important;
+  margin:0!important;
+  color:#102f55!important;
+  font-size:16px!important;
+  font-weight:900!important;
+  line-height:1.35!important;
+}
+body.store-mobile #alinAccountSheet .alin-option-action small,
+body.store-mobile #alinAccountSheet .alin-option-row small{
+  display:block!important;
+  margin:0!important;
+  color:#6b7788!important;
+  font-size:11px!important;
+  font-weight:600!important;
+  line-height:1.55!important;
+  white-space:normal!important;
+}
+body.store-mobile #alinAccountSheet .alin-option-icon{
+  position:static!important;
+  display:grid!important;
+  place-items:center!important;
+  width:46px!important;
+  min-width:46px!important;
+  height:46px!important;
+  margin:0!important;
+  padding:0!important;
+  border-radius:14px!important;
+  background:#f2f6fa!important;
+  color:#0b3a66!important;
+  font-size:22px!important;
+  line-height:1!important;
+  box-shadow:none!important;
+}
+body.store-mobile #alinAccountSheet .alin-option-chevron{
+  position:static!important;
+  display:block!important;
+  width:18px!important;
+  min-width:18px!important;
+  color:#8c98a8!important;
+  font-size:28px!important;
+  line-height:1!important;
+  text-align:center!important;
+}
+body.store-mobile #alinAccountSheet .alin-option-row{
+  position:static!important;
+  display:grid!important;
+  grid-template-columns:46px minmax(0,1fr)!important;
+  grid-template-areas:"icon copy" "choices choices"!important;
+  align-items:center!important;
+  gap:10px 11px!important;
+  width:100%!important;
+  min-width:0!important;
+  min-height:0!important;
+  margin:0!important;
+  padding:12px!important;
+  overflow:hidden!important;
+  border:1px solid #dde5ee!important;
+  border-radius:17px!important;
+  background:#fff!important;
+  color:#102f55!important;
+  box-shadow:0 7px 20px rgba(9,39,75,.07)!important;
+  text-align:right!important;
+}
+body.store-mobile #alinAccountSheet .alin-option-row>.alin-option-icon{
+  grid-area:icon!important;
+}
+body.store-mobile #alinAccountSheet .alin-option-row>div:not(.alin-choice-group){
+  grid-area:copy!important;
+  display:grid!important;
+  gap:4px!important;
+  min-width:0!important;
+}
+body.store-mobile #alinAccountSheet .alin-choice-group{
+  grid-area:choices!important;
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:7px!important;
+  width:100%!important;
+  min-width:0!important;
+  margin:0!important;
+  padding:0!important;
+}
+body.store-mobile #alinAccountSheet .alin-choice-group.alin-theme-toggle{
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+}
+body.store-mobile #alinAccountSheet .alin-choice{
+  position:static!important;
+  display:grid!important;
+  place-items:center!important;
+  width:100%!important;
+  min-width:0!important;
+  height:43px!important;
+  min-height:43px!important;
+  margin:0!important;
+  padding:0 5px!important;
+  border:1px solid #d8e1eb!important;
+  border-radius:13px!important;
+  background:#f5f8fb!important;
+  color:#15375e!important;
+  box-shadow:none!important;
+  font-size:13px!important;
+  font-weight:800!important;
+  line-height:1.2!important;
+  white-space:nowrap!important;
+}
+body.store-mobile #alinAccountSheet .alin-choice.active,
+body.store-mobile #alinAccountSheet .alin-choice.is-active,
+body.store-mobile #alinAccountSheet .alin-choice[aria-pressed="true"]{
+  border-color:#0c416f!important;
+  background:#0c416f!important;
+  color:#fff!important;
 }
 
-/* Very narrow phones: avoid text or logo clipping. */
-@media (max-width:360px){
-  .alin-mobile-entry-splash__inner{width:90vw}
-  .alin-mobile-entry-splash__mark{width:96px;border-radius:20px}
-  .alin-mobile-entry-splash__latin{font-size:29px}
-  .alin-mobile-entry-splash h1{font-size:29px!important}
-  .alin-mobile-entry-splash p{font-size:12.5px!important}
-  .alin-mobile-entry-splash__progress{margin-top:20px}
+html[data-alin-theme="dark"] body.store-mobile #alinAccountSheet .alin-option-action,
+html[data-alin-theme="dark"] body.store-mobile #alinAccountSheet .alin-option-row{
+  border-color:var(--ao-border)!important;
+  background:var(--ao-surface)!important;
+  color:var(--ao-ink)!important;
+}
+html[data-alin-theme="dark"] body.store-mobile #alinAccountSheet .alin-option-action b,
+html[data-alin-theme="dark"] body.store-mobile #alinAccountSheet .alin-option-row b{
+  color:var(--ao-ink)!important;
+}
+html[data-alin-theme="dark"] body.store-mobile #alinAccountSheet .alin-option-icon,
+html[data-alin-theme="dark"] body.store-mobile #alinAccountSheet .alin-choice{
+  border-color:var(--ao-border)!important;
+  background:#102a44!important;
+  color:var(--ao-ink)!important;
 }
 
-@keyframes alinMobileEntrySplashCycle{
-  0%,86%{opacity:1;visibility:visible}
-  100%{opacity:0;visibility:hidden}
-}
-@keyframes alinMobileEntrySplashBar{from{transform:scaleX(.035)}to{transform:scaleX(1)}}
-@media (prefers-reduced-motion:reduce){
-  .alin-mobile-entry-splash{animation:alinMobileEntrySplashReduced var(--alin-entry-total) linear both!important}
-  .alin-mobile-entry-splash__bar{animation:none!important;transform:scaleX(1)!important}
-}
-@keyframes alinMobileEntrySplashReduced{
-  0%,99%{opacity:1;visibility:visible}
-  100%{opacity:0;visibility:hidden}
+@media(max-width:370px){
+  body.store-mobile #alinAccountSheet{right:6px!important;left:6px!important;padding-inline:10px!important}
+  body.store-mobile #alinAccountSheet .alin-option-action,
+  body.store-mobile #alinAccountSheet .alin-option-row{padding:10px!important;gap:8px!important}
+  body.store-mobile #alinAccountSheet .alin-choice{font-size:11px!important}
+  body.store-mobile #storeGrid:not(.alin-product-shelves){gap:7px!important}
+  body.store-mobile #storeGrid:not(.alin-product-shelves)>.v99-product-card:last-child:nth-child(odd){width:calc((100% - 7px)/2)!important}
 }
 
+html[dir="ltr"] body.store-mobile #alinAccountSheet .alin-option-chevron{transform:scaleX(-1)!important}
+
+.login-actions button.active-login-role{outline:3px solid rgba(20,109,180,.24);box-shadow:0 0 0 2px rgba(255,255,255,.85) inset;transform:translateY(-1px)}
+#loginMsg[data-role]{min-height:24px;margin-top:10px;font-weight:800;color:#0b3158;text-align:center}

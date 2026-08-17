@@ -1,0 +1,16 @@
+{
+  "css_files": 19,
+  "css_parse_errors": [],
+  "store_mobile_inline_style_blocks": false,
+  "store_desktop_inline_style_blocks": false,
+  "mobile_duplicate_splash_markup": false,
+  "tablet_anywhere_wrap": false,
+  "mobile_anywhere_wrap": false,
+  "push_background_reset": false,
+  "student_local_session": true,
+  "push_edge_function_local": true,
+  "migration_007_lines": 59,
+  "migration_010_lines": 229,
+  "migration_011_lines": 44,
+  "migration_012_lines": 98
+}

@@ -65,6 +65,40 @@ for storefront in ['store-desktop.html','store-mobile.html']:
  runtime_missing=unresolved_loaded_actions(storefront)
  if runtime_missing: errors.append(f'{storefront}: unresolved loaded actions: '+', '.join(runtime_missing))
 
+
+# CLEAN1 structural checks that catch regressions the older action/syntax audit missed.
+mobile_html=(root/'store-mobile.html').read_text(encoding='utf-8',errors='ignore')
+desktop_html=(root/'store-desktop.html').read_text(encoding='utf-8',errors='ignore')
+for html_name,html_text in [('store-mobile.html',mobile_html),('store-desktop.html',desktop_html)]:
+ if re.search(r'<style\b',html_text,re.I): errors.append(f'{html_name}: inline style block is forbidden; use owned CSS files')
+if 'alinMobileEntrySplash' in mobile_html: errors.append('store-mobile.html: duplicate in-page mobile splash returned')
+if not (root/'styles/alin-tablet.css').is_file(): errors.append('missing canonical tablet stylesheet')
+for css_name in ['styles/alin-mobile.css','styles/alin-tablet.css']:
+ css=(root/css_name).read_text(encoding='utf-8',errors='ignore')
+ if 'overflow-wrap:anywhere' in css: errors.append(f'{css_name}: unsafe mid-word wrapping remains')
+ # Catalogue columns may be defined only outside independent shelf mode.
+ for m in re.finditer(r'([^{}]*#storeGrid[^{}]*)\{[^{}]*grid-template-columns',css,re.I|re.S):
+  selector=m.group(1)
+  if '.alin-product-shelves' not in selector and ':not(.alin-product-shelves)' not in selector:
+   errors.append(f'{css_name}: #storeGrid column rule can override shelf mode: {selector.strip()[:120]}')
+student_auth=(root/'modules/store/student-auth.js').read_text(encoding='utf-8',errors='ignore')
+if 'localStorage.getItem(SESSION_KEY)' not in student_auth: errors.append('student session is not persistent across app restarts')
+if re.search(r'return JSON\.parse\(sessionStorage\.getItem\(SESSION_KEY',student_auth): errors.append('student session still uses sessionStorage as primary storage')
+push=(root/'core/push-notifications.js').read_text(encoding='utf-8',errors='ignore')
+if 'hiddenAt' in push: errors.append('push Later behavior still resets on background/foreground')
+if "Notification.permission==='denied')hidePrompt()" not in push: errors.append('push denied state does not remove opt-in prompt')
+required_migrations=[
+ 'database/migrations/007_product_subcategories_shelf_system.sql',
+ 'database/migrations/010_student_retention_personal_offers.sql',
+ 'database/migrations/011_student_retention_single_active_offer.sql',
+ 'database/migrations/012_store_web_push_notifications.sql']
+for rel in required_migrations:
+ mp=root/rel
+ if not mp.is_file(): errors.append(f'missing reproducible migration: {rel}'); continue
+ sql=mp.read_text(encoding='utf-8',errors='ignore').lower()
+ if len(sql.splitlines())<20 or not re.search(r'\b(create|alter)\b',sql): errors.append(f'incomplete reproducible migration: {rel}')
+if not (root/'supabase/functions/admin-send-push/index.ts').is_file(): errors.append('missing local Edge Function admin-send-push')
+
 files=['dist/alin-core.v4.js','alin-app-desktop.v4.2.0.js','alin-app-mobile.v4.2.0.js','dist/alin-role-runtime.v4.js']
 before={f:hashlib.sha256((root/f).read_bytes()).hexdigest() for f in files}
 subprocess.run([sys.executable,str(root/'scripts/build-runtime.py')],cwd=root,check=True,stdout=subprocess.DEVNULL)

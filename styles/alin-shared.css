@@ -43,17 +43,17 @@ html[data-alin-theme="dark"] body .book-card small{color:var(--ao-muted)!importa
 
 .alin-options-backdrop{position:fixed;inset:0;background:rgba(3,15,28,.58);z-index:9998;animation:aoFade .18s ease}
 .alin-options-dialog,.alin-contact-dialog{position:fixed;z-index:9999;top:50%;left:50%;transform:translate(-50%,-50%);width:min(510px,calc(100vw - 32px));max-height:min(780px,calc(100dvh - 32px));overflow:auto;box-sizing:border-box;background:var(--ao-bg);color:var(--ao-ink);border:1px solid var(--ao-border);border-radius:22px;box-shadow:var(--ao-shadow);animation:aoEnter .22s cubic-bezier(.2,.8,.2,1)}
-.alin-options-dialog>header,.alin-contact-dialog>header,.alin-mobile-sheet .alin-sheet-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;padding:22px 24px 16px;border-bottom:1px solid var(--ao-border)}
-.alin-options-dialog h2,.alin-contact-dialog h2,.alin-mobile-sheet .alin-sheet-head h2{margin:0;font-size:24px;color:var(--ao-ink)}
-.alin-options-dialog header p,.alin-mobile-sheet .alin-sheet-head p{margin:4px 0 0;color:var(--ao-muted);font-size:13px}
+.alin-options-dialog>header,.alin-contact-dialog>header{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;padding:22px 24px 16px;border-bottom:1px solid var(--ao-border)}
+.alin-options-dialog h2,.alin-contact-dialog h2{margin:0;font-size:24px;color:var(--ao-ink)}
+.alin-options-dialog header p{margin:4px 0 0;color:var(--ao-muted);font-size:13px}
 [data-alin-close],[data-contact-close]{width:36px;height:36px;border:1px solid var(--ao-border);border-radius:10px;background:var(--ao-surface);color:var(--ao-ink);font-size:24px;line-height:1;cursor:pointer}
 .alin-options-sections{padding:16px 24px 22px}
 .alin-account-card,.alin-help-row{width:100%;display:flex;align-items:center;gap:13px;box-sizing:border-box;border:1px solid var(--ao-border);background:var(--ao-surface);color:var(--ao-ink);font:inherit;text-align:start;cursor:pointer}
 .alin-account-card{padding:15px;border-inline-start:4px solid var(--ao-gold);border-radius:14px}
 .alin-account-copy{display:grid;gap:2px;flex:1}.alin-account-copy b{font-size:16px}.alin-account-copy small{color:var(--ao-gold);font-weight:800}.alin-account-copy em{font-style:normal;color:var(--ao-muted);font-size:11px}
-.alin-option-icon{width:38px;height:38px;flex:0 0 38px;display:grid;place-items:center;border-radius:11px;background:var(--ao-soft);color:var(--ao-ink)}
-.alin-option-icon svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
-.alin-option-chevron{font-size:25px;color:var(--ao-muted)}
+.alin-options-dialog .alin-option-icon{width:38px;height:38px;flex:0 0 38px;display:grid;place-items:center;border-radius:11px;background:var(--ao-soft);color:var(--ao-ink)}
+.alin-options-dialog .alin-option-icon svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.alin-options-dialog .alin-option-chevron{font-size:25px;color:var(--ao-muted)}
 .alin-local-note,.alin-privacy-note{margin:8px 4px 14px;color:var(--ao-muted);font-size:12.5px;line-height:1.65}
 .alin-settings-section{margin-top:14px}.alin-settings-section h3{margin:0 2px 8px;color:var(--ao-muted);font-size:12px;letter-spacing:.04em}
 .alin-setting-row{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid var(--ao-border)}
@@ -66,7 +66,7 @@ html[data-alin-theme="dark"] body .book-card small{color:var(--ao-muted)!importa
 .alin-contact-dialog{width:min(400px,calc(100vw - 32px));padding-bottom:20px}.alin-contact-dialog [data-contact-content]{padding:22px}.alin-contact-number{text-align:center;font-size:20px;font-weight:800;color:var(--ao-ink)}.alin-contact-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px}.alin-contact-actions a{padding:12px;text-align:center;text-decoration:none;border-radius:10px;background:var(--ao-ink);color:var(--ao-bg);font-weight:800}.alin-contact-actions a:last-child{background:var(--ao-surface);color:var(--ao-ink);border:1px solid var(--ao-border)}.alin-contact-empty{padding:16px;background:var(--ao-soft);border-radius:12px;color:var(--ao-muted);line-height:1.7}
 .alin-account-card:hover,.alin-help-row:hover{border-color:var(--ao-gold)}button:focus-visible,a:focus-visible{outline:3px solid color-mix(in srgb,var(--ao-gold) 70%,white);outline-offset:2px}
 body.alin-options-open{overflow:hidden}
-html[dir="ltr"] .alin-option-chevron,html[dir="ltr"] .alin-help-row>span:last-child{transform:scaleX(-1)}
+html[dir="ltr"] .alin-options-dialog .alin-option-chevron,html[dir="ltr"] .alin-help-row>span:last-child{transform:scaleX(-1)}
 @keyframes aoFade{from{opacity:0}to{opacity:1}}@keyframes aoEnter{from{opacity:0;transform:translate(-50%,-47%) scale(.98)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}@keyframes aoMobile{from{opacity:0;transform:translate(-50%,18px)}to{opacity:1;transform:translate(-50%,0)}}
 @media(max-width:680px){.alin-options-dialog{top:auto;bottom:10px;transform:translateX(-50%);border-radius:22px 22px 12px 12px;max-height:calc(100dvh - 20px);animation:aoMobile .22s ease-out}.alin-options-dialog>header{padding:18px 18px 13px}.alin-options-sections{padding:13px 16px 20px}.alin-options-dialog h2{font-size:21px}.alin-contact-actions{grid-template-columns:1fr}.alin-account-copy em{display:none}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}.alin-options-dialog,.alin-contact-dialog,.alin-options-backdrop{animation:none!important}}

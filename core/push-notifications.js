@@ -4,11 +4,10 @@
   const STUDENT_SESSION_KEY='alin_student_secure_session_v3';
   const LEGACY_DISMISS_KEY='alin_push_prompt_dismissed_at_v2';
   let dismissedThisVisit=false;
-  let hiddenAt=0;
   const PUBLIC_KEY='BI-mAjJvDZXH9HEus8ypbEs85J4c47DL9CRibbrT54KYsFygUVbm1B2lYaDnnFKPqLSXmy6lv1rwBvU7dzjrzwc';
   const supported=()=>('serviceWorker' in navigator)&&('PushManager' in window)&&('Notification' in window)&&/^https?:$/.test(location.protocol);
   const client=()=>window.sb||window.AlinCloud?.client?.()||null;
-  const studentState=()=>{try{return JSON.parse(sessionStorage.getItem(STUDENT_SESSION_KEY)||'null')}catch(_){return null}};
+  const studentState=()=>{try{return JSON.parse(localStorage.getItem(STUDENT_SESSION_KEY)||sessionStorage.getItem(STUDENT_SESSION_KEY)||'null')}catch(_){return null}};
   const deviceId=()=>window.ALINStudentAuth?.deviceId?.()||window.AlinStudentAuth?.deviceId?.()||(()=>{try{let v=localStorage.getItem('alin_device_id_v3');if(!v){v=crypto.randomUUID?.()||`${Date.now()}-${Math.random()}`;localStorage.setItem('alin_device_id_v3',v)}return v}catch(_){return'browser-device'}})();
   const b64ToUint8=value=>{const pad='='.repeat((4-value.length%4)%4);const raw=atob((value+pad).replace(/-/g,'+').replace(/_/g,'/'));return Uint8Array.from([...raw].map(c=>c.charCodeAt(0)))};
   const b64=value=>{const bytes=new Uint8Array(value);let raw='';bytes.forEach(v=>raw+=String.fromCharCode(v));return btoa(raw).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')};
@@ -39,7 +38,7 @@
     if(!supported())throw new Error('هذا الجهاز أو المتصفح لا يدعم إشعارات التطبيق');
     let permission=Notification.permission;
     if(permission!=='granted')permission=await Notification.requestPermission();
-    if(permission!=='granted')throw new Error('لم يتم السماح بإشعارات منصة آلين');
+    if(permission!=='granted'){hidePrompt();throw new Error('لم يتم السماح بإشعارات منصة آلين')}
     const reg=await currentRegistration();
     let sub=await reg.pushManager.getSubscription();
     if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64ToUint8(PUBLIC_KEY)});
@@ -72,13 +71,9 @@
   window.addEventListener('load',boot,{once:true});
   window.addEventListener('alin:student-session',()=>{if(Notification.permission==='granted')sync()});
   document.addEventListener('visibilitychange',()=>{
-    if(document.visibilityState==='hidden'){hiddenAt=Date.now();return}
     if(document.visibilityState!=='visible')return;
-    if(Notification.permission==='granted'){sync();return}
-    if(Notification.permission==='default'&&hiddenAt&&Date.now()-hiddenAt>1200){
-      dismissedThisVisit=false;
-      setTimeout(renderPrompt,650);
-    }
+    if(Notification.permission==='granted')sync();
+    else if(Notification.permission==='denied')hidePrompt();
   });
   window.AlinPush=Object.freeze({supported,enable,sync,existing,renderPrompt});
 })();

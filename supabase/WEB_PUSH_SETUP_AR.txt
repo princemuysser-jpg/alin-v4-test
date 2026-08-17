@@ -1,0 +1,12 @@
+إعداد Web Push في مشروع Supabase جديد
+=====================================
+
+1) طبّق migrations بالترتيب حتى 012_store_web_push_notifications.sql.
+2) انشر Edge Function: admin-send-push مع verify_jwt=true.
+3) احفظ الأسرار داخل Edge Function Secrets ولا تضع المفتاح الخاص داخل ملفات المشروع:
+   VAPID_PUBLIC_KEY
+   VAPID_PRIVATE_KEY
+   VAPID_SUBJECT (اختياري، مثال mailto:admin@alinplatform.com)
+4) المفتاح العام المستخدم في الواجهة يجب أن يطابق VAPID_PUBLIC_KEY.
+
+الإنتاج الحالي يستطيع الاستمرار بالـfallback المحمي من جدول push_config، لكن المشاريع الجديدة تستخدم Secrets كمسار معتمد.
