@@ -1,4 +1,4 @@
-/* ALIN v2.4.2 — device router for the animated entry screen. */
+/* ALIN v2.4.3 — device router for the animated entry screen on all device classes. */
 (()=>{
   'use strict';
   const STORAGE_KEY='alin_device_view';
