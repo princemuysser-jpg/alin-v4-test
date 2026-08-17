@@ -156,8 +156,6 @@
     const stock=stockCopy(item);
     const variants=Array.isArray(item.variants)?item.variants:[];
     const meta=[item.teacher,item.subject,item.grade].filter(Boolean).join(' • ');
-    const primaryAction=out?'cart':(variants.length?'details':'cart');
-    const primaryLabel=out?'أبلغني':(variants.length?'اختر التصميم':'أضف للسلة');
     return `<article class="v99-product-card" data-v99-item="${esc(ctx.stableKey(item.kind,item.id))}">
       <div class="v99-card-topline"><span class="v99-card-kind">${esc(itemTypeLabel(item))}</span>${discount?`<span class="v99-card-discount">-${fmt(discount)}%</span>`:''}</div>
       <button class="v99-fav" type="button" data-v99-action="favorite" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}" aria-label="${isFavorite(item)?'إزالة من المفضلة':'إضافة إلى المفضلة'}">${isFavorite(item)?'♥':'♡'}</button>
@@ -168,7 +166,7 @@
         ${meta?`<p class="v99-card-subtitle">${esc(meta)}</p>`:'<p class="v99-card-subtitle is-empty">منتج من منصة آلين</p>'}
         <div class="v99-card-meta"><span class="v99-stock ${stock.tone}"><i aria-hidden="true"></i>${esc(stock.text)}</span>${variants.length?`<span class="v99-variant-count">${fmt(variants.length)} تصاميم</span>`:''}${item.packPrice>0&&item.packSize>=2?`<span class="v99-pack-chip">باكيت ${fmt(item.packSize)}</span>`:''}</div>
         <div class="v99-card-price"><span class="alin-current-price"><strong>${fmt(price)} د.ع</strong>${hasPrevious?`<del title="السعر السابق">${fmt(previous)} د.ع</del>`:''}</span>${item.packPrice>0&&item.packSize>=2?`<small>الباكيت ${fmt(item.packPrice)} د.ع</small>`:''}</div>
-        <div class="v99-actions"><button class="v99-primary ${out?'v99-alert-action':''}" data-v99-action="${primaryAction}" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">${primaryLabel}</button><button class="v99-secondary" data-v99-action="details" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}" aria-label="التفاصيل">التفاصيل</button></div>
+        <div class="v99-actions"><button class="v99-primary" data-v99-action="details" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}" aria-label="عرض تفاصيل ${esc(item.title)}">تفاصيل</button></div>
       </div>
     </article>`;
   }
@@ -262,7 +260,7 @@
     const current=effectivePrice(item),previous=comparisonPrice(item),hasPrevious=previous>current;
     const discount=hasPrevious?Math.max(1,Math.round((1-current/previous)*100)):0;
     const meta=[item.teacher,item.subject,item.grade].filter(Boolean).join(' • ');
-    return `<article class="v99-mini-card" data-v99-item="${esc(ctx.stableKey(item.kind,item.id))}"><button class="v99-mini-media" type="button" data-v99-action="details" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}" aria-label="عرض ${esc(item.title)}"${item.image?` style='--alin-media-image:url("${esc(imageUrl(item.image))}")'`:''}>${item.image?`<img class="alin-product-image-fit" src="${esc(imageUrl(item.image))}" alt="${esc(item.title)}" loading="lazy">`:'<span class="v99-placeholder">آ</span>'}${discount?`<span class="v99-mini-discount">-${fmt(discount)}%</span>`:''}</button><div class="v99-mini-body"><span class="v99-mini-kind">${esc(itemTypeLabel(item))}</span><h3><button type="button" data-v99-action="details" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">${esc(item.title)}</button></h3>${meta?`<p>${esc(meta)}</p>`:''}<div class="v99-card-price"><strong>${fmt(current)} د.ع</strong>${hasPrevious?`<del>${fmt(previous)} د.ع</del>`:''}</div><button class="v99-mini-open" data-v99-action="details" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">عرض التفاصيل</button></div></article>`;
+    return `<article class="v99-mini-card" data-v99-item="${esc(ctx.stableKey(item.kind,item.id))}"><button class="v99-mini-media" type="button" data-v99-action="details" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}" aria-label="عرض ${esc(item.title)}"${item.image?` style='--alin-media-image:url("${esc(imageUrl(item.image))}")'`:''}>${item.image?`<img class="alin-product-image-fit" src="${esc(imageUrl(item.image))}" alt="${esc(item.title)}" loading="lazy">`:'<span class="v99-placeholder">آ</span>'}${discount?`<span class="v99-mini-discount">-${fmt(discount)}%</span>`:''}</button><div class="v99-mini-body"><span class="v99-mini-kind">${esc(itemTypeLabel(item))}</span><h3><button type="button" data-v99-action="details" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">${esc(item.title)}</button></h3>${meta?`<p>${esc(meta)}</p>`:''}<div class="v99-card-price"><strong>${fmt(current)} د.ع</strong>${hasPrevious?`<del>${fmt(previous)} د.ع</del>`:''}</div><button class="v99-mini-open" data-v99-action="details" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">تفاصيل</button></div></article>`;
   }
 
   function rail(rootSelector,title,subtitle,rows){
@@ -297,7 +295,7 @@
     if(!root)return;
     const item=canonicalItems().filter(activeDeal).sort((a,b)=>(b.price-b.dealPrice)-(a.price-a.dealPrice))[0];
     if(!item){root.innerHTML='';return}
-    root.innerHTML=`<article class="v99-deal-feature"><div class="v99-deal-media">${item.image?`<img src="${esc(imageUrl(item.image))}" alt="${esc(item.title)}">`:'<span class="v99-placeholder">ALIN</span>'}</div><div class="v99-deal-copy"><span class="v99-kicker">عرض اليوم</span><h2>${esc(item.title)}</h2><p>${esc([item.teacher,item.subject,item.grade].filter(Boolean).join(' • '))}</p><div class="v99-price">${fmt(item.dealPrice)} د.ع <del>${fmt(comparisonPrice(item))}</del></div><div class="v99-countdown" data-deal-end="${esc(item.dealEnd||'')}"></div><div class="v99-actions"><button data-v99-action="cart" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">أضف للسلة</button><button class="v99-secondary" data-v99-action="share" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">مشاركة</button></div></div></article>`;
+    root.innerHTML=`<article class="v99-deal-feature"><div class="v99-deal-media">${item.image?`<img src="${esc(imageUrl(item.image))}" alt="${esc(item.title)}">`:'<span class="v99-placeholder">ALIN</span>'}</div><div class="v99-deal-copy"><span class="v99-kicker">عرض اليوم</span><h2>${esc(item.title)}</h2><p>${esc([item.teacher,item.subject,item.grade].filter(Boolean).join(' • '))}</p><div class="v99-price">${fmt(item.dealPrice)} د.ع <del>${fmt(comparisonPrice(item))}</del></div><div class="v99-countdown" data-deal-end="${esc(item.dealEnd||'')}"></div><div class="v99-actions"><button data-v99-action="details" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">تفاصيل</button><button class="v99-secondary" data-v99-action="share" data-kind="${esc(item.kind)}" data-id="${esc(item.id)}">مشاركة</button></div></div></article>`;
     updateCountdowns();
   }
 
@@ -383,9 +381,9 @@
     const key=String(state.categoryKey||(state.searchCatalog?'search':'all'));
     if(root.dataset.categoryKey!==key||!root.querySelector('#v99CategorySearch')){
       root.dataset.categoryKey=key;
-      root.innerHTML=`<div class="v99-category-tools">
-        <label class="v99-category-search" for="v99CategorySearch"><span class="v99-category-search-icon" aria-hidden="true"></span><input id="v99CategorySearch" type="search" autocomplete="off" placeholder="ابحث داخل هذا القسم..." value="${esc(state.categoryQuery||'')}" aria-label="البحث داخل القسم"></label>
-        <label class="v99-category-sort"><span>ترتيب</span><select id="v99CategorySort" aria-label="ترتيب منتجات القسم"><option value="recommended">افتراضي</option><option value="newest">الأحدث</option><option value="priceAsc">السعر من الأقل إلى الأعلى</option><option value="priceDesc">السعر من الأعلى إلى الأقل</option></select></label>
+      root.innerHTML=`<div class="v99-category-tools" role="search" aria-label="البحث والترتيب داخل القسم">
+        <label class="v99-category-search" for="v99CategorySearch"><span class="v99-category-search-icon" aria-hidden="true"></span><input id="v99CategorySearch" type="search" autocomplete="off" placeholder="ابحث داخل القسم" value="${esc(state.categoryQuery||'')}" aria-label="البحث داخل القسم"></label>
+        <label class="v99-category-sort"><span>ترتيب</span><select id="v99CategorySort" aria-label="ترتيب منتجات القسم"><option value="recommended">افتراضي</option><option value="newest">الأحدث</option><option value="priceAsc">السعر: الأقل أولاً</option><option value="priceDesc">السعر: الأعلى أولاً</option></select></label>
         <span class="v99-category-result-count" id="v99CategoryResultCount" aria-live="polite"></span>
       </div>`;
     }

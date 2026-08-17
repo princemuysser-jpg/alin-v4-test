@@ -1,0 +1,45 @@
+منصة آلين v4.2.0 — Full Cleanup / No Patches
+==============================================
+
+تم إصلاح النقاط المكتشفة من المصدر:
+1) خيارات الكمبيوتر: المكوّن صار مملوكاً لملف desktop CSS واضح، والأيقونة واللوحة داخل حدود الشاشة.
+2) شعب المنتجات: فصل shelf mode عن catalogue grid؛ لا يوجد 5 أعمدة ثابتة تخرّب منتجين فقط.
+3) أسماء الأقسام العربية: منع mid-word wrapping على الموبايل والتابلت.
+4) Splash: إزالة splash HTML المكرر للموبايل؛ الهاتف/الآيباد يوجّه قبل رسم splash القديم، والـPWA يعتمد شاشة تشغيل النظام.
+5) زر لاحقاً للإشعارات: يبقى مخفياً طوال حياة الصفحة الحالية ولا يعود بسبب background/foreground.
+6) رفض الإشعارات: النافذة تنغلق ولا تعاد عند permission=denied.
+7) جلسة الطالب: حفظ آمن نسبياً في localStorage لمدة 30 يوم متوافقة مع جلسة الخادم، مع ترحيل تلقائي من sessionStorage القديم.
+8) قابلية إعادة النشر: إكمال migrations 007/010/011 وإضافة 012 Web Push كاملة، وإضافة Edge Function admin-send-push داخل المشروع.
+
+تنظيف الهيكل:
+- store-mobile.html: لا يحتوي أي <style> inline.
+- store-desktop.html: لا يحتوي أي <style> inline.
+- تم فصل CSS التابلت إلى styles/alin-tablet.css.
+- تم تحديث cache epoch وService Worker للإصدار CLEAN1.
+- تم توسيع audit-stable.py حتى يكتشف هذه الأنواع من regressions مستقبلاً.
+
+حماية الأجزاء الحساسة:
+تمت مقارنة الملفات التالية byte-for-byte مع النسخة السابقة ولم تتغير:
+- modules/store/cart.js
+- modules/core/checkout-service.js
+- modules/store/order-routing.js
+- modules/admin/orders.js
+- modules/admin/finance.js
+- modules/library/orders.js
+- modules/library/finance.js
+- modules/courier/finance.js
+- modules/teacher/finance.js
+- core/finance-runtime.js
+
+فحص نهائي:
+- audit-stable.py: 150 Action / 0 Errors
+- JavaScript syntax: كل ملفات JS سليمة
+- CSS parser: 19 ملف / 0 parse errors
+- لا يوجد overflow-wrap:anywhere في mobile/tablet canonical CSS
+- لا يوجد mobile duplicate splash markup
+- migrations المحلية المكتملة: 007=59 سطر، 010=229، 011=44، 012=98
+- Edge Function admin-send-push موجودة محلياً وتم نشر production version 3 على Supabase.
+- STABLE_SHA256SUMS.txt يغطي 191 ملفاً.
+
+ملاحظة Web Push:
+المشاريع الجديدة يجب أن تضع VAPID_PRIVATE_KEY داخل Supabase Edge Function Secrets، ولا يوجد المفتاح الخاص داخل ملفات المشروع.

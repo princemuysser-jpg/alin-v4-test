@@ -9,6 +9,7 @@
   const cleanQuery=url=>{
     url.searchParams.delete('view');
     url.searchParams.delete('splash');
+    url.searchParams.delete('__alin_entry');
     return url;
   };
 
@@ -45,6 +46,7 @@
     }
     cleanQuery(current);
     current.pathname=current.pathname.replace(/[^/]*$/,'')+(chosen==='mobile'?'store-mobile':'store-desktop');
+    current.searchParams.set('__alin_entry','1');
     destination=current.href;
   }catch(_){
     chosen=(window.innerWidth||1024)<800?'mobile':'desktop';
@@ -57,7 +59,7 @@
         return key!=='view'&&key!=='splash';
       }).join('&');
     }catch(_){query=''}
-    destination='./'+(chosen==='mobile'?'store-mobile':'store-desktop')+(query?'?'+query:'')+String(location.hash||'');
+    destination='./'+(chosen==='mobile'?'store-mobile':'store-desktop')+'?'+(query?query+'&':'')+'__alin_entry=1'+String(location.hash||'');
   }
 
   const go=()=>{
@@ -69,7 +71,6 @@
   document.documentElement.dataset.alinEntryView=chosen;
   window.dispatchEvent(new CustomEvent('alin:entry-route-ready',{detail:{view:chosen,target:destination}}));
 
-  // Phones/tablets/iPads route before index.html body is parsed. Installed PWAs use the OS launch screen;
-  // browser launches go straight to store-mobile, so two app-owned splash screens can never paint in sequence.
-  if(chosen==='mobile')go();
+  // All browser/PWA entries stay on index long enough for one ALIN splash, then route once.
+  // The manifest background matches the splash so the OS launch surface blends into the same visual.
 })();

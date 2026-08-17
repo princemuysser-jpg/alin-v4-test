@@ -1,0 +1,69 @@
+{
+  "release": "4.2.0-ui5",
+  "splash": {
+    "single_canonical_entry": true,
+    "mobile_direct_url_guard": true,
+    "desktop_direct_url_guard": true
+  },
+  "product_cards": {
+    "main_action_details_only": true,
+    "mini_action_details": true,
+    "variant_choice_inside_details_only": true
+  },
+  "product_media": {
+    "desktop_ratio": "4/3",
+    "tablet_ratio": "4/3",
+    "mobile_ratio": "1/1",
+    "mobile_shelf_ratio": "5/4",
+    "desktop_rule_present": true,
+    "tablet_rule_present": true,
+    "mobile_shelf_rule_present": true
+  },
+  "categories": {
+    "responsive_owner": "styles/alin-store-responsive-1z4.css",
+    "no_shared_showcase_duplicate": true,
+    "no_midword_wrap_tablet": true
+  },
+  "category_tools": {
+    "classic_search": true,
+    "sort_same_component": true,
+    "options": [
+      "افتراضي",
+      "الأحدث",
+      "السعر: الأقل أولاً",
+      "السعر: الأعلى أولاً"
+    ]
+  },
+  "audit": {
+    "actions": 150,
+    "errors": 0,
+    "js_files": 113,
+    "css_files": 19,
+    "css_parse_errors": 0
+  },
+  "sensitive_files_unchanged": [
+    "modules/store/cart.js",
+    "modules/core/checkout-service.js",
+    "modules/admin/orders.js",
+    "modules/admin/finance.js",
+    "modules/library/finance.js",
+    "modules/courier/finance.js",
+    "modules/teacher/finance.js",
+    "modules/store/order-routing.js",
+    "modules/store/student-auth.js",
+    "database/ALIN_V4_CLEAN_PROJECT_MASTER.sql"
+  ],
+  "sensitive_files_expected": [
+    "modules/store/cart.js",
+    "modules/core/checkout-service.js",
+    "modules/admin/orders.js",
+    "modules/admin/finance.js",
+    "modules/library/finance.js",
+    "modules/courier/finance.js",
+    "modules/teacher/finance.js",
+    "modules/store/order-routing.js",
+    "modules/store/student-auth.js",
+    "database/ALIN_V4_CLEAN_PROJECT_MASTER.sql"
+  ],
+  "backups_present": false
+}

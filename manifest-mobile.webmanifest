@@ -4,12 +4,12 @@
   "description": "متجر آلين السريع للطلاب",
   "lang": "ar",
   "dir": "rtl",
-  "start_url": "./store-mobile?v=4.2.0&view=mobile",
+  "start_url": "./?view=mobile&v=4.2.0-ui5",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#00143c",
-  "theme_color": "#00143c",
+  "background_color": "#f7fbff",
+  "theme_color": "#f7fbff",
   "icons": [
     {
       "src": "./assets/icons/icon-192.png",

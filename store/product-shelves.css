@@ -54,9 +54,10 @@
 #storeGrid.alin-product-shelves .alin-product-shelf-rail .v99-product-media{
   width:100%!important;
   min-width:0!important;
-  height:180px!important;
-  min-height:180px!important;
-  max-height:180px!important;
+  height:auto!important;
+  min-height:0!important;
+  max-height:none!important;
+  aspect-ratio:4/3!important;
 }
 #storeGrid.alin-product-shelves .alin-product-shelf-rail .v99-product-body{
   min-width:0!important;
@@ -97,9 +98,10 @@
     min-height:300px!important;
   }
   #storeGrid.alin-product-shelves .alin-product-shelf-rail .v99-product-media{
-    height:142px!important;
-    min-height:142px!important;
-    max-height:142px!important;
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    aspect-ratio:5/4!important;
   }
 }
 @media(max-width:520px){

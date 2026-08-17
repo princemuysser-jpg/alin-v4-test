@@ -99,6 +99,33 @@ for rel in required_migrations:
  if len(sql.splitlines())<20 or not re.search(r'\b(create|alter)\b',sql): errors.append(f'incomplete reproducible migration: {rel}')
 if not (root/'supabase/functions/admin-send-push/index.ts').is_file(): errors.append('missing local Edge Function admin-send-push')
 
+# UI5 storefront checks: one canonical splash entry, details-only product cards and single CSS ownership.
+device_router=(root/'core/device-router.js').read_text(encoding='utf-8',errors='ignore')
+if "if(chosen==='mobile')go();" in device_router: errors.append('mobile entry bypasses the canonical splash')
+if "current.searchParams.set('__alin_entry','1')" not in device_router: errors.append('entry router marker missing; direct store routes can skip splash')
+for rel,view in [('core/csp-mobile-inline-1.js','mobile'),('core/csp-desktop-inline-1.js','desktop')]:
+ guard=(root/rel).read_text(encoding='utf-8',errors='ignore')
+ if "__alin_entry" not in guard or f"url.searchParams.set('view','{view}')" not in guard: errors.append(f'{rel}: canonical entry guard missing')
+for rel,view in [('manifest-mobile.webmanifest','mobile'),('manifest-desktop.webmanifest','desktop')]:
+ manifest=json.loads((root/rel).read_text(encoding='utf-8'))
+ if f'view={view}' not in str(manifest.get('start_url','')): errors.append(f'{rel}: start_url bypasses splash entry')
+ if manifest.get('background_color')!='#f7fbff': errors.append(f'{rel}: launch background does not match splash')
+catalog=(root/'modules/store/discovery-catalog.js').read_text(encoding='utf-8',errors='ignore')
+try:
+ card_source=catalog[catalog.index('function card(item)'):catalog.index('function matches(item)')]
+except ValueError:
+ card_source=''
+if 'اختر التصميم' in card_source or 'أضف للسلة' in card_source: errors.append('catalog product card bypasses details flow')
+if '>تفاصيل</button>' not in card_source: errors.append('catalog product card details action missing')
+responsive=(root/'styles/alin-store-responsive-1z4.css').read_text(encoding='utf-8',errors='ignore')
+shared=(root/'styles/alin-shared.css').read_text(encoding='utf-8',errors='ignore')
+tablet=(root/'styles/alin-tablet.css').read_text(encoding='utf-8',errors='ignore')
+if '.alin-category-showcase{' in shared: errors.append('category showcase has multiple CSS owners')
+if 'aspect-ratio:4/3!important' not in responsive: errors.append('desktop product media ratio missing')
+if 'aspect-ratio:1/1!important' not in responsive: errors.append('mobile product media ratio missing')
+if re.search(r'#alinStoreCategories\{\s*display:grid',tablet,re.S): errors.append('tablet legacy category grid returned')
+if 'v99-category-tools' not in responsive or 'v99-category-search' not in responsive or 'v99-category-sort' not in responsive: errors.append('classic category search/sort toolbar styles missing')
+
 files=['dist/alin-core.v4.js','alin-app-desktop.v4.2.0.js','alin-app-mobile.v4.2.0.js','dist/alin-role-runtime.v4.js']
 before={f:hashlib.sha256((root/f).read_bytes()).hexdigest() for f in files}
 subprocess.run([sys.executable,str(root/'scripts/build-runtime.py')],cwd=root,check=True,stdout=subprocess.DEVNULL)

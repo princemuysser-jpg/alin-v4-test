@@ -39,7 +39,7 @@ html[data-alin-device="tablet"] body.store-mobile #storeGrid:not(.alin-product-s
 html[data-alin-device="tablet"] body.store-mobile #storeGrid:not(.alin-product-shelves)>.v99-product-card:last-child:nth-child(odd){
   grid-column:auto!important;justify-self:stretch!important;width:100%!important;
 }
-html[data-alin-device="tablet"] body.store-mobile #storeGrid:not(.alin-product-shelves) .v99-product-media{height:220px!important}
+html[data-alin-device="tablet"] body.store-mobile #storeGrid:not(.alin-product-shelves) .v99-product-media{height:auto!important;aspect-ratio:4/3!important}
 html[data-alin-device="tablet"] body.store-mobile #storeGrid:not(.alin-product-shelves) .v99-product-body{padding:15px!important}
 html[data-alin-device="tablet"] body.store-mobile .alin98-bottom{
   left:50%!important;right:auto!important;transform:translateX(-50%)!important;
@@ -122,28 +122,12 @@ html[data-alin-device="tablet"] body.store-mobile #alinStoreHomeView,
 html[data-alin-device="tablet"] body.store-mobile #alinStoreCatalogView{
   width:100%!important;max-width:none!important;min-width:0!important;box-sizing:border-box!important;
 }
-html[data-alin-device="tablet"] body.store-mobile #alinStoreCategories{
-  display:grid!important;
-  grid-template-columns:repeat(auto-fit,minmax(160px,1fr))!important;
-  gap:12px!important;width:100%!important;margin:16px 0 24px!important;overflow:visible!important;
-}
-html[data-alin-device="tablet"] body.store-mobile #alinStoreCategories>button{
-  display:grid!important;grid-template-columns:48px minmax(0,1fr)!important;align-items:center!important;
-  justify-items:start!important;gap:11px!important;width:100%!important;min-width:0!important;min-height:104px!important;
-  padding:14px!important;text-align:right!important;border-radius:18px!important;
-}
-html[data-alin-device="tablet"] body.store-mobile #alinStoreCategories .cat-icon{
-  width:48px!important;height:48px!important;min-width:48px!important;flex:0 0 48px!important;border-radius:14px!important;
-}
-html[data-alin-device="tablet"] body.store-mobile #alinStoreCategories .cat-copy{
-  min-width:0!important;width:100%!important;place-items:start!important;text-align:right!important;
-}
-html[data-alin-device="tablet"] body.store-mobile #alinStoreCategories .cat-copy strong{
-  font-size:15px!important;line-height:1.35!important;overflow-wrap:normal!important;word-break:normal!important;hyphens:none!important;
-}
-html[data-alin-device="tablet"] body.store-mobile #alinStoreCategories .cat-copy small{
-  font-size:10.5px!important;line-height:1.45!important;overflow-wrap:normal!important;word-break:normal!important;hyphens:none!important;
-}
+html[data-alin-device="tablet"] body.store-mobile .alin-category-showcase{--alin-cat-card-w:148px!important}
+html[data-alin-device="tablet"] body.store-mobile .alin-category-showcase #alinStoreCategories{margin:0!important;overflow-x:auto!important;width:100%!important}
+html[data-alin-device="tablet"] body.store-mobile .alin-category-showcase #alinStoreCategories>button[data-v99-category]{height:150px!important;min-height:150px!important;padding:7px!important;grid-template-columns:none!important;grid-template-rows:minmax(0,1fr) 40px!important;justify-items:stretch!important;text-align:center!important}
+html[data-alin-device="tablet"] body.store-mobile .alin-category-showcase #alinStoreCategories .cat-icon{width:100%!important;height:auto!important;min-width:0!important;max-height:none!important;border-radius:13px!important}
+html[data-alin-device="tablet"] body.store-mobile .alin-category-showcase #alinStoreCategories .cat-copy{width:100%!important;height:40px!important;min-height:40px!important;place-items:center!important;text-align:center!important;margin:0!important;padding:5px 7px!important}
+html[data-alin-device="tablet"] body.store-mobile .alin-category-showcase #alinStoreCategories .cat-copy strong{font-size:13px!important;line-height:1.35!important;overflow-wrap:normal!important;word-break:normal!important;hyphens:none!important}
 html[data-alin-device="tablet"] body.store-mobile #v99NewArrivals,
 html[data-alin-device="tablet"] body.store-mobile #v99Featured,
 html[data-alin-device="tablet"] body.store-mobile #v99TopTen{
@@ -165,10 +149,10 @@ html[data-alin-device="tablet"] body.store-mobile .v99-mini-card{
   box-shadow:0 9px 24px rgba(7,35,67,.06)!important;
 }
 html[data-alin-device="tablet"] body.store-mobile .v99-mini-media{
-  height:210px!important;min-height:210px!important;background:linear-gradient(145deg,#f5f8fc,#fffaf0)!important;
+  height:auto!important;min-height:0!important;aspect-ratio:4/3!important;background:linear-gradient(145deg,#f5f8fc,#fffaf0)!important;
 }
 html[data-alin-device="tablet"] body.store-mobile #v99NewArrivals .v99-mini-media{
-  height:auto!important;min-height:0!important;aspect-ratio:4/5!important;padding:8px!important;box-sizing:border-box!important;
+  height:auto!important;min-height:0!important;aspect-ratio:4/3!important;padding:8px!important;box-sizing:border-box!important;
 }
 html[data-alin-device="tablet"] body.store-mobile #v99NewArrivals .v99-mini-media img{
   width:100%!important;height:100%!important;object-fit:contain!important;object-position:center!important;
@@ -200,7 +184,7 @@ html[data-alin-device="tablet"] body.store-mobile #alinStoreCatalogView #storeGr
 html[data-alin-device="tablet"] body.store-mobile #alinStoreCatalogView #storeGrid:not(.alin-product-shelves)>.v99-product-card{
   width:100%!important;min-width:0!important;height:100%!important;border-radius:18px!important;
 }
-html[data-alin-device="tablet"] body.store-mobile #alinStoreCatalogView #storeGrid:not(.alin-product-shelves) .v99-product-media{height:240px!important}
+html[data-alin-device="tablet"] body.store-mobile #alinStoreCatalogView #storeGrid:not(.alin-product-shelves) .v99-product-media{height:auto!important;aspect-ratio:4/3!important}
 html[data-alin-device="tablet"] body.store-mobile #alinStoreCatalogView #storeGrid:not(.alin-product-shelves) .v99-product-body{padding:14px!important}
 html[data-alin-device="tablet"] body.store-mobile #alinStoreCatalogView #storeGrid:not(.alin-product-shelves) .v99-product-body h3{font-size:16px!important}
 html[data-alin-device="tablet"] body.store-mobile #alinStoreCatalogView #storeGrid:not(.alin-product-shelves) .v99-actions button{min-height:42px!important;font-size:11px!important}
@@ -261,15 +245,13 @@ html[data-alin-device="tablet"] body.store-mobile #alinCategoryEditForm .row-act
   html[data-alin-device="tablet"] body.store-mobile #alinStoreCatalogView #storeGrid:not(.alin-product-shelves){
     grid-template-columns:repeat(3,minmax(0,1fr))!important;
   }
-  html[data-alin-device="tablet"] body.store-mobile #alinStoreCatalogView #storeGrid:not(.alin-product-shelves) .v99-product-media{height:220px!important}
+  html[data-alin-device="tablet"] body.store-mobile #alinStoreCatalogView #storeGrid:not(.alin-product-shelves) .v99-product-media{height:auto!important;aspect-ratio:4/3!important}
   html[data-alin-device="tablet"] body.store-mobile #adminPage .admin-category-list{
     grid-template-columns:repeat(3,minmax(0,1fr))!important;
   }
 }
 @media (max-width:760px){
-  html[data-alin-device="tablet"] body.store-mobile #alinStoreCategories{
-    grid-template-columns:repeat(2,minmax(0,1fr))!important;
-  }
+  html[data-alin-device="tablet"] body.store-mobile .alin-category-showcase{--alin-cat-card-w:132px!important}
   html[data-alin-device="tablet"] body.store-mobile .v99-rail{grid-auto-columns:min(72%,290px)!important}
   html[data-alin-device="tablet"] body.store-mobile #adminPage .admin-category-list{grid-template-columns:1fr!important}
 }

@@ -4,12 +4,12 @@
   "description": "متجر آلين للملازم والقرطاسية والهدايا",
   "lang": "ar",
   "dir": "rtl",
-  "start_url": "./?v=4.2.0",
+  "start_url": "./?view=desktop&v=4.2.0-ui5",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#00143c",
-  "theme_color": "#00143c",
+  "background_color": "#f7fbff",
+  "theme_color": "#f7fbff",
   "icons": [
     {
       "src": "./assets/icons/icon-192.png",
