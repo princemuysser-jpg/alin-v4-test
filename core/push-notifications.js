@@ -43,7 +43,7 @@
     if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64ToUint8(PUBLIC_KEY)});
     await registerSubscription(sub);
     hidePrompt();
-    window.toast?.(studentState()?.token?'تم تفعيل الإشعارات لهذا الحساب والجهاز':'تم تفعيل الإشعارات لهذا الجهاز — بدون حساب');
+    window.toast?.('تم تفعيل إشعارات منصة آلين');
     return true;
   }
 
@@ -56,8 +56,8 @@
   function renderPrompt(){
     if(!promptAllowed()||document.getElementById('alinPushPrompt'))return;
     const box=document.createElement('div');box.id='alinPushPrompt';box.className='alin-push-prompt';
-    box.innerHTML='<div class="alin-push-prompt-icon">🔔</div><div class="alin-push-prompt-copy"><strong>فعّل إشعارات منصة آلين</strong><span>توصلك العروض والإعلانات على شاشة الجهاز حتى لو التطبيق مغلق — ما يحتاج تسجيل حساب.</span></div><div class="alin-push-prompt-actions"><button type="button" data-push-enable>تفعيل الإشعارات</button><button type="button" class="secondary" data-push-dismiss>لاحقاً</button></div>';
-    box.querySelector('[data-push-enable]')?.addEventListener('click',async e=>{const btn=e.currentTarget;btn.disabled=true;btn.textContent='جارٍ التفعيل...';try{await enable()}catch(error){window.toast?.(error?.message||'تعذر تفعيل الإشعارات');btn.disabled=false;btn.textContent='تفعيل'}});
+    box.innerHTML='<div class="alin-push-prompt-icon" aria-hidden="true"><span>🔔</span></div><div class="alin-push-prompt-copy"><div class="alin-push-prompt-kicker">إشعارات آلين</div><strong>خلّك قريب من كل جديد</strong><span>فعّل الإشعارات لتصلك العروض والإعلانات الجديدة أول بأول.</span><div class="alin-push-prompt-tags"><i>العروض الجديدة</i><i>الإعلانات</i></div></div><div class="alin-push-prompt-actions"><button type="button" data-push-enable><span>تفعيل الإشعارات</span></button><button type="button" class="secondary" data-push-dismiss>لاحقاً</button></div>';
+    box.querySelector('[data-push-enable]')?.addEventListener('click',async e=>{const btn=e.currentTarget;btn.disabled=true;btn.textContent='جارٍ التفعيل...';try{await enable()}catch(error){window.toast?.(error?.message||'تعذر تفعيل الإشعارات');btn.disabled=false;btn.textContent='تفعيل الإشعارات'}});
     box.querySelector('[data-push-dismiss]')?.addEventListener('click',dismiss);
     document.body.appendChild(box);
   }

@@ -1,0 +1,12 @@
+{
+  "feature": "web_push_optin_ui_refresh",
+  "removed_copy": ["حتى لو التطبيق مغلق", "ما يحتاج تسجيل حساب", "بدون حساب"],
+  "checks": {
+    "premium_prompt_layout": true,
+    "desktop_responsive": true,
+    "mobile_responsive": true,
+    "dark_mode": true,
+    "notification_behavior_unchanged": true,
+    "guest_push_behavior_unchanged": true
+  }
+}
