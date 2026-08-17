@@ -1,0 +1,11 @@
+{
+  "feature": "push_later_session_behavior",
+  "status": "passed",
+  "rules": {
+    "later_hides_current_visit": true,
+    "returns_after_app_background_and_foreground": true,
+    "enabled_push_never_prompts": true,
+    "denied_permission_never_reprompts": true,
+    "legacy_7_day_dismiss_removed": true
+  }
+}

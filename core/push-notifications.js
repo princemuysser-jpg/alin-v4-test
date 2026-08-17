@@ -2,7 +2,9 @@
 (function(){
   'use strict';
   const STUDENT_SESSION_KEY='alin_student_secure_session_v3';
-  const DISMISS_KEY='alin_push_prompt_dismissed_at_v2';
+  const LEGACY_DISMISS_KEY='alin_push_prompt_dismissed_at_v2';
+  let dismissedThisVisit=false;
+  let hiddenAt=0;
   const PUBLIC_KEY='BI-mAjJvDZXH9HEus8ypbEs85J4c47DL9CRibbrT54KYsFygUVbm1B2lYaDnnFKPqLSXmy6lv1rwBvU7dzjrzwc';
   const supported=()=>('serviceWorker' in navigator)&&('PushManager' in window)&&('Notification' in window)&&/^https?:$/.test(location.protocol);
   const client=()=>window.sb||window.AlinCloud?.client?.()||null;
@@ -49,10 +51,10 @@
 
   function promptAllowed(){
     if(!supported()||Notification.permission==='denied'||Notification.permission==='granted')return false;
-    try{const at=Number(localStorage.getItem(DISMISS_KEY)||0);return !at||Date.now()-at>7*864e5}catch(_){return true}
+    return !dismissedThisVisit;
   }
   function hidePrompt(){document.getElementById('alinPushPrompt')?.remove()}
-  function dismiss(){try{localStorage.setItem(DISMISS_KEY,String(Date.now()))}catch(_){}hidePrompt()}
+  function dismiss(){dismissedThisVisit=true;hidePrompt()}
   function renderPrompt(){
     if(!promptAllowed()||document.getElementById('alinPushPrompt'))return;
     const box=document.createElement('div');box.id='alinPushPrompt';box.className='alin-push-prompt';
@@ -64,10 +66,19 @@
 
   function boot(){
     if(!supported())return;
+    try{localStorage.removeItem(LEGACY_DISMISS_KEY)}catch(_){}
     if(Notification.permission==='granted')sync(); else setTimeout(renderPrompt,1800);
   }
   window.addEventListener('load',boot,{once:true});
   window.addEventListener('alin:student-session',()=>{if(Notification.permission==='granted')sync()});
-  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&Notification.permission==='granted')sync()});
+  document.addEventListener('visibilitychange',()=>{
+    if(document.visibilityState==='hidden'){hiddenAt=Date.now();return}
+    if(document.visibilityState!=='visible')return;
+    if(Notification.permission==='granted'){sync();return}
+    if(Notification.permission==='default'&&hiddenAt&&Date.now()-hiddenAt>1200){
+      dismissedThisVisit=false;
+      setTimeout(renderPrompt,650);
+    }
+  });
   window.AlinPush=Object.freeze({supported,enable,sync,existing,renderPrompt});
 })();
