@@ -1,8 +1,8 @@
-/* ALIN v4.2.0 — storefront Web Push opt-in and subscription sync. */
+/* ALIN v4.2.0 — storefront Web Push opt-in for guests and registered students. */
 (function(){
   'use strict';
   const STUDENT_SESSION_KEY='alin_student_secure_session_v3';
-  const DISMISS_KEY='alin_push_prompt_dismissed_at_v1';
+  const DISMISS_KEY='alin_push_prompt_dismissed_at_v2';
   const PUBLIC_KEY='BI-mAjJvDZXH9HEus8ypbEs85J4c47DL9CRibbrT54KYsFygUVbm1B2lYaDnnFKPqLSXmy6lv1rwBvU7dzjrzwc';
   const supported=()=>('serviceWorker' in navigator)&&('PushManager' in window)&&('Notification' in window)&&/^https?:$/.test(location.protocol);
   const client=()=>window.sb||window.AlinCloud?.client?.()||null;
@@ -43,7 +43,7 @@
     if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64ToUint8(PUBLIC_KEY)});
     await registerSubscription(sub);
     hidePrompt();
-    window.toast?.('تم تفعيل إشعارات منصة آلين');
+    window.toast?.(studentState()?.token?'تم تفعيل الإشعارات لهذا الحساب والجهاز':'تم تفعيل الإشعارات لهذا الجهاز — بدون حساب');
     return true;
   }
 
@@ -56,7 +56,7 @@
   function renderPrompt(){
     if(!promptAllowed()||document.getElementById('alinPushPrompt'))return;
     const box=document.createElement('div');box.id='alinPushPrompt';box.className='alin-push-prompt';
-    box.innerHTML='<div class="alin-push-prompt-icon">🔔</div><div class="alin-push-prompt-copy"><strong>فعّل إشعارات منصة آلين</strong><span>حتى توصلك العروض والإعلانات على شاشة الجهاز حتى لو التطبيق مغلق.</span></div><div class="alin-push-prompt-actions"><button type="button" data-push-enable>تفعيل</button><button type="button" class="secondary" data-push-dismiss>لاحقاً</button></div>';
+    box.innerHTML='<div class="alin-push-prompt-icon">🔔</div><div class="alin-push-prompt-copy"><strong>فعّل إشعارات منصة آلين</strong><span>توصلك العروض والإعلانات على شاشة الجهاز حتى لو التطبيق مغلق — ما يحتاج تسجيل حساب.</span></div><div class="alin-push-prompt-actions"><button type="button" data-push-enable>تفعيل الإشعارات</button><button type="button" class="secondary" data-push-dismiss>لاحقاً</button></div>';
     box.querySelector('[data-push-enable]')?.addEventListener('click',async e=>{const btn=e.currentTarget;btn.disabled=true;btn.textContent='جارٍ التفعيل...';try{await enable()}catch(error){window.toast?.(error?.message||'تعذر تفعيل الإشعارات');btn.disabled=false;btn.textContent='تفعيل'}});
     box.querySelector('[data-push-dismiss]')?.addEventListener('click',dismiss);
     document.body.appendChild(box);

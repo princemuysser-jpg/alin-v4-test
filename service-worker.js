@@ -2,7 +2,7 @@
    Runtime assets are NOT intercepted or cached by the Service Worker.
    Cloudflare Pages + the browser HTTP cache own HTML/CSS/JS/image delivery.
    This prevents stale release assets from surviving on phones/tablets. */
-const VERSION='alin-4.2.0-push1';
+const VERSION='alin-4.2.0-push2';
 
 self.addEventListener('install',event=>{
   event.waitUntil(self.skipWaiting());

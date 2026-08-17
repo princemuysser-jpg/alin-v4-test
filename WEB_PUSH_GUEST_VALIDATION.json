@@ -1,0 +1,9 @@
+{
+  "feature": "web_push_guests_and_registered_users",
+  "guest_subscription_without_account": true,
+  "registered_subscription_supported": true,
+  "general_push_includes_guest_devices": true,
+  "personal_push_requires_registered_student": true,
+  "notification_permission_required": true,
+  "account_not_required_for_general_push": true
+}
