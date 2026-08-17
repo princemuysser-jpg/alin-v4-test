@@ -1,6 +1,11 @@
 (function(){
   'use strict';
   try{
+    var standalone=(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true;
+    if(standalone)document.documentElement.dataset.alinStandalone='1';
+  }catch(_){ }
+
+  try{
     var mode=localStorage.getItem('alin_theme_v234')==='dark'?'dark':'light';
     document.documentElement.dataset.alinTheme=mode;
     document.documentElement.dataset.alinThemeMode=mode;
@@ -12,7 +17,12 @@
   /* One splash lifecycle for phone/tablet/iPad: exactly 2 seconds, then remove the overlay. */
   function startEntrySplash(){
     var el=document.getElementById('alinMobileEntrySplash');
-    if(!el||el.dataset.alinSplashStarted==='1')return;
+    if(!el)return;
+    if(document.documentElement.dataset.alinStandalone==='1'){
+      if(el.parentNode)el.parentNode.removeChild(el);
+      return;
+    }
+    if(el.dataset.alinSplashStarted==='1')return;
     el.dataset.alinSplashStarted='1';
     var done=false;
     var finish=function(){

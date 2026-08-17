@@ -410,6 +410,9 @@ html[data-alin-orientation="landscape"] body.store-mobile .alin98-bottom{max-wid
 }
 
 
+/* Installed PWA already has the OS launch screen; never paint a second custom splash. */
+html[data-alin-standalone="1"] .alin-mobile-entry-splash{display:none!important}
+
 /* ALIN v4.2.0 Stable — unified 2-second touch-device entry splash.
    One responsive layout for phone, Android tablet and iPad; no duplicate timing rules. */
 .alin-mobile-entry-splash{

@@ -108,3 +108,80 @@ body.store-desktop.alin-cart-open #checkoutBox .alin-cart-side-content{flex:1 1 
 body.store-desktop.alin-cart-open #checkoutBox .alin-cart-submit{flex:0 0 46px!important;height:46px!important;margin:9px 0 0!important}
 body.store-desktop.alin-cart-open #checkoutBox .alin-cart-head{margin-bottom:10px!important}
 body.store-desktop.alin-cart-open #checkoutBox .alin-cart-item{padding:9px!important}
+
+/* ALIN desktop options component — owned here so storefront CSS cannot remove it. */
+body.store-desktop .desktop-options-icon{
+  width:28px;height:28px;display:grid;place-items:center;color:#0b5fa5;
+}
+body.store-desktop .desktop-options-icon svg{
+  width:24px;height:24px;display:block;fill:none;stroke:currentColor;stroke-width:1.9;
+  stroke-linecap:round;stroke-linejoin:round;
+}
+body.store-desktop .desktop-options-button[aria-expanded="true"]{
+  background:#edf5fc!important;color:#0b3158!important;
+}
+body.store-desktop .alin-desktop-options-panel{
+  position:fixed;inset-inline-start:22px;top:88px;z-index:2147483000;
+  width:min(390px,calc(100vw - 44px));max-height:calc(100dvh - 110px);overflow:auto;
+  padding:16px;border:1px solid #d9e4ef;border-radius:22px;background:rgba(255,255,255,.985);
+  box-shadow:0 24px 60px rgba(10,38,70,.18);backdrop-filter:blur(14px);box-sizing:border-box;
+  direction:rtl;text-align:right;color:#163553;
+}
+body.store-desktop .alin-desktop-options-panel[hidden]{display:none!important}
+body.store-desktop .alin-desktop-options-head{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:2px 2px 13px;
+  border-bottom:1px solid #edf1f5;
+}
+body.store-desktop .alin-desktop-options-head h2{margin:0;color:#0b3158;font-size:20px;line-height:1.35}
+body.store-desktop .alin-desktop-options-head p{margin:4px 0 0;color:#65758a;font-size:11px;line-height:1.6}
+body.store-desktop .alin-desktop-options-close{
+  flex:0 0 34px;width:34px;height:34px;padding:0;border:0;border-radius:11px;background:#f1f5f9;
+  color:#334155;font-size:22px;line-height:1;cursor:pointer;display:grid;place-items:center;
+}
+body.store-desktop .alin-desktop-options-body{display:grid;gap:11px;padding-top:13px}
+body.store-desktop .alin-desktop-option-card{
+  display:grid;grid-template-columns:38px minmax(0,1fr) auto;align-items:center;gap:10px;width:100%;
+  min-height:60px;padding:11px 12px;border:1px solid #e1e8ef;border-radius:15px;background:#fbfdff;
+  color:#163553;text-align:right;cursor:pointer;box-shadow:none;transform:none;box-sizing:border-box;
+}
+body.store-desktop .alin-desktop-option-card:hover{border-color:#b7cadc;background:#f3f8fc;transform:none}
+body.store-desktop .alin-desktop-option-icon{
+  width:36px;height:36px;display:grid;place-items:center;border-radius:11px;background:#edf5fc;color:#0b5fa5;font-size:18px;
+}
+body.store-desktop .alin-desktop-option-card b{display:block;font-size:13px;color:#0b3158;line-height:1.4}
+body.store-desktop .alin-desktop-option-card small{display:block;margin-top:2px;color:#6b7b8d;font-size:10px;line-height:1.55}
+body.store-desktop .alin-desktop-option-row{
+  display:grid;gap:8px;padding:11px 12px;border:1px solid #e1e8ef;border-radius:15px;background:#fff;box-sizing:border-box;
+}
+body.store-desktop .alin-desktop-option-row>div:first-child{display:flex;align-items:center;gap:9px;min-width:0}
+body.store-desktop .alin-desktop-option-row b{font-size:13px;color:#0b3158}
+body.store-desktop .alin-desktop-option-row small{font-size:10px;color:#6b7b8d}
+body.store-desktop .alin-desktop-choice-group{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+body.store-desktop .alin-desktop-choice-group.theme{grid-template-columns:repeat(2,minmax(0,1fr))}
+body.store-desktop .alin-desktop-choice{
+  min-width:0;min-height:36px;padding:7px 8px;border:1px solid #dbe5ed;border-radius:11px;background:#f7fafc;
+  color:#36536f;font-size:11px;font-weight:800;cursor:pointer;box-shadow:none;transform:none;white-space:nowrap;
+}
+body.store-desktop .alin-desktop-choice:hover{background:#eef5fb;transform:none}
+body.store-desktop .alin-desktop-choice.active,
+body.store-desktop .alin-desktop-choice.is-active,
+body.store-desktop .alin-desktop-choice[aria-pressed="true"]{
+  border-color:#0b5fa5;background:#eaf4fc;color:#083d6b;box-shadow:0 0 0 2px rgba(11,95,165,.08);
+}
+html[data-alin-theme="dark"] body.store-desktop .alin-desktop-options-panel{background:rgba(13,36,57,.985);border-color:#29445d;color:#eef5fb}
+html[data-alin-theme="dark"] body.store-desktop .alin-desktop-options-head{border-color:#29445d}
+html[data-alin-theme="dark"] body.store-desktop .alin-desktop-options-head h2,
+html[data-alin-theme="dark"] body.store-desktop .alin-desktop-option-card b,
+html[data-alin-theme="dark"] body.store-desktop .alin-desktop-option-row b{color:#eef5fb}
+html[data-alin-theme="dark"] body.store-desktop .alin-desktop-options-head p,
+html[data-alin-theme="dark"] body.store-desktop .alin-desktop-option-card small,
+html[data-alin-theme="dark"] body.store-desktop .alin-desktop-option-row small{color:#a8bacb}
+html[data-alin-theme="dark"] body.store-desktop .alin-desktop-option-card,
+html[data-alin-theme="dark"] body.store-desktop .alin-desktop-option-row{background:#102a42;border-color:#29445d;color:#eef5fb}
+html[data-alin-theme="dark"] body.store-desktop .alin-desktop-option-icon,
+html[data-alin-theme="dark"] body.store-desktop .alin-desktop-options-close,
+html[data-alin-theme="dark"] body.store-desktop .alin-desktop-choice{background:#18364f;border-color:#29445d;color:#d8e7f5}
+@media(max-width:1100px){
+  body.store-desktop .alin-desktop-options-panel{top:82px;inset-inline-start:14px;width:min(360px,calc(100vw - 28px))}
+}
+

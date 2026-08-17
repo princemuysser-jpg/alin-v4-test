@@ -1,0 +1,51 @@
+{
+  "release": "Alin v4.2.0 Stable — Storefront Four Issues Fixed",
+  "date": "2026-08-17",
+  "base": "Alin_v4_2_0_Stable_Storefront_UI_95.zip",
+  "fixes": {
+    "desktop_options": {
+      "root_cause": "component CSS was dropped when storefront responsive CSS was rewritten",
+      "solution": "desktop options component now lives in styles/alin-desktop.css with matching desktop-options-icon selector",
+      "icon_css_present": true,
+      "panel_css_present": true
+    },
+    "subcategory_shelves": {
+      "root_cause": "fixed five-column rail made two products occupy two narrow fifths of the shelf",
+      "solution": "restored isolated auto-fit 190–220px desktop shelf and horizontal mobile shelf",
+      "fixed_five_columns_removed": true,
+      "auto_fit_layout": true
+    },
+    "mobile_category_words": {
+      "root_cause": "overflow-wrap:anywhere allowed Arabic category names to split inside a word",
+      "solution": "word-break normal + overflow-wrap normal + no hyphenation in the source category component"
+    },
+    "single_mobile_splash": {
+      "root_cause": "touch entry could paint legacy index splash before store-mobile splash; installed PWA can also have an OS launch screen before the HTML splash",
+      "solution": "touch devices route from index head before body paint; standalone PWA suppresses the second HTML splash",
+      "index_router_non_deferred": true,
+      "touch_direct_route": true,
+      "standalone_second_splash_suppressed": true
+    }
+  },
+  "audit_ok": true,
+  "audit_errors": [],
+  "actions": 150,
+  "protected_logic_files_unchanged": {
+    "modules/store/cart.js": true,
+    "modules/core/checkout-service.js": true,
+    "modules/store/order-routing.js": true,
+    "modules/admin/finance.js": true,
+    "core/finance-runtime.js": true,
+    "service-worker.js": true
+  },
+  "database_tree_unchanged": true,
+  "supabase_tree_unchanged": true,
+  "no_finance_checkout_stock_schema_change": true,
+  "css_parse_errors": [],
+  "runtime_build_hashes": {
+    "dist/alin-core.v4.js": "7a539c091f20379adf1d2c0664290057566defbf84383288f43ed9e8008dd243",
+    "alin-app-desktop.v4.2.0.js": "150bcaff8733270d444f88f69ae96a7c4561c3acbbbd314e71f220d1912d9136",
+    "alin-app-mobile.v4.2.0.js": "3a572425f9ce965755a0ea7e5430c198aa3a7ef418c4f18733991268000421fc",
+    "dist/alin-role-runtime.v4.js": "a3b1c3618046e0975b79602d044d5f9037fa3f5daf5b32d7763f85781c96c78c"
+  }
+}

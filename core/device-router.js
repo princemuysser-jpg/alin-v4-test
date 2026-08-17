@@ -68,4 +68,8 @@
   window.AlinEntryRoute=Object.freeze({view:chosen,target:destination,go});
   document.documentElement.dataset.alinEntryView=chosen;
   window.dispatchEvent(new CustomEvent('alin:entry-route-ready',{detail:{view:chosen,target:destination}}));
+
+  // Phones/tablets/iPads own exactly one splash: the one inside store-mobile.html.
+  // Route before index.html body is parsed so the legacy desktop entry splash never paints first.
+  if(chosen==='mobile')go();
 })();

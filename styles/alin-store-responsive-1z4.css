@@ -121,7 +121,7 @@ html[data-alin-theme="dark"]{
   background:transparent!important;display:grid!important;place-items:center!important;text-align:center!important;box-shadow:none!important
 }
 .alin-category-showcase #alinStoreCategories .cat-copy::after{display:none!important}
-.alin-category-showcase #alinStoreCategories .cat-copy strong{font-size:14px!important;line-height:1.35!important;color:var(--alin-store-ink)!important;font-weight:900!important}
+.alin-category-showcase #alinStoreCategories .cat-copy strong{font-size:14px!important;line-height:1.35!important;color:var(--alin-store-ink)!important;font-weight:900!important;overflow-wrap:normal!important;word-break:normal!important;hyphens:none!important;white-space:normal!important}
 .alin-category-showcase #alinStoreCategories .cat-copy small{display:none!important}
 
 /* ---------- Home rails ---------- */
