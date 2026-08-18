@@ -32,7 +32,7 @@ Deno.serve(async(req:Request)=>{
     const body=await req.json();
     const title=clean(body.title,160)||'منصة آلين'; const message=clean(body.message,700);
     const role=clean(body.role||'student',30).toLowerCase(); const targetId=clean(body.target_id,120)||null;
-    const notificationId=clean(body.notification_id,120)||null; const urlPath=clean(body.url||'./store-mobile.html',500)||'./store-mobile.html';
+    const notificationId=clean(body.notification_id,120)||null; const urlPath=clean(body.url||'./index.html',500)||'./index.html';
     if(!message)throw new Error('اكتب نص الإشعار');
     if(!['all','student'].includes(role))return json(req,{ok:true,sent:0,failed:0,skipped:true,reason:'لا توجد أجهزة Push لهذه الفئة'});
 
@@ -49,7 +49,7 @@ Deno.serve(async(req:Request)=>{
     let query=admin.from('push_subscriptions').select('id,endpoint,p256dh,auth,student_id').eq('status','active');
     if(targetId)query=query.eq('student_id',targetId);
     const {data:subs,error:subError}=await query; if(subError)throw subError;
-    const payload=JSON.stringify({title,body:message,icon:'./assets/icons/icon-192.png',badge:'./assets/icons/icon-192.png',url:urlPath,tag:notificationId||`alin-${Date.now()}`,notification_id:notificationId,renotify:true});
+    const payload=JSON.stringify({title,body:message,icon:'./assets/icons/alin-icon-192-v2.png',badge:'./assets/icons/alin-icon-192-v2.png',url:urlPath,tag:notificationId||`alin-${Date.now()}`,notification_id:notificationId,renotify:true});
     let sent=0,failed=0; const stale:string[]=[];
     for(const sub of subs||[]){
       try{await webpush.sendNotification({endpoint:sub.endpoint,keys:{p256dh:sub.p256dh,auth:sub.auth}},payload,{TTL:86400,urgency:'high'});sent++}

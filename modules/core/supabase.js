@@ -73,7 +73,7 @@
   const readJson=(key,fallback,storage=localStorage)=>{try{return JSON.parse(storage.getItem(key)||'null')??fallback}catch(_){return fallback}};
   const writeJson=(key,value,storage=localStorage)=>{try{storage.setItem(key,JSON.stringify(value))}catch(_){}};
   function publicSnapshot(snapshot){
-    return {booklets:snapshot.booklets||[],products:snapshot.products||[],productVariants:snapshot.productVariants||[],categories:snapshot.categories||[],productSubcategories:snapshot.productSubcategories||[],banners:snapshot.banners||[],coupons:snapshot.coupons||[],deliveryAreas:snapshot.deliveryAreas||[],settings:snapshot.settings||{storeType:'booklet'},accounts:{all:[],teachers:snapshot.accounts?.teachers||[],libraries:snapshot.accounts?.libraries||[],couriers:[],accountants:[]},notifications:[]};
+    return {booklets:snapshot.booklets||[],products:snapshot.products||[],productVariants:snapshot.productVariants||[],categories:snapshot.categories||[],productSubcategories:snapshot.productSubcategories||[],banners:snapshot.banners||[],coupons:snapshot.coupons||[],deliveryAreas:snapshot.deliveryAreas||[],settings:snapshot.settings||{storeType:'booklet'},accounts:{all:[],teachers:snapshot.accounts?.teachers||[],libraries:snapshot.accounts?.libraries||[],couriers:[],accountants:[]},notifications:Array.isArray(snapshot.notifications)?snapshot.notifications:[]};
   }
   function persistSnapshot(snapshot){
     if(window.current?.id){writeJson(SESSION_SNAPSHOT_KEY,{at:nowIso(),snapshot},sessionStorage);return}
@@ -383,7 +383,7 @@
       productVariants:Array.isArray(raw.productVariants)?raw.productVariants:[],
       banners:Array.isArray(raw.banners)?raw.banners:[],
       coupons:Array.isArray(raw.coupons)?raw.coupons:[],
-      notifications:[]
+      notifications:Array.isArray(raw.notifications)?raw.notifications:[]
     };
     return syncAliases(snapshot);
   }

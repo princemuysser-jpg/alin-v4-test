@@ -83,7 +83,7 @@
       if(result.remote&&(role==='all'||role==='student')){
         try{
           const invoke=window.ALINAuthRuntime?.invokeAdmin;
-          if(typeof invoke==='function')push=await invoke('admin-send-push',{notification_id:result.id,title,message,role,target_id:targetId||null,url:'./store-mobile.html'});
+          if(typeof invoke==='function')push=await invoke('admin-send-push',{notification_id:result.id,title,message,role,target_id:targetId||null,url:'./index.html'});
         }catch(pushError){console.warn('[ALIN push send]',pushError);push={ok:false,error:pushError?.message||'تعذر إرسال Push'}}
       }
       if(typeof window.audit==='function')await window.audit('notification',`إرسال إشعار ${title}`);

@@ -1,0 +1,23 @@
+{
+  "version": "4.2.0-ui8",
+  "tablet_route": true,
+  "mobile_loads_tablet_css": false,
+  "tablet_loads_tablet_css": true,
+  "router_has_tablet_route": true,
+  "public_bootstrap_preserves_notifications": true,
+  "push_opens_device_router": true,
+  "migration_014": true,
+  "edge_function_local": true,
+  "audit": {
+    "ok": true,
+    "errors": [],
+    "actions": 150,
+    "build_hashes": {
+      "dist/alin-core.v4.js": "eef0111c11fa5ad278e0a107d4bec5e8bc8f437aded007ca018cd8680ba8242f",
+      "alin-app-desktop.v4.2.0.js": "28ff7cebc575746d3105ab6ad9aa91257dbf420d124c405b3736fd55c255e263",
+      "alin-app-mobile.v4.2.0.js": "7a5264e732604f70a815d3b94702ec3682ffbc7a1e5070a0d33c554979e279a0",
+      "dist/alin-role-runtime.v4.js": "3b0ccca8e4263ae51d9c722e220ca292bc171b3fbd5d42742f422bbdf977dba1"
+    },
+    "js_files": 113
+  }
+}

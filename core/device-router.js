@@ -16,7 +16,7 @@
   try{
     const current=new URL(location.href);
     const forced=current.searchParams.get('view');
-    chosen=forced==='mobile'||forced==='desktop'?forced:'';
+    chosen=['mobile','tablet','desktop'].includes(forced)?forced:'';
     if(chosen){
       try{sessionStorage.setItem(STORAGE_KEY,chosen)}catch(_){ }
     }else{
@@ -24,7 +24,7 @@
       try{
         const saved=sessionStorage.getItem(STORAGE_KEY);
         const touchNow=(navigator.maxTouchPoints||0)>0;
-        if(!touchNow&&(saved==='mobile'||saved==='desktop'))chosen=saved;
+        if(!touchNow&&['mobile','tablet','desktop'].includes(saved))chosen=saved;
       }catch(_){ }
     }
     if(!chosen){
@@ -41,15 +41,15 @@
       const hintedMobile=!!(navigator.userAgentData&&navigator.userAgentData.mobile===true);
       const phone=hintedMobile||/iPhone|iPod|Android.+Mobile|Windows Phone|Mobile/i.test(ua)||(width<800&&coarse);
       const tablet=/iPad|Tablet|Kindle|Silk|Android(?!.*Mobile)/i.test(ua)||(/Macintosh/i.test(ua)&&touch)||((coarse||hoverNone)&&touch&&width>=800&&width<=1180);
-      chosen=(phone||tablet)?'mobile':'desktop';
+      chosen=phone?'mobile':(tablet?'tablet':'desktop');
       try{sessionStorage.setItem(STORAGE_KEY,chosen)}catch(_){ }
     }
     cleanQuery(current);
-    current.pathname=current.pathname.replace(/[^/]*$/,'')+(chosen==='mobile'?'store-mobile':'store-desktop');
+    current.pathname=current.pathname.replace(/[^/]*$/,'')+(chosen==='mobile'?'store-mobile':(chosen==='tablet'?'store-tablet':'store-desktop'));
     current.searchParams.set('__alin_entry','1');
     destination=current.href;
   }catch(_){
-    chosen=(window.innerWidth||1024)<800?'mobile':'desktop';
+    chosen=(window.innerWidth||1024)<760?'mobile':((navigator.maxTouchPoints||0)>0&&Math.min(window.innerWidth||1024,window.innerHeight||768)>=540?'tablet':'desktop');
     let query='';
     try{
       query=String(location.search||'').replace(/^\?/,'').split('&').filter(part=>{
@@ -59,7 +59,7 @@
         return key!=='view'&&key!=='splash';
       }).join('&');
     }catch(_){query=''}
-    destination='./'+(chosen==='mobile'?'store-mobile':'store-desktop')+'?'+(query?query+'&':'')+'__alin_entry=1'+String(location.hash||'');
+    destination='./'+(chosen==='mobile'?'store-mobile':(chosen==='tablet'?'store-tablet':'store-desktop'))+'?'+(query?query+'&':'')+'__alin_entry=1'+String(location.hash||'');
   }
 
   const go=()=>{

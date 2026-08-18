@@ -2,7 +2,7 @@
    Runtime assets are NOT intercepted or cached by the Service Worker.
    Cloudflare Pages + the browser HTTP cache own HTML/CSS/JS/image delivery.
    This prevents stale release assets from surviving on phones/tablets. */
-const VERSION='alin-4.2.0-ui7';
+const VERSION='alin-4.2.0-ui8';
 
 self.addEventListener('install',event=>{
   event.waitUntil(self.skipWaiting());
@@ -45,7 +45,7 @@ self.addEventListener('push',event=>{
       badge:data.badge||'./assets/icons/alin-icon-192-v2.png',
       tag:String(data.tag||data.notification_id||'alin-notification'),
       renotify:data.renotify!==false,
-      data:{url:data.url||'./store-mobile.html',notification_id:data.notification_id||null},
+      data:{url:data.url||'./index.html',notification_id:data.notification_id||null},
       dir:'rtl',lang:'ar'
     };
     await self.registration.showNotification(title,options);
@@ -54,7 +54,7 @@ self.addEventListener('push',event=>{
 
 self.addEventListener('notificationclick',event=>{
   event.notification.close();
-  const target=new URL(event.notification.data?.url||'./store-mobile.html',self.registration.scope).href;
+  const target=new URL(event.notification.data?.url||'./index.html',self.registration.scope).href;
   event.waitUntil((async()=>{
     const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});
     for(const client of windows){
