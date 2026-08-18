@@ -1,0 +1,16 @@
+{
+  "ok": true,
+  "checks": {
+    "browser_session_no_fixed_ttl": true,
+    "old_session_migrates_without_deleting": true,
+    "network_error_preserves_cached_student": true,
+    "manual_logout_clears_local_session": true,
+    "welcome_text_in_runtime": true,
+    "mobile_welcome_visible": true,
+    "tablet_welcome_owned": true,
+    "master_persistent_session": true,
+    "migration_015_present": true,
+    "asset_version_ui13": true,
+    "all_passed": true
+  }
+}

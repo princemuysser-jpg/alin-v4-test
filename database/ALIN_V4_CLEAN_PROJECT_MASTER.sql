@@ -255,7 +255,7 @@ create table public.student_sessions (
   student_id text not null references public.student_profiles(id) on delete cascade,
   token_hash text not null unique,
   device_hash text not null,
-  expires_at timestamptz not null,
+  expires_at timestamptz,
   revoked_at timestamptz,
   created_at timestamptz not null default now()
 );
@@ -1768,7 +1768,7 @@ begin
   v_token:=replace(extensions.gen_random_uuid()::text,'-','')||replace(extensions.gen_random_uuid()::text,'-','');
   v_token_hash:=encode(extensions.digest(v_token,'sha256'),'hex');
   v_device_hash:=encode(extensions.digest(coalesce(p_device,''),'sha256'),'hex');
-  insert into public.student_sessions(student_id,token_hash,device_hash,expires_at) values(v_student.id,v_token_hash,v_device_hash,now()+interval '30 days');
+  insert into public.student_sessions(student_id,token_hash,device_hash,expires_at) values(v_student.id,v_token_hash,v_device_hash,null);
   return jsonb_build_object('student',jsonb_build_object('id',v_student.id,'name',v_student.name,'phone',v_student.phone,'grade',v_student.grade),'token',v_token);
 end $$;
 
@@ -1789,7 +1789,8 @@ begin
   v_token:=replace(extensions.gen_random_uuid()::text,'-','')||replace(extensions.gen_random_uuid()::text,'-','');
   v_hash:=encode(extensions.digest(v_token,'sha256'),'hex');
   v_device_hash:=encode(extensions.digest(coalesce(p_device,''),'sha256'),'hex');
-  insert into public.student_sessions(student_id,token_hash,device_hash,expires_at) values(v_student.id,v_hash,v_device_hash,now()+interval '30 days');
+  update public.student_sessions set revoked_at=now() where student_id=v_student.id and device_hash=v_device_hash and revoked_at is null;
+  insert into public.student_sessions(student_id,token_hash,device_hash,expires_at) values(v_student.id,v_hash,v_device_hash,null);
   return jsonb_build_object('student',jsonb_build_object('id',v_student.id,'name',v_student.name,'phone',v_student.phone,'grade',v_student.grade),'token',v_token);
 end $$;
 
@@ -1798,7 +1799,7 @@ returns text language sql stable security definer set search_path=public,extensi
   select s.student_id from public.student_sessions s
   where s.token_hash=encode(extensions.digest(coalesce(p_token,''),'sha256'),'hex')
     and s.device_hash=encode(extensions.digest(coalesce(p_device,''),'sha256'),'hex')
-    and s.revoked_at is null and s.expires_at>now() limit 1
+    and s.revoked_at is null and (s.expires_at is null or s.expires_at>now()) limit 1
 $$;
 
 create or replace function public.alin_student_profile(p_token text,p_device text)

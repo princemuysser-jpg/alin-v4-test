@@ -1,5 +1,5 @@
 {
-  "release": "4.2.0-ui11-pwa-launch",
+  "release": "4.2.0-ui12-notifications-resume",
   "ok": true,
   "checks": {
     "cache_cleanup_non_destructive": true,

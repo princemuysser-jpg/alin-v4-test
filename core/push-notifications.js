@@ -75,5 +75,13 @@
     if(Notification.permission==='granted')sync();
     else if(Notification.permission==='denied')hidePrompt();
   });
+
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.addEventListener('message',event=>{
+      if(event.data?.type!=='ALIN_PUSH_RECEIVED')return;
+      window.dispatchEvent(new CustomEvent('alin:push-received',{detail:event.data||{}}));
+      try{window.AlinStoreNotifications?.refresh?.({force:true})}catch(_){ }
+    });
+  }
   window.AlinPush=Object.freeze({supported,enable,sync,existing,renderPrompt});
 })();

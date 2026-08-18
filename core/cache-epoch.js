@@ -1,9 +1,9 @@
-/* ALIN v4.2.0 UI11 — safe release cache cleanup for installed PWAs.
+/* ALIN v4.2.0 UI13 — safe release cache cleanup for installed PWAs.
    Never stops the document, unregisters the active Service Worker, or reloads the app during launch.
    Versioned asset URLs + the lifecycle-only Service Worker own updates. */
 (function(){
   'use strict';
-  const EPOCH='4.2.0-ui11-pwa-launch';
+  const EPOCH='4.2.0-ui13-student-session';
   const KEY='alin_cache_epoch';
 
   let marked='';

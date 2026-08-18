@@ -2,7 +2,7 @@
    Runtime assets are NOT intercepted or cached by the Service Worker.
    Cloudflare Pages + the browser HTTP cache own HTML/CSS/JS/image delivery.
    This prevents stale release assets from surviving on phones/tablets. */
-const VERSION='alin-4.2.0-ui11-pwa-launch';
+const VERSION='alin-4.2.0-ui13-student-session';
 
 self.addEventListener('install',event=>{
   event.waitUntil(self.skipWaiting());
@@ -39,6 +39,11 @@ self.addEventListener('push',event=>{
     let data={};
     try{data=event.data?.json?.()||{body:event.data?.text?.()||''}}catch(_){data={body:event.data?.text?.()||''}}
     const title=String(data.title||'منصة آلين');
+    const openClients=await self.clients.matchAll({type:'window',includeUncontrolled:true});
+    await Promise.all(openClients.map(client=>{
+      try{return client.postMessage({type:'ALIN_PUSH_RECEIVED',notification_id:data.notification_id||null,title,body:String(data.body||data.message||'')})}
+      catch(_){return null}
+    }));
     const options={
       body:String(data.body||data.message||''),
       icon:data.icon||'./assets/icons/alin-icon-192-v2.png',

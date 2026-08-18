@@ -1508,9 +1508,24 @@
     }));
   }
 
-  async function refresh(){
-    await service()?.refresh?.();
-    badges();
+  let refreshPromise=null;
+  let lastRefreshAt=0;
+  async function refresh(options={}){
+    const force=options?.force===true;
+    const now=Date.now();
+    if(!force&&now-lastRefreshAt<2500){badges();return rows()}
+    if(refreshPromise)return refreshPromise;
+    refreshPromise=(async()=>{
+      try{await service()?.refresh?.();lastRefreshAt=Date.now()}
+      finally{badges();refreshPromise=null}
+      return rows();
+    })();
+    return refreshPromise;
+  }
+
+  function refreshOnResume(){
+    if(document.visibilityState&&document.visibilityState!=='visible')return;
+    refresh({force:true}).catch(error=>console.warn('[ALIN store notifications] resume refresh',error));
   }
 
   function install(){
@@ -1521,9 +1536,15 @@
       button.addEventListener('click',event=>{event.preventDefault();open()});
     });
     document.addEventListener('keydown',event=>{if(event.key==='Escape')close()});
-    window.addEventListener('alin:notifications-updated',badges);
+    window.addEventListener('alin:notifications-updated',()=>{badges();if(document.getElementById('alinNotificationsV120'))open()});
     window.addEventListener('alin:store-rendered',badges);
-    refresh();
+    window.addEventListener('focus',refreshOnResume,{passive:true});
+    window.addEventListener('pageshow',refreshOnResume,{passive:true});
+    window.addEventListener('online',refreshOnResume,{passive:true});
+    document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refreshOnResume()});
+    window.addEventListener('alin:push-received',refreshOnResume);
+    setInterval(()=>{if(document.visibilityState==='visible')refresh().catch(()=>{})},45000);
+    refresh({force:true});
   }
 
   const api=Object.freeze({open,close,refresh,badges,rows});

@@ -4,27 +4,33 @@
   'use strict';
   const SESSION_KEY='alin_student_secure_session_v3';
   const DEVICE_KEY='alin_device_id_v3';
-  const SESSION_TTL_MS=30*24*60*60*1000;
   const escv=value=>typeof window.esc==='function'?window.esc(value):String(value??'');
   const moneyv=value=>typeof window.money==='function'?window.money(value):String(Number(value)||0);
   const client=()=>window.sb||window.AlinCloud?.client?.()||null;
   const cleanPhone=value=>String(value||'').trim().replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[^0-9+]/g,'');
   let secureOrders=[];
+  let restorePromise=null;
+  let restoreRetryTimer=null;
+  let welcomedThisLaunch=false;
   function deviceId(){try{let v=localStorage.getItem(DEVICE_KEY);if(!v){v=crypto.randomUUID?.()||`${Date.now()}-${Math.random()}`;localStorage.setItem(DEVICE_KEY,v)}return v}catch(_){return'browser-session'}}
   function readSession(){
     try{
       let raw=localStorage.getItem(SESSION_KEY);
       if(!raw){raw=sessionStorage.getItem(SESSION_KEY);if(raw){localStorage.setItem(SESSION_KEY,raw);sessionStorage.removeItem(SESSION_KEY)}}
       const state=JSON.parse(raw||'null');
-      if(!state)return null;
-      if(state.expiresAt&&Date.now()>=Number(state.expiresAt)){localStorage.removeItem(SESSION_KEY);return null}
+      if(!state||!state.token||!state.student)return null;
+      // v4.2.0 UI13: migrate old 30-day browser sessions to persistent-until-logout storage.
+      if(Object.prototype.hasOwnProperty.call(state,'expiresAt')){
+        delete state.expiresAt;
+        localStorage.setItem(SESSION_KEY,JSON.stringify(state));
+      }
       return state;
     }catch(_){return null}
   }
   function writeSession(value){
     try{
       sessionStorage.removeItem(SESSION_KEY);
-      if(value)localStorage.setItem(SESSION_KEY,JSON.stringify({...value,savedAt:Date.now(),expiresAt:Date.now()+SESSION_TTL_MS}));
+      if(value)localStorage.setItem(SESSION_KEY,JSON.stringify({...value,savedAt:Date.now()}));
       else localStorage.removeItem(SESSION_KEY);
     }catch(_){}
   }
@@ -44,7 +50,7 @@
   function updateStudentAuthBar(){
     const student=currentStudent(),button=document.getElementById('studentAuthBtn'),status=document.getElementById('studentAuthStatus');
     if(button){const small=button.querySelector('small');if(small)small.textContent=student?.name||'تسجيل الدخول';else button.textContent=student?'👤 حسابي':'👤 تسجيل دخول'}
-    if(status)status.textContent=student?`مرحباً ${student.name}`:'التسجيل اختياري والطلب متاح للجميع';
+    if(status){status.textContent=student?`أهلاً ${student.name} 👋`:'التسجيل اختياري والطلب متاح للجميع';status.hidden=!student}
   }
   function form(mode='login'){
     const create=mode==='create',edit=mode==='edit',student=currentStudent()||{};
@@ -88,13 +94,52 @@
       box.innerHTML='<h3>طلباتي</h3>'+(secureOrders.length?secureOrders.map(order=>`<div class="row"><div><b>${escv(order.order_number||order.id)}</b><small>${escv(order.item_name||'طلب')} — ${moneyv(order.total)} د.ع — ${escv(order.status||'')}</small></div><button type="button" data-alin-click="AlinStudentAuth.track" data-alin-click-arg0="${encodeURIComponent(String(order.order_number||order.id||''))}">تتبع</button></div>`).join(''):window.emptyState?.('لا توجد طلبات بهذا الرقم')||'<div class="empty">لا توجد طلبات.</div>');
     }catch(error){box.innerHTML=`<div class="empty">${escv(error.message||'تعذر تحميل الطلبات')}</div>`}
   }
-  async function restoreStudent(){
-    const state=readSession();if(!state?.token)return updateStudentAuthBar();
-    try{const student=await rpc('alin_student_profile',{p_token:state.token,p_device:deviceId()});if(student){setCurrentStudent(student,state.token);rpc('alin_student_orders',{p_token:state.token,p_device:deviceId()}).then(rows=>{secureOrders=Array.isArray(rows)?rows:[];window.dispatchEvent(new CustomEvent('alin:student-orders',{detail:{orders:secureOrders.slice()}}))}).catch(()=>{})}else setCurrentStudent(null,'')}catch(_){setCurrentStudent(null,'')}
+  function welcomeStudent(student){
+    if(welcomedThisLaunch||!student?.name)return;
+    welcomedThisLaunch=true;
+    setTimeout(()=>window.toast?.(`أهلاً ${student.name} 👋`),180);
+  }
+  function scheduleRestoreRetry(){
+    if(restoreRetryTimer||!readSession()?.token)return;
+    restoreRetryTimer=setTimeout(()=>{restoreRetryTimer=null;restoreStudent({silentWelcome:true})},1800);
+  }
+  async function restoreStudent(options={}){
+    if(restorePromise)return restorePromise;
+    const state=readSession();
+    updateStudentAuthBar();
+    if(!state?.token)return null;
+    // Show the saved account immediately. Network verification must never blank a valid cached identity.
+    if(!options.silentWelcome)welcomeStudent(state.student);
+    restorePromise=(async()=>{
+      try{
+        const student=await rpc('alin_student_profile',{p_token:state.token,p_device:deviceId()});
+        if(student){
+          writeSession({student,token:state.token});
+          updateStudentAuthBar();
+          window.dispatchEvent(new CustomEvent('alin:student-session',{detail:{student}}));
+          rpc('alin_student_orders',{p_token:state.token,p_device:deviceId()}).then(rows=>{
+            secureOrders=Array.isArray(rows)?rows:[];
+            window.dispatchEvent(new CustomEvent('alin:student-orders',{detail:{orders:secureOrders.slice()}}));
+          }).catch(()=>{});
+          return student;
+        }
+        // A successful RPC returning no profile means this token was explicitly revoked/invalid.
+        writeSession(null);secureOrders=[];updateStudentAuthBar();
+        window.dispatchEvent(new CustomEvent('alin:student-session',{detail:{student:null}}));
+        return null;
+      }catch(error){
+        // Offline / startup race / temporary Supabase failure: keep the saved account and retry later.
+        updateStudentAuthBar();
+        scheduleRestoreRetry();
+        return state.student;
+      }finally{restorePromise=null}
+    })();
+    return restorePromise;
   }
   Object.assign(window,{currentStudent,setCurrentStudent,updateStudentAuthBar,openStudentAuth,closeStudentAuth,showStudentAuthForm,studentCreate,studentLogin,saveStudentEdit,studentLogout,showStudentOrders});
   document.addEventListener('alin:cart-rendered',()=>{const student=currentStudent();if(!student)return;const name=document.getElementById('studentName'),phone=document.getElementById('studentPhone');if(name){name.value=student.name||'';name.readOnly=true;name.dataset.studentLocked='1'}if(phone){phone.value=student.phone||'';phone.readOnly=true;phone.dataset.studentLocked='1'}});
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',restoreStudent,{once:true});else restoreStudent();
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>restoreStudent(),{once:true});else restoreStudent();
+  window.addEventListener('online',()=>restoreStudent({silentWelcome:true}));
   window.AlinStudentAuth=Object.freeze({current:currentStudent,set:setCurrentStudent,open:openStudentAuth,close:closeStudentAuth,restore:restoreStudent,token,deviceId,orders,track:encoded=>{const code=decodeURIComponent(String(encoded||''));closeStudentAuth();if(document.body.classList.contains('store-desktop')){window.AlinTrack415Safe?.open?.();setTimeout(()=>{const input=document.getElementById('alinTrack415Input');if(input){input.value=code;input.focus()}},30)}else{const input=document.getElementById('alinMobileTrackingInput');if(input)input.value=code;window.alinOpenTrackingSheet?.()}}});
 })();
 

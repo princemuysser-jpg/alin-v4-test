@@ -1,0 +1,15 @@
+{
+  "ok": true,
+  "version": "4.2.0-ui12-notifications-resume",
+  "checks": {
+    "mobile_resume_refresh": true,
+    "tablet_uses_mobile_notification_runtime": true,
+    "push_worker_notifies_open_clients": true,
+    "push_client_refresh_bridge": true,
+    "visible_poll_45s": true,
+    "mobile_asset_version_ui12": true,
+    "tablet_asset_version_ui12": true,
+    "service_worker_ui12": true
+  },
+  "note": "Public notifications are refreshed on resume/focus/pageshow/online, on push receipt, and periodically while visible."
+}

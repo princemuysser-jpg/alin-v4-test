@@ -141,7 +141,7 @@
     try{student=typeof window.currentStudent==='function'?window.currentStudent():null}catch(_){/* ignore */}
     const button=$('#studentAuthBtn'),status=$('#studentAuthStatus');
     if(button)button.innerHTML=`<span class="desktop-account-icon" aria-hidden="true"></span><small>${esc(student?.name||'تسجيل الدخول')}</small>`;
-    if(status)status.textContent=student?`مرحباً ${student.name}`:'التسجيل اختياري';
+    if(status){status.textContent=student?`أهلاً ${student.name} 👋`:'التسجيل اختياري';status.hidden=!student}
   }
 
   function updateMobileHeader(){
@@ -156,7 +156,7 @@
     try{student=typeof window.currentStudent==='function'?window.currentStudent():null}catch(_){/* ignore */}
     const button=$('#studentAuthBtn'),status=$('#studentAuthStatus');
     if(button)button.innerHTML=`<span class="mobile-account-icon" aria-hidden="true"></span><small>${esc(student?.name||'الحساب')}</small>`;
-    if(status)status.textContent=student?`مرحباً ${student.name}`:'التسجيل اختياري';
+    if(status){status.textContent=student?`أهلاً ${student.name} 👋`:'التسجيل اختياري';status.hidden=!student}
   }
 
   const api={get FAV_KEY(){return favoriteStorageKey()},favoriteStorageKey,profileStorageKey,saveFavoriteKeys,state,$,$$,esc,num,fmt,now,imageUrl,teacherBy,statusVisible,hasSb,isDesktop,isMobile,stableKey,productVariants,variantsForProduct,canonicalItems,activeDeal,effectivePrice,comparisonPrice,badges,findItem,favoriteKeys,favoriteItems,isFavorite,openModal,closeModal,studentProfile,updateDesktopHeader,updateMobileHeader};

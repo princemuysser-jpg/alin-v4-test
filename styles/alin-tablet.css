@@ -8,6 +8,9 @@ body.store-tablet #app>main{
   width:100%!important;max-width:var(--alin-tablet-max)!important;margin-inline:auto!important;
   padding:20px clamp(18px,3vw,34px) 120px!important;box-sizing:border-box!important;
 }
+
+body.store-tablet .mobile-account-status{display:block!important;width:max-content;max-width:100%;margin:0 0 12px auto;padding:9px 15px;border:1px solid #dfe8f3;border-radius:999px;background:#fff;color:#0b3158;font-size:13px;font-weight:900;line-height:1.35;box-shadow:0 7px 20px rgba(7,26,55,.06);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.store-tablet .mobile-account-status[hidden]{display:none!important}
 body.store-tablet #storePage,
 body.store-tablet #adminPage,
 body.store-tablet #teacherPage,

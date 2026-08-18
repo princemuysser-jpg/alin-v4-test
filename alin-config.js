@@ -1,9 +1,10 @@
 // منصة آلين v4.2.0 Stable — Alin Platform.
 window.ALIN_CONFIG=Object.freeze({
   version:'4.2.0',
-  assetVersion:'4.2.0-ui10-receipts',
+  assetVersion:'4.2.0-ui13-student-session',
   desktopPage:'./store-desktop.html',
   mobilePage:'./store-mobile.html',
+  tabletPage:'./store-tablet.html',
   currency:'د.ع',
   locale:'ar-IQ',
   locales:{ar:'ar-IQ',ku:'ckb-IQ',en:'en-IQ'},
