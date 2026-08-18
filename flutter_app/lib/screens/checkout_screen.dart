@@ -185,7 +185,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         const SizedBox(height: 14),
                         if (fulfillmentType == 'pickup')
                           DropdownButtonFormField<LibraryModel>(
-                            value: library,
+                            initialValue: library,
                             decoration: const InputDecoration(labelText: 'اختر المكتبة'),
                             items: data.libraries
                                 .where((e) => e.isOpen)
@@ -195,7 +195,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           )
                         else ...[
                           DropdownButtonFormField<DeliveryAreaModel>(
-                            value: area,
+                            initialValue: area,
                             decoration: const InputDecoration(labelText: 'منطقة التوصيل'),
                             items: data.deliveryAreas.map((e) => DropdownMenuItem(value: e, child: Text(e.deliveryFee > 0 ? '${e.name} — ${e.deliveryFee.toStringAsFixed(0)} د.ع' : e.name))).toList(),
                             onChanged: busy ? null : (value) => setState(() => area = value),

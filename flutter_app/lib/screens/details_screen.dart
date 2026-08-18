@@ -28,13 +28,14 @@ class _DetailsScreenState extends State<DetailsScreen> {
         : images[(imageIndex >= 0 && imageIndex < images.length) ? imageIndex : 0];
 
     Future<void> add() async {
+      final messenger = ScaffoldMessenger.of(context);
       try {
         await c.addToCart(item, purchaseType: purchaseType, variant: selectedVariant);
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تمت الإضافة إلى السلة')));
+        messenger.showSnackBar(const SnackBar(content: Text('تمت الإضافة إلى السلة')));
       } catch (e) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e'.replaceFirst('Exception: ', ''))));
+        messenger.showSnackBar(SnackBar(content: Text('$e'.replaceFirst('Exception: ', ''))));
       }
     }
 

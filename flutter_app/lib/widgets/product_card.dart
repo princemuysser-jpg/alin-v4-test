@@ -75,7 +75,7 @@ class ProductCard extends StatelessWidget {
                     children: [
                       Expanded(child: Text(item.priceText, style: const TextStyle(color: AlinTheme.navy, fontWeight: FontWeight.w900, fontSize: 15))),
                       if (item.oldPrice != null)
-                        Text('${item.oldPrice!.toStringAsFixed(0)}', style: const TextStyle(color: Colors.grey, decoration: TextDecoration.lineThrough, fontSize: 11)),
+                        Text(item.oldPrice!.toStringAsFixed(0), style: const TextStyle(color: Colors.grey, decoration: TextDecoration.lineThrough, fontSize: 11)),
                     ],
                   ),
                   const SizedBox(height: 8),

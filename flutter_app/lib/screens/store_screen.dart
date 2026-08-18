@@ -81,7 +81,7 @@ class StoreScreen extends StatelessWidget {
                       SizedBox(
                         width: tablet ? 210 : 150,
                         child: DropdownButtonFormField<String>(
-                          value: c.sort,
+                          initialValue: c.sort,
                           isDense: true,
                           decoration: const InputDecoration(labelText: 'الترتيب'),
                           items: const [
