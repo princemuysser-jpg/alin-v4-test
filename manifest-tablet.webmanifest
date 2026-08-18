@@ -1,10 +1,10 @@
 {
-  "name": "متجر منصة آلين — الموبايل",
+  "name": "متجر منصة آلين — الآيباد والتابلت",
   "short_name": "آلين",
-  "description": "متجر آلين السريع للطلاب",
+  "description": "واجهة آلين المخصصة للآيباد والتابلت",
   "lang": "ar",
   "dir": "rtl",
-  "start_url": "./index.html?view=tablet&v=4.2.0-ui13-student-session",
+  "start_url": "./index.html?view=tablet&v=4.2.0-ui15-brand-greeting",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
@@ -36,7 +36,7 @@
       "purpose": "maskable"
     }
   ],
-  "id": "./store-mobile?alin-app=mobile",
+  "id": "./store-tablet?alin-app=tablet",
   "display_override": [
     "standalone",
     "minimal-ui"

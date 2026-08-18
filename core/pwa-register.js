@@ -7,7 +7,7 @@
   window.addEventListener('load',()=>{
     setTimeout(async()=>{
       try{
-        const registration=await navigator.serviceWorker.register('./service-worker.js?v=4.2.0-ui13-student-session',{
+        const registration=await navigator.serviceWorker.register('./service-worker.js?v=4.2.0-ui15-brand-greeting',{
           scope:'./',
           updateViaCache:'none'
         });

@@ -51,4 +51,5 @@ def concat(paths,out):
 concat(CORE,ROOT/'dist/alin-core.v4.js')
 concat(PUBLIC_APP+['store/notifications.js'],ROOT/'alin-app-desktop.v4.2.0.js')
 concat(PUBLIC_APP+['store/mobile-navigation.js','store/notifications.js'],ROOT/'alin-app-mobile.v4.2.0.js')
+concat(PUBLIC_APP+['store/mobile-navigation.js','store/notifications.js'],ROOT/'alin-app-tablet.v4.2.0.js')
 concat(ROLE_APP,ROOT/'dist/alin-role-runtime.v4.js')

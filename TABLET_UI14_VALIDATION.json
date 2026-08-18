@@ -1,0 +1,12 @@
+{
+  "release": "4.2.0-ui14-tablet-layout",
+  "tablet_body_isolated": true,
+  "tablet_bundle": true,
+  "tablet_nav_owner": true,
+  "tablet_runtime": true,
+  "inline_tracking_hidden": true,
+  "tablet_splash_explicit": true,
+  "tablet_manifest_id": true,
+  "css_errors": [],
+  "sensitive_source_changes": []
+}

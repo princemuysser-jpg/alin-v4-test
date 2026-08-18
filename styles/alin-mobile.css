@@ -735,3 +735,7 @@ body.store-mobile.alin-student-auth-open .alin98-bottom{
   body.store-mobile #studentAuthModal{padding:18px 12px!important}
   body.store-mobile #studentAuthModal .student-auth-card{width:100%!important;max-height:82dvh!important;padding:58px 18px 22px!important;border-radius:24px!important}
 }
+
+/* ALIN UI15 — device role-shell logo isolation. */
+body.store-mobile .topbar .brand .logo.small.has-logo{flex-basis:42px!important;width:42px!important;height:42px!important;padding:4px!important}
+body.store-mobile .topbar .brand .logo.small.has-logo .logo-img{object-fit:contain!important;transform:none!important}

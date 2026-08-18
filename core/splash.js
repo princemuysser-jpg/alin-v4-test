@@ -5,11 +5,8 @@
   const route=window.AlinEntryRoute;
   if(!root||!route||typeof route.go!=='function')return;
 
-  const width=Math.max(1,Math.round((window.visualViewport&&window.visualViewport.width)||window.innerWidth||document.documentElement.clientWidth||1024));
-  let touch=false;
-  try{touch=(navigator.maxTouchPoints||0)>0||window.matchMedia('(pointer: coarse)').matches}catch(_){touch=false}
-  const phone=touch&&width<760;
-  const tablet=touch&&width>=760&&width<=1366;
+  const phone=route.view==='mobile';
+  const tablet=route.view==='tablet';
   const totalMs=phone?1800:(tablet?2200:2600);
   const fadeMs=260;
   const fadeAt=Math.max(0,totalMs-fadeMs);

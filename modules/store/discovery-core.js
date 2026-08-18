@@ -25,7 +25,8 @@
   const statusVisible=status=>!['hidden','inactive','deleted','archived','draft'].includes(String(status||'published'));
   const hasSb=()=>typeof window.sb!=='undefined'&&!!window.sb;
   const isDesktop=()=>document.body.classList.contains('store-desktop');
-  const isMobile=()=>document.body.classList.contains('store-mobile');
+  const isMobile=()=>document.body.classList.contains('store-mobile')||document.body.classList.contains('store-tablet');
+  const isTablet=()=>document.body.classList.contains('store-tablet');
   const stableKey=(kind,id)=>`${kind}:${id}`;
 
   function orderCounts(){
@@ -159,7 +160,7 @@
     if(status){status.textContent=student?`أهلاً ${student.name} 👋`:'التسجيل اختياري';status.hidden=!student}
   }
 
-  const api={get FAV_KEY(){return favoriteStorageKey()},favoriteStorageKey,profileStorageKey,saveFavoriteKeys,state,$,$$,esc,num,fmt,now,imageUrl,teacherBy,statusVisible,hasSb,isDesktop,isMobile,stableKey,productVariants,variantsForProduct,canonicalItems,activeDeal,effectivePrice,comparisonPrice,badges,findItem,favoriteKeys,favoriteItems,isFavorite,openModal,closeModal,studentProfile,updateDesktopHeader,updateMobileHeader};
+  const api={get FAV_KEY(){return favoriteStorageKey()},favoriteStorageKey,profileStorageKey,saveFavoriteKeys,state,$,$$,esc,num,fmt,now,imageUrl,teacherBy,statusVisible,hasSb,isDesktop,isMobile,isTablet,stableKey,productVariants,variantsForProduct,canonicalItems,activeDeal,effectivePrice,comparisonPrice,badges,findItem,favoriteKeys,favoriteItems,isFavorite,openModal,closeModal,studentProfile,updateDesktopHeader,updateMobileHeader};
   window.AlinStoreDiscovery=api;
 
   window.v99ToggleFavorite=(kind,id)=>{

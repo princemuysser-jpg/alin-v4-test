@@ -185,3 +185,38 @@ html[data-alin-theme="dark"] body.store-desktop .alin-desktop-choice{background:
   body.store-desktop .alin-desktop-options-panel{top:82px;inset-inline-start:14px;width:min(360px,calc(100vw - 28px))}
 }
 
+
+
+/* ALIN UI15 — desktop student greeting and high-contrast options panel. */
+body.store-desktop .desktop-account-status{
+  flex:0 0 auto;max-width:190px;min-height:36px;display:inline-flex;align-items:center;justify-content:center;
+  padding:7px 12px;border-radius:999px;background:#eef6fd;border:1px solid #d4e6f5;color:#0b4d82;
+  font-size:12px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+body.store-desktop .desktop-account-status[hidden]{display:none!important}
+body.store-desktop .alin-desktop-options-panel{
+  background:linear-gradient(180deg,#0b3158,#082947)!important;border-color:#31506d!important;color:#fff!important;
+}
+body.store-desktop .alin-desktop-options-head{border-color:rgba(255,255,255,.16)!important}
+body.store-desktop .alin-desktop-options-head h2,
+body.store-desktop .alin-desktop-options-head p,
+body.store-desktop .alin-desktop-option-card,
+body.store-desktop .alin-desktop-option-card b,
+body.store-desktop .alin-desktop-option-card small,
+body.store-desktop .alin-desktop-option-row,
+body.store-desktop .alin-desktop-option-row b,
+body.store-desktop .alin-desktop-option-row small{color:#fff!important}
+body.store-desktop .alin-desktop-option-card,
+body.store-desktop .alin-desktop-option-row{background:rgba(255,255,255,.08)!important;border-color:rgba(255,255,255,.16)!important}
+body.store-desktop .alin-desktop-option-card:hover{background:rgba(255,255,255,.13)!important;border-color:rgba(255,255,255,.28)!important}
+body.store-desktop .alin-desktop-option-card small,
+body.store-desktop .alin-desktop-option-row small,
+body.store-desktop .alin-desktop-options-head p{color:rgba(255,255,255,.75)!important}
+body.store-desktop .alin-desktop-option-icon{background:rgba(255,255,255,.12)!important;color:#fff!important}
+body.store-desktop .alin-desktop-options-close{background:rgba(255,255,255,.12)!important;color:#fff!important}
+body.store-desktop .alin-desktop-choice{background:rgba(255,255,255,.10)!important;border-color:rgba(255,255,255,.18)!important;color:#fff!important}
+body.store-desktop .alin-desktop-choice:hover{background:rgba(255,255,255,.16)!important}
+body.store-desktop .alin-desktop-choice.active,
+body.store-desktop .alin-desktop-choice.is-active,
+body.store-desktop .alin-desktop-choice[aria-pressed="true"]{background:#0b5fa5!important;border-color:#5fa4d8!important;color:#fff!important;box-shadow:none!important}
+@media(max-width:1180px){body.store-desktop .desktop-account-status{max-width:150px;font-size:11px}}

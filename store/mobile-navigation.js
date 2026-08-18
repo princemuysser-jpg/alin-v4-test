@@ -27,17 +27,19 @@
       document.getElementById('storeAbout')?.scrollIntoView({behavior:'smooth',block:'start'});
     }
   };
-  window.alinSubmitMobileTracking=function(){
+  window.alinSubmitMobileTracking=async function(){
     const source=byId('alinMobileTrackingInput');
     const target=byId('trackOrderInput');
     const result=byId('alinMobileTrackingResult');
-    if(!source?.value.trim()){if(result)result.innerHTML='<div class="notice">اكتب رقم الطلب أولاً.</div>';return;}
+    if(!source?.value.trim()){if(result)result.innerHTML='<div class="notice">اكتب رقم الطلب أولاً.</div>';return false;}
     if(target)target.value=source.value.trim();
-    try{ if(typeof trackOrder==='function') trackOrder(); }catch(e){}
-    setTimeout(()=>{
-      const original=byId('trackOrderResult');
-      if(result&&original) result.innerHTML=original.innerHTML||'<div class="notice">جاري البحث عن الطلب...</div>';
-    },300);
+    if(result)result.innerHTML='<div class="notice">جاري البحث عن الطلب...</div>';
+    try{
+      if(typeof window.trackOrder==='function')await window.trackOrder();
+    }catch(_){ }
+    const original=byId('trackOrderResult');
+    if(result&&original)result.innerHTML=original.innerHTML||'<div class="notice">تعذر جلب حالة الطلب الآن.</div>';
+    return true;
   };
   document.addEventListener('keydown',e=>{if(e.key==='Escape')alinCloseMobileSheets();});
 })();

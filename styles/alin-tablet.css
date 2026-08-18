@@ -23,8 +23,26 @@ body.store-tablet .alin-mobile-premium-header{
   align-items:center!important;gap:14px!important;width:100%!important;max-width:none!important;
   margin:0 0 20px!important;padding:14px 16px!important;border-radius:22px!important;
 }
-body.store-tablet .mobile-search-premium{min-width:0!important;width:100%!important}
-body.store-tablet .mobile-search-premium label{height:52px!important}
+body.store-tablet .alin-mobile-brand{min-width:0!important;display:flex!important;align-items:center!important;gap:10px!important}
+body.store-tablet .alin-mobile-brand .alin98-logo{width:58px!important;height:58px!important;flex:0 0 58px!important;border-radius:16px!important;overflow:hidden!important}
+body.store-tablet .alin-mobile-brand .alin98-logo img{width:100%!important;height:100%!important;object-fit:contain!important}
+body.store-tablet .alin-mobile-brand>span:last-child{min-width:0!important;display:grid!important;gap:2px!important}
+body.store-tablet .alin-mobile-brand strong{font-size:19px!important;line-height:1.25!important;white-space:nowrap!important}
+body.store-tablet .alin-mobile-brand small{font-size:10px!important;line-height:1.35!important;white-space:nowrap!important;color:#6d7b8e!important}
+body.store-tablet .mobile-search-premium{min-width:0!important;width:100%!important;display:block!important;margin:0!important}
+body.store-tablet .mobile-search-premium label{height:52px!important;width:100%!important;display:flex!important;align-items:center!important;gap:9px!important;padding:0 16px!important;border:1px solid #dfe6ef!important;border-radius:16px!important;background:#fff!important;box-shadow:0 8px 22px rgba(7,26,55,.055)!important}
+body.store-tablet .mobile-search-premium input{width:100%!important;min-width:0!important;border:0!important;outline:0!important;background:transparent!important;font-size:14px!important;text-align:right!important}
+body.store-tablet .mobile-search-icon{width:20px!important;height:20px!important;flex:0 0 20px!important;position:relative!important}
+body.store-tablet .mobile-search-icon:before{content:""!important;position:absolute!important;inset:2px 5px 5px 2px!important;border:2px solid #52677f!important;border-radius:50%!important}
+body.store-tablet .mobile-search-icon:after{content:""!important;position:absolute!important;width:7px!important;height:2px!important;background:#52677f!important;right:1px!important;bottom:3px!important;transform:rotate(45deg)!important;border-radius:999px!important}
+body.store-tablet .mobile-header-actions{display:flex!important;align-items:center!important;justify-content:flex-start!important;gap:9px!important;direction:ltr!important}
+body.store-tablet .mobile-header-icon-btn{position:relative!important;min-width:72px!important;height:58px!important;padding:6px 9px!important;display:grid!important;place-items:center!important;align-content:center!important;gap:3px!important;border:1px solid #dfe6ef!important;border-radius:15px!important;background:#fff!important;color:#102d54!important;box-shadow:0 8px 22px rgba(7,26,55,.055)!important}
+body.store-tablet .mobile-header-icon-btn small{font-size:9px!important;font-weight:850!important;color:#314967!important}
+body.store-tablet .mobile-notification-icon,body.store-tablet .mobile-exit-icon{width:22px!important;height:22px!important;display:grid!important;place-items:center!important}
+body.store-tablet .mobile-notification-icon svg{width:22px!important;height:22px!important;fill:none!important;stroke:currentColor!important;stroke-width:1.8!important}
+body.store-tablet .mobile-exit-icon{position:relative!important}
+body.store-tablet .mobile-exit-icon:before{content:""!important;position:absolute!important;left:3px!important;top:3px!important;width:12px!important;height:16px!important;border:2px solid currentColor!important;border-right:0!important;border-radius:4px 0 0 4px!important}
+body.store-tablet .mobile-exit-icon:after{content:"→"!important;position:absolute!important;right:0!important;top:0!important;font-size:20px!important;font-weight:900!important;line-height:22px!important}
 body.store-tablet .alin98-cats{
   display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:14px!important;
   width:100%!important;margin:18px 0 24px!important;overflow:visible!important;
@@ -44,10 +62,6 @@ body.store-tablet #storeGrid:not(.alin-product-shelves)>.v99-product-card:last-c
 }
 body.store-tablet #storeGrid:not(.alin-product-shelves) .v99-product-media{height:auto!important;aspect-ratio:4/3!important}
 body.store-tablet #storeGrid:not(.alin-product-shelves) .v99-product-body{padding:15px!important}
-body.store-tablet .alin98-bottom{
-  left:50%!important;right:auto!important;transform:translateX(-50%)!important;
-  width:min(620px,calc(100vw - 36px))!important;border-radius:24px 24px 0 0!important;
-}
 body.store-tablet #adminPage .admin-heading{
   display:flex!important;align-items:center!important;justify-content:space-between!important;
   min-height:138px!important;padding:24px 28px!important;border-radius:26px!important;
@@ -96,15 +110,6 @@ body.store-tablet .alin415r-row{grid-template-columns:repeat(3,minmax(0,1fr))!im
 body.store-tablet .alin415r-actions{grid-column:1/-1!important;display:flex!important;justify-content:stretch!important}
 body.store-tablet .alin415r-actions button{flex:1 1 0!important}
 body.store-tablet .alin415r-modal-dialog{width:min(940px,calc(100vw - 34px))!important;max-height:calc(100dvh - 34px)!important}
-body.store-tablet .alin-mobile-sheet{
-  left:max(16px,calc((100vw - 760px)/2))!important;
-  right:max(16px,calc((100vw - 760px)/2))!important;
-  width:auto!important;max-width:none!important;transform:none!important;
-  animation:alinSheetFade .18s ease-out!important;overflow-x:hidden!important;box-sizing:border-box!important;
-}
-body.store-tablet #alinTrackingSheet .alin-tracking-form{
-  grid-template-columns:minmax(0,1fr) auto!important;width:100%!important;min-width:0!important;
-}
 @media (min-width:960px){
   body.store-tablet #adminPage .admin-tabs,
   body.store-tablet #teacherPage .teacher-tabs{grid-template-columns:repeat(4,minmax(0,1fr))!important}
@@ -303,4 +308,7 @@ body.store-tablet .alin-notifications-v120__title h3{font-size:16px!important}
 body.store-tablet .alin-notifications-v120__list p{font-size:14px!important;line-height:1.75!important}
 body.store-tablet .alin-mobile-premium-header .mobile-header-actions{display:flex!important;gap:9px!important;justify-content:flex-end!important}
 body.store-tablet .mobile-header-icon-btn{min-width:74px!important;min-height:58px!important;border-radius:15px!important}
-body.store-tablet .alin-mobile-bottom-v103{width:min(680px,calc(100vw - 52px))!important;bottom:max(10px,env(safe-area-inset-bottom))!important}
+
+/* ALIN UI15 — device role-shell logo isolation. */
+body.store-tablet .topbar .brand .logo.small.has-logo{flex-basis:46px!important;width:46px!important;height:46px!important;padding:4px!important}
+body.store-tablet .topbar .brand .logo.small.has-logo .logo-img{object-fit:contain!important;transform:none!important}
