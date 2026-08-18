@@ -73,7 +73,7 @@
     box.innerHTML=`
       <article class="alin-store-banner${link?' is-clickable':''}${hasText?' has-copy':' no-copy'}" ${link?'role="link" tabindex="0"':''}>
         <div class="alin-store-banner__media"${image?` style='--alin-banner-image:url("${esc(image)}")'`:''}>
-          ${image?`<img class="alin-store-banner__image" src="${esc(image)}" alt="${esc(banner.title||'إعلان منصة آلين')}" loading="eager" decoding="async" style="width:100%!important;height:100%!important;object-fit:fill!important;object-position:center!important;padding:0!important;margin:0!important;">`:`<span class="alin-store-banner__placeholder" aria-hidden="true">آ</span>`}
+          ${image?`<img class="alin-store-banner__image" src="${esc(image)}" alt="${esc(banner.title||'إعلان منصة آلين')}" loading="eager" decoding="async" style="width:100%!important;height:100%!important;object-fit:fill!important;object-position:center!important;padding:0!important;margin:0!important;">`:`<span class="alin-store-banner__placeholder" aria-hidden="true"><img class="logo-img" src="./assets/icons/alin-icon-192-v2.png" alt="شعار منصة آلين"></span>`}
         </div>
         ${hasText?`<div class="alin-store-banner__content">
           <div class="alin-store-banner__copy">
@@ -97,7 +97,7 @@
       console.warn('[ALIN banners] image failed',event.currentTarget.src);
       const media=event.currentTarget.closest('.alin-store-banner__media');
       event.currentTarget.remove();
-      if(media)media.innerHTML='<span class="alin-store-banner__placeholder" aria-hidden="true">آ</span>';
+      if(media)media.innerHTML='<span class="alin-store-banner__placeholder" aria-hidden="true"><img class="logo-img" src="./assets/icons/alin-icon-192-v2.png" alt="شعار منصة آلين"></span>';
       article?.classList.add('without-image');
     },{once:true});
   }

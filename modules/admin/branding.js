@@ -9,7 +9,7 @@
     theme:'alin-original',
     primary:'#0b3158',secondary:'#c9a24a',background:'#f6f8fb',card:'#ffffff',
     success:'#2f7d62',warning:'#b98532',danger:'#b44b4b',
-    font:'Cairo',radius:18,shadow:'soft',logo:'',logoDark:'',icon:''
+    font:'Cairo',radius:18,shadow:'soft',logo:'assets/images/alin-logo-default-v2.png',logoDark:'assets/images/alin-logo-default-v2.png',icon:'assets/icons/alin-icon-192-v2.png'
   };
 
   const templates={
@@ -93,7 +93,10 @@
 
   function setLogo(node,url,fallback='آ'){
     if(!node)return;
-    if(url)node.innerHTML=`<img class="logo-img" src="${escv(url)}" alt="${escv(t('شعار منصة آلين'))}">`;
+    const hasImage=!!url;
+    node.classList.toggle('has-logo',hasImage);
+    if(node.classList.contains('alin98-logo'))node.classList.toggle('as145-has-image',hasImage);
+    if(hasImage)node.innerHTML=`<img class="logo-img" src="${escv(url)}" alt="${escv(t('شعار منصة آلين'))}">`;
     else node.textContent=fallback;
   }
 
@@ -177,7 +180,7 @@
     return identity;
   }
 
-  function imageMarkup(value,label){return value?`<img src="${escv(urlOf(value))}" alt="${escv(label)}">`:'<span aria-hidden="true">آ</span>'}
+  function imageMarkup(value,label){return value?`<img src="${escv(urlOf(value))}" alt="${escv(label)}">`:'<img src="./assets/icons/alin-icon-192-v2.png" alt="شعار منصة آلين">'}
   function previewFile(box,file){
     if(!box||!file)return '';
     if(box.dataset.previewUrl)URL.revokeObjectURL(box.dataset.previewUrl);
@@ -285,7 +288,7 @@
     iconInput.addEventListener('change',()=>{if(iconInput.files[0]){draft.icon=previewFile(root.querySelector('#ab235IconPreview'),iconInput.files[0])}});
     root.querySelectorAll('[data-clear]').forEach(button=>button.addEventListener('click',()=>{
       const key=button.dataset.clear;draft[key]='';const map={logo:['#ab235LogoPreview',logoInput],logoDark:['#ab235DarkLogoPreview',darkLogoInput],icon:['#ab235IconPreview',iconInput]};
-      const [selector,input]=map[key];input.value='';root.querySelector(selector).innerHTML='<span aria-hidden="true">آ</span>';sync();
+      const [selector,input]=map[key];input.value='';root.querySelector(selector).innerHTML='<img src="./assets/icons/alin-icon-192-v2.png" alt="شعار منصة آلين">';sync();
     }));
 
     root.querySelector('#ab235Reset').addEventListener('click',async()=>{

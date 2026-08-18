@@ -143,7 +143,7 @@
     box.innerHTML=`
       <article class="alin-store-banner${link?' is-clickable':''}${hasText?' has-copy':' no-copy'}" ${link?'role="link" tabindex="0"':''}>
         <div class="alin-store-banner__media"${image?` style='--alin-banner-image:url("${esc(image)}")'`:''}>
-          ${image?`<img class="alin-store-banner__image" src="${esc(image)}" alt="${esc(banner.title||'إعلان منصة آلين')}" loading="eager" decoding="async" style="width:100%!important;height:100%!important;object-fit:fill!important;object-position:center!important;padding:0!important;margin:0!important;">`:`<span class="alin-store-banner__placeholder" aria-hidden="true"><img class="logo-img" src="./assets/icons/icon-192.png" alt="شعار منصة آلين"></span>`}
+          ${image?`<img class="alin-store-banner__image" src="${esc(image)}" alt="${esc(banner.title||'إعلان منصة آلين')}" loading="eager" decoding="async" style="width:100%!important;height:100%!important;object-fit:fill!important;object-position:center!important;padding:0!important;margin:0!important;">`:`<span class="alin-store-banner__placeholder" aria-hidden="true"><img class="logo-img" src="./assets/icons/alin-icon-192-v2.png" alt="شعار منصة آلين"></span>`}
         </div>
         ${hasText?`<div class="alin-store-banner__content">
           <div class="alin-store-banner__copy">
@@ -167,7 +167,7 @@
       console.warn('[ALIN banners] image failed',event.currentTarget.src);
       const media=event.currentTarget.closest('.alin-store-banner__media');
       event.currentTarget.remove();
-      if(media)media.innerHTML='<span class="alin-store-banner__placeholder" aria-hidden="true"><img class="logo-img" src="./assets/icons/icon-192.png" alt="شعار منصة آلين"></span>';
+      if(media)media.innerHTML='<span class="alin-store-banner__placeholder" aria-hidden="true"><img class="logo-img" src="./assets/icons/alin-icon-192-v2.png" alt="شعار منصة آلين"></span>';
       article?.classList.add('without-image');
     },{once:true});
   }
@@ -485,7 +485,7 @@
     theme:'alin-original',
     primary:'#0b3158',secondary:'#c9a24a',background:'#f6f8fb',card:'#ffffff',
     success:'#2f7d62',warning:'#b98532',danger:'#b44b4b',
-    font:'Cairo',radius:18,shadow:'soft',logo:'assets/images/alin-logo-default.png',logoDark:'assets/images/alin-logo-default.png',icon:'assets/icons/icon-192.png'
+    font:'Cairo',radius:18,shadow:'soft',logo:'assets/images/alin-logo-default-v2.png',logoDark:'assets/images/alin-logo-default-v2.png',icon:'assets/icons/alin-icon-192-v2.png'
   };
 
   const templates={
@@ -656,7 +656,7 @@
     return identity;
   }
 
-  function imageMarkup(value,label){return value?`<img src="${escv(urlOf(value))}" alt="${escv(label)}">`:'<img src="./assets/icons/icon-192.png" alt="شعار منصة آلين">'}
+  function imageMarkup(value,label){return value?`<img src="${escv(urlOf(value))}" alt="${escv(label)}">`:'<img src="./assets/icons/alin-icon-192-v2.png" alt="شعار منصة آلين">'}
   function previewFile(box,file){
     if(!box||!file)return '';
     if(box.dataset.previewUrl)URL.revokeObjectURL(box.dataset.previewUrl);
@@ -764,7 +764,7 @@
     iconInput.addEventListener('change',()=>{if(iconInput.files[0]){draft.icon=previewFile(root.querySelector('#ab235IconPreview'),iconInput.files[0])}});
     root.querySelectorAll('[data-clear]').forEach(button=>button.addEventListener('click',()=>{
       const key=button.dataset.clear;draft[key]='';const map={logo:['#ab235LogoPreview',logoInput],logoDark:['#ab235DarkLogoPreview',darkLogoInput],icon:['#ab235IconPreview',iconInput]};
-      const [selector,input]=map[key];input.value='';root.querySelector(selector).innerHTML='<img src="./assets/icons/icon-192.png" alt="شعار منصة آلين">';sync();
+      const [selector,input]=map[key];input.value='';root.querySelector(selector).innerHTML='<img src="./assets/icons/alin-icon-192-v2.png" alt="شعار منصة آلين">';sync();
     }));
 
     root.querySelector('#ab235Reset').addEventListener('click',async()=>{

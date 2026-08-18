@@ -4,7 +4,7 @@
   "description": "متجر آلين للملازم والقرطاسية والهدايا",
   "lang": "ar",
   "dir": "rtl",
-  "start_url": "./?view=desktop&v=4.2.0-ui5",
+  "start_url": "./?view=desktop&v=4.2.0-ui6",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
@@ -12,16 +12,28 @@
   "theme_color": "#f7fbff",
   "icons": [
     {
-      "src": "./assets/icons/icon-192.png",
+      "src": "./assets/icons/alin-icon-192-v2.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "./assets/icons/icon-512.png",
+      "src": "./assets/icons/alin-icon-512-v2.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "./assets/icons/alin-maskable-192-v2.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "./assets/icons/alin-maskable-512-v2.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
   "id": "./?alin-app=desktop"

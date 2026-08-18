@@ -1,0 +1,28 @@
+{
+  "release": "4.2.0-ui6",
+  "fixes": {
+    "ipad_splash_centered": true,
+    "portrait_tablet_no_phone_css": true,
+    "student_auth_centered": true,
+    "mobile_bottom_nav_hidden_during_student_auth": true,
+    "android_manifest_uses_versioned_brand_icons": true,
+    "maskable_icons_added": true,
+    "pwa_cache_epoch_bumped": true,
+    "default_brand_logo_source_owned": true
+  },
+  "sensitive_files_unchanged": [
+    "modules/store/cart.js",
+    "modules/core/checkout-service.js",
+    "modules/admin/orders.js",
+    "modules/admin/finance.js",
+    "modules/library/finance.js",
+    "modules/courier/finance.js",
+    "modules/teacher/finance.js",
+    "core/finance-runtime.js"
+  ],
+  "audit": {
+    "actions": 150,
+    "errors": 0,
+    "js_files": 113
+  }
+}

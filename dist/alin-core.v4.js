@@ -4662,9 +4662,9 @@ window.Alin.helpers={
   function openStudentAuth(mode='login'){
     const box=document.getElementById('studentAuthBox');if(!box)return;const student=currentStudent();
     box.innerHTML=student?`<h2>حساب الطالب</h2><div class="student-profile-box"><b>${escv(student.name)}</b><br><small>${escv(student.phone||'')}</small></div><div class="row-actions"><button data-alin-click="showStudentOrders">طلباتي</button><button class="secondary" data-alin-click="showStudentAuthForm" data-alin-click-arg0="edit">تعديل البيانات</button><button class="danger" data-alin-click="studentLogout">تسجيل خروج</button></div><div id="studentOrdersBox"></div>`:form(mode);
-    document.getElementById('studentAuthModal')?.classList.remove('hidden');
+    document.body.classList.add('alin-student-auth-open');document.getElementById('studentAuthModal')?.classList.remove('hidden');
   }
-  function closeStudentAuth(){document.getElementById('studentAuthModal')?.classList.add('hidden')}
+  function closeStudentAuth(){document.body.classList.remove('alin-student-auth-open');document.getElementById('studentAuthModal')?.classList.add('hidden')}
   function showStudentAuthForm(mode){const box=document.getElementById('studentAuthBox');if(box)box.innerHTML=form(mode)}
   async function studentCreate(){try{
     const name=document.getElementById('studentAuthName')?.value.trim()||'',phone=cleanPhone(document.getElementById('studentAuthPhone')?.value),pin=document.getElementById('studentAuthPass')?.value||'';

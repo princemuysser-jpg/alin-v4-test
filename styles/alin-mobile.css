@@ -707,3 +707,31 @@ html[dir="ltr"] body.store-mobile #alinAccountSheet .alin-option-chevron{transfo
 
 .login-actions button.active-login-role{outline:3px solid rgba(20,109,180,.24);box-shadow:0 0 0 2px rgba(255,255,255,.85) inset;transform:translateY(-1px)}
 #loginMsg[data-role]{min-height:24px;margin-top:10px;font-weight:800;color:#0b3158;text-align:center}
+
+/* ALIN UI6 — student account dialog is a centered modal, never a bottom sheet. */
+body.store-mobile #studentAuthModal{
+  z-index:1900!important;
+  display:grid!important;
+  place-items:center!important;
+  padding:max(18px,env(safe-area-inset-top)) 14px max(18px,env(safe-area-inset-bottom))!important;
+  overflow:hidden!important;
+}
+body.store-mobile #studentAuthModal.hidden{display:none!important}
+body.store-mobile #studentAuthModal .student-auth-card{
+  width:min(560px,calc(100vw - 28px))!important;
+  max-width:560px!important;
+  max-height:min(78dvh,720px)!important;
+  margin:0!important;
+  overflow:auto!important;
+  overscroll-behavior:contain;
+  padding:60px 22px 24px!important;
+  border-radius:28px!important;
+}
+body.store-mobile.alin-student-auth-open{overflow:hidden!important}
+body.store-mobile.alin-student-auth-open .alin98-bottom{
+  opacity:0!important;visibility:hidden!important;pointer-events:none!important;transform:translateY(120%)!important;
+}
+@media(max-width:520px){
+  body.store-mobile #studentAuthModal{padding:18px 12px!important}
+  body.store-mobile #studentAuthModal .student-auth-card{width:100%!important;max-height:82dvh!important;padding:58px 18px 22px!important;border-radius:24px!important}
+}
