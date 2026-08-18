@@ -1,0 +1,29 @@
+{
+  "release": "4.2.0-ui7",
+  "fixes": {
+    "receipt_filters": "class-based filtering for all/order/settlement; no hidden-attribute dependency",
+    "customer_directory": "unified all/active/inactive registered student directory with personal-offer action",
+    "product_modal_close": "mobile/tablet close control fixed above product media with safe-area positioning"
+  },
+  "production": {
+    "completed_orders_checked": 31,
+    "settlements_checked": 8,
+    "registered_students_checked": 1,
+    "active_30_checked": 1,
+    "inactive_30_checked": 0
+  },
+  "sensitive_sources_unchanged": [
+    "modules/store/cart.js",
+    "modules/core/checkout-service.js",
+    "modules/admin/orders.js",
+    "modules/admin/finance.js",
+    "modules/library/finance.js",
+    "modules/teacher/finance.js",
+    "modules/courier/finance.js"
+  ],
+  "audit": {
+    "actions": 150,
+    "errors": 0,
+    "js_files": 113
+  }
+}

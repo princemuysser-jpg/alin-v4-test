@@ -252,7 +252,7 @@
       let shown=0;
       rows().forEach(row=>{
         const visible=(kind==='all'||row.dataset.alin415rKind===kind)&&(state==='all'||row.dataset.alin415rStatus===state)&&(!query||String(row.dataset.alin415rSearch||'').includes(query));
-        row.hidden=!visible;if(visible)shown++;
+        row.classList.toggle('alin415r-filtered-out',!visible);row.setAttribute('aria-hidden',visible?'false':'true');if(visible)shown++;
       });
       const empty=root.querySelector('.alin415r-no-results');if(empty)empty.hidden=shown!==0||rows().length===0;
     };

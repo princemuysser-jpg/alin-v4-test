@@ -2,7 +2,7 @@
    Does NOT touch cart, account, auth, language, theme, IndexedDB or app data. */
 (function(){
   'use strict';
-  const EPOCH='4.2.0-ui6';
+  const EPOCH='4.2.0-ui7';
   const KEY='alin_cache_epoch';
   const PARAM='__alin_clean';
 

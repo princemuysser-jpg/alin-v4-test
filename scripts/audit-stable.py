@@ -91,7 +91,8 @@ required_migrations=[
  'database/migrations/007_product_subcategories_shelf_system.sql',
  'database/migrations/010_student_retention_personal_offers.sql',
  'database/migrations/011_student_retention_single_active_offer.sql',
- 'database/migrations/012_store_web_push_notifications.sql']
+ 'database/migrations/012_store_web_push_notifications.sql',
+ 'database/migrations/013_admin_customer_activity_directory.sql']
 for rel in required_migrations:
  mp=root/rel
  if not mp.is_file(): errors.append(f'missing reproducible migration: {rel}'); continue
