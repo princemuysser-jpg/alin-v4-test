@@ -45,7 +45,7 @@
       try{sessionStorage.setItem(STORAGE_KEY,chosen)}catch(_){ }
     }
     cleanQuery(current);
-    current.pathname=current.pathname.replace(/[^/]*$/,'')+(chosen==='mobile'?'store-mobile':(chosen==='tablet'?'store-tablet':'store-desktop'));
+    current.pathname=current.pathname.replace(/[^/]*$/,'')+(chosen==='mobile'?'store-mobile.html':(chosen==='tablet'?'store-tablet.html':'store-desktop.html'));
     current.searchParams.set('__alin_entry','1');
     destination=current.href;
   }catch(_){
@@ -59,7 +59,7 @@
         return key!=='view'&&key!=='splash';
       }).join('&');
     }catch(_){query=''}
-    destination='./'+(chosen==='mobile'?'store-mobile':(chosen==='tablet'?'store-tablet':'store-desktop'))+'?'+(query?query+'&':'')+'__alin_entry=1'+String(location.hash||'');
+    destination='./'+(chosen==='mobile'?'store-mobile.html':(chosen==='tablet'?'store-tablet.html':'store-desktop.html'))+'?'+(query?query+'&':'')+'__alin_entry=1'+String(location.hash||'');
   }
 
   const go=()=>{

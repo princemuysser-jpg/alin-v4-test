@@ -1,0 +1,13 @@
+{
+  "release": "4.2.0-ui9-customers",
+  "customer_directory": {
+    "tab_label": "العملاء",
+    "modes": ["all", "active", "inactive"],
+    "stats": ["registered", "active", "inactive"],
+    "rpc": "alin_admin_student_customers",
+    "private_offer_action": true
+  },
+  "cache_epoch": "4.2.0-ui9",
+  "audit": "150 actions, 0 errors",
+  "runtime_rebuilt": true
+}

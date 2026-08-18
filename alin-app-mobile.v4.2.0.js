@@ -1019,7 +1019,8 @@
         explicitSignOut=true;
         try{await c.auth.signOut()}catch(_){}
         explicitSignOut=false;
-        window.current=null;showSignedOut();finishAuthBoot();return false;
+        window.current=null;
+        return openPublicStore();
       }
       window.current=accountState(account,session.user);
       try{window.AlinCloud?.loadCachedSnapshot?.()}catch(_){}
@@ -1036,7 +1037,8 @@
       return true;
     })().catch(error=>{
       console.error('[ALIN auth restore]',error);
-      window.current=null;showSignedOut();finishAuthBoot();return false;
+      window.current=null;
+      return openPublicStore();
     }).finally(()=>{restorePromise=null});
     return restorePromise;
   }

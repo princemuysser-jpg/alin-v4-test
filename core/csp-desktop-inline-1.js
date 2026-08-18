@@ -8,7 +8,7 @@
     }else{
       url.searchParams.delete('view');
       url.searchParams.delete('splash');
-      url.pathname=url.pathname.replace(/[^/]*$/,'');
+      url.pathname=url.pathname.replace(/[^/]*$/,'')+'index.html';
       url.searchParams.set('view','desktop');
       location.replace(url.href);
       return;

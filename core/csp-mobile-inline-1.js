@@ -8,8 +8,9 @@
     }else{
       url.searchParams.delete('view');
       url.searchParams.delete('splash');
-      url.pathname=url.pathname.replace(/[^/]*$/,'');
-      url.searchParams.set('view','mobile');
+      var tablet=/\/store-tablet(?:\.html)?$/i.test(url.pathname)||document.documentElement.dataset.alinDevice==='tablet';
+      url.pathname=url.pathname.replace(/[^/]*$/,'')+'index.html';
+      url.searchParams.set('view',tablet?'tablet':'mobile');
       location.replace(url.href);
       return;
     }

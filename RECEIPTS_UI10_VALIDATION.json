@@ -1,0 +1,10 @@
+{
+  "release": "4.2.0-ui10-receipts",
+  "receipt_filters": {
+    "order_filter": "direct_js_display_control",
+    "settlement_filter": "direct_js_display_control",
+    "delegated_filter_events": true,
+    "asset_version_bumped": true,
+    "desktop_mobile_tablet_same_release": true
+  }
+}

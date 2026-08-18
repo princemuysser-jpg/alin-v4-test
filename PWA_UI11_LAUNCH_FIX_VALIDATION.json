@@ -1,0 +1,17 @@
+{
+  "release": "4.2.0-ui11-pwa-launch",
+  "ok": true,
+  "checks": {
+    "cache_cleanup_non_destructive": true,
+    "mobile_route_explicit_html": true,
+    "tablet_route_explicit_html": true,
+    "desktop_route_explicit_html": true,
+    "mobile_direct_relaunch_uses_explicit_index": true,
+    "mobile_manifest_explicit_index": true,
+    "tablet_manifest_explicit_index": true,
+    "desktop_manifest_explicit_index": true,
+    "service_worker_lifecycle_only": true,
+    "expired_role_session_falls_back_to_public_store": true,
+    "auth_restore_error_falls_back_to_public_store": true
+  }
+}

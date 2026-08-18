@@ -1,5 +1,5 @@
 // === admin/retention.js ===
-/* ALIN v4.2.0 — registered-student inactivity and private retention offers. */
+/* ALIN v4.2.0 UI9 — unified customer directory: all / active / inactive + private offers. */
 (function(){
   'use strict';
   const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));

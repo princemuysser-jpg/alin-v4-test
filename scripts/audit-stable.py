@@ -104,12 +104,16 @@ if not (root/'supabase/functions/admin-send-push/index.ts').is_file(): errors.ap
 device_router=(root/'core/device-router.js').read_text(encoding='utf-8',errors='ignore')
 if "if(chosen==='mobile')go();" in device_router: errors.append('mobile entry bypasses the canonical splash')
 if "current.searchParams.set('__alin_entry','1')" not in device_router: errors.append('entry router marker missing; direct store routes can skip splash')
-for rel,view in [('core/csp-mobile-inline-1.js','mobile'),('core/csp-desktop-inline-1.js','desktop')]:
- guard=(root/rel).read_text(encoding='utf-8',errors='ignore')
- if "__alin_entry" not in guard or f"url.searchParams.set('view','{view}')" not in guard: errors.append(f'{rel}: canonical entry guard missing')
-for rel,view in [('manifest-mobile.webmanifest','mobile'),('manifest-desktop.webmanifest','desktop')]:
+mobile_guard=(root/'core/csp-mobile-inline-1.js').read_text(encoding='utf-8',errors='ignore')
+if "__alin_entry" not in mobile_guard or "url.searchParams.set('view',tablet?'tablet':'mobile')" not in mobile_guard or "+'index.html'" not in mobile_guard:
+ errors.append('core/csp-mobile-inline-1.js: canonical mobile/tablet entry guard missing')
+desktop_guard=(root/'core/csp-desktop-inline-1.js').read_text(encoding='utf-8',errors='ignore')
+if "__alin_entry" not in desktop_guard or "url.searchParams.set('view','desktop')" not in desktop_guard or "+'index.html'" not in desktop_guard:
+ errors.append('core/csp-desktop-inline-1.js: canonical desktop entry guard missing')
+for rel,view in [('manifest-mobile.webmanifest','mobile'),('manifest-tablet.webmanifest','tablet'),('manifest-desktop.webmanifest','desktop')]:
  manifest=json.loads((root/rel).read_text(encoding='utf-8'))
- if f'view={view}' not in str(manifest.get('start_url','')): errors.append(f'{rel}: start_url bypasses splash entry')
+ if not str(manifest.get('start_url','')).startswith(f'./index.html?view={view}'):
+  errors.append(f'{rel}: start_url bypasses explicit splash entry')
  if manifest.get('background_color')!='#f7fbff': errors.append(f'{rel}: launch background does not match splash')
 catalog=(root/'modules/store/discovery-catalog.js').read_text(encoding='utf-8',errors='ignore')
 try:
