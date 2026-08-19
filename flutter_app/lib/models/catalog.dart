@@ -63,9 +63,13 @@ class VariantModel {
 class StoreItem {
   final String id;
   final String kind;
+  final String reviewKind;
   final String title;
   final String subtitle;
   final String description;
+  final String subject;
+  final String grade;
+  final String category;
   final String categoryId;
   final String subcategoryId;
   final String imagePath;
@@ -81,9 +85,13 @@ class StoreItem {
   const StoreItem({
     required this.id,
     required this.kind,
+    required this.reviewKind,
     required this.title,
     required this.subtitle,
     required this.description,
+    required this.subject,
+    required this.grade,
+    required this.category,
     required this.categoryId,
     required this.subcategoryId,
     required this.imagePath,
@@ -101,57 +109,120 @@ class StoreItem {
     final unit = _num(map['unit_price']);
     final sale = _num(map['sale_price']);
     final base = _num(map['price']);
-    final current = sale > 0 ? sale : (unit > 0 ? unit : base);
+    final normal = unit > 0 ? unit : (base > 0 ? base : sale);
+    final current = sale > 0 && (normal <= 0 || sale <= normal) ? sale : normal;
+    final comparison = base > 0 ? base : normal;
     final imageList = (map['images'] is List)
         ? (map['images'] as List).map(_str).where((e) => e.isNotEmpty).toList()
         : <String>[];
     final image = _str(map['image_path']);
     if (imageList.isEmpty && image.isNotEmpty) imageList.add(image);
     final id = _str(map['id']);
+    final category = _str(map['category']).isNotEmpty ? _str(map['category']) : _str(map['type']);
+    final subject = _str(map['subject']).isNotEmpty ? _str(map['subject']) : category;
+    final type = _str(map['type']).isNotEmpty ? _str(map['type']) : 'product';
     return StoreItem(
       id: id,
+      // Keep Flutter's internal product kind stable so existing carts/favorites survive upgrades.
       kind: 'product',
+      // Reviews use the same kind as the web storefront (stationery/gift/product).
+      reviewKind: type,
       title: _str(map['name']).isNotEmpty ? _str(map['name']) : _str(map['title']),
-      subtitle: _str(map['category']),
+      subtitle: category,
       description: _str(map['description']).isNotEmpty ? _str(map['description']) : _str(map['details']),
+      subject: subject,
+      grade: _str(map['grade']),
+      category: category,
       categoryId: _str(map['category_id']),
       subcategoryId: _str(map['subcategory_id']),
       imagePath: image,
       images: imageList,
       price: current,
-      oldPrice: base > current ? base : null,
+      oldPrice: comparison > current && current > 0 ? comparison : null,
       packPrice: _num(map['pack_price']) > 0 ? _num(map['pack_price']) : null,
       packSize: _num(map['pack_size']).toInt(),
       stock: _num(map['stock']).toInt(),
-      teacherId: '',
+      teacherId: _str(map['teacher_id']),
       variants: allVariants.where((v) => v.productId == id).toList()..sort((a, b) => a.sortOrder.compareTo(b.sortOrder)),
     );
   }
 
-  factory StoreItem.booklet(Map<String, dynamic> map) => StoreItem(
-        id: _str(map['id']),
-        kind: 'booklet',
-        title: _str(map['title']),
-        subtitle: [_str(map['subject']), _str(map['grade']), _str(map['year'])].where((e) => e.isNotEmpty).join(' • '),
-        description: _str(map['description']),
-        categoryId: 'CAT-BOOKLETS',
-        subcategoryId: '',
-        imagePath: _str(map['cover_path']),
-        images: _str(map['cover_path']).isEmpty ? const [] : [_str(map['cover_path'])],
-        price: _num(map['price']),
-        oldPrice: null,
-        packPrice: null,
-        packSize: 0,
-        stock: 999999,
-        teacherId: _str(map['teacher_id']),
-        variants: const [],
-      );
+  factory StoreItem.booklet(Map<String, dynamic> map) {
+    final current = _num(map['price']);
+    final comparison = _num(map['original_price']);
+    final subject = _str(map['subject']);
+    final grade = _str(map['grade']);
+    return StoreItem(
+      id: _str(map['id']),
+      kind: 'booklet',
+      reviewKind: 'booklet',
+      title: _str(map['title']),
+      subtitle: [subject, grade, _str(map['year'])].where((e) => e.isNotEmpty).join(' • '),
+      description: _str(map['description']),
+      subject: subject,
+      grade: grade,
+      category: 'ملازم',
+      categoryId: 'CAT-BOOKLETS',
+      subcategoryId: '',
+      imagePath: _str(map['cover_path']),
+      images: _str(map['cover_path']).isEmpty ? const [] : [_str(map['cover_path'])],
+      price: current,
+      oldPrice: comparison > current && current > 0 ? comparison : null,
+      packPrice: null,
+      packSize: 0,
+      stock: 999999,
+      teacherId: _str(map['teacher_id']),
+      variants: const [],
+    );
+  }
 
-  bool get isProduct => kind == 'product';
   bool get isBooklet => kind == 'booklet';
+  bool get isProduct => !isBooklet;
   bool get hasPack => isProduct && packPrice != null && packSize > 1;
   bool get hasVariants => variants.isNotEmpty;
+  bool get hasDiscount => oldPrice != null && oldPrice! > price && price > 0;
+
+  int get discountPercent {
+    if (!hasDiscount) return 0;
+    final value = (((oldPrice! - price) / oldPrice!) * 100).round();
+    if (value < 1) return 1;
+    if (value > 99) return 99;
+    return value;
+  }
+
+  num get savings => hasDiscount ? oldPrice! - price : 0;
+
   String get priceText => '${price.toStringAsFixed(price % 1 == 0 ? 0 : 2)} ${AlinConfig.currency}';
+  String get oldPriceText => oldPrice == null
+      ? ''
+      : '${oldPrice!.toStringAsFixed(oldPrice! % 1 == 0 ? 0 : 2)} ${AlinConfig.currency}';
+}
+
+class ProductReviewModel {
+  final String id;
+  final String kind;
+  final String itemId;
+  final int rating;
+  final String comment;
+  final DateTime? createdAt;
+
+  const ProductReviewModel({
+    required this.id,
+    required this.kind,
+    required this.itemId,
+    required this.rating,
+    required this.comment,
+    required this.createdAt,
+  });
+
+  factory ProductReviewModel.fromMap(Map<String, dynamic> map) => ProductReviewModel(
+        id: _str(map['id']),
+        kind: _str(map['kind']),
+        itemId: _str(map['item_id']),
+        rating: _num(map['rating']).toInt().clamp(1, 5).toInt(),
+        comment: _str(map['comment']),
+        createdAt: DateTime.tryParse(_str(map['created_at'])),
+      );
 }
 
 class BannerModel {
@@ -284,6 +355,7 @@ class BootstrapData {
   final List<StoreItem> items;
   final List<BannerModel> banners;
   final List<NotificationModel> notifications;
+  final List<ProductReviewModel> reviews;
   final List<LibraryModel> libraries;
   final List<DeliveryAreaModel> deliveryAreas;
 
@@ -294,6 +366,7 @@ class BootstrapData {
     required this.items,
     required this.banners,
     required this.notifications,
+    required this.reviews,
     required this.libraries,
     required this.deliveryAreas,
   });
@@ -313,6 +386,7 @@ class BootstrapData {
       items: [...booklets, ...products],
       banners: maps(map['banners']).map(BannerModel.fromMap).where((e) => e.isVisible).toList(),
       notifications: maps(map['notifications']).map(NotificationModel.fromMap).toList(),
+      reviews: maps(map['productReviews']).map(ProductReviewModel.fromMap).toList(),
       libraries: maps(accountMap['libraries']).map(LibraryModel.fromMap).toList(),
       deliveryAreas: maps(map['deliveryAreas']).map(DeliveryAreaModel.fromMap).toList(),
     );

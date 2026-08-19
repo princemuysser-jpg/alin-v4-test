@@ -86,7 +86,7 @@ class AppController extends ChangeNotifier {
 
   Future<void> refreshNotifications() async {
     try {
-      final fresh = await repository.loadBootstrap();
+      final fresh = await repository.loadBootstrap(includeReviews: false);
       if (bootstrap == null) {
         bootstrap = fresh;
       } else {
@@ -97,6 +97,7 @@ class AppController extends ChangeNotifier {
           items: bootstrap!.items,
           banners: bootstrap!.banners,
           notifications: fresh.notifications,
+          reviews: bootstrap!.reviews,
           libraries: bootstrap!.libraries,
           deliveryAreas: bootstrap!.deliveryAreas,
         );
@@ -156,7 +157,7 @@ class AppController extends ChangeNotifier {
   List<StoreItem> get visibleItems {
     var rows = bootstrap?.items ?? const <StoreItem>[];
     if (selectedCategoryId == '__deals__') {
-      rows = rows.where((e) => e.oldPrice != null).toList();
+      rows = rows.where((e) => e.hasDiscount).toList();
     } else if (selectedCategoryId.isNotEmpty) {
       rows = rows.where((e) => e.categoryId == selectedCategoryId).toList();
     }
@@ -219,6 +220,52 @@ class AppController extends ChangeNotifier {
   List<StoreItem> get favoriteItems => (bootstrap?.items ?? const <StoreItem>[])
       .where((item) => favorites.contains('${item.kind}:${item.id}'))
       .toList();
+
+  List<ProductReviewModel> reviewsFor(StoreItem item) =>
+      (bootstrap?.reviews ?? const <ProductReviewModel>[])
+          .where((review) => review.kind == item.reviewKind && review.itemId == item.id)
+          .toList();
+
+  double averageRating(StoreItem item) {
+    final rows = reviewsFor(item);
+    if (rows.isEmpty) return 0;
+    return rows.fold<double>(0, (sum, review) => sum + review.rating) / rows.length;
+  }
+
+  List<StoreItem> relatedItems(StoreItem item, {int limit = 6}) {
+    final candidates = <_RelatedCandidate>[];
+    for (final candidate in bootstrap?.items ?? const <StoreItem>[]) {
+      if (candidate.id == item.id && candidate.kind == item.kind) continue;
+      var score = 0;
+      if (item.subject.isNotEmpty && candidate.subject == item.subject) score += 5;
+      if (item.grade.isNotEmpty && candidate.grade == item.grade) score += 4;
+      if (item.teacherId.isNotEmpty && candidate.teacherId == item.teacherId) score += 3;
+      if (item.category.isNotEmpty && candidate.category == item.category) score += 2;
+      if (score > 0) candidates.add(_RelatedCandidate(candidate, score));
+    }
+    candidates.sort((a, b) {
+      final byScore = b.score.compareTo(a.score);
+      if (byScore != 0) return byScore;
+      return a.item.title.compareTo(b.item.title);
+    });
+    return candidates.take(limit).map((row) => row.item).toList();
+  }
+
+  Future<String> submitReview({
+    required StoreItem item,
+    required String contact,
+    required int rating,
+    required String comment,
+  }) async {
+    final result = await repository.submitReview(
+      kind: item.reviewKind,
+      itemId: item.id,
+      contact: contact,
+      rating: rating,
+      comment: comment,
+    );
+    return '${result['message'] ?? 'تم إرسال تقييمك للمراجعة قبل النشر.'}';
+  }
 
   void _restoreCartFromDisk() {
     if (cart.isNotEmpty) return;
@@ -393,6 +440,12 @@ class AppController extends ChangeNotifier {
     final hex = List.generate(32, (_) => random.nextInt(16).toRadixString(16)).join();
     return '${hex.substring(0, 8)}-${hex.substring(8, 12)}-4${hex.substring(13, 16)}-a${hex.substring(17, 20)}-${hex.substring(20)}';
   }
+}
+
+class _RelatedCandidate {
+  final StoreItem item;
+  final int score;
+  const _RelatedCandidate(this.item, this.score);
 }
 
 extension _FirstOrNull<T> on Iterable<T> {

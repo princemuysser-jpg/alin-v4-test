@@ -1,13 +1,14 @@
-منصة آلين Flutter 5.0 — قائمة الإصدار
+منصة آلين Flutter 5.2 — قائمة الإصدار
 
 [جاهز] نفس Supabase الإنتاجي الحالي.
 [جاهز] Package ID: com.alin.platform
-[جاهز] Version Code: 2
-[جاهز] Version Name: 5.0.0
+[جاهز] Version Code: 4
+[جاهز] Version Name: 5.2.0
 [جاهز] Target/Compile SDK 36
 [جاهز] Android Native icon + splash
 [جاهز] Secure student token storage
 [جاهز] Store/cart/favorites/checkout/tracking/account/orders/offers/in-app notifications
+[جاهز] Related items + product ratings + discount percent/old-new pricing UI
 [جاهز] Release signing config
 [جاهز] Play icon 512x512
 [جاهز] Play feature graphic 1024x500

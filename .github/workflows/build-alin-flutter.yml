@@ -1,4 +1,4 @@
-name: Build Alin Flutter Android UI18
+name: Build Alin Flutter Android UI19 Signed
 
 on:
   push:
@@ -27,6 +27,32 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+
+      - name: Restore fixed Android release signing key
+        env:
+          ALIN_KEYSTORE_BASE64: ${{ secrets.ALIN_KEYSTORE_BASE64 }}
+          ALIN_KEYSTORE_PASSWORD: ${{ secrets.ALIN_KEYSTORE_PASSWORD }}
+          ALIN_KEY_ALIAS: ${{ secrets.ALIN_KEY_ALIAS }}
+          ALIN_KEY_PASSWORD: ${{ secrets.ALIN_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          for name in ALIN_KEYSTORE_BASE64 ALIN_KEYSTORE_PASSWORD ALIN_KEY_ALIAS ALIN_KEY_PASSWORD; do
+            if [ -z "${!name:-}" ]; then
+              echo "Missing required GitHub Actions secret: $name"
+              exit 1
+            fi
+          done
+          printf '%s' "$ALIN_KEYSTORE_BASE64" | base64 --decode > android/app/alin-release.jks
+          cat > android/key.properties <<EOF
+          storePassword=$ALIN_KEYSTORE_PASSWORD
+          keyPassword=$ALIN_KEY_PASSWORD
+          keyAlias=$ALIN_KEY_ALIAS
+          storeFile=alin-release.jks
+          EOF
+          keytool -list -keystore android/app/alin-release.jks \
+            -storepass "$ALIN_KEYSTORE_PASSWORD" \
+            -alias "$ALIN_KEY_ALIAS" >/dev/null
+          echo "Fixed Android release signing key restored successfully."
 
       - name: Install Flutter 3.44.9 stable
         working-directory: ${{ github.workspace }}
@@ -64,18 +90,32 @@ jobs:
       - name: Flutter tests
         run: flutter test
 
-      - name: Build unsigned release AAB
+      - name: Build signed release AAB
         run: flutter build appbundle --release --no-pub
 
-      - name: Build unsigned release APK
+      - name: Build signed release APK
         run: flutter build apk --release --no-pub
 
-      - name: Upload Android release artifacts
+      - name: Verify APK signing
+        run: |
+          APK="$(find build/app/outputs/flutter-apk -maxdepth 1 -name '*.apk' -print -quit)"
+          if [ -z "$APK" ]; then
+            echo "APK not found"
+            exit 1
+          fi
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose --print-certs "$APK"
+
+      - name: Upload signed Android release artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: alin-flutter-ui18-v5.1.0-build3
+          name: alin-flutter-ui19-v5.2.0-build4-SIGNED
           if-no-files-found: error
           path: |
             flutter_app/build/app/outputs/bundle/release/*.aab
             flutter_app/build/app/outputs/flutter-apk/*.apk
           retention-days: 7
+
+      - name: Remove signing files from runner
+        if: always()
+        run: |
+          rm -f android/key.properties android/app/alin-release.jks

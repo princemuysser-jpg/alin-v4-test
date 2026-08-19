@@ -1,13 +1,13 @@
 {
   "project": "Alin Flutter Production",
-  "version": "5.0.0+2",
+  "version": "5.2.0+4",
   "package_id": "com.alin.platform",
   "backend": "Supabase production dgaikazhbtyjmswpyvrl",
   "checks": {
     "package_id_com_alin_platform": true,
     "compile_sdk_36": true,
     "target_sdk_36": true,
-    "version_5_0_0_code_2": true,
+    "version_5_2_0_code_4": true,
     "production_supabase": true,
     "secure_storage": true,
     "release_signing_config": true,

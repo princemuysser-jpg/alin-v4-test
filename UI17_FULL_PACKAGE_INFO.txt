@@ -1,5 +1,0 @@
-ALIN FULL PACKAGE — UI17
-- Web: v4.2.0 UI16 greeting/layout base
-- Flutter: UI17 web-style storefront + UI16 student greeting
-- GitHub Actions: build-alin-flutter.yml included
-- Supabase database is external and is not bundled in this ZIP.

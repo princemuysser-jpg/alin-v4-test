@@ -9,10 +9,59 @@ class AlinRepository {
   Future<dynamic> _rpc(String name, {Map<String, dynamic>? params}) =>
       client.rpc(name, params: params).timeout(const Duration(seconds: 25));
 
-  Future<BootstrapData> loadBootstrap() async {
+  Future<BootstrapData> loadBootstrap({bool includeReviews = true}) async {
     final raw = await _rpc('alin_public_store_bootstrap');
     if (raw is! Map) throw Exception('تعذر تحميل بيانات متجر آلين');
-    return BootstrapData.fromMap(Map<String, dynamic>.from(raw));
+    final data = Map<String, dynamic>.from(raw);
+    if (includeReviews) {
+      data['productReviews'] = await _loadPublishedReviews();
+    }
+    return BootstrapData.fromMap(data);
+  }
+
+  Future<List<Map<String, dynamic>>> _loadPublishedReviews() async {
+    try {
+      final raw = await client
+          .from('product_reviews')
+          .select('id,kind,item_id,rating,comment,status,created_at')
+          .eq('status', 'approved')
+          .order('created_at', ascending: false)
+          .limit(500)
+          .timeout(const Duration(seconds: 20));
+      return raw.map((row) => Map<String, dynamic>.from(row)).toList();
+    } catch (_) {
+      // Reviews are optional storefront content; never block the store if they fail.
+      return [];
+    }
+  }
+
+  Future<Map<String, dynamic>> submitReview({
+    required String kind,
+    required String itemId,
+    required String contact,
+    required int rating,
+    required String comment,
+  }) async {
+    final response = await client.functions
+        .invoke(
+          'public-submission',
+          body: {
+            'action': 'review',
+            'kind': kind,
+            'item_id': itemId,
+            'contact': contact.trim(),
+            'rating': rating.clamp(1, 5),
+            'comment': comment.trim(),
+          },
+        )
+        .timeout(const Duration(seconds: 25));
+    final raw = response.data;
+    if (raw is! Map) throw Exception('تعذر إرسال التقييم حالياً');
+    final data = Map<String, dynamic>.from(raw);
+    if (data['ok'] != true) {
+      throw Exception('${data['message'] ?? 'تعذر إرسال التقييم حالياً'}');
+    }
+    return data;
   }
 
   String mediaUrl(String path) {

@@ -108,7 +108,7 @@ class _StoreScreenState extends State<StoreScreen> {
                     _HomeCategories(
                       categories: data.categories,
                       settings: data.settings,
-                      hasDeals: data.items.any((e) => e.oldPrice != null),
+                      hasDeals: data.items.any((e) => e.hasDiscount),
                       onAll: () => _openAll(c),
                       onCategory: (id) => _openCategory(c, id),
                     ),
@@ -145,7 +145,7 @@ class _StoreScreenState extends State<StoreScreen> {
 
   List<Widget> _homeSlivers(BuildContext context, BootstrapData data) {
     final all = data.items;
-    final offers = all.where((e) => e.oldPrice != null).toList();
+    final offers = all.where((e) => e.hasDiscount).toList();
     final booklets = all.where((e) => e.isBooklet).take(10).toList();
     final products = all.where((e) => e.isProduct).take(10).toList();
     final mixed = all.take(10).toList();
@@ -450,14 +450,17 @@ class _ShelfCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                    if (item.oldPrice != null)
+                    if (item.hasDiscount)
                       Positioned(
                         top: 8,
                         right: 8,
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
                           decoration: BoxDecoration(color: AlinTheme.gold, borderRadius: BorderRadius.circular(99)),
-                          child: const Text('عرض', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900)),
+                          child: Text(
+                            'خصم ${item.discountPercent}%',
+                            style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900),
+                          ),
                         ),
                       ),
                   ],
@@ -473,6 +476,17 @@ class _ShelfCard extends StatelessWidget {
                     Text(item.subtitle.isEmpty ? (item.isBooklet ? c.tr('ملزمة', ku: 'ملزمە', en: 'Booklet') : c.tr('منتج', ku: 'بەرهەم', en: 'Product')) : item.subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 10.5, color: Theme.of(context).colorScheme.onSurfaceVariant)),
                     const SizedBox(height: 6),
                     Text(item.priceText, style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w900)),
+                    if (item.hasDiscount)
+                      Text(
+                        item.oldPriceText,
+                        style: const TextStyle(
+                          fontSize: 10,
+                          color: Colors.grey,
+                          decoration: TextDecoration.lineThrough,
+                          decorationThickness: 2,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                   ],
                 ),
               ),

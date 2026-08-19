@@ -45,15 +45,18 @@ class ProductCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  if (item.oldPrice != null)
+                  if (item.hasDiscount)
                     Positioned(
                       top: 10,
                       right: 10,
                       child: DecoratedBox(
                         decoration: BoxDecoration(color: AlinTheme.gold, borderRadius: BorderRadius.circular(99)),
-                        child: const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          child: Text('عرض', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 11)),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                          child: Text(
+                            'خصم ${item.discountPercent}%',
+                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 11),
+                          ),
                         ),
                       ),
                     ),
@@ -71,13 +74,21 @@ class ProductCard extends StatelessWidget {
                     Text(item.subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 11)),
                   ],
                   const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(child: Text(item.priceText, style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w900, fontSize: 15))),
-                      if (item.oldPrice != null)
-                        Text(item.oldPrice!.toStringAsFixed(0), style: const TextStyle(color: Colors.grey, decoration: TextDecoration.lineThrough, fontSize: 11)),
-                    ],
+                  Text(
+                    item.priceText,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w900, fontSize: 15),
                   ),
+                  if (item.hasDiscount) ...[
+                    const SizedBox(height: 1),
+                    Text(
+                      item.oldPriceText,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(color: Colors.grey, decoration: TextDecoration.lineThrough, decorationThickness: 2, fontSize: 11, fontWeight: FontWeight.w700),
+                    ),
+                  ],
                   const SizedBox(height: 8),
                   SizedBox(
                     width: double.infinity,
