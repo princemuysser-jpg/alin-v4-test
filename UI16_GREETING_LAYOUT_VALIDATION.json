@@ -1,0 +1,15 @@
+{
+  "ui": "ALIN UI16",
+  "base": "v4.2.0 Stable UI15",
+  "checks": {
+    "student_auth_greeting_logic_preserved": true,
+    "desktop_greeting_prominent_css": true,
+    "role_selector_layout_isolated_from_brand": true,
+    "desktop_cache_epoch_ui16": true,
+    "mobile_web_cache_epoch_ui16": true,
+    "tablet_web_cache_epoch_ui16": true,
+    "service_worker_epoch_ui16": true
+  },
+  "scope": "UI-only: greeting visibility and login/role selector layout. No database, orders, finance or auth logic changed.",
+  "all_static_checks_passed": true
+}

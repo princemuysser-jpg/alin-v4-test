@@ -1,0 +1,19 @@
+{
+  "version": "UI17 Web Style Flutter",
+  "base": "Alin_Flutter_FULL_Restore_Fix_3_UI16_Greeting",
+  "changes": {
+    "navigation_rail_removed": true,
+    "bottom_navigation_like_web": true,
+    "store_home_before_catalog": true,
+    "banner_search_categories_home": true,
+    "horizontal_offer_and_product_shelves": true,
+    "catalog_opens_from_category_search_or_all": true,
+    "student_greeting_preserved": true,
+    "supabase_order_finance_logic_unchanged": true
+  },
+  "static_checks": {
+    "balanced_delimiters_home_shell": true,
+    "balanced_delimiters_store_screen": true,
+    "flutter_sdk_available_in_workspace": false
+  }
+}

@@ -723,3 +723,76 @@ html[data-alin-device="tablet"] body.store-mobile .v99-modal .v99-close{top:calc
 .alin-retention-special-note{display:grid;gap:4px;padding:11px 13px;border:1px solid #d8e6f4;border-radius:13px;background:#f3f8fd;color:#173c63;font-size:12px;line-height:1.65}
 .alin-retention-special-note b{font-size:12px;color:#0b4d82}
 .alin-retention-special-note span{color:#506b86}
+
+/* ALIN UI16 — keep the partner selector and its icons clear of the ALIN brand. */
+.login .login-card{
+  width:min(560px,calc(100vw - 32px))!important;
+  max-width:560px!important;
+  box-sizing:border-box!important;
+  padding:32px 34px 36px!important;
+  overflow:visible!important;
+}
+.login .login-card>.logo,
+.login .login-card>.logo.has-logo{
+  position:relative!important;
+  inset:auto!important;
+  top:auto!important;
+  right:auto!important;
+  bottom:auto!important;
+  left:auto!important;
+  transform:none!important;
+  width:min(260px,68vw)!important;
+  height:auto!important;
+  min-height:0!important;
+  margin:0 auto 18px!important;
+  padding:0!important;
+  overflow:visible!important;
+}
+.login .login-card>.logo .logo-img{
+  display:block!important;
+  width:100%!important;
+  max-width:240px!important;
+  height:auto!important;
+  max-height:125px!important;
+  margin:0 auto!important;
+  object-fit:contain!important;
+}
+.login .login-card>h1{margin:0 0 5px!important}
+.login .login-card>p{margin:0!important}
+.login .login-actions{
+  position:relative!important;
+  z-index:2!important;
+  width:100%!important;
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:12px 14px!important;
+  margin:26px 0 0!important;
+}
+.login .login-actions button{
+  min-width:0!important;
+  min-height:58px!important;
+  margin:0!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:9px!important;
+}
+.login .login-actions button::before{
+  position:static!important;
+  inset:auto!important;
+  transform:none!important;
+  flex:0 0 auto!important;
+  margin:0!important;
+}
+.login .login-actions .admin{
+  grid-column:1 / -1!important;
+  width:calc(50% - 7px)!important;
+  justify-self:center!important;
+}
+@media(max-width:680px){
+  .login .login-card{padding:26px 20px 30px!important}
+  .login .login-actions{grid-template-columns:1fr!important;gap:10px!important;margin-top:22px!important}
+  .login .login-actions .admin{grid-column:auto!important;width:100%!important}
+  .login .login-card>.logo,.login .login-card>.logo.has-logo{width:min(220px,68vw)!important;margin-bottom:16px!important}
+}
+

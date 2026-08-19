@@ -220,3 +220,29 @@ body.store-desktop .alin-desktop-choice.active,
 body.store-desktop .alin-desktop-choice.is-active,
 body.store-desktop .alin-desktop-choice[aria-pressed="true"]{background:#0b5fa5!important;border-color:#5fa4d8!important;color:#fff!important;box-shadow:none!important}
 @media(max-width:1180px){body.store-desktop .desktop-account-status{max-width:150px;font-size:11px}}
+
+/* ALIN UI16 — make the signed-in student greeting unmistakable on desktop. */
+body.store-desktop .alin98-brand{
+  display:flex!important;
+  flex-wrap:wrap!important;
+  align-items:center!important;
+  column-gap:10px!important;
+  row-gap:5px!important;
+}
+body.store-desktop .desktop-account-status{
+  flex:1 0 100%!important;
+  max-width:none!important;
+  min-height:42px!important;
+  box-sizing:border-box!important;
+  justify-content:flex-start!important;
+  margin-top:3px!important;
+  padding:8px 14px!important;
+  border:1px solid #e2be69!important;
+  border-radius:13px!important;
+  background:#fff7e2!important;
+  color:#0b3158!important;
+  box-shadow:0 5px 14px rgba(11,49,88,.08)!important;
+  font-size:14px!important;
+  font-weight:900!important;
+}
+

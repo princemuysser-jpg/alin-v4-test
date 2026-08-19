@@ -1,0 +1,12 @@
+{
+  "ui": "ALIN UI16",
+  "base": "Alin Flutter FULL Restore Fix 3",
+  "checks": {
+    "signed_in_student_greeting_text": true,
+    "greeting_high_contrast_pill": true,
+    "logged_out_tagline_preserved": true,
+    "orders_finance_auth_files_untouched_by_ui16_script": true
+  },
+  "all_static_checks_passed": true,
+  "note": "Static source validation only. Flutter SDK/Android SDK availability is checked separately; no build/analyze claim is made here."
+}
