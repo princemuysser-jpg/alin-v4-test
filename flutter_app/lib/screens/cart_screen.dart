@@ -44,10 +44,10 @@ class CartScreen extends StatelessWidget {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(line.item.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w900)),
-                                    if (line.variant != null) Text('التصميم: ${line.variant!.name}', style: const TextStyle(fontSize: 12, color: AlinTheme.muted)),
-                                    if (line.purchaseType == 'pack') Text('باكيت ${line.item.packSize}', style: const TextStyle(fontSize: 12, color: AlinTheme.muted)),
+                                    if (line.variant != null) Text('التصميم: ${line.variant!.name}', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                                    if (line.purchaseType == 'pack') Text('باكيت ${line.item.packSize}', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
                                     const SizedBox(height: 6),
-                                    Text('${line.total.toStringAsFixed(0)} ${AlinConfig.currency}', style: const TextStyle(fontWeight: FontWeight.w900, color: AlinTheme.navy)),
+                                    Text('${line.total.toStringAsFixed(0)} ${AlinConfig.currency}', style: TextStyle(fontWeight: FontWeight.w900, color: Theme.of(context).colorScheme.primary)),
                                   ],
                                 ),
                               ),
@@ -69,7 +69,7 @@ class CartScreen extends StatelessWidget {
                 SafeArea(
                   top: false,
                   child: Container(
-                    decoration: const BoxDecoration(color: Colors.white, border: Border(top: BorderSide(color: AlinTheme.line))),
+                    decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, border: Border(top: BorderSide(color: Theme.of(context).dividerColor))),
                     padding: EdgeInsets.fromLTRB(tablet ? 28 : 16, 14, tablet ? 28 : 16, 14),
                     child: Row(
                       children: [
@@ -78,8 +78,8 @@ class CartScreen extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Text('الإجمالي', style: TextStyle(color: AlinTheme.muted, fontSize: 12)),
-                              Text('${c.cartTotal.toStringAsFixed(0)} ${AlinConfig.currency}', style: TextStyle(fontSize: tablet ? 22 : 19, fontWeight: FontWeight.w900, color: AlinTheme.navy)),
+                              Text('الإجمالي', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12)),
+                              Text('${c.cartTotal.toStringAsFixed(0)} ${AlinConfig.currency}', style: TextStyle(fontSize: tablet ? 22 : 19, fontWeight: FontWeight.w900, color: Theme.of(context).colorScheme.primary)),
                             ],
                           ),
                         ),

@@ -278,6 +278,7 @@ class StudentModel {
 }
 
 class BootstrapData {
+  final Map<String, dynamic> settings;
   final List<CategoryModel> categories;
   final List<SubcategoryModel> subcategories;
   final List<StoreItem> items;
@@ -287,6 +288,7 @@ class BootstrapData {
   final List<DeliveryAreaModel> deliveryAreas;
 
   const BootstrapData({
+    required this.settings,
     required this.categories,
     required this.subcategories,
     required this.items,
@@ -305,6 +307,7 @@ class BootstrapData {
     final booklets = maps(map['booklets']).map(StoreItem.booklet);
     final accountMap = map['accounts'] is Map ? Map<String, dynamic>.from(map['accounts'] as Map) : <String, dynamic>{};
     return BootstrapData(
+      settings: map['settings'] is Map ? Map<String, dynamic>.from(map['settings'] as Map) : <String, dynamic>{},
       categories: maps(map['categories']).map(CategoryModel.fromMap).toList()..sort((a, b) => a.sortOrder.compareTo(b.sortOrder)),
       subcategories: maps(map['productSubcategories']).map(SubcategoryModel.fromMap).toList()..sort((a, b) => a.sortOrder.compareTo(b.sortOrder)),
       items: [...booklets, ...products],

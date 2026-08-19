@@ -59,11 +59,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                 Text(row.title.isEmpty ? 'إشعار من منصة آلين' : row.title, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
                                 if (row.message.isNotEmpty) ...[
                                   const SizedBox(height: 5),
-                                  Text(row.message, style: const TextStyle(height: 1.55, color: AlinTheme.ink)),
+                                  Text(row.message, style: TextStyle(height: 1.55, color: Theme.of(context).colorScheme.onSurface)),
                                 ],
                                 if (row.createdAt != null) ...[
                                   const SizedBox(height: 8),
-                                  Text(_date(row.createdAt!), style: const TextStyle(color: AlinTheme.muted, fontSize: 11)),
+                                  Text(_date(row.createdAt!), style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 11)),
                                 ],
                               ],
                             ),

@@ -64,7 +64,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     final unread = c.unreadNotificationCount;
 
     Widget header() => Material(
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.surface,
           child: SafeArea(
             bottom: false,
             child: Padding(
@@ -92,7 +92,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Text(
-                                    'منصة آلين',
+                                    c.tr('منصة آلين', ku: 'پلاتفۆرمی ئالین', en: 'Alin Platform'),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
@@ -103,12 +103,12 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
                                   ),
                                   if (c.student == null)
                                     Text(
-                                      'ملازم • قرطاسية • هدايا',
+                                      c.tr('ملازم • قرطاسية • هدايا', ku: 'ملزمە • نووسینگە • دیاری', en: 'Booklets • Stationery • Gifts'),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
                                         fontSize: roomy ? 11.5 : 10.5,
-                                        color: AlinTheme.muted,
+                                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                                         fontWeight: FontWeight.w600,
                                       ),
                                     )
@@ -122,7 +122,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
                                         borderRadius: BorderRadius.circular(999),
                                       ),
                                       child: Text(
-                                        'أهلاً ${c.student!.name} 👋',
+                                        c.tr('أهلاً ${c.student!.name} 👋', ku: 'بەخێربێیت ${c.student!.name} 👋', en: 'Welcome ${c.student!.name} 👋'),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                         style: TextStyle(
@@ -142,7 +142,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
                   ),
                   const SizedBox(width: 8),
                   _HeaderAction(
-                    tooltip: 'الإشعارات',
+                    tooltip: c.tr('الإشعارات', ku: 'ئاگادارکردنەوەکان', en: 'Notifications'),
                     onPressed: () => Navigator.of(context).push(
                       MaterialPageRoute(builder: (_) => const NotificationsScreen()),
                     ),
@@ -154,7 +154,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
                   ),
                   const SizedBox(width: 6),
                   _HeaderAction(
-                    tooltip: 'السلة',
+                    tooltip: c.tr('السلة', ku: 'سەبەتە', en: 'Cart'),
                     onPressed: () => Navigator.of(context).push(
                       MaterialPageRoute(builder: (_) => const CartScreen()),
                     ),
@@ -186,6 +186,11 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
         onFavorites: () => setState(() => index = 1),
         onTracking: () => setState(() => index = 2),
         onOptions: () => setState(() => index = 3),
+        homeLabel: c.tr('المتجر', ku: 'فرۆشگا', en: 'Store'),
+        cartLabel: c.tr('السلة', ku: 'سەبەتە', en: 'Cart'),
+        favoritesLabel: c.tr('المفضلة', ku: 'دڵخوازەکان', en: 'Favorites'),
+        trackingLabel: c.tr('التتبع', ku: 'بەدواداچوون', en: 'Tracking'),
+        optionsLabel: c.tr('خيارات', ku: 'هەڵبژاردەکان', en: 'Options'),
       ),
     );
   }
@@ -203,10 +208,10 @@ class _HeaderAction extends StatelessWidget {
     return Tooltip(
       message: tooltip,
       child: Material(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(13),
-          side: const BorderSide(color: AlinTheme.line),
+          side: BorderSide(color: Theme.of(context).dividerColor),
         ),
         child: InkWell(
           borderRadius: BorderRadius.circular(13),
@@ -226,6 +231,11 @@ class _WebStyleBottomBar extends StatelessWidget {
   final VoidCallback onFavorites;
   final VoidCallback onTracking;
   final VoidCallback onOptions;
+  final String homeLabel;
+  final String cartLabel;
+  final String favoritesLabel;
+  final String trackingLabel;
+  final String optionsLabel;
 
   const _WebStyleBottomBar({
     required this.selectedPage,
@@ -235,26 +245,31 @@ class _WebStyleBottomBar extends StatelessWidget {
     required this.onFavorites,
     required this.onTracking,
     required this.onOptions,
+    required this.homeLabel,
+    required this.cartLabel,
+    required this.favoritesLabel,
+    required this.trackingLabel,
+    required this.optionsLabel,
   });
 
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.white,
+      color: Theme.of(context).colorScheme.surface,
       elevation: 18,
       child: SafeArea(
         top: false,
         child: Container(
           height: 68,
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-          decoration: const BoxDecoration(
-            border: Border(top: BorderSide(color: AlinTheme.line)),
+          decoration: BoxDecoration(
+            border: Border(top: BorderSide(color: Theme.of(context).dividerColor)),
           ),
           child: Row(
             children: [
               Expanded(
                 child: _BottomItem(
-                  label: 'المتجر',
+                  label: homeLabel,
                   icon: Icons.storefront_outlined,
                   selectedIcon: Icons.storefront_rounded,
                   selected: selectedPage == 0,
@@ -263,7 +278,7 @@ class _WebStyleBottomBar extends StatelessWidget {
               ),
               Expanded(
                 child: _BottomItem(
-                  label: 'السلة',
+                  label: cartLabel,
                   icon: Icons.shopping_bag_outlined,
                   selectedIcon: Icons.shopping_bag,
                   badge: cartCount,
@@ -272,7 +287,7 @@ class _WebStyleBottomBar extends StatelessWidget {
               ),
               Expanded(
                 child: _BottomItem(
-                  label: 'المفضلة',
+                  label: favoritesLabel,
                   icon: Icons.favorite_border_rounded,
                   selectedIcon: Icons.favorite_rounded,
                   selected: selectedPage == 1,
@@ -281,7 +296,7 @@ class _WebStyleBottomBar extends StatelessWidget {
               ),
               Expanded(
                 child: _BottomItem(
-                  label: 'التتبع',
+                  label: trackingLabel,
                   icon: Icons.local_shipping_outlined,
                   selectedIcon: Icons.local_shipping_rounded,
                   selected: selectedPage == 2,
@@ -290,7 +305,7 @@ class _WebStyleBottomBar extends StatelessWidget {
               ),
               Expanded(
                 child: _BottomItem(
-                  label: 'خيارات',
+                  label: optionsLabel,
                   icon: Icons.tune_rounded,
                   selectedIcon: Icons.tune_rounded,
                   selected: selectedPage == 3,
@@ -336,14 +351,14 @@ class _BottomItem extends StatelessWidget {
               width: 42,
               height: 30,
               decoration: BoxDecoration(
-                color: selected ? const Color(0xFFE8F1FB) : Colors.transparent,
+                color: selected ? (Theme.of(context).brightness == Brightness.dark ? const Color(0xFF173E60) : const Color(0xFFE8F1FB)) : Colors.transparent,
                 borderRadius: BorderRadius.circular(999),
               ),
               child: Center(
                 child: Badge(
                   isLabelVisible: badge > 0,
                   label: Text(badge > 99 ? '99+' : '$badge'),
-                  child: Icon(selected ? selectedIcon : icon, size: 22, color: selected ? AlinTheme.navy : const Color(0xFF3D4650)),
+                  child: Icon(selected ? selectedIcon : icon, size: 22, color: selected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurfaceVariant),
                 ),
               ),
             ),
@@ -355,7 +370,7 @@ class _BottomItem extends StatelessWidget {
               style: TextStyle(
                 fontSize: 10.5,
                 fontWeight: selected ? FontWeight.w900 : FontWeight.w700,
-                color: selected ? AlinTheme.navy : const Color(0xFF3D4650),
+                color: selected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
           ],

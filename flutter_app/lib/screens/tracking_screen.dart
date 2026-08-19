@@ -44,6 +44,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final c = AppScope.of(context);
     final tablet = MediaQuery.sizeOf(context).shortestSide >= 600;
     return ListView(
       padding: EdgeInsets.all(tablet ? 28 : 16),
@@ -54,9 +55,9 @@ class _TrackingScreenState extends State<TrackingScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text('تتبع الطلب', style: TextStyle(fontSize: tablet ? 26 : 22, fontWeight: FontWeight.w900, color: AlinTheme.ink)),
+                Text(c.tr('تتبع الطلب', ku: 'بەدواداچوونی داواکاری', en: 'Track order'), style: TextStyle(fontSize: tablet ? 26 : 22, fontWeight: FontWeight.w900, color: Theme.of(context).colorScheme.onSurface)),
                 const SizedBox(height: 5),
-                const Text('اكتب رقم الطلب حتى تعرف حالته الحالية.', style: TextStyle(color: AlinTheme.muted)),
+                Text(c.tr('اكتب رقم الطلب حتى تعرف حالته الحالية.', ku: 'ژمارەی داواکاری بنووسە بۆ زانینی دۆخەکەی.', en: 'Enter the order number to check its status.'), style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
                 const SizedBox(height: 20),
                 TextField(
                   controller: input,

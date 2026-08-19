@@ -11,6 +11,8 @@ class DeviceStore {
   static const _cartKey = 'alin_flutter_cart_v1';
   static const _favoritesKey = 'alin_flutter_favorites_v1';
   static const _readNotificationsKey = 'alin_flutter_read_notifications_v1';
+  static const _themeKey = 'alin_flutter_theme_v1';
+  static const _languageKey = 'alin_flutter_language_v1';
 
   final SharedPreferences prefs;
   final FlutterSecureStorage secure;
@@ -79,6 +81,16 @@ class DeviceStore {
 
   Set<String> readFavorites() => _readStringSet(_favoritesKey);
   Future<void> writeFavorites(Set<String> value) => prefs.setString(_favoritesKey, jsonEncode(value.toList()));
+
+  String readThemeMode() => prefs.getString(_themeKey) == 'dark' ? 'dark' : 'light';
+  Future<void> writeThemeMode(String value) => prefs.setString(_themeKey, value == 'dark' ? 'dark' : 'light');
+
+  String readLanguageCode() {
+    final value = prefs.getString(_languageKey);
+    return const {'ar', 'ku', 'en'}.contains(value) ? value! : 'ar';
+  }
+  Future<void> writeLanguageCode(String value) =>
+      prefs.setString(_languageKey, const {'ar', 'ku', 'en'}.contains(value) ? value : 'ar');
 
   Set<String> readReadNotifications() => _readStringSet(_readNotificationsKey);
   Future<void> writeReadNotifications(Set<String> value) =>

@@ -18,9 +18,9 @@ class FavoritesScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('المفضلة', style: TextStyle(fontSize: tablet ? 25 : 21, fontWeight: FontWeight.w900, color: AlinTheme.ink)),
+          Text(c.tr('المفضلة', ku: 'دڵخوازەکان', en: 'Favorites'), style: TextStyle(fontSize: tablet ? 25 : 21, fontWeight: FontWeight.w900, color: Theme.of(context).colorScheme.onSurface)),
           const SizedBox(height: 5),
-          Text('${items.length} عنصر محفوظ', style: const TextStyle(color: AlinTheme.muted)),
+          Text('${items.length} ${c.tr('عنصر محفوظ', ku: 'دانە پاشەکەوتکراو', en: 'saved items')}', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
           const SizedBox(height: 16),
           Expanded(
             child: items.isEmpty

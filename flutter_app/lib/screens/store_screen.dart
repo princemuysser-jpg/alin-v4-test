@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../core/app_scope.dart';
 import '../core/alin_theme.dart';
@@ -106,6 +107,8 @@ class _StoreScreenState extends State<StoreScreen> {
                   if (!showCatalog) ...[
                     _HomeCategories(
                       categories: data.categories,
+                      settings: data.settings,
+                      hasDeals: data.items.any((e) => e.oldPrice != null),
                       onAll: () => _openAll(c),
                       onCategory: (id) => _openCategory(c, id),
                     ),
@@ -116,7 +119,7 @@ class _StoreScreenState extends State<StoreScreen> {
                       count: c.visibleItems.length,
                       onBack: () => _openHome(c),
                     ),
-                    if (c.selectedCategoryId.isNotEmpty) ...[
+                    if (c.selectedCategoryId.isNotEmpty && c.selectedCategoryId != '__deals__') ...[
                       const SizedBox(height: 10),
                       _SubcategoryStrip(items: c.subcategoriesFor(c.selectedCategoryId)),
                     ],
@@ -136,6 +139,7 @@ class _StoreScreenState extends State<StoreScreen> {
   String _catalogTitle(dynamic c, BootstrapData data) {
     if (c.search.trim().isNotEmpty) return 'نتائج البحث';
     if (c.selectedCategoryId.isEmpty) return 'كل المنتجات والملازم';
+    if (c.selectedCategoryId == '__deals__') return c.tr('العروض', ku: 'داشکاندنەکان', en: 'Offers');
     return data.categories.where((e) => e.id == c.selectedCategoryId).map((e) => e.name).firstOrNull ?? 'القسم';
   }
 
@@ -219,9 +223,9 @@ class _SearchBox extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AlinTheme.line),
+        border: Border.all(color: Theme.of(context).dividerColor),
         boxShadow: [BoxShadow(color: AlinTheme.navy.withValues(alpha: .04), blurRadius: 12, offset: const Offset(0, 4))],
       ),
       child: TextField(
@@ -244,56 +248,111 @@ class _SearchBox extends StatelessWidget {
 
 class _HomeCategories extends StatelessWidget {
   final List<CategoryModel> categories;
+  final Map<String, dynamic> settings;
+  final bool hasDeals;
   final VoidCallback onAll;
   final ValueChanged<String> onCategory;
 
-  const _HomeCategories({required this.categories, required this.onAll, required this.onCategory});
+  const _HomeCategories({
+    required this.categories,
+    required this.settings,
+    required this.hasDeals,
+    required this.onAll,
+    required this.onCategory,
+  });
+
+  String _type(String value) {
+    final type = value.trim().toLowerCase();
+    if (type == 'booklets') return 'booklet';
+    if (type == 'gifts') return 'gift';
+    if (type == 'stationary') return 'stationery';
+    return type;
+  }
+
+  String _imageFor(CategoryModel item) {
+    final type = _type(item.type);
+    final key = const {'booklet', 'stationery', 'gift', 'deal'}.contains(type)
+        ? 'store_category_icon_$type'
+        : 'store_category_icon_category:${item.id}';
+    return '${settings[key] ?? ''}'.trim();
+  }
+
+  IconData _iconFor(CategoryModel item) {
+    final type = _type(item.type);
+    if (type == 'booklet') return Icons.menu_book_rounded;
+    if (type == 'gift') return Icons.card_giftcard_rounded;
+    if (type == 'stationery') return Icons.edit_note_rounded;
+    if (type == 'deal') return Icons.local_offer_rounded;
+    return Icons.grid_view_rounded;
+  }
 
   @override
   Widget build(BuildContext context) {
-    final all = [CategoryModel(id: '', name: 'كل المنتجات', type: 'all', sortOrder: -1), ...categories];
+    final c = AppScope.of(context);
+    final surface = Theme.of(context).colorScheme.surface;
+    final border = Theme.of(context).dividerColor;
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final all = [
+      CategoryModel(id: '', name: c.tr('كل المنتجات', ku: 'هەموو بەرهەمەکان', en: 'All products'), type: 'all', sortOrder: -1),
+      ...categories,
+      if (hasDeals) CategoryModel(id: '__deals__', name: c.tr('عروض', ku: 'داشکاندن', en: 'Offers'), type: 'deal', sortOrder: 999),
+    ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const _SectionHeading(title: 'تسوق حسب القسم', subtitle: 'اختار القسم المناسب إلك'),
+        _SectionHeading(
+          title: c.tr('تسوّق حسب الأقسام', ku: 'بەپێی بەشەکان بکڕە', en: 'Shop by category'),
+          subtitle: c.tr('اختار القسم المناسب إلك', ku: 'بەشی گونجاو هەڵبژێرە', en: 'Choose what you need'),
+        ),
         const SizedBox(height: 10),
         SizedBox(
-          height: 88,
+          height: 122,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: all.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 9),
+            separatorBuilder: (_, __) => const SizedBox(width: 10),
             itemBuilder: (context, index) {
               final item = all[index];
-              final icon = item.type == 'booklet'
-                  ? Icons.menu_book_rounded
-                  : item.type == 'gift'
-                      ? Icons.card_giftcard_rounded
-                      : item.type == 'stationery'
-                          ? Icons.edit_note_rounded
-                          : Icons.grid_view_rounded;
+              final imagePath = item.id.isEmpty ? '' : _imageFor(item);
               return InkWell(
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(20),
                 onTap: item.id.isEmpty ? onAll : () => onCategory(item.id),
                 child: Container(
-                  width: 132,
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                  width: 138,
+                  padding: const EdgeInsets.fromLTRB(9, 9, 9, 10),
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: AlinTheme.line),
+                    color: dark ? const Color(0xFF0E3659) : const Color(0xFF0B3158),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: dark ? const Color(0xFF4B6F8F) : const Color(0xFF315778)),
+                    boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: dark ? .12 : .07), blurRadius: 14, offset: const Offset(0, 5))],
                   ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(color: const Color(0xFFEAF2FB), borderRadius: BorderRadius.circular(13)),
-                        child: Icon(icon, color: AlinTheme.navy, size: 22),
+                        width: 68,
+                        height: 68,
+                        clipBehavior: Clip.antiAlias,
+                        decoration: BoxDecoration(
+                          color: surface,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: border),
+                        ),
+                        child: imagePath.isNotEmpty
+                            ? Padding(
+                                padding: const EdgeInsets.all(3),
+                                child: AlinNetworkImage(path: imagePath, fit: BoxFit.contain),
+                              )
+                            : Icon(_iconFor(item), color: AlinTheme.gold, size: 34),
                       ),
-                      const SizedBox(height: 5),
-                      Text(item.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12)),
+                      const SizedBox(height: 7),
+                      Text(
+                        item.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 12),
+                      ),
                     ],
                   ),
                 ),
@@ -351,7 +410,7 @@ class _ShelfCard extends StatelessWidget {
     final c = AppScope.of(context);
     final favorite = c.isFavorite(item);
     return Material(
-      color: Colors.white,
+      color: Theme.of(context).colorScheme.surface,
       borderRadius: BorderRadius.circular(18),
       child: InkWell(
         borderRadius: BorderRadius.circular(18),
@@ -359,7 +418,7 @@ class _ShelfCard extends StatelessWidget {
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: AlinTheme.line),
+            border: Border.all(color: Theme.of(context).dividerColor),
           ),
           clipBehavior: Clip.antiAlias,
           child: Column(
@@ -370,7 +429,7 @@ class _ShelfCard extends StatelessWidget {
                   children: [
                     Positioned.fill(
                       child: Container(
-                        color: const Color(0xFFF9FBFD),
+                        color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF102F4D) : const Color(0xFFF9FBFD),
                         padding: const EdgeInsets.all(10),
                         child: AlinNetworkImage(path: item.imagePath, fit: BoxFit.contain),
                       ),
@@ -379,7 +438,7 @@ class _ShelfCard extends StatelessWidget {
                       top: 7,
                       left: 7,
                       child: Material(
-                        color: Colors.white.withValues(alpha: .94),
+                        color: Theme.of(context).colorScheme.surface.withValues(alpha: .94),
                         shape: const CircleBorder(),
                         child: InkWell(
                           customBorder: const CircleBorder(),
@@ -411,9 +470,9 @@ class _ShelfCard extends StatelessWidget {
                   children: [
                     Text(item.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900)),
                     const SizedBox(height: 3),
-                    Text(item.subtitle.isEmpty ? (item.isBooklet ? 'ملزمة' : 'منتج') : item.subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 10.5, color: AlinTheme.muted)),
+                    Text(item.subtitle.isEmpty ? (item.isBooklet ? c.tr('ملزمة', ku: 'ملزمە', en: 'Booklet') : c.tr('منتج', ku: 'بەرهەم', en: 'Product')) : item.subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 10.5, color: Theme.of(context).colorScheme.onSurfaceVariant)),
                     const SizedBox(height: 6),
-                    Text(item.priceText, style: const TextStyle(fontSize: 14, color: AlinTheme.navy, fontWeight: FontWeight.w900)),
+                    Text(item.priceText, style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w900)),
                   ],
                 ),
               ),
@@ -439,9 +498,9 @@ class _SectionHeading extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: const TextStyle(fontSize: 18, color: AlinTheme.ink, fontWeight: FontWeight.w900)),
+              Text(title, style: TextStyle(fontSize: 18, color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w900)),
               const SizedBox(height: 2),
-              Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11, color: AlinTheme.muted)),
+              Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant)),
             ],
           ),
         ),
@@ -467,8 +526,8 @@ class _CatalogTopBar extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 19, color: AlinTheme.ink, fontWeight: FontWeight.w900)),
-              Text('$count عنصر', style: const TextStyle(fontSize: 11, color: AlinTheme.muted)),
+              Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 19, color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w900)),
+              Text('$count عنصر', style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant)),
             ],
           ),
         ),
@@ -539,10 +598,40 @@ class _BannerCarousel extends StatefulWidget {
 }
 
 class _BannerCarouselState extends State<_BannerCarousel> {
-  final controller = PageController(viewportFraction: .97);
+  final controller = PageController();
+  Timer? timer;
+  int index = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _restart();
+  }
+
+  @override
+  void didUpdateWidget(covariant _BannerCarousel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.banners.length != widget.banners.length) {
+      index = 0;
+      _restart();
+    }
+  }
+
+  void _restart() {
+    timer?.cancel();
+    if (widget.banners.length <= 1) return;
+    timer = Timer.periodic(const Duration(milliseconds: 6500), (_) {
+      if (!mounted || widget.banners.isEmpty) return;
+      index = (index + 1) % widget.banners.length;
+      if (controller.hasClients) {
+        controller.animateToPage(index, duration: const Duration(milliseconds: 420), curve: Curves.easeOutCubic);
+      }
+    });
+  }
 
   @override
   void dispose() {
+    timer?.cancel();
     controller.dispose();
     super.dispose();
   }
@@ -550,54 +639,86 @@ class _BannerCarouselState extends State<_BannerCarousel> {
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.sizeOf(context).width;
-    final height = width >= 700 ? 220.0 : 162.0;
+    final roomy = width >= 700;
+    final surface = Theme.of(context).colorScheme.surface;
+    final border = Theme.of(context).dividerColor;
     return SizedBox(
-      height: height,
+      height: roomy ? 330 : 285,
       child: PageView.builder(
         controller: controller,
         itemCount: widget.banners.length,
-        itemBuilder: (context, index) {
-          final banner = widget.banners[index];
+        onPageChanged: (value) {
+          index = value;
+          _restart();
+        },
+        itemBuilder: (context, pageIndex) {
+          final banner = widget.banners[pageIndex];
+          final hasCopy = banner.title.isNotEmpty || banner.subtitle.isNotEmpty;
           return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 3),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(18),
-              child: Stack(
-                fit: StackFit.expand,
+            padding: const EdgeInsets.symmetric(horizontal: 2),
+            child: Container(
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                color: surface,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: border),
+                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: .08), blurRadius: 20, offset: const Offset(0, 8))],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  if (banner.imagePath.isNotEmpty)
-                    AlinNetworkImage(path: banner.imagePath, fit: BoxFit.cover)
-                  else
-                    Container(decoration: const BoxDecoration(gradient: LinearGradient(colors: [AlinTheme.navy, Color(0xFF1468A8)]))),
-                  DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [Colors.transparent, Colors.black.withValues(alpha: .62)],
-                      ),
+                  Expanded(
+                    flex: hasCopy ? 7 : 10,
+                    child: Container(
+                      color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF102F4D) : const Color(0xFFFFF7EF),
+                      child: banner.imagePath.isNotEmpty
+                          ? AlinNetworkImage(path: banner.imagePath, fit: roomy ? BoxFit.cover : BoxFit.contain)
+                          : Center(
+                              child: Image.asset('assets/images/alin_icon.png', width: roomy ? 90 : 70, height: roomy ? 90 : 70),
+                            ),
                     ),
                   ),
-                  Align(
-                    alignment: Alignment.bottomRight,
-                    child: Padding(
-                      padding: const EdgeInsets.all(14),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            banner.title,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(color: Colors.white, fontSize: width >= 700 ? 21 : 16, fontWeight: FontWeight.w900),
-                          ),
-                          if (banner.subtitle.isNotEmpty)
-                            Text(banner.subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white70, fontSize: 11)),
-                        ],
+                  if (hasCopy)
+                    Flexible(
+                      flex: 3,
+                      child: Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.fromLTRB(roomy ? 20 : 14, 10, roomy ? 20 : 14, 12),
+                        decoration: BoxDecoration(
+                          color: surface,
+                          border: Border(top: BorderSide(color: border)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(color: const Color(0xFFFFF2E7), borderRadius: BorderRadius.circular(999)),
+                              child: const Text('إعلان منصة آلين', style: TextStyle(color: Color(0xFFD95F00), fontSize: 9.5, fontWeight: FontWeight.w900)),
+                            ),
+                            if (banner.title.isNotEmpty) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                banner.title,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(fontSize: roomy ? 18 : 15.5, fontWeight: FontWeight.w900, color: Theme.of(context).colorScheme.onSurface),
+                              ),
+                            ],
+                            if (banner.subtitle.isNotEmpty) ...[
+                              const SizedBox(height: 2),
+                              Text(
+                                banner.subtitle,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(fontSize: roomy ? 12.5 : 11.5, height: 1.35, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                              ),
+                            ],
+                          ],
+                        ),
                       ),
                     ),
-                  ),
                 ],
               ),
             ),

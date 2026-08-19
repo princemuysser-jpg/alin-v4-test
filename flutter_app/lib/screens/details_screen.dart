@@ -40,7 +40,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
     }
 
     final gallery = Container(
-      color: Colors.white,
+      color: Theme.of(context).colorScheme.surface,
       child: Column(
         children: [
           AspectRatio(
@@ -66,7 +66,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
                     padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: imageIndex == index ? AlinTheme.navy : AlinTheme.line, width: imageIndex == index ? 2 : 1),
+                      border: Border.all(color: imageIndex == index ? Theme.of(context).colorScheme.primary : Theme.of(context).dividerColor, width: imageIndex == index ? 2 : 1),
                     ),
                     child: AlinNetworkImage(path: images[index], fit: BoxFit.contain),
                   ),
@@ -85,7 +85,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(child: Text(item.title, style: TextStyle(fontSize: tablet ? 28 : 22, fontWeight: FontWeight.w900, color: AlinTheme.ink))),
+              Expanded(child: Text(item.title, style: TextStyle(fontSize: tablet ? 28 : 22, fontWeight: FontWeight.w900, color: Theme.of(context).colorScheme.onSurface))),
               IconButton(
                 onPressed: () => c.toggleFavorite(item),
                 icon: Icon(c.isFavorite(item) ? Icons.favorite : Icons.favorite_border, color: c.isFavorite(item) ? Colors.red : AlinTheme.navy),
@@ -94,12 +94,12 @@ class _DetailsScreenState extends State<DetailsScreen> {
           ),
           if (item.subtitle.isNotEmpty) ...[
             const SizedBox(height: 5),
-            Text(item.subtitle, style: const TextStyle(color: AlinTheme.muted)),
+            Text(item.subtitle, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
           ],
           const SizedBox(height: 14),
           Row(
             children: [
-              Text(item.priceText, style: TextStyle(fontSize: tablet ? 24 : 21, fontWeight: FontWeight.w900, color: AlinTheme.navy)),
+              Text(item.priceText, style: TextStyle(fontSize: tablet ? 24 : 21, fontWeight: FontWeight.w900, color: Theme.of(context).colorScheme.primary)),
               if (item.oldPrice != null) ...[
                 const SizedBox(width: 10),
                 Text('${item.oldPrice!.toStringAsFixed(0)} د.ع', style: const TextStyle(color: Colors.grey, decoration: TextDecoration.lineThrough)),
@@ -110,7 +110,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
             const SizedBox(height: 20),
             const Text('التفاصيل', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
             const SizedBox(height: 7),
-            Text(item.description, style: const TextStyle(height: 1.7, color: AlinTheme.ink)),
+            Text(item.description, style: TextStyle(height: 1.7, color: Theme.of(context).colorScheme.onSurface)),
           ],
           if (item.hasVariants) ...[
             const SizedBox(height: 22),

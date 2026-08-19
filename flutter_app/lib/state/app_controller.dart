@@ -19,6 +19,8 @@ class AppController extends ChangeNotifier {
   String selectedSubcategoryId = '';
   String sort = 'default';
   String? pendingCouponCode;
+  String themeMode = 'light';
+  String languageCode = 'ar';
 
   StudentModel? student;
   String? studentToken;
@@ -54,6 +56,8 @@ class AppController extends ChangeNotifier {
   }
 
   Future<void> _restoreLocalState() async {
+    themeMode = store.readThemeMode();
+    languageCode = store.readLanguageCode();
     favorites
       ..clear()
       ..addAll(store.readFavorites());
@@ -87,6 +91,7 @@ class AppController extends ChangeNotifier {
         bootstrap = fresh;
       } else {
         bootstrap = BootstrapData(
+          settings: bootstrap!.settings,
           categories: bootstrap!.categories,
           subcategories: bootstrap!.subcategories,
           items: bootstrap!.items,
@@ -112,6 +117,29 @@ class AppController extends ChangeNotifier {
     notifyListeners();
   }
 
+
+  Future<void> setThemeMode(String value) async {
+    final next = value == 'dark' ? 'dark' : 'light';
+    if (themeMode == next) return;
+    themeMode = next;
+    await store.writeThemeMode(next);
+    notifyListeners();
+  }
+
+  Future<void> setLanguageCode(String value) async {
+    final next = const {'ar', 'ku', 'en'}.contains(value) ? value : 'ar';
+    if (languageCode == next) return;
+    languageCode = next;
+    await store.writeLanguageCode(next);
+    notifyListeners();
+  }
+
+  String tr(String ar, {String? ku, String? en}) {
+    if (languageCode == 'en' && en != null) return en;
+    if (languageCode == 'ku' && ku != null) return ku;
+    return ar;
+  }
+
   void useCoupon(String code) {
     final clean = code.trim();
     if (clean.isEmpty) return;
@@ -127,7 +155,9 @@ class AppController extends ChangeNotifier {
 
   List<StoreItem> get visibleItems {
     var rows = bootstrap?.items ?? const <StoreItem>[];
-    if (selectedCategoryId.isNotEmpty) {
+    if (selectedCategoryId == '__deals__') {
+      rows = rows.where((e) => e.oldPrice != null).toList();
+    } else if (selectedCategoryId.isNotEmpty) {
       rows = rows.where((e) => e.categoryId == selectedCategoryId).toList();
     }
     if (selectedSubcategoryId.isNotEmpty) {

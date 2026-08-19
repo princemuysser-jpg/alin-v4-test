@@ -1,4 +1,4 @@
-name: Build Alin Flutter Android
+name: Build Alin Flutter Android UI18
 
 on:
   push:
@@ -73,7 +73,7 @@ jobs:
       - name: Upload Android release artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: alin-flutter-android-unsigned
+          name: alin-flutter-ui18-v5.1.0-build3
           if-no-files-found: error
           path: |
             flutter_app/build/app/outputs/bundle/release/*.aab

@@ -35,7 +35,18 @@ class AlinApp extends StatefulWidget {
 
 class _AlinAppState extends State<AlinApp> {
   @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(_controllerChanged);
+  }
+
+  void _controllerChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
   void dispose() {
+    widget.controller.removeListener(_controllerChanged);
     widget.controller.disposeController();
     widget.controller.dispose();
     super.dispose();
@@ -48,7 +59,7 @@ class _AlinAppState extends State<AlinApp> {
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         title: AlinConfig.appName,
-        locale: const Locale('ar', 'IQ'),
+        locale: widget.controller.languageCode == 'en' ? const Locale('en', 'US') : const Locale('ar', 'IQ'),
         supportedLocales: const [Locale('ar', 'IQ'), Locale('en', 'US')],
         localizationsDelegates: const [
           GlobalMaterialLocalizations.delegate,
@@ -56,8 +67,10 @@ class _AlinAppState extends State<AlinApp> {
           GlobalCupertinoLocalizations.delegate,
         ],
         theme: AlinTheme.light(),
+        darkTheme: AlinTheme.dark(),
+        themeMode: widget.controller.themeMode == 'dark' ? ThemeMode.dark : ThemeMode.light,
         builder: (context, child) => Directionality(
-          textDirection: TextDirection.rtl,
+          textDirection: widget.controller.languageCode == 'en' ? TextDirection.ltr : TextDirection.rtl,
           child: child ?? const SizedBox.shrink(),
         ),
         home: const SplashScreen(),

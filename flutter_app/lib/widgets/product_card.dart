@@ -27,7 +27,7 @@ class ProductCard extends StatelessWidget {
                 children: [
                   Positioned.fill(
                     child: Container(
-                      color: const Color(0xFFF8FAFC),
+                      color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF102F4D) : const Color(0xFFF8FAFC),
                       padding: const EdgeInsets.all(10),
                       child: AlinNetworkImage(path: item.imagePath, fit: BoxFit.contain),
                     ),
@@ -36,7 +36,7 @@ class ProductCard extends StatelessWidget {
                     top: 8,
                     left: 8,
                     child: Material(
-                      color: Colors.white.withValues(alpha: .92),
+                      color: Theme.of(context).colorScheme.surface.withValues(alpha: .92),
                       shape: const CircleBorder(),
                       child: IconButton(
                         visualDensity: VisualDensity.compact,
@@ -68,12 +68,12 @@ class ProductCard extends StatelessWidget {
                   Text(item.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
                   if (item.subtitle.isNotEmpty) ...[
                     const SizedBox(height: 3),
-                    Text(item.subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AlinTheme.muted, fontSize: 11)),
+                    Text(item.subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 11)),
                   ],
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      Expanded(child: Text(item.priceText, style: const TextStyle(color: AlinTheme.navy, fontWeight: FontWeight.w900, fontSize: 15))),
+                      Expanded(child: Text(item.priceText, style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w900, fontSize: 15))),
                       if (item.oldPrice != null)
                         Text(item.oldPrice!.toStringAsFixed(0), style: const TextStyle(color: Colors.grey, decoration: TextDecoration.lineThrough, fontSize: 11)),
                     ],
@@ -84,7 +84,7 @@ class ProductCard extends StatelessWidget {
                     height: 36,
                     child: OutlinedButton(
                       onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => DetailsScreen(item: item))),
-                      child: const Text('تفاصيل', style: TextStyle(fontWeight: FontWeight.w800)),
+                      child: Text(c.tr('تفاصيل', ku: 'وردەکاری', en: 'Details'), style: const TextStyle(fontWeight: FontWeight.w800)),
                     ),
                   ),
                 ],

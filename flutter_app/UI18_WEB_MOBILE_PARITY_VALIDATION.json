@@ -1,0 +1,18 @@
+{
+  "audit_ok": true,
+  "checks": {
+    "yaml_parse": true,
+    "dart_delimiters_balanced": true,
+    "banner_auto_rotate_6500": true,
+    "banner_copy_below_media": true,
+    "category_images_from_settings": true,
+    "deal_category_supported": true,
+    "bootstrap_settings_exposed": true,
+    "language_options": true,
+    "theme_options": true,
+    "contact_about": true,
+    "bottom_navigation_only": true,
+    "version_5_1_0_3": true,
+    "critical_order_finance_files_unchanged": true
+  }
+}

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../core/app_scope.dart';
 import '../core/alin_theme.dart';
 
@@ -63,7 +64,27 @@ class _AccountScreenState extends State<AccountScreen> {
         Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 760),
-            child: student == null ? _signedOut(c, tablet) : _signedIn(c, tablet),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  c.tr('خيارات', ku: 'هەڵبژاردەکان', en: 'Options'),
+                  style: TextStyle(fontSize: tablet ? 26 : 22, fontWeight: FontWeight.w900),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  c.tr('الحساب واللغة ومظهر المنصة', ku: 'هەژمار و زمان و ڕووکار', en: 'Account, language and appearance'),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12),
+                ),
+                const SizedBox(height: 14),
+                student == null ? _signedOut(c, tablet) : _signedIn(c, tablet),
+                const SizedBox(height: 14),
+                _preferencesCard(c),
+                const SizedBox(height: 14),
+                _supportCard(c),
+                const SizedBox(height: 20),
+              ],
+            ),
           ),
         ),
       ],
@@ -86,7 +107,7 @@ class _AccountScreenState extends State<AccountScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(createMode ? 'إنشاء حساب طالب' : 'تسجيل دخول الطالب', style: TextStyle(fontSize: tablet ? 25 : 21, fontWeight: FontWeight.w900)),
-                      const Text('الحساب يبقى محفوظ إلى أن تسوي تسجيل خروج.', style: TextStyle(color: AlinTheme.muted, fontSize: 12)),
+                      Text(c.tr('الحساب يبقى محفوظ إلى أن تسوي تسجيل خروج.', ku: 'هەژمارەکە پارێزراوە تا دەرچوون بکەیت.', en: 'Your account stays signed in until you log out.'), style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12)),
                     ],
                   ),
                 ),
@@ -150,8 +171,8 @@ class _AccountScreenState extends State<AccountScreen> {
                     children: [
                       Text('أهلاً ${student.name} 👋', style: TextStyle(fontSize: tablet ? 24 : 20, fontWeight: FontWeight.w900)),
                       const SizedBox(height: 4),
-                      Text(student.phone, style: const TextStyle(color: AlinTheme.muted)),
-                      if (c.studentVerifying) const Padding(padding: EdgeInsets.only(top: 6), child: Text('جارٍ تأكيد الجلسة...', style: TextStyle(fontSize: 11, color: AlinTheme.muted))),
+                      Text(student.phone, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                      if (c.studentVerifying) Padding(padding: const EdgeInsets.only(top: 6), child: Text(c.tr('جارٍ تأكيد الجلسة...', ku: 'پشتڕاستکردنەوەی دانیشتن...', en: 'Verifying session...'), style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant))),
                     ],
                   ),
                 ),
@@ -204,6 +225,185 @@ class _AccountScreenState extends State<AccountScreen> {
       ],
     );
   }
+
+  String _setting(dynamic c, String key, String fallback) {
+    final value = '${c.bootstrap?.settings[key] ?? ''}'.trim();
+    return value.isEmpty ? fallback : value;
+  }
+
+  Widget _preferencesCard(dynamic c) {
+    final dark = c.themeMode == 'dark';
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.language_rounded),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(c.tr('اللغة', ku: 'زمان', en: 'Language'), style: const TextStyle(fontWeight: FontWeight.w900)),
+                      Text(c.tr('اختر لغة واجهة المنصة', ku: 'زمانی ڕووکار هەڵبژێرە', en: 'Choose the interface language'), style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                ChoiceChip(label: const Text('العربية'), selected: c.languageCode == 'ar', onSelected: (_) => c.setLanguageCode('ar')),
+                ChoiceChip(label: const Text('کوردی'), selected: c.languageCode == 'ku', onSelected: (_) => c.setLanguageCode('ku')),
+                ChoiceChip(label: const Text('English'), selected: c.languageCode == 'en', onSelected: (_) => c.setLanguageCode('en')),
+              ],
+            ),
+            const Divider(height: 28),
+            Row(
+              children: [
+                Icon(dark ? Icons.dark_mode_rounded : Icons.light_mode_rounded),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(c.tr('المظهر', ku: 'ڕووکار', en: 'Appearance'), style: const TextStyle(fontWeight: FontWeight.w900)),
+                      Text(c.tr('الوضع النهاري أو الليلي', ku: 'ڕووناک یان تاریک', en: 'Light or dark mode'), style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            SegmentedButton<String>(
+              segments: [
+                ButtonSegment(value: 'light', icon: const Icon(Icons.light_mode_outlined), label: Text(c.tr('نهاري', ku: 'ڕووناک', en: 'Light'))),
+                ButtonSegment(value: 'dark', icon: const Icon(Icons.dark_mode_outlined), label: Text(c.tr('ليلي', ku: 'تاریک', en: 'Dark'))),
+              ],
+              selected: {c.themeMode},
+              onSelectionChanged: (values) => c.setThemeMode(values.first),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _supportCard(dynamic c) {
+    return Card(
+      child: Column(
+        children: [
+          ListTile(
+            leading: const Icon(Icons.chat_bubble_outline_rounded),
+            title: Text(c.tr('تواصل معنا', ku: 'پەیوەندیمان پێوە بکە', en: 'Contact us'), style: const TextStyle(fontWeight: FontWeight.w900)),
+            subtitle: Text(c.tr('للاستفسار والدعم', ku: 'بۆ پرسیار و پشتگیری', en: 'Questions and support')),
+            trailing: const Icon(Icons.chevron_left_rounded),
+            onTap: () => _showContact(c),
+          ),
+          const Divider(height: 1),
+          ListTile(
+            leading: const Icon(Icons.info_outline_rounded),
+            title: Text(c.tr('حول منصة آلين', ku: 'دەربارەی پلاتفۆرمی ئالین', en: 'About Alin Platform'), style: const TextStyle(fontWeight: FontWeight.w900)),
+            subtitle: Text(c.tr('معلومات عن المنصة وخدماتها', ku: 'زانیاری دەربارەی پلاتفۆرم', en: 'Platform information and services')),
+            trailing: const Icon(Icons.chevron_left_rounded),
+            onTap: () => _showAbout(c),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _openExternal(String raw) async {
+    final value = raw.trim();
+    if (value.isEmpty) return;
+    final uri = Uri.tryParse(value);
+    if (uri == null) return;
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+
+  String _whatsAppUrl(String phone) {
+    var digits = phone.replaceAll(RegExp(r'\D'), '');
+    if (digits.startsWith('0')) digits = '964${digits.substring(1)}';
+    return digits.isEmpty ? '' : 'https://wa.me/$digits';
+  }
+
+  void _showContact(dynamic c) {
+    final title = _setting(c, 'contact_title', 'تواصل معنا');
+    final text = _setting(c, 'contact_text', 'للاستفسار أو الدعم، تواصل مع إدارة منصة آلين.');
+    final whatsapp = _setting(c, 'whatsapp', _setting(c, 'platform_phone', ''));
+    final facebook = _setting(c, 'facebook_url', '');
+    final instagram = _setting(c, 'instagram_url', '');
+    final tiktok = _setting(c, 'tiktok_url', '');
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(18, 0, 18, 22),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(title, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
+              const SizedBox(height: 7),
+              Text(text, style: const TextStyle(height: 1.6)),
+              const SizedBox(height: 14),
+              if (whatsapp.isNotEmpty)
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const CircleAvatar(child: Icon(Icons.chat_rounded)),
+                  title: const Text('WhatsApp', style: TextStyle(fontWeight: FontWeight.w900)),
+                  subtitle: Text(whatsapp),
+                  onTap: () => _openExternal(_whatsAppUrl(whatsapp)),
+                ),
+              if (facebook.isNotEmpty) ListTile(contentPadding: EdgeInsets.zero, leading: const Icon(Icons.facebook_rounded), title: const Text('Facebook'), onTap: () => _openExternal(facebook)),
+              if (instagram.isNotEmpty) ListTile(contentPadding: EdgeInsets.zero, leading: const Icon(Icons.camera_alt_outlined), title: const Text('Instagram'), onTap: () => _openExternal(instagram)),
+              if (tiktok.isNotEmpty) ListTile(contentPadding: EdgeInsets.zero, leading: const Icon(Icons.music_note_rounded), title: const Text('TikTok'), onTap: () => _openExternal(tiktok)),
+              if ([whatsapp, facebook, instagram, tiktok].every((e) => e.isEmpty))
+                Text(c.tr('بيانات التواصل غير مضافة حالياً.', ku: 'زانیاری پەیوەندی بەردەست نییە.', en: 'Contact details are not available yet.')),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showAbout(dynamic c) {
+    final title = _setting(c, 'about_title', 'حول منصة آلين');
+    final text = _setting(c, 'about_text', 'منصة آلين تجمع الملازم والقرطاسية والهدايا في مكان واحد، وتربط الطالب بالمدرس والمكتبة وخدمة التوصيل.');
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (_) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Image.asset('assets/images/alin_icon.png', width: 54, height: 54),
+                  const SizedBox(width: 12),
+                  Expanded(child: Text(title, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900))),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Text(text, style: const TextStyle(height: 1.75, fontSize: 14)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
 }
 
 class StudentOrdersScreen extends StatelessWidget {
