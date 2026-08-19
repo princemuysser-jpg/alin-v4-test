@@ -4,4 +4,6 @@ class AlinConfig {
   static const publicBucket = 'alin-files';
   static const currency = 'د.ع';
   static const appName = 'منصة آلين';
+  static const privacyPolicyUrl = 'https://alinplatform.com/privacy-policy.html';
+  static const accountDeletionUrl = 'https://alinplatform.com/account-deletion.html';
 }

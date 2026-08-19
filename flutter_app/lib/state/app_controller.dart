@@ -395,6 +395,33 @@ class AppController extends ChangeNotifier {
     }
   }
 
+  Future<String> deleteStudentAccount({required String pin}) async {
+    final token = studentToken;
+    if (token == null || token.isEmpty || student == null) {
+      throw Exception('سجل الدخول أولاً');
+    }
+    final result = await repository.studentDeleteAccount(
+      token: token,
+      deviceId: store.deviceId(),
+      pin: pin,
+    );
+    if (result['ok'] != true) {
+      throw Exception('${result['message'] ?? 'تعذر حذف الحساب حالياً'}');
+    }
+    student = null;
+    studentToken = null;
+    pendingCouponCode = null;
+    favorites.clear();
+    readNotifications.clear();
+    await Future.wait([
+      store.writeStudentSession(null),
+      store.writeFavorites(favorites),
+      store.writeReadNotifications(readNotifications),
+    ]);
+    notifyListeners();
+    return '${result['message'] ?? 'تم حذف الحساب'}';
+  }
+
   Future<List<Map<String, dynamic>>> loadStudentOrders() async {
     if (studentToken == null) return [];
     return repository.studentOrders(token: studentToken!, deviceId: store.deviceId());

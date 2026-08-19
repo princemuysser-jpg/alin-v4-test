@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../core/app_scope.dart';
 import '../core/alin_theme.dart';
+import '../core/alin_config.dart';
 
 class AccountScreen extends StatefulWidget {
   const AccountScreen({super.key});
@@ -222,6 +223,13 @@ class _AccountScreenState extends State<AccountScreen> {
           icon: const Icon(Icons.logout),
           label: const Text('تسجيل خروج'),
         ),
+        const SizedBox(height: 10),
+        TextButton.icon(
+          style: TextButton.styleFrom(foregroundColor: Colors.red.shade800, minimumSize: const Size(0, 46)),
+          onPressed: () => _deleteAccount(c),
+          icon: const Icon(Icons.delete_forever_outlined),
+          label: Text(c.tr('حذف الحساب نهائياً', ku: 'سڕینەوەی هەژمار بە یەکجاری', en: 'Delete account permanently')),
+        ),
       ],
     );
   }
@@ -308,6 +316,22 @@ class _AccountScreenState extends State<AccountScreen> {
           ),
           const Divider(height: 1),
           ListTile(
+            leading: const Icon(Icons.privacy_tip_outlined),
+            title: Text(c.tr('سياسة الخصوصية', ku: 'سیاسەتی تایبەتمەندی', en: 'Privacy policy'), style: const TextStyle(fontWeight: FontWeight.w900)),
+            subtitle: Text(c.tr('كيف نحمي ونستخدم بياناتك', ku: 'چۆن داتاکانت پارێزراون', en: 'How your data is used and protected')),
+            trailing: const Icon(Icons.open_in_new_rounded, size: 18),
+            onTap: () => _openExternal(AlinConfig.privacyPolicyUrl),
+          ),
+          const Divider(height: 1),
+          ListTile(
+            leading: const Icon(Icons.manage_accounts_outlined),
+            title: Text(c.tr('طلب حذف الحساب', ku: 'داوای سڕینەوەی هەژمار', en: 'Account deletion request'), style: const TextStyle(fontWeight: FontWeight.w900)),
+            subtitle: Text(c.tr('صفحة خارجية لطلب حذف الحساب', ku: 'پەڕەی دەرەکی بۆ داواکاری سڕینەوە', en: 'External page to request account deletion')),
+            trailing: const Icon(Icons.open_in_new_rounded, size: 18),
+            onTap: () => _openExternal(AlinConfig.accountDeletionUrl),
+          ),
+          const Divider(height: 1),
+          ListTile(
             leading: const Icon(Icons.info_outline_rounded),
             title: Text(c.tr('حول منصة آلين', ku: 'دەربارەی پلاتفۆرمی ئالین', en: 'About Alin Platform'), style: const TextStyle(fontWeight: FontWeight.w900)),
             subtitle: Text(c.tr('معلومات عن المنصة وخدماتها', ku: 'زانیاری دەربارەی پلاتفۆرم', en: 'Platform information and services')),
@@ -317,6 +341,96 @@ class _AccountScreenState extends State<AccountScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _deleteAccount(dynamic c) async {
+    final pinController = TextEditingController();
+    var busyDelete = false;
+    var message = '';
+    var failed = false;
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          Future<void> confirmDelete() async {
+            final pin = pinController.text;
+            if (pin.length < 6) {
+              setDialogState(() {
+                failed = true;
+                message = 'اكتب الرمز السري لتأكيد حذف الحساب';
+              });
+              return;
+            }
+            setDialogState(() {
+              busyDelete = true;
+              failed = false;
+              message = '';
+            });
+            try {
+              final result = await c.deleteStudentAccount(pin: pin);
+              if (!dialogContext.mounted) return;
+              Navigator.of(dialogContext).pop();
+              if (!mounted) return;
+              ScaffoldMessenger.of(this.context).showSnackBar(SnackBar(content: Text(result)));
+            } catch (e) {
+              if (!dialogContext.mounted) return;
+              setDialogState(() {
+                busyDelete = false;
+                failed = true;
+                message = '$e'.replaceFirst('Exception: ', '');
+              });
+            }
+          }
+
+          return AlertDialog(
+            icon: Icon(Icons.warning_amber_rounded, color: Colors.red.shade700, size: 42),
+            title: Text(c.tr('حذف الحساب نهائياً', ku: 'سڕینەوەی هەژمار بە یەکجاری', en: 'Delete account permanently')),
+            content: SizedBox(
+              width: 460,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Text(
+                    'سيتم حذف حساب الطالب والجلسات والعروض الخاصة والبيانات الشخصية المرتبطة بالحساب. الطلبات النشطة تبقى بالقدر الضروري لإكمالها ثم تُزال منها بياناتك تلقائياً.',
+                    style: TextStyle(height: 1.6),
+                  ),
+                  const SizedBox(height: 14),
+                  TextField(
+                    controller: pinController,
+                    obscureText: true,
+                    enabled: !busyDelete,
+                    onSubmitted: (_) => busyDelete ? null : confirmDelete(),
+                    decoration: const InputDecoration(
+                      labelText: 'الرمز السري',
+                      prefixIcon: Icon(Icons.lock_outline),
+                      helperText: 'أدخل رمز حسابك للتأكيد',
+                    ),
+                  ),
+                  if (message.isNotEmpty) ...[
+                    const SizedBox(height: 10),
+                    Text(message, style: TextStyle(color: failed ? Colors.red.shade700 : Colors.green.shade700, fontWeight: FontWeight.w700)),
+                  ],
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(onPressed: busyDelete ? null : () => Navigator.of(dialogContext).pop(), child: const Text('إلغاء')),
+              FilledButton.icon(
+                style: FilledButton.styleFrom(backgroundColor: Colors.red.shade700),
+                onPressed: busyDelete ? null : confirmDelete,
+                icon: busyDelete
+                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : const Icon(Icons.delete_forever_outlined),
+                label: Text(busyDelete ? 'جارٍ الحذف...' : 'حذف الحساب'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+    pinController.dispose();
   }
 
   Future<void> _openExternal(String raw) async {

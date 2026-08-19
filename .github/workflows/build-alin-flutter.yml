@@ -1,4 +1,4 @@
-name: Build Alin Flutter Android UI19 Signed
+name: Build Alin Flutter Android 5.3 Security Signed
 
 on:
   push:
@@ -108,7 +108,7 @@ jobs:
       - name: Upload signed Android release artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: alin-flutter-ui19-v5.2.0-build4-SIGNED
+          name: alin-flutter-v5.3.0-build5-SECURITY-SIGNED
           if-no-files-found: error
           path: |
             flutter_app/build/app/outputs/bundle/release/*.aab

@@ -122,6 +122,20 @@ class AlinRepository {
     });
   }
 
+  Future<Map<String, dynamic>> studentDeleteAccount({
+    required String token,
+    required String deviceId,
+    required String pin,
+  }) async {
+    final raw = await _rpc('alin_student_delete_account', params: {
+      'p_token': token,
+      'p_device': deviceId,
+      'p_pin': pin,
+    });
+    if (raw is! Map) throw Exception('تعذر حذف الحساب حالياً');
+    return Map<String, dynamic>.from(raw);
+  }
+
   Future<List<Map<String, dynamic>>> studentOrders({
     required String token,
     required String deviceId,
