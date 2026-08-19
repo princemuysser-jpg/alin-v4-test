@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/app_scope.dart';
 import '../core/alin_config.dart';
-import '../core/alin_theme.dart';
 import '../widgets/alin_network_image.dart';
 import 'checkout_screen.dart';
 

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../core/app_scope.dart';
-import '../core/alin_theme.dart';
 import '../widgets/product_card.dart';
 
 class FavoritesScreen extends StatelessWidget {
