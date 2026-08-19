@@ -1,0 +1,27 @@
+name: alin_flutter
+description: تطبيق الطالب الرسمي لمنصة آلين - Flutter
+publish_to: 'none'
+version: 5.0.0+2
+
+environment:
+  sdk: '>=3.10.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  supabase_flutter: ^2.16.0
+  shared_preferences: ^2.5.3
+  flutter_secure_storage: ^10.3.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/alin_logo.png
+    - assets/images/alin_icon.png

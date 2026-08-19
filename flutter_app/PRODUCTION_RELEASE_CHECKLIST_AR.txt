@@ -1,0 +1,19 @@
+منصة آلين Flutter 5.0 — قائمة الإصدار
+
+[جاهز] نفس Supabase الإنتاجي الحالي.
+[جاهز] Package ID: com.alin.platform
+[جاهز] Version Code: 2
+[جاهز] Version Name: 5.0.0
+[جاهز] Target/Compile SDK 36
+[جاهز] Android Native icon + splash
+[جاهز] Secure student token storage
+[جاهز] Store/cart/favorites/checkout/tracking/account/orders/offers/in-app notifications
+[جاهز] Release signing config
+[جاهز] Play icon 512x512
+[جاهز] Play feature graphic 1024x500
+[جاهز] Store listing text
+[جاهز] Privacy policy draft
+[جاهز] Data Safety draft
+
+[يتطلب بيانات خارجية فقط] Native FCM/APNs push when app is fully closed.
+[يتطلب بيئة بناء] flutter analyze / flutter test / AAB build. بيئة ChatGPT الحالية لا تحتوي Flutter/Android SDK، لذلك لم يتم اختلاق نتيجة Build غير منفذة.

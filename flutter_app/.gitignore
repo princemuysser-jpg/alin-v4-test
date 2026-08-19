@@ -1,0 +1,15 @@
+.dart_tool/
+.packages
+.pub/
+build/
+coverage/
+.flutter-plugins
+.flutter-plugins-dependencies
+android/local.properties
+android/key.properties
+android/keystore/
+*.jks
+*.keystore
+ios/Pods/
+ios/.symlinks/
+.DS_Store
