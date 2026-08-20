@@ -41,27 +41,52 @@ class AlinRepository {
     required String contact,
     required int rating,
     required String comment,
+    required String deviceId,
+    String? studentToken,
+    String? studentDevice,
   }) async {
-    final response = await client.functions
-        .invoke(
-          'public-submission',
-          body: {
-            'action': 'review',
-            'kind': kind,
-            'item_id': itemId,
-            'contact': contact.trim(),
-            'rating': rating.clamp(1, 5),
-            'comment': comment.trim(),
-          },
-        )
-        .timeout(const Duration(seconds: 25));
-    final raw = response.data;
-    if (raw is! Map) throw Exception('تعذر إرسال التقييم حالياً');
+    final raw = await _rpc('alin_flutter_submit_review', params: {
+      'p_kind': kind,
+      'p_item_id': itemId,
+      'p_contact': contact.trim(),
+      'p_rating': rating.clamp(1, 5),
+      'p_comment': comment.trim(),
+      'p_device': deviceId,
+      'p_student_token': studentToken,
+      'p_student_device': studentDevice,
+    });
+    if (raw is! Map) throw Exception('تعذر نشر التقييم حالياً');
     final data = Map<String, dynamic>.from(raw);
     if (data['ok'] != true) {
-      throw Exception('${data['message'] ?? 'تعذر إرسال التقييم حالياً'}');
+      throw Exception('${data['message'] ?? 'تعذر نشر التقييم حالياً'}');
     }
     return data;
+  }
+
+  Future<Map<String, dynamic>> quoteCart({
+    required List<CartItem> cart,
+    required String deviceId,
+    String? couponCode,
+    String? studentToken,
+    String? studentDevice,
+  }) async {
+    final items = cart
+        .map((line) => {
+              'kind': line.item.kind,
+              'id': line.item.id,
+              'qty': line.qty,
+              'purchase_type': line.purchaseType,
+              'variant_id': line.variant?.id,
+            })
+        .toList();
+    final raw = await _rpc('alin_flutter_cart_quote', params: {
+      'p_items': items,
+      'p_coupon_code': couponCode?.trim().isEmpty == true ? null : couponCode?.trim(),
+      'p_student_token': studentToken,
+      'p_student_device': studentDevice,
+    });
+    if (raw is! Map) throw Exception('تعذر احتساب الخصم حالياً');
+    return Map<String, dynamic>.from(raw);
   }
 
   String mediaUrl(String path) {
@@ -148,8 +173,18 @@ class AlinRepository {
     return raw.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
   }
 
-  Future<dynamic> trackOrder(String orderNumber) =>
-      _rpc('alin_track_order', params: {'p_order_number': orderNumber.trim()});
+  Future<Map<String, dynamic>> trackOrder(String orderNumber) async {
+    final clean = orderNumber.trim().toUpperCase().replaceAll(RegExp(r'\s+'), '');
+    if (clean.isEmpty) throw Exception('اكتب رقم الطلب');
+    final raw = await _rpc('alin_track_order', params: {'p_order_number': clean});
+    if (raw is List) {
+      if (raw.isEmpty) throw Exception('رقم الطلب غير موجود');
+      final first = raw.first;
+      if (first is Map) return Map<String, dynamic>.from(first);
+    }
+    if (raw is Map) return Map<String, dynamic>.from(raw);
+    throw Exception('رقم الطلب غير موجود');
+  }
 
   Future<List<Map<String, dynamic>>> personalOffers({
     required String token,

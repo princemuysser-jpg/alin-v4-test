@@ -257,14 +257,30 @@ class AppController extends ChangeNotifier {
     required int rating,
     required String comment,
   }) async {
+    final deviceId = store.deviceId();
     final result = await repository.submitReview(
       kind: item.reviewKind,
       itemId: item.id,
       contact: contact,
       rating: rating,
       comment: comment,
+      deviceId: deviceId,
+      studentToken: studentToken,
+      studentDevice: studentToken == null ? null : deviceId,
     );
-    return '${result['message'] ?? 'تم إرسال تقييمك للمراجعة قبل النشر.'}';
+    await refreshCatalog();
+    return '${result['message'] ?? 'تم نشر تقييمك مباشرة.'}';
+  }
+
+  Future<Map<String, dynamic>> quoteCart({String? couponCode}) {
+    final deviceId = store.deviceId();
+    return repository.quoteCart(
+      cart: cart,
+      deviceId: deviceId,
+      couponCode: couponCode,
+      studentToken: studentToken,
+      studentDevice: studentToken == null ? null : deviceId,
+    );
   }
 
   void _restoreCartFromDisk() {

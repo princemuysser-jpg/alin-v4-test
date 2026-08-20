@@ -626,7 +626,7 @@ class _ReviewsSection extends StatelessWidget {
                   children: [
                     Text('لا توجد تقييمات منشورة بعد', style: TextStyle(fontWeight: FontWeight.w900)),
                     SizedBox(height: 4),
-                    Text('يمكنك إضافة تقييمك وسيظهر بعد مراجعته.', textAlign: TextAlign.center),
+                    Text('يمكنك إضافة تقييمك وسيظهر مباشرة.', textAlign: TextAlign.center),
                   ],
                 ),
               )

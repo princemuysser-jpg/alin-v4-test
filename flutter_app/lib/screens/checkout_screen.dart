@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:geolocator/geolocator.dart';
 import '../core/app_scope.dart';
 import '../core/alin_config.dart';
 import '../core/alin_theme.dart';
@@ -20,6 +22,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   String fulfillmentType = 'pickup';
   LibraryModel? library;
   DeliveryAreaModel? area;
+  Position? deliveryPosition;
+  bool locationBusy = false;
+  String? locationError;
+  Map<String, dynamic>? cartQuote;
+  bool quoteRequested = false;
   bool busy = false;
   String? error;
 
@@ -35,6 +42,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       final pending = AppScope.of(context).takePendingCoupon();
       if (pending != null && pending.isNotEmpty) coupon.text = pending;
     }
+    if (!quoteRequested && coupon.text.isNotEmpty) {
+      quoteRequested = true;
+      Future.microtask(_loadQuote);
+    }
   }
 
   @override
@@ -45,6 +56,62 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     coupon.dispose();
     landmark.dispose();
     super.dispose();
+  }
+
+
+  Future<void> _loadQuote() async {
+    try {
+      final result = await AppScope.of(context).quoteCart(couponCode: coupon.text.trim());
+      if (!mounted) return;
+      setState(() => cartQuote = result);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => error = '$e'.replaceFirst('Exception: ', ''));
+    }
+  }
+
+  num _quoteNumber(String key, num fallback) {
+    final value = cartQuote?[key];
+    if (value is num) return value;
+    return num.tryParse('$value') ?? fallback;
+  }
+
+  Future<void> captureLocation() async {
+    setState(() {
+      locationBusy = true;
+      locationError = null;
+    });
+    try {
+      final enabled = await Geolocator.isLocationServiceEnabled();
+      if (!enabled) throw Exception('فعّل GPS بالموبايل ثم حاول مرة ثانية');
+
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.denied) {
+        throw Exception('لازم تسمح للتطبيق باستخدام الموقع للتوصيل');
+      }
+      if (permission == LocationPermission.deniedForever) {
+        throw Exception('صلاحية الموقع مرفوضة نهائياً. فعّلها من إعدادات التطبيق');
+      }
+
+      const locationSettings = LocationSettings(
+        accuracy: LocationAccuracy.high,
+        timeLimit: Duration(seconds: 20),
+      );
+      final position = await Geolocator.getCurrentPosition(locationSettings: locationSettings);
+      if (!mounted) return;
+      setState(() {
+        deliveryPosition = position;
+        locationError = null;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => locationError = '$e'.replaceFirst('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => locationBusy = false);
+    }
   }
 
   Future<void> submit() async {
@@ -71,14 +138,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       };
     } else {
       if (area == null) return _setError('اختر منطقة التوصيل');
-      if (landmark.text.trim().isEmpty) return _setError('اكتب أقرب نقطة دالة');
+      if (deliveryPosition == null) return _setError('حدد موقعك GPS حتى يعرف المندوب مكان التوصيل');
       fulfillment = {
         'fulfillment_type': 'home_delivery',
         'delivery_area': area!.name,
         'delivery_landmark': landmark.text.trim(),
-        'delivery_latitude': null,
-        'delivery_longitude': null,
-        'delivery_location_accuracy': null,
+        'delivery_latitude': deliveryPosition!.latitude,
+        'delivery_longitude': deliveryPosition!.longitude,
+        'delivery_location_accuracy': deliveryPosition!.accuracy.round(),
       };
     }
 
@@ -99,7 +166,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       await showDialog<void>(
         context: context,
         barrierDismissible: false,
-        builder: (_) => AlertDialog(
+        builder: (dialogContext) => AlertDialog(
           icon: const Icon(Icons.check_circle, color: Colors.green, size: 54),
           title: const Text('تم إرسال طلبك'),
           content: Column(
@@ -107,10 +174,32 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             children: [
               const Text('احتفظ برقم الطلب حتى تگدر تتابعه.'),
               const SizedBox(height: 12),
-              SelectableText(number, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: AlinTheme.navy)),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Theme.of(dialogContext).colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Flexible(child: SelectableText(number, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: AlinTheme.navy))),
+                    const SizedBox(width: 6),
+                    IconButton(
+                      tooltip: 'نسخ رقم الطلب',
+                      onPressed: () async {
+                        await Clipboard.setData(ClipboardData(text: number));
+                        if (!dialogContext.mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم نسخ رقم الطلب')));
+                      },
+                      icon: const Icon(Icons.copy_rounded),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
-          actions: [FilledButton(onPressed: () => Navigator.pop(context), child: const Text('تم'))],
+          actions: [FilledButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('تم'))],
         ),
       );
       if (!mounted) return;
@@ -201,7 +290,30 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             onChanged: busy ? null : (value) => setState(() => area = value),
                           ),
                           const SizedBox(height: 12),
-                          TextField(controller: landmark, maxLength: 300, decoration: const InputDecoration(labelText: 'أقرب نقطة دالة')),
+                          FilledButton.tonalIcon(
+                            onPressed: busy || locationBusy ? null : captureLocation,
+                            icon: locationBusy
+                                ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                                : Icon(deliveryPosition == null ? Icons.my_location_rounded : Icons.location_on_rounded),
+                            label: Text(deliveryPosition == null ? 'تحديد موقعي GPS' : 'تم تحديد الموقع — تحديث'),
+                          ),
+                          if (deliveryPosition != null) ...[
+                            const SizedBox(height: 8),
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(color: Colors.green.withValues(alpha: .08), borderRadius: BorderRadius.circular(12)),
+                              child: Text(
+                                '✓ تم حفظ موقع التوصيل بدقة تقريبية ${deliveryPosition!.accuracy.round()} متر',
+                                style: TextStyle(color: Colors.green.shade800, fontWeight: FontWeight.w800),
+                              ),
+                            ),
+                          ],
+                          if (locationError != null) ...[
+                            const SizedBox(height: 8),
+                            Text(locationError!, style: TextStyle(color: Colors.red.shade700, fontWeight: FontWeight.w700)),
+                          ],
+                          const SizedBox(height: 12),
+                          TextField(controller: landmark, maxLength: 300, decoration: const InputDecoration(labelText: 'أقرب نقطة دالة — اختياري')),
                         ],
                       ],
                     ),
@@ -211,23 +323,46 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     title: 'إضافات',
                     child: Column(
                       children: [
-                        TextField(controller: coupon, decoration: const InputDecoration(labelText: 'كود الخصم — اختياري')),
+                        TextField(controller: coupon, readOnly: coupon.text.isNotEmpty, decoration: const InputDecoration(labelText: 'كود الخصم')),
+                        if (coupon.text.isNotEmpty) ...[
+                          const SizedBox(height: 7),
+                          const Align(alignment: Alignment.centerRight, child: Text('تم تطبيق الكود من السلة.', style: TextStyle(color: Colors.green, fontSize: 12, fontWeight: FontWeight.w700))),
+                        ],
                         const SizedBox(height: 12),
                         TextField(controller: notes, maxLines: 3, maxLength: 1000, decoration: const InputDecoration(labelText: 'ملاحظات الطلب — اختياري')),
                       ],
                     ),
                   ),
                   const SizedBox(height: 14),
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(18),
-                      child: Row(
-                        children: [
-                          Expanded(child: Text(fulfillmentType == 'home_delivery' && area != null ? 'الإجمالي التقريبي' : 'إجمالي السلة', style: const TextStyle(fontWeight: FontWeight.w800))),
-                          Text('${(c.cartTotal + (fulfillmentType == 'home_delivery' ? (area?.deliveryFee ?? 0) : 0)).toStringAsFixed(0)} ${AlinConfig.currency}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: AlinTheme.navy)),
-                        ],
-                      ),
-                    ),
+                  Builder(
+                    builder: (context) {
+                      final subtotal = _quoteNumber('subtotal', c.cartTotal);
+                      final discount = _quoteNumber('discount', 0);
+                      final afterDiscount = _quoteNumber('total', c.cartTotal);
+                      final deliveryFee = fulfillmentType == 'home_delivery' ? (area?.deliveryFee ?? 0) : 0;
+                      final finalTotal = afterDiscount + deliveryFee;
+                      return Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(18),
+                          child: Column(
+                            children: [
+                              if (discount > 0) ...[
+                                _CheckoutPriceLine(title: 'قبل الخصم', value: subtotal),
+                                _CheckoutPriceLine(title: 'الخصم', value: -discount, green: true),
+                                if (deliveryFee > 0) _CheckoutPriceLine(title: 'التوصيل', value: deliveryFee),
+                                const Divider(),
+                              ],
+                              Row(
+                                children: [
+                                  Expanded(child: Text(discount > 0 ? 'الإجمالي بعد الخصم' : (deliveryFee > 0 ? 'الإجمالي مع التوصيل' : 'إجمالي السلة'), style: const TextStyle(fontWeight: FontWeight.w800))),
+                                  Text('${finalTotal.toStringAsFixed(0)} ${AlinConfig.currency}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: AlinTheme.navy)),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
                   ),
                   if (error != null) ...[
                     const SizedBox(height: 12),
@@ -248,6 +383,27 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CheckoutPriceLine extends StatelessWidget {
+  final String title;
+  final num value;
+  final bool green;
+  const _CheckoutPriceLine({required this.title, required this.value, this.green = false});
+
+  @override
+  Widget build(BuildContext context) {
+    final prefix = value < 0 ? '- ' : '';
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 7),
+      child: Row(
+        children: [
+          Expanded(child: Text(title, style: const TextStyle(fontWeight: FontWeight.w700))),
+          Text('$prefix${value.abs().toStringAsFixed(0)} ${AlinConfig.currency}', style: TextStyle(fontWeight: FontWeight.w900, color: green ? Colors.green.shade700 : null)),
         ],
       ),
     );
