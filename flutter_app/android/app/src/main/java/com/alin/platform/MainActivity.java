@@ -1,6 +1,8 @@
 package com.alin.platform;
 
 import android.Manifest;
+import android.app.Activity;
+import android.content.Intent;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.location.Location;
@@ -29,7 +31,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
+import com.google.android.gms.common.api.ResolvableApiException;
 import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationCallback;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationResult;
+import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.Priority;
 import com.google.android.gms.tasks.CancellationTokenSource;
@@ -43,6 +50,8 @@ public class MainActivity extends FlutterActivity {
     private static final String LOCATION_CHANNEL = "com.alin.platform/native_location";
     private static final String FUSED_PROVIDER = "fused";
     private static final String WEB_LOCATION_URL = "https://dgaikazhbtyjmswpyvrl.supabase.co/functions/v1/flutter-location-bridge";
+    private static final int LOCATION_SETTINGS_REQUEST_CODE = 4201;
+    private GoogleFusedLocationRequest pendingGoogleLocationRequest;
 
     @Override
     public void configureFlutterEngine(FlutterEngine flutterEngine) {
@@ -53,9 +62,27 @@ public class MainActivity extends FlutterActivity {
         ).setMethodCallHandler(this::handleLocationCall);
     }
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode != LOCATION_SETTINGS_REQUEST_CODE) return;
+        GoogleFusedLocationRequest pending = pendingGoogleLocationRequest;
+        pendingGoogleLocationRequest = null;
+        if (pending == null) return;
+        if (resultCode == Activity.RESULT_OK) {
+            pending.resumeAfterSettings();
+        } else {
+            pending.cancelFromSettings();
+        }
+    }
+
     private void handleLocationCall(MethodCall call, MethodChannel.Result result) {
         if ("getGoogleFusedLocation".equals(call.method)) {
             getGoogleFusedLocation(result);
+            return;
+        }
+        if ("getLocationDiagnostics".equals(call.method)) {
+            getLocationDiagnostics(result);
             return;
         }
         if ("getQuickLocation".equals(call.method)) {
@@ -87,6 +114,49 @@ public class MainActivity extends FlutterActivity {
         }
 
         runOnUiThread(() -> new GoogleFusedLocationRequest(result).start());
+    }
+
+    private void getLocationDiagnostics(MethodChannel.Result result) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("manufacturer", Build.MANUFACTURER);
+        map.put("model", Build.MODEL);
+        map.put("sdk", Build.VERSION.SDK_INT);
+        map.put("fine", checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED);
+        map.put("coarse", checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED);
+        map.put("gms", GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(this));
+
+        LocationManager manager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        if (manager != null) {
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    map.put("location_enabled", manager.isLocationEnabled());
+                }
+                List<String> providerStates = new ArrayList<>();
+                for (String provider : manager.getAllProviders()) {
+                    boolean enabled = false;
+                    try { enabled = manager.isProviderEnabled(provider); } catch (Exception ignored) { }
+                    providerStates.add(provider + ":" + (enabled ? "on" : "off"));
+                }
+                map.put("providers", providerStates.toString());
+            } catch (Exception ignored) {
+            }
+        }
+
+        try {
+            LocationServices.getSettingsClient(this)
+                    .isGoogleLocationAccuracyEnabled()
+                    .addOnSuccessListener(enabled -> {
+                        map.put("google_accuracy", enabled);
+                        result.success(map);
+                    })
+                    .addOnFailureListener(error -> {
+                        map.put("google_accuracy", "unknown");
+                        result.success(map);
+                    });
+        } catch (RuntimeException error) {
+            map.put("google_accuracy", "unavailable");
+            result.success(map);
+        }
     }
 
     private void getQuickLocation(MethodChannel.Result result) {
@@ -176,54 +246,132 @@ public class MainActivity extends FlutterActivity {
         private final CancellationTokenSource balancedToken = new CancellationTokenSource();
         private final CancellationTokenSource highAccuracyToken = new CancellationTokenSource();
         private final FusedLocationProviderClient client = LocationServices.getFusedLocationProviderClient(MainActivity.this);
+        private final LocationRequest liveRequest = new LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1000L)
+                .setMinUpdateIntervalMillis(500L)
+                .setWaitForAccurateLocation(false)
+                .setDurationMillis(22_000L)
+                .setMaxUpdates(12)
+                .build();
+        private final LocationCallback liveCallback = new LocationCallback() {
+            @Override
+            public void onLocationResult(LocationResult locationResult) {
+                if (finished.get() || locationResult == null) return;
+                for (Location location : locationResult.getLocations()) {
+                    acceptLocation(location, true);
+                    if (finished.get()) return;
+                }
+            }
+        };
         private Location best;
-        private int currentRequestsFinished = 0;
+        private boolean flowStarted = false;
 
         GoogleFusedLocationRequest(MethodChannel.Result result) {
             this.result = result;
         }
 
         void start() {
+            // HONOR/Android can report "location enabled" while the network/high-accuracy
+            // settings required by Google Fused are still disabled. Ask Android to verify
+            // the exact settings for this request and show the native one-tap resolution
+            // dialog when required. No browser/page is opened.
+            LocationSettingsRequest settingsRequest = new LocationSettingsRequest.Builder()
+                    .addLocationRequest(liveRequest)
+                    .setAlwaysShow(true)
+                    .build();
+
+            LocationServices.getSettingsClient(MainActivity.this)
+                    .checkLocationSettings(settingsRequest)
+                    .addOnSuccessListener(response -> beginLocationFlow())
+                    .addOnFailureListener(error -> {
+                        if (finished.get()) return;
+                        if (error instanceof ResolvableApiException) {
+                            try {
+                                if (pendingGoogleLocationRequest != null && pendingGoogleLocationRequest != this) {
+                                    pendingGoogleLocationRequest.finish(null);
+                                }
+                                pendingGoogleLocationRequest = this;
+                                ((ResolvableApiException) error).startResolutionForResult(
+                                        MainActivity.this,
+                                        LOCATION_SETTINGS_REQUEST_CODE
+                                );
+                                // Never leave the MethodChannel hanging if the OEM does not
+                                // return an activity result. Try the live request anyway.
+                                handler.postDelayed(() -> {
+                                    if (!finished.get() && pendingGoogleLocationRequest == this) {
+                                        pendingGoogleLocationRequest = null;
+                                        beginLocationFlow();
+                                    }
+                                }, 12_000L);
+                                return;
+                            } catch (Exception ignored) {
+                            }
+                        }
+                        // Some OEM builds do not expose a resolvable settings dialog. The
+                        // live fused request can still succeed, so continue instead of fail.
+                        beginLocationFlow();
+                    });
+        }
+
+        void resumeAfterSettings() {
+            beginLocationFlow();
+        }
+
+        void cancelFromSettings() {
+            finish(null);
+        }
+
+        private void beginLocationFlow() {
+            if (finished.get() || flowStarted) return;
+            flowStarted = true;
+
+            // Cached fix: useful when Maps/browser obtained a location moments ago.
             try {
                 client.getLastLocation()
                         .addOnSuccessListener(location -> {
-                            if (location != null && isFreshEnough(location, 2 * 60 * 1000L, 3000f)) {
-                                best = location;
-                                finish(location);
+                            if (location != null && isFreshEnough(location, 5 * 60 * 1000L, 5000f)) {
+                                acceptLocation(location, false);
                             } else if (isBetter(location, best)) {
                                 best = location;
                             }
                         })
                         .addOnFailureListener(error -> { });
-
-                requestCurrent(Priority.PRIORITY_BALANCED_POWER_ACCURACY, balancedToken);
-                requestCurrent(Priority.PRIORITY_HIGH_ACCURACY, highAccuracyToken);
-                handler.postDelayed(() -> finish(isAcceptableGoogle(best) ? best : null), 12_000L);
-            } catch (RuntimeException error) {
-                finish(null);
+            } catch (RuntimeException ignored) {
             }
+
+            // Single-fix APIs can legally return null. Keep them for speed, but do not
+            // depend on them as the only Google Fused path.
+            requestCurrent(Priority.PRIORITY_BALANCED_POWER_ACCURACY, balancedToken);
+            requestCurrent(Priority.PRIORITY_HIGH_ACCURACY, highAccuracyToken);
+
+            // Critical path for HONOR Pad X9: actively subscribe to fresh fused updates.
+            // This can produce a fix even when getCurrentLocation() returned null.
+            try {
+                client.requestLocationUpdates(liveRequest, liveCallback, Looper.getMainLooper())
+                        .addOnFailureListener(error -> { });
+            } catch (RuntimeException ignored) {
+            }
+
+            handler.postDelayed(() -> finish(isAcceptableGoogle(best) ? best : null), 22_000L);
         }
 
         private void requestCurrent(int priority, CancellationTokenSource token) {
             try {
                 client.getCurrentLocation(priority, token.getToken())
-                        .addOnSuccessListener(location -> {
-                            if (location != null && isBetter(location, best)) best = location;
-                            if (location != null && isAcceptableGoogle(location)) {
-                                finish(location);
-                                return;
-                            }
-                            markCurrentFinished();
-                        })
-                        .addOnFailureListener(error -> markCurrentFinished());
-            } catch (RuntimeException error) {
-                markCurrentFinished();
+                        .addOnSuccessListener(location -> acceptLocation(location, false))
+                        .addOnFailureListener(error -> { });
+            } catch (RuntimeException ignored) {
             }
         }
 
-        private void markCurrentFinished() {
-            currentRequestsFinished++;
-            if (currentRequestsFinished >= 2 && isAcceptableGoogle(best)) finish(best);
+        private void acceptLocation(Location location, boolean live) {
+            if (finished.get() || location == null) return;
+            if (isBetter(location, best)) best = location;
+
+            long maxAge = live ? 2 * 60 * 1000L : 5 * 60 * 1000L;
+            float maxAccuracy = live ? 5000f : 5000f;
+            if (isFreshEnough(location, maxAge, maxAccuracy)) {
+                finish(location);
+            }
         }
 
         private boolean isFreshEnough(Location location, long maxAgeMs, float maxAccuracy) {
@@ -235,15 +383,18 @@ public class MainActivity extends FlutterActivity {
 
         private boolean isAcceptableGoogle(Location location) {
             if (location == null) return false;
+            long ageMs = Math.max(0L, System.currentTimeMillis() - location.getTime());
             float accuracy = location.hasAccuracy() ? location.getAccuracy() : 99999f;
-            return accuracy <= 3000f;
+            return ageMs <= 10 * 60 * 1000L && accuracy <= 5000f;
         }
 
         private void finish(Location location) {
             if (!finished.compareAndSet(false, true)) return;
             handler.removeCallbacksAndMessages(null);
+            if (pendingGoogleLocationRequest == this) pendingGoogleLocationRequest = null;
             try { balancedToken.cancel(); } catch (Exception ignored) { }
             try { highAccuracyToken.cancel(); } catch (Exception ignored) { }
+            try { client.removeLocationUpdates(liveCallback); } catch (Exception ignored) { }
             result.success(location == null ? null : locationMap(location));
         }
     }

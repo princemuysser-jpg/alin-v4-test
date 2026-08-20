@@ -146,7 +146,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     unawaited(runWebEngineLocation());
 
     return completer.future.timeout(
-      const Duration(seconds: 17),
+      const Duration(seconds: 25),
       onTimeout: () => null,
     );
   }
@@ -216,6 +216,23 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     }
   }
 
+  Future<String> _locationDiagnostics() async {
+    if (defaultTargetPlatform != TargetPlatform.android) return '';
+    try {
+      final raw = await _nativeLocationChannel.invokeMethod<dynamic>('getLocationDiagnostics');
+      if (raw is! Map) return '';
+      final fine = raw['fine'];
+      final coarse = raw['coarse'];
+      final gms = raw['gms'];
+      final googleAccuracy = raw['google_accuracy'];
+      final locationEnabled = raw['location_enabled'];
+      final providers = '${raw['providers'] ?? ''}';
+      return 'FINE=$fine COARSE=$coarse GMS=$gms ACC=$googleAccuracy LOC=$locationEnabled ${providers.isEmpty ? '' : 'PROV=$providers'}'.trim();
+    } catch (_) {
+      return '';
+    }
+  }
+
   Future<void> captureLocation() async {
     if (locationBusy) return;
     setState(() {
@@ -254,7 +271,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       selected ??= await _raceFreshLocation();
 
       if (selected == null) {
-        throw Exception('تعذر تحديد موقعك. تأكد من تشغيل خدمة الموقع واسمح للتطبيق بالموقع ثم حاول مرة ثانية');
+        final diagnostic = await _locationDiagnostics();
+        throw Exception(
+          diagnostic.isEmpty
+              ? 'تعذر تحديد موقعك. تأكد من تشغيل خدمة الموقع واسمح للتطبيق بالموقع ثم حاول مرة ثانية'
+              : 'تعذر تحديد موقعك. تشخيص الجهاز: $diagnostic',
+        );
       }
 
       if (!mounted) return;

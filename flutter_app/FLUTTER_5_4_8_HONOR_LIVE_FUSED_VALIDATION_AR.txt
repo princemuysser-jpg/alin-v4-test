@@ -1,0 +1,21 @@
+منصة آلين — Flutter 5.4.8+14
+تصحيح GPS مخصص لـ HONOR Pad X9 (ELN-L09)
+
+التغييرات:
+- الإبقاء على GPS إجباري لطلب التوصيل.
+- الإبقاء على عنوان قسم العميل: "البيانات".
+- الإبقاء على عرض البنرات كاملة باستخدام BoxFit.contain.
+- إضافة فحص Location Settings الحقيقي عبر Google SettingsClient قبل طلب الموقع.
+- إذا إعداد الدقة/الشبكة المطلوب غير مفعل، يظهر Android dialog أصلي داخل التطبيق لتفعيله؛ لا يفتح متصفح.
+- إضافة FusedLocationProviderClient.requestLocationUpdates للحصول على تحديث حي، وليس الاعتماد على getCurrentLocation/lastLocation فقط.
+- الإبقاء على getCurrentLocation (Balanced + High Accuracy) كمسارات سريعة موازية.
+- الإبقاء على Android LocationManager وFlutter Geolocator وWebView المخفي كمسارات احتياطية.
+- تمديد نافذة السباق إلى 25 ثانية لأن مسار live fused قد يحتاج أول fix.
+- إذا فشلت جميع المسارات، يظهر تشخيص مختصر (الصلاحيات، Google Play Services، Google Location Accuracy، provider states) حتى لا تكون أي محاولة لاحقة عمياء.
+
+ملاحظات الفحص المحلي:
+- توازن الأقواس/الأقواس الدائرية في MainActivity وcheckout_screen تم التحقق منه.
+- pubspec version = 5.4.8+14.
+- workflow artifact = alin-flutter-v5.4.8-build14-HONOR-LIVE-FUSED-GPS-SIGNED.
+- لا توجد ملفات keystore/key.properties داخل الحزمة.
+- الفحص النهائي الحقيقي (flutter analyze/tests/Android compile/signing) يجب أن يمر عبر GitHub Actions.
