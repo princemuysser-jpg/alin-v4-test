@@ -190,7 +190,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       onPressed: () async {
                         await Clipboard.setData(ClipboardData(text: number));
                         if (!dialogContext.mounted) return;
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم نسخ رقم الطلب')));
+                        ScaffoldMessenger.of(dialogContext).showSnackBar(const SnackBar(content: Text('تم نسخ رقم الطلب')));
                       },
                       icon: const Icon(Icons.copy_rounded),
                     ),
