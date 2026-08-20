@@ -128,7 +128,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
       if (position == null && defaultTargetPlatform == TargetPlatform.android) {
         position = await _tryCurrentPosition(
-          const AndroidSettings(
+          AndroidSettings(
             accuracy: LocationAccuracy.medium,
             distanceFilter: 0,
             forceLocationManager: true,
