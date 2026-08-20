@@ -1,0 +1,21 @@
+منصة آلين — Flutter 5.4.2+8 — Auto Location
+
+التعديل محصور في Flutter/Android فقط، ولا يتضمن تعديل ملفات الويب.
+
+سلوك التوصيل:
+1) عند فتح تأكيد الطلب لمنتج يحتاج توصيل، يتحول إلى التوصيل ويبدأ تحديد الموقع تلقائياً.
+2) عند اختيار «توصيل» يدوياً يبدأ تحديد الموقع تلقائياً بدون الحاجة لضغط زر GPS أول مرة.
+3) Android يستخدم LocationManager مباشرة: Network + GPS + Last Known، بدون اعتماد على Google Play Services.
+4) إذا لم يعطِ Android موقعاً مناسباً، يستخدم Geolocator كمسار احتياطي.
+5) زر الموقع يبقى لتحديث الموقع فقط.
+6) لا يسمح بتأكيد طلب التوصيل بدون إحداثيات موقع ناجحة.
+7) لا تظهر TimeoutException الخام للمستخدم.
+
+فحوصات قبل التغليف:
+- pubspec.yaml / GitHub Actions YAML: صالحان للقراءة.
+- AndroidManifest.xml: XML صالح.
+- توازن الأقواس في checkout_screen.dart وMainActivity.java: ناجح.
+- صلاحيات ACCESS_COARSE_LOCATION وACCESS_FINE_LOCATION موجودة.
+- لا توجد ملفات key.properties أو JKS داخل الحزمة.
+
+ملاحظة: الفحص النهائي الحقيقي لـ Flutter analyze/test/build يتم عبر GitHub Actions لأن Flutter SDK غير مثبت محلياً في بيئة إعداد الحزمة.

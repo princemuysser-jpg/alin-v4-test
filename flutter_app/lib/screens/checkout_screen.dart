@@ -15,6 +15,7 @@ class CheckoutScreen extends StatefulWidget {
 }
 
 class _CheckoutScreenState extends State<CheckoutScreen> {
+  static const MethodChannel _nativeLocationChannel = MethodChannel('com.alin.platform/native_location');
   final name = TextEditingController();
   final phone = TextEditingController();
   final notes = TextEditingController();
@@ -23,7 +24,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   String fulfillmentType = 'pickup';
   LibraryModel? library;
   DeliveryAreaModel? area;
-  Position? deliveryPosition;
+  _DeliveryLocation? deliveryPosition;
+  bool autoLocationRequested = false;
   bool locationBusy = false;
   String? locationError;
   Map<String, dynamic>? cartQuote;
@@ -42,6 +44,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     if (coupon.text.isEmpty) {
       final pending = AppScope.of(context).takePendingCoupon();
       if (pending != null && pending.isNotEmpty) coupon.text = pending;
+    }
+    final hasPhysical = AppScope.of(context).cart.any((line) => line.item.isProduct);
+    if (hasPhysical && fulfillmentType == 'pickup') fulfillmentType = 'home_delivery';
+    if (fulfillmentType == 'home_delivery' && !autoLocationRequested && deliveryPosition == null) {
+      autoLocationRequested = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && deliveryPosition == null && !locationBusy) captureLocation();
+      });
     }
     if (!quoteRequested && coupon.text.isNotEmpty) {
       quoteRequested = true;
@@ -88,10 +98,31 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   bool _usableCachedPosition(Position position) {
     final age = DateTime.now().difference(position.timestamp);
-    return age <= const Duration(minutes: 15) && position.accuracy <= 500;
+    return age <= const Duration(minutes: 10) && position.accuracy <= 1500;
+  }
+
+  Future<_DeliveryLocation?> _tryNativeQuickLocation() async {
+    if (defaultTargetPlatform != TargetPlatform.android) return null;
+    try {
+      final raw = await _nativeLocationChannel.invokeMethod<dynamic>('getQuickLocation');
+      if (raw is! Map) return null;
+      final latitude = num.tryParse('${raw['latitude']}')?.toDouble();
+      final longitude = num.tryParse('${raw['longitude']}')?.toDouble();
+      final accuracy = num.tryParse('${raw['accuracy']}')?.toDouble() ?? 0;
+      if (latitude == null || longitude == null) return null;
+      if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) return null;
+      return _DeliveryLocation(
+        latitude: latitude,
+        longitude: longitude,
+        accuracy: accuracy,
+      );
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<void> captureLocation() async {
+    if (locationBusy) return;
     setState(() {
       locationBusy = true;
       locationError = null;
@@ -99,7 +130,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     try {
       final enabled = await Geolocator.isLocationServiceEnabled();
       if (!enabled) {
-        throw Exception('فعّل خدمة الموقع GPS من الجهاز ثم اضغط تحديد موقعي مرة ثانية');
+        throw Exception('فعّل خدمة الموقع من الجهاز حتى نحدد موقع التوصيل');
       }
 
       var permission = await Geolocator.checkPermission();
@@ -110,48 +141,47 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         throw Exception('لازم تسمح للتطبيق باستخدام الموقع للتوصيل');
       }
       if (permission == LocationPermission.deniedForever) {
-        throw Exception('صلاحية الموقع مرفوضة نهائياً. فعّل الموقع من إعدادات التطبيق');
+        throw Exception('صلاحية الموقع مرفوضة نهائياً. فعّلها من إعدادات التطبيق');
       }
 
-      Position? cached;
-      try {
-        cached = await Geolocator.getLastKnownPosition();
-      } catch (_) {}
+      _DeliveryLocation? selected;
 
-      Position? position = await _tryCurrentPosition(
-        const LocationSettings(accuracy: LocationAccuracy.medium),
-      );
+      // Android first: ask the operating system directly for a recent network/GPS
+      // location. This does not depend on Google Play Services and works better on
+      // devices such as Huawei tablets.
+      selected = await _tryNativeQuickLocation();
 
-      if (position == null && cached != null && _usableCachedPosition(cached)) {
-        position = cached;
+      // Fast fallback: reuse a recent system location instead of making the user wait.
+      if (selected == null) {
+        try {
+          final cached = await Geolocator.getLastKnownPosition();
+          if (cached != null && _usableCachedPosition(cached)) {
+            selected = _DeliveryLocation.fromPosition(cached);
+          }
+        } catch (_) {}
       }
 
-      if (position == null && defaultTargetPlatform == TargetPlatform.android) {
-        position = await _tryCurrentPosition(
-          AndroidSettings(
-            accuracy: LocationAccuracy.medium,
-            distanceFilter: 0,
-            forceLocationManager: true,
-          ),
+      // Final fallback for Android/iOS: obtain a fresh location through geolocator.
+      if (selected == null) {
+        final current = await _tryCurrentPosition(
+          const LocationSettings(accuracy: LocationAccuracy.high),
         );
+        if (current != null) selected = _DeliveryLocation.fromPosition(current);
       }
 
-      if (position == null) {
-        throw Exception('تعذر تحديد موقعك. فعّل GPS وWi‑Fi أو بيانات الهاتف، وانتقل قرب نافذة أو مكان مفتوح ثم حاول مرة ثانية');
+      if (selected == null) {
+        throw Exception('تعذر تحديد موقعك تلقائياً. تأكد أن خدمة الموقع وWi‑Fi أو بيانات الهاتف مفعلة ثم اضغط تحديث الموقع');
       }
 
       if (!mounted) return;
       setState(() {
-        deliveryPosition = position;
+        deliveryPosition = selected;
         locationError = null;
       });
     } catch (e) {
       if (!mounted) return;
       final raw = '$e'.replaceFirst('Exception: ', '');
-      final text = raw.contains('TimeoutException')
-          ? 'تعذر تحديد الموقع خلال الوقت المحدد. فعّل GPS وWi‑Fi أو بيانات الهاتف وحاول من مكان أقرب للنافذة أو مكان مفتوح.'
-          : raw;
-      setState(() => locationError = text.isEmpty ? 'تعذر تحديد الموقع. حاول مرة ثانية.' : text);
+      setState(() => locationError = raw.isEmpty ? 'تعذر تحديد الموقع. اضغط تحديث الموقع وحاول مرة ثانية.' : raw);
     } finally {
       if (mounted) setState(() => locationBusy = false);
     }
@@ -265,7 +295,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     final data = c.bootstrap;
     final tablet = MediaQuery.sizeOf(context).shortestSide >= 600;
     final hasPhysical = c.cart.any((line) => line.item.isProduct);
-    if (hasPhysical && fulfillmentType == 'pickup') fulfillmentType = 'home_delivery';
     if (data == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
     return Scaffold(
       appBar: AppBar(title: const Text('تأكيد الطلب')),
@@ -307,7 +336,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           onSelectionChanged: busy ? null : (value) {
                             final next = value.first;
                             if (hasPhysical && next == 'pickup') return;
-                            setState(() => fulfillmentType = next);
+                            setState(() {
+                              fulfillmentType = next;
+                              if (next == 'pickup') locationError = null;
+                            });
+                            if (next == 'home_delivery' && deliveryPosition == null && !locationBusy) {
+                              autoLocationRequested = true;
+                              Future.microtask(captureLocation);
+                            }
                           },
                         ),
                         if (hasPhysical) ...[
@@ -338,7 +374,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             icon: locationBusy
                                 ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
                                 : Icon(deliveryPosition == null ? Icons.my_location_rounded : Icons.location_on_rounded),
-                            label: Text(deliveryPosition == null ? 'تحديد موقعي GPS' : 'تم تحديد الموقع — تحديث'),
+                            label: Text(locationBusy ? 'جاري تحديد موقعك...' : (deliveryPosition == null ? 'تحديث الموقع' : 'تم تحديد الموقع — تحديث')),
                           ),
                           if (deliveryPosition != null) ...[
                             const SizedBox(height: 8),
@@ -346,7 +382,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                               padding: const EdgeInsets.all(10),
                               decoration: BoxDecoration(color: Colors.green.withValues(alpha: .08), borderRadius: BorderRadius.circular(12)),
                               child: Text(
-                                '✓ تم حفظ موقع التوصيل بدقة تقريبية ${deliveryPosition!.accuracy.round()} متر',
+                                '✓ تم تحديد موقع التوصيل تلقائياً — الدقة التقريبية ${deliveryPosition!.accuracy.round()} متر',
                                 style: TextStyle(color: Colors.green.shade800, fontWeight: FontWeight.w800),
                               ),
                             ),
@@ -430,6 +466,24 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       ),
     );
   }
+}
+
+
+class _DeliveryLocation {
+  final double latitude;
+  final double longitude;
+  final double accuracy;
+  const _DeliveryLocation({
+    required this.latitude,
+    required this.longitude,
+    required this.accuracy,
+  });
+
+  factory _DeliveryLocation.fromPosition(Position position) => _DeliveryLocation(
+        latitude: position.latitude,
+        longitude: position.longitude,
+        accuracy: position.accuracy,
+      );
 }
 
 class _CheckoutPriceLine extends StatelessWidget {
