@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
@@ -76,6 +77,20 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     return num.tryParse('$value') ?? fallback;
   }
 
+  Future<Position?> _tryCurrentPosition(LocationSettings settings) async {
+    try {
+      return await Geolocator.getCurrentPosition(locationSettings: settings)
+          .timeout(const Duration(seconds: 12));
+    } catch (_) {
+      return null;
+    }
+  }
+
+  bool _usableCachedPosition(Position position) {
+    final age = DateTime.now().difference(position.timestamp);
+    return age <= const Duration(minutes: 15) && position.accuracy <= 500;
+  }
+
   Future<void> captureLocation() async {
     setState(() {
       locationBusy = true;
@@ -83,7 +98,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     });
     try {
       final enabled = await Geolocator.isLocationServiceEnabled();
-      if (!enabled) throw Exception('فعّل GPS بالموبايل ثم حاول مرة ثانية');
+      if (!enabled) {
+        throw Exception('فعّل خدمة الموقع GPS من الجهاز ثم اضغط تحديد موقعي مرة ثانية');
+      }
 
       var permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
@@ -93,14 +110,36 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         throw Exception('لازم تسمح للتطبيق باستخدام الموقع للتوصيل');
       }
       if (permission == LocationPermission.deniedForever) {
-        throw Exception('صلاحية الموقع مرفوضة نهائياً. فعّلها من إعدادات التطبيق');
+        throw Exception('صلاحية الموقع مرفوضة نهائياً. فعّل الموقع من إعدادات التطبيق');
       }
 
-      const locationSettings = LocationSettings(
-        accuracy: LocationAccuracy.high,
-        timeLimit: Duration(seconds: 20),
+      Position? cached;
+      try {
+        cached = await Geolocator.getLastKnownPosition();
+      } catch (_) {}
+
+      Position? position = await _tryCurrentPosition(
+        const LocationSettings(accuracy: LocationAccuracy.medium),
       );
-      final position = await Geolocator.getCurrentPosition(locationSettings: locationSettings);
+
+      if (position == null && cached != null && _usableCachedPosition(cached)) {
+        position = cached;
+      }
+
+      if (position == null && defaultTargetPlatform == TargetPlatform.android) {
+        position = await _tryCurrentPosition(
+          const AndroidSettings(
+            accuracy: LocationAccuracy.medium,
+            distanceFilter: 0,
+            forceLocationManager: true,
+          ),
+        );
+      }
+
+      if (position == null) {
+        throw Exception('تعذر تحديد موقعك. فعّل GPS وWi‑Fi أو بيانات الهاتف، وانتقل قرب نافذة أو مكان مفتوح ثم حاول مرة ثانية');
+      }
+
       if (!mounted) return;
       setState(() {
         deliveryPosition = position;
@@ -108,7 +147,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       });
     } catch (e) {
       if (!mounted) return;
-      setState(() => locationError = '$e'.replaceFirst('Exception: ', ''));
+      final raw = '$e'.replaceFirst('Exception: ', '');
+      final text = raw.contains('TimeoutException')
+          ? 'تعذر تحديد الموقع خلال الوقت المحدد. فعّل GPS وWi‑Fi أو بيانات الهاتف وحاول من مكان أقرب للنافذة أو مكان مفتوح.'
+          : raw;
+      setState(() => locationError = text.isEmpty ? 'تعذر تحديد الموقع. حاول مرة ثانية.' : text);
     } finally {
       if (mounted) setState(() => locationBusy = false);
     }
