@@ -652,12 +652,18 @@ class _BannerCarouselState extends State<_BannerCarousel> {
 
   @override
   Widget build(BuildContext context) {
-    final width = MediaQuery.sizeOf(context).width;
-    final roomy = width >= 700;
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final roomy = screenWidth >= 700;
     final surface = Theme.of(context).colorScheme.surface;
     final border = Theme.of(context).dividerColor;
+    final horizontalPagePadding = roomy ? 20.0 : 12.0;
+    final availableWidth = (screenWidth - (horizontalPagePadding * 2) - 4).clamp(280.0, 1180.0);
+    // منصة آلين تعتمد بنرات عريضة (1180×220). نحافظ على الصورة كاملة
+    // بدون BoxFit.cover حتى لا ينقص أي جزء من الإعلان على الموبايل أو التابلت.
+    final bannerHeight = (availableWidth / (1180 / 220)).clamp(92.0, 220.0).toDouble();
+
     return SizedBox(
-      height: roomy ? 330 : 285,
+      height: bannerHeight,
       child: PageView.builder(
         controller: controller,
         itemCount: widget.banners.length,
@@ -667,74 +673,62 @@ class _BannerCarouselState extends State<_BannerCarousel> {
         },
         itemBuilder: (context, pageIndex) {
           final banner = widget.banners[pageIndex];
-          final hasCopy = banner.title.isNotEmpty || banner.subtitle.isNotEmpty;
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 2),
             child: Container(
               clipBehavior: Clip.antiAlias,
               decoration: BoxDecoration(
                 color: surface,
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(roomy ? 20 : 16),
                 border: Border.all(color: border),
-                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: .08), blurRadius: 20, offset: const Offset(0, 8))],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Expanded(
-                    flex: hasCopy ? 7 : 10,
-                    child: Container(
-                      color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF102F4D) : const Color(0xFFFFF7EF),
-                      child: banner.imagePath.isNotEmpty
-                          ? AlinNetworkImage(path: banner.imagePath, fit: roomy ? BoxFit.cover : BoxFit.contain)
-                          : Center(
-                              child: Image.asset('assets/images/alin_icon.png', width: roomy ? 90 : 70, height: roomy ? 90 : 70),
-                            ),
-                    ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: .07),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
                   ),
-                  if (hasCopy)
-                    Flexible(
-                      flex: 3,
-                      child: Container(
-                        width: double.infinity,
-                        padding: EdgeInsets.fromLTRB(roomy ? 20 : 14, 10, roomy ? 20 : 14, 12),
-                        decoration: BoxDecoration(
-                          color: surface,
-                          border: Border(top: BorderSide(color: border)),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(color: const Color(0xFFFFF2E7), borderRadius: BorderRadius.circular(999)),
-                              child: const Text('إعلان منصة آلين', style: TextStyle(color: Color(0xFFD95F00), fontSize: 9.5, fontWeight: FontWeight.w900)),
-                            ),
-                            if (banner.title.isNotEmpty) ...[
-                              const SizedBox(height: 4),
-                              Text(
-                                banner.title,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(fontSize: roomy ? 18 : 15.5, fontWeight: FontWeight.w900, color: Theme.of(context).colorScheme.onSurface),
-                              ),
-                            ],
-                            if (banner.subtitle.isNotEmpty) ...[
-                              const SizedBox(height: 2),
-                              Text(
-                                banner.subtitle,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(fontSize: roomy ? 12.5 : 11.5, height: 1.35, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                    ),
                 ],
               ),
+              child: banner.imagePath.isNotEmpty
+                  ? Container(
+                      width: double.infinity,
+                      height: double.infinity,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? const Color(0xFF102F4D)
+                          : Colors.white,
+                      child: AlinNetworkImage(
+                        path: banner.imagePath,
+                        fit: BoxFit.contain,
+                      ),
+                    )
+                  : Container(
+                      alignment: Alignment.center,
+                      padding: const EdgeInsets.symmetric(horizontal: 18),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Image.asset(
+                            'assets/images/alin_icon.png',
+                            width: roomy ? 70 : 54,
+                            height: roomy ? 70 : 54,
+                          ),
+                          if (banner.title.isNotEmpty) ...[
+                            const SizedBox(height: 8),
+                            Text(
+                              banner.title,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: roomy ? 17 : 14,
+                                fontWeight: FontWeight.w900,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
             ),
           );
         },

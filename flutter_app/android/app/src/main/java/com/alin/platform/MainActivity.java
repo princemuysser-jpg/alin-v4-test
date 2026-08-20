@@ -27,6 +27,13 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GoogleApiAvailability;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.Priority;
+import com.google.android.gms.tasks.CancellationTokenSource;
+
 import io.flutter.embedding.android.FlutterActivity;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.plugin.common.MethodCall;
@@ -47,6 +54,10 @@ public class MainActivity extends FlutterActivity {
     }
 
     private void handleLocationCall(MethodCall call, MethodChannel.Result result) {
+        if ("getGoogleFusedLocation".equals(call.method)) {
+            getGoogleFusedLocation(result);
+            return;
+        }
         if ("getQuickLocation".equals(call.method)) {
             getQuickLocation(result);
             return;
@@ -61,6 +72,21 @@ public class MainActivity extends FlutterActivity {
     private boolean hasLocationPermission() {
         return checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
                 || checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private void getGoogleFusedLocation(MethodChannel.Result result) {
+        if (!hasLocationPermission()) {
+            result.error("location_permission", "Location permission is not granted", null);
+            return;
+        }
+
+        int availability = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(this);
+        if (availability != ConnectionResult.SUCCESS) {
+            result.success(null);
+            return;
+        }
+
+        runOnUiThread(() -> new GoogleFusedLocationRequest(result).start());
     }
 
     private void getQuickLocation(MethodChannel.Result result) {
@@ -141,6 +167,85 @@ public class MainActivity extends FlutterActivity {
         map.put("timestamp", location.getTime());
         map.put("provider", location.getProvider());
         return map;
+    }
+
+    private final class GoogleFusedLocationRequest {
+        private final MethodChannel.Result result;
+        private final Handler handler = new Handler(Looper.getMainLooper());
+        private final AtomicBoolean finished = new AtomicBoolean(false);
+        private final CancellationTokenSource balancedToken = new CancellationTokenSource();
+        private final CancellationTokenSource highAccuracyToken = new CancellationTokenSource();
+        private final FusedLocationProviderClient client = LocationServices.getFusedLocationProviderClient(MainActivity.this);
+        private Location best;
+        private int currentRequestsFinished = 0;
+
+        GoogleFusedLocationRequest(MethodChannel.Result result) {
+            this.result = result;
+        }
+
+        void start() {
+            try {
+                client.getLastLocation()
+                        .addOnSuccessListener(location -> {
+                            if (location != null && isFreshEnough(location, 2 * 60 * 1000L, 3000f)) {
+                                best = location;
+                                finish(location);
+                            } else if (isBetter(location, best)) {
+                                best = location;
+                            }
+                        })
+                        .addOnFailureListener(error -> { });
+
+                requestCurrent(Priority.PRIORITY_BALANCED_POWER_ACCURACY, balancedToken);
+                requestCurrent(Priority.PRIORITY_HIGH_ACCURACY, highAccuracyToken);
+                handler.postDelayed(() -> finish(isAcceptableGoogle(best) ? best : null), 12_000L);
+            } catch (RuntimeException error) {
+                finish(null);
+            }
+        }
+
+        private void requestCurrent(int priority, CancellationTokenSource token) {
+            try {
+                client.getCurrentLocation(priority, token.getToken())
+                        .addOnSuccessListener(location -> {
+                            if (location != null && isBetter(location, best)) best = location;
+                            if (location != null && isAcceptableGoogle(location)) {
+                                finish(location);
+                                return;
+                            }
+                            markCurrentFinished();
+                        })
+                        .addOnFailureListener(error -> markCurrentFinished());
+            } catch (RuntimeException error) {
+                markCurrentFinished();
+            }
+        }
+
+        private void markCurrentFinished() {
+            currentRequestsFinished++;
+            if (currentRequestsFinished >= 2 && isAcceptableGoogle(best)) finish(best);
+        }
+
+        private boolean isFreshEnough(Location location, long maxAgeMs, float maxAccuracy) {
+            if (location == null) return false;
+            long ageMs = Math.max(0L, System.currentTimeMillis() - location.getTime());
+            float accuracy = location.hasAccuracy() ? location.getAccuracy() : 99999f;
+            return ageMs <= maxAgeMs && accuracy <= maxAccuracy;
+        }
+
+        private boolean isAcceptableGoogle(Location location) {
+            if (location == null) return false;
+            float accuracy = location.hasAccuracy() ? location.getAccuracy() : 99999f;
+            return accuracy <= 3000f;
+        }
+
+        private void finish(Location location) {
+            if (!finished.compareAndSet(false, true)) return;
+            handler.removeCallbacksAndMessages(null);
+            try { balancedToken.cancel(); } catch (Exception ignored) { }
+            try { highAccuracyToken.cancel(); } catch (Exception ignored) { }
+            result.success(location == null ? null : locationMap(location));
+        }
     }
 
     private final class QuickLocationRequest implements LocationListener {

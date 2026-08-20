@@ -93,7 +93,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   Future<_DeliveryLocation?> _raceFreshLocation() async {
     final completer = Completer<_DeliveryLocation?>();
     var finished = 0;
-    const sourceCount = 3;
+    const sourceCount = 4;
 
     void settle(_DeliveryLocation? value) {
       if (value != null && !completer.isCompleted) {
@@ -102,6 +102,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       finished++;
       if (finished >= sourceCount && !completer.isCompleted) {
         completer.complete(null);
+      }
+    }
+
+    Future<void> runGoogleFused() async {
+      try {
+        settle(await _tryGoogleFusedLocation());
+      } catch (_) {
+        settle(null);
       }
     }
 
@@ -132,6 +140,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       }
     }
 
+    unawaited(runGoogleFused());
     unawaited(runNative());
     unawaited(runFlutterLocation());
     unawaited(runWebEngineLocation());
@@ -145,6 +154,26 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   bool _usableCachedPosition(Position position) {
     final age = DateTime.now().difference(position.timestamp);
     return age <= const Duration(seconds: 30) && position.accuracy <= 2000;
+  }
+
+  Future<_DeliveryLocation?> _tryGoogleFusedLocation() async {
+    if (defaultTargetPlatform != TargetPlatform.android) return null;
+    try {
+      final raw = await _nativeLocationChannel.invokeMethod<dynamic>('getGoogleFusedLocation');
+      if (raw is! Map) return null;
+      final latitude = num.tryParse('${raw['latitude']}')?.toDouble();
+      final longitude = num.tryParse('${raw['longitude']}')?.toDouble();
+      final accuracy = num.tryParse('${raw['accuracy']}')?.toDouble() ?? 0;
+      if (latitude == null || longitude == null) return null;
+      if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) return null;
+      return _DeliveryLocation(
+        latitude: latitude,
+        longitude: longitude,
+        accuracy: accuracy,
+      );
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<_DeliveryLocation?> _tryNativeQuickLocation() async {
@@ -212,9 +241,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
       _DeliveryLocation? selected;
 
-      // Same behavior the web checkout relies on: accept a very recent fix immediately,
-      // otherwise race Android, Flutter geolocation and Android WebView geolocation.
-      // Nothing opens outside the app; the first valid coordinates win.
+      // Accept a very recent fix immediately. Otherwise race Google Play Services
+      // Fused Location, Android system providers, Flutter geolocation, and the hidden
+      // WebView fallback. Nothing opens outside the app; the first valid coordinates win.
       try {
         final cached = await Geolocator.getLastKnownPosition();
         if (cached != null && _usableCachedPosition(cached)) {
@@ -363,12 +392,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   _Section(
-                    title: 'بيانات الطالب',
+                    title: 'البيانات',
                     child: Column(
                       children: [
-                        TextField(controller: name, readOnly: c.student != null, decoration: const InputDecoration(labelText: 'الاسم')),
+                        TextField(controller: name, readOnly: c.student != null, decoration: const InputDecoration(labelText: 'الاسم *')),
                         const SizedBox(height: 12),
-                        TextField(controller: phone, readOnly: c.student != null, keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'رقم الهاتف')),
+                        TextField(controller: phone, readOnly: c.student != null, keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'رقم الهاتف *')),
                         if (c.student != null) ...[
                           const SizedBox(height: 8),
                           Text('الطلب مربوط بحساب ${c.student!.name}', style: const TextStyle(color: Colors.green, fontSize: 12, fontWeight: FontWeight.w700)),
@@ -415,7 +444,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         else ...[
                           DropdownButtonFormField<DeliveryAreaModel>(
                             initialValue: area,
-                            decoration: const InputDecoration(labelText: 'منطقة التوصيل'),
+                            decoration: const InputDecoration(labelText: 'منطقة التوصيل *'),
                             items: data.deliveryAreas.map((e) => DropdownMenuItem(value: e, child: Text(e.deliveryFee > 0 ? '${e.name} — ${e.deliveryFee.toStringAsFixed(0)} د.ع' : e.name))).toList(),
                             onChanged: busy ? null : (value) => setState(() => area = value),
                           ),
@@ -425,7 +454,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             icon: locationBusy
                                 ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
                                 : Icon(deliveryPosition == null ? Icons.my_location_rounded : Icons.location_on_rounded),
-                            label: Text(locationBusy ? 'جاري تحديد موقعك...' : (deliveryPosition == null ? 'تحديد موقعي' : 'تحديث الموقع')),
+                            label: Text(locationBusy ? 'جاري تحديد موقعك...' : (deliveryPosition == null ? 'تحديد موقعي *' : 'تحديث الموقع')),
                           ),
                           if (deliveryPosition != null) ...[
                             const SizedBox(height: 8),
