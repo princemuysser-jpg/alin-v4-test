@@ -1,4 +1,4 @@
-name: Build Alin Flutter Android 5.4.4 Web Location Bridge Tracking Fix Signed
+name: Build Alin Flutter Android 5.4.5 GPS Tracking Fixed Signed
 
 on:
   push:
@@ -108,7 +108,7 @@ jobs:
       - name: Upload signed Android release artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: alin-flutter-v5.4.4-build10-WEB-LOCATION-TRACKING-SIGNED
+          name: alin-flutter-v5.4.5-build11-GPS-TRACKING-FIXED-SIGNED
           if-no-files-found: error
           path: |
             flutter_app/build/app/outputs/bundle/release/*.aab

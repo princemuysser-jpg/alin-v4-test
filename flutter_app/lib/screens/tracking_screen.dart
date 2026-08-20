@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../core/app_scope.dart';
 import '../core/alin_theme.dart';
@@ -13,7 +12,7 @@ class TrackingScreen extends StatefulWidget {
 class _TrackingScreenState extends State<TrackingScreen> {
   final input = TextEditingController();
   bool busy = false;
-  dynamic result;
+  Map<String, dynamic>? result;
   String? error;
 
   @override
@@ -33,7 +32,8 @@ class _TrackingScreenState extends State<TrackingScreen> {
     try {
       final data = await AppScope.of(context).trackOrder(code);
       if (!mounted) return;
-      setState(() => result = data);
+      if (data is! Map) throw Exception('تعذر قراءة حالة الطلب');
+      setState(() => result = Map<String, dynamic>.from(data));
     } catch (e) {
       if (!mounted) return;
       setState(() => error = '$e'.replaceFirst('Exception: ', ''));
@@ -55,15 +55,23 @@ class _TrackingScreenState extends State<TrackingScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(c.tr('تتبع الطلب', ku: 'بەدواداچوونی داواکاری', en: 'Track order'), style: TextStyle(fontSize: tablet ? 26 : 22, fontWeight: FontWeight.w900, color: Theme.of(context).colorScheme.onSurface)),
+                Text(
+                  c.tr('تتبع الطلب', ku: 'بەدواداچوونی داواکاری', en: 'Track order'),
+                  style: TextStyle(fontSize: tablet ? 26 : 22, fontWeight: FontWeight.w900, color: Theme.of(context).colorScheme.onSurface),
+                ),
                 const SizedBox(height: 5),
-                Text(c.tr('اكتب رقم الطلب حتى تعرف حالته الحالية.', ku: 'ژمارەی داواکاری بنووسە بۆ زانینی دۆخەکەی.', en: 'Enter the order number to check its status.'), style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                Text(
+                  c.tr('اكتب رقم الطلب حتى تعرف حالته الحالية.', ku: 'ژمارەی داواکاری بنووسە بۆ زانینی دۆخەکەی.', en: 'Enter the order number to check its status.'),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                ),
                 const SizedBox(height: 20),
                 TextField(
                   controller: input,
                   textInputAction: TextInputAction.search,
+                  autocorrect: false,
+                  enableSuggestions: false,
                   onSubmitted: (_) => search(),
-                  decoration: const InputDecoration(prefixIcon: Icon(Icons.receipt_long_outlined), hintText: 'مثال: ALIN-0001'),
+                  decoration: const InputDecoration(prefixIcon: Icon(Icons.receipt_long_outlined), hintText: 'مثال: AL-260820092349-01-483f'),
                 ),
                 const SizedBox(height: 12),
                 ElevatedButton.icon(
@@ -79,7 +87,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
                 ],
                 if (result != null) ...[
                   const SizedBox(height: 18),
-                  _TrackingResult(data: result),
+                  _TrackingResult(data: result!),
                 ],
               ],
             ),
@@ -91,40 +99,152 @@ class _TrackingScreenState extends State<TrackingScreen> {
 }
 
 class _TrackingResult extends StatelessWidget {
-  final dynamic data;
+  final Map<String, dynamic> data;
   const _TrackingResult({required this.data});
+
+  String _normalizedStatus() {
+    final raw = '${data['status'] ?? 'new'}'.trim().toLowerCase();
+    if (raw == 'delivered') return 'completed';
+    if (raw == 'out_delivery') return 'out_for_delivery';
+    if (raw == 'canceled') return 'cancelled';
+    return raw;
+  }
+
+  bool get _isDelivery => '${data['fulfillment_type'] ?? ''}'.trim().toLowerCase() == 'home_delivery';
+  bool get _isCancelled => const {'cancelled', 'rejected'}.contains(_normalizedStatus());
+
+  int _currentStep() {
+    final status = _normalizedStatus();
+    if (_isDelivery) {
+      if (const {'completed'}.contains(status)) return 3;
+      if (const {'picked_up', 'out_for_delivery'}.contains(status)) return 2;
+      if (const {'assigned', 'accepted'}.contains(status)) return 1;
+      return 0;
+    }
+    if (const {'completed'}.contains(status)) return 3;
+    if (status == 'ready') return 2;
+    if (const {'processing', 'printing'}.contains(status)) return 1;
+    return 0;
+  }
 
   @override
   Widget build(BuildContext context) {
-    if (data is Map) {
-      final map = Map<String, dynamic>.from(data as Map);
-      final number = '${map['order_number'] ?? map['id'] ?? ''}';
-      final status = '${map['status'] ?? map['order_status'] ?? 'قيد المتابعة'}';
-      final item = '${map['item_name'] ?? map['title'] ?? ''}';
-      final total = '${map['total'] ?? map['total_amount'] ?? ''}';
+    final number = '${data['order_number'] ?? ''}';
+    final item = '${data['title'] ?? data['item_name'] ?? ''}';
+    final steps = _isDelivery
+        ? const ['تم استلام الطلب', 'تم تحديد المندوب', 'في الطريق', 'تم التسليم']
+        : const ['تم استلام الطلب', 'قيد الطباعة', 'جاهز', 'تم التسليم'];
+
+    if (_isCancelled) {
       return Card(
         child: Padding(
           padding: const EdgeInsets.all(18),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(children: [const Icon(Icons.check_circle_outline, color: Colors.green), const SizedBox(width: 8), Expanded(child: Text(number.isEmpty ? 'تم العثور على الطلب' : number, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18)))]),
-              const Divider(height: 28),
-              _line('الحالة', status),
-              if (item.isNotEmpty) _line('الطلب', item),
-              if (total.isNotEmpty) _line('المبلغ', '$total د.ع'),
+              Text(number, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+              const SizedBox(height: 14),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(14), border: Border.all(color: Colors.red.shade100)),
+                child: Row(
+                  children: [
+                    Icon(Icons.cancel_rounded, color: Colors.red.shade700),
+                    const SizedBox(width: 10),
+                    Text('ملغي', style: TextStyle(color: Colors.red.shade800, fontSize: 18, fontWeight: FontWeight.w900)),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
       );
     }
-    return _MessageCard(icon: Icons.info_outline, color: AlinTheme.navy, text: const JsonEncoder.withIndent('  ').convert(data));
-  }
 
-  Widget _line(String title, String value) => Padding(
-        padding: const EdgeInsets.only(bottom: 10),
-        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [SizedBox(width: 90, child: Text(title, style: const TextStyle(color: AlinTheme.muted))), Expanded(child: Text(value, style: const TextStyle(fontWeight: FontWeight.w700)))]),
-      );
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.receipt_long_rounded, color: AlinTheme.navy),
+                const SizedBox(width: 8),
+                Expanded(child: SelectableText(number, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18))),
+              ],
+            ),
+            if (item.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Text(item, style: const TextStyle(color: AlinTheme.muted, fontWeight: FontWeight.w700)),
+            ],
+            const SizedBox(height: 8),
+            Text(_isDelivery ? 'توصيل بواسطة مندوب' : 'استلام من مكتبة', style: const TextStyle(fontWeight: FontWeight.w800)),
+            const Divider(height: 28),
+            _OrderProgress(steps: steps, currentStep: _currentStep()),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _OrderProgress extends StatelessWidget {
+  final List<String> steps;
+  final int currentStep;
+  const _OrderProgress({required this.steps, required this.currentStep});
+
+  @override
+  Widget build(BuildContext context) {
+    final activeColor = Theme.of(context).colorScheme.primary;
+    final inactiveColor = Theme.of(context).colorScheme.outlineVariant;
+    return Column(
+      children: List.generate(steps.length, (index) {
+        final done = index < currentStep;
+        final active = index == currentStep;
+        final reached = index <= currentStep;
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: 34,
+              child: Column(
+                children: [
+                  Container(
+                    width: 26,
+                    height: 26,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: reached ? activeColor : Colors.transparent,
+                      border: Border.all(color: reached ? activeColor : inactiveColor, width: 2),
+                    ),
+                    child: Icon(done ? Icons.check_rounded : (active ? Icons.circle : Icons.circle_outlined), size: active ? 11 : 16, color: reached ? Colors.white : inactiveColor),
+                  ),
+                  if (index < steps.length - 1)
+                    Container(width: 2, height: 34, color: index < currentStep ? activeColor : inactiveColor),
+                ],
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(top: 3, bottom: 28),
+                child: Text(
+                  steps[index],
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: active ? FontWeight.w900 : FontWeight.w700,
+                    color: reached ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      }),
+    );
+  }
 }
 
 class _MessageCard extends StatelessWidget {

@@ -174,10 +174,7 @@ class AlinRepository {
   }
 
   Future<Map<String, dynamic>> trackOrder(String orderNumber) async {
-    final clean = orderNumber
-        .trim()
-        .replaceAll(RegExp(r'[\u200B-\u200D\uFEFF\s]+'), '')
-        .replaceAll(RegExp(r'[–—−]'), '-');
+    final clean = orderNumber.trim().replaceAll(RegExp(r'\s+'), '');
     if (clean.isEmpty) throw Exception('اكتب رقم الطلب');
     final raw = await _rpc('alin_track_order', params: {'p_order_number': clean});
     if (raw is List) {

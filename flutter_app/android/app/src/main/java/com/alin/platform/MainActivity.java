@@ -6,16 +6,25 @@ import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.CancellationSignal;
 import android.os.Handler;
 import android.os.Looper;
+import android.view.ViewGroup;
+import android.webkit.GeolocationPermissions;
+import android.webkit.WebChromeClient;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.flutter.embedding.android.FlutterActivity;
@@ -26,6 +35,7 @@ import io.flutter.plugin.common.MethodChannel;
 public class MainActivity extends FlutterActivity {
     private static final String LOCATION_CHANNEL = "com.alin.platform/native_location";
     private static final String FUSED_PROVIDER = "fused";
+    private static final String WEB_LOCATION_URL = "https://dgaikazhbtyjmswpyvrl.supabase.co/functions/v1/flutter-location-bridge";
 
     @Override
     public void configureFlutterEngine(FlutterEngine flutterEngine) {
@@ -37,16 +47,24 @@ public class MainActivity extends FlutterActivity {
     }
 
     private void handleLocationCall(MethodCall call, MethodChannel.Result result) {
-        if (!"getQuickLocation".equals(call.method)) {
-            result.notImplemented();
+        if ("getQuickLocation".equals(call.method)) {
+            getQuickLocation(result);
             return;
         }
-        getQuickLocation(result);
+        if ("getWebLocation".equals(call.method)) {
+            getHiddenWebLocation(result);
+            return;
+        }
+        result.notImplemented();
+    }
+
+    private boolean hasLocationPermission() {
+        return checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                || checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
     }
 
     private void getQuickLocation(MethodChannel.Result result) {
-        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
-                && checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        if (!hasLocationPermission()) {
             result.error("location_permission", "Location permission is not granted", null);
             return;
         }
@@ -64,6 +82,14 @@ public class MainActivity extends FlutterActivity {
         }
 
         new QuickLocationRequest(manager, result, cached).start();
+    }
+
+    private void getHiddenWebLocation(MethodChannel.Result result) {
+        if (!hasLocationPermission()) {
+            result.error("location_permission", "Location permission is not granted", null);
+            return;
+        }
+        runOnUiThread(() -> new HiddenWebLocationRequest(result).start());
     }
 
     private String[] preferredProviders() {
@@ -93,7 +119,7 @@ public class MainActivity extends FlutterActivity {
         if (location == null) return false;
         long ageMs = Math.max(0L, System.currentTimeMillis() - location.getTime());
         float accuracy = location.hasAccuracy() ? location.getAccuracy() : 99999f;
-        return ageMs <= 10 * 60 * 1000L && accuracy <= 2000f;
+        return ageMs <= 30_000L && accuracy <= 2000f;
     }
 
     private boolean isBetter(Location candidate, Location current) {
@@ -141,9 +167,6 @@ public class MainActivity extends FlutterActivity {
                 try {
                     if (!manager.isProviderEnabled(provider)) continue;
 
-                    // Android 11+: ask each system provider for its current location.
-                    // On Huawei/non-GMS devices the system "fused" or network provider
-                    // can succeed even when Google Play Services based location cannot.
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                         CancellationSignal signal = new CancellationSignal();
                         cancellationSignals.add(signal);
@@ -151,12 +174,10 @@ public class MainActivity extends FlutterActivity {
                                 provider,
                                 signal,
                                 MainActivity.this.getMainExecutor(),
-                                location -> acceptLocation(location)
+                                this::acceptLocation
                         );
                     }
 
-                    // Keep live updates as a second native path. The first acceptable
-                    // result from fused/network/GPS ends the request immediately.
                     manager.requestLocationUpdates(provider, 0L, 0f, this, Looper.getMainLooper());
                     requested = true;
                 } catch (SecurityException | IllegalArgumentException ignored) {
@@ -224,6 +245,101 @@ public class MainActivity extends FlutterActivity {
             } catch (SecurityException ignored) {
             }
             result.success(location == null ? null : locationMap(location));
+        }
+    }
+
+    private final class HiddenWebLocationRequest {
+        private final MethodChannel.Result result;
+        private final Handler handler = new Handler(Looper.getMainLooper());
+        private final AtomicBoolean finished = new AtomicBoolean(false);
+        private final String state = UUID.randomUUID().toString().replace("-", "");
+        private WebView webView;
+
+        HiddenWebLocationRequest(MethodChannel.Result result) {
+            this.result = result;
+        }
+
+        void start() {
+            webView = new WebView(MainActivity.this);
+            WebSettings settings = webView.getSettings();
+            settings.setJavaScriptEnabled(true);
+            settings.setGeolocationEnabled(true);
+            settings.setDomStorageEnabled(false);
+
+            webView.setWebChromeClient(new WebChromeClient() {
+                @Override
+                public void onGeolocationPermissionsShowPrompt(String origin, GeolocationPermissions.Callback callback) {
+                    callback.invoke(origin, hasLocationPermission(), false);
+                }
+            });
+
+            webView.setWebViewClient(new WebViewClient() {
+                @Override
+                public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                    return handleReturnUri(request.getUrl());
+                }
+
+                @Override
+                @SuppressWarnings("deprecation")
+                public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                    return handleReturnUri(Uri.parse(url));
+                }
+            });
+
+            webView.setAlpha(0.01f);
+            webView.setTranslationX(-2000f);
+            webView.setTranslationY(-2000f);
+            addContentView(webView, new ViewGroup.LayoutParams(1, 1));
+            webView.loadUrl(WEB_LOCATION_URL + "?state=" + state);
+            handler.postDelayed(() -> finish(null), 17_000L);
+        }
+
+        private boolean handleReturnUri(Uri uri) {
+            if (uri == null || !"alinplatform".equalsIgnoreCase(uri.getScheme()) || !"gps".equalsIgnoreCase(uri.getHost())) {
+                return false;
+            }
+            String returnedState = uri.getQueryParameter("state");
+            if (!state.equals(returnedState)) {
+                finish(null);
+                return true;
+            }
+            try {
+                double latitude = Double.parseDouble(uri.getQueryParameter("lat"));
+                double longitude = Double.parseDouble(uri.getQueryParameter("lng"));
+                double accuracy = 0d;
+                String accuracyRaw = uri.getQueryParameter("accuracy");
+                if (accuracyRaw != null && !accuracyRaw.isEmpty()) accuracy = Double.parseDouble(accuracyRaw);
+                if (latitude < -90d || latitude > 90d || longitude < -180d || longitude > 180d) {
+                    finish(null);
+                    return true;
+                }
+                Map<String, Object> map = new HashMap<>();
+                map.put("latitude", latitude);
+                map.put("longitude", longitude);
+                map.put("accuracy", accuracy);
+                map.put("provider", "webview_geolocation");
+                finish(map);
+            } catch (Exception ignored) {
+                finish(null);
+            }
+            return true;
+        }
+
+        private void finish(Map<String, Object> location) {
+            if (!finished.compareAndSet(false, true)) return;
+            handler.removeCallbacksAndMessages(null);
+            if (webView != null) {
+                try {
+                    webView.stopLoading();
+                    if (webView.getParent() instanceof ViewGroup) {
+                        ((ViewGroup) webView.getParent()).removeView(webView);
+                    }
+                    webView.destroy();
+                } catch (Exception ignored) {
+                }
+                webView = null;
+            }
+            result.success(location);
         }
     }
 }
