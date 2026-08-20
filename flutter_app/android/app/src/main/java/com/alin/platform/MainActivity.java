@@ -6,11 +6,15 @@ import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.CancellationSignal;
 import android.os.Handler;
 import android.os.Looper;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -21,6 +25,7 @@ import io.flutter.plugin.common.MethodChannel;
 
 public class MainActivity extends FlutterActivity {
     private static final String LOCATION_CHANNEL = "com.alin.platform/native_location";
+    private static final String FUSED_PROVIDER = "fused";
 
     @Override
     public void configureFlutterEngine(FlutterEngine flutterEngine) {
@@ -61,16 +66,21 @@ public class MainActivity extends FlutterActivity {
         new QuickLocationRequest(manager, result, cached).start();
     }
 
+    private String[] preferredProviders() {
+        return new String[]{
+                FUSED_PROVIDER,
+                LocationManager.NETWORK_PROVIDER,
+                LocationManager.GPS_PROVIDER,
+                LocationManager.PASSIVE_PROVIDER
+        };
+    }
+
     private Location bestLastKnown(LocationManager manager) {
         Location best = null;
-        String[] providers = new String[]{
-                LocationManager.NETWORK_PROVIDER,
-                LocationManager.PASSIVE_PROVIDER,
-                LocationManager.GPS_PROVIDER
-        };
-        for (String provider : providers) {
+        List<String> available = manager.getAllProviders();
+        for (String provider : preferredProviders()) {
             try {
-                if (!manager.getAllProviders().contains(provider)) continue;
+                if (!available.contains(provider)) continue;
                 Location value = manager.getLastKnownLocation(provider);
                 if (isBetter(value, best)) best = value;
             } catch (SecurityException | IllegalArgumentException ignored) {
@@ -83,7 +93,7 @@ public class MainActivity extends FlutterActivity {
         if (location == null) return false;
         long ageMs = Math.max(0L, System.currentTimeMillis() - location.getTime());
         float accuracy = location.hasAccuracy() ? location.getAccuracy() : 99999f;
-        return ageMs <= 5 * 60 * 1000L && accuracy <= 1500f;
+        return ageMs <= 10 * 60 * 1000L && accuracy <= 2000f;
     }
 
     private boolean isBetter(Location candidate, Location current) {
@@ -112,6 +122,7 @@ public class MainActivity extends FlutterActivity {
         private final MethodChannel.Result result;
         private final Handler handler = new Handler(Looper.getMainLooper());
         private final AtomicBoolean finished = new AtomicBoolean(false);
+        private final List<CancellationSignal> cancellationSignals = new ArrayList<>();
         private Location best;
 
         QuickLocationRequest(LocationManager manager, MethodChannel.Result result, Location initial) {
@@ -122,37 +133,62 @@ public class MainActivity extends FlutterActivity {
 
         void start() {
             boolean requested = false;
-            try {
-                if (manager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
-                    manager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0L, 0f, this, Looper.getMainLooper());
+            List<String> available = manager.getAllProviders();
+            for (String provider : preferredProviders()) {
+                if (LocationManager.PASSIVE_PROVIDER.equals(provider)) continue;
+                if (!available.contains(provider)) continue;
+
+                try {
+                    if (!manager.isProviderEnabled(provider)) continue;
+
+                    // Android 11+: ask each system provider for its current location.
+                    // On Huawei/non-GMS devices the system "fused" or network provider
+                    // can succeed even when Google Play Services based location cannot.
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        CancellationSignal signal = new CancellationSignal();
+                        cancellationSignals.add(signal);
+                        manager.getCurrentLocation(
+                                provider,
+                                signal,
+                                MainActivity.this.getMainExecutor(),
+                                location -> acceptLocation(location)
+                        );
+                    }
+
+                    // Keep live updates as a second native path. The first acceptable
+                    // result from fused/network/GPS ends the request immediately.
+                    manager.requestLocationUpdates(provider, 0L, 0f, this, Looper.getMainLooper());
                     requested = true;
+                } catch (SecurityException | IllegalArgumentException ignored) {
                 }
-            } catch (SecurityException | IllegalArgumentException ignored) {
-            }
-            try {
-                if (manager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-                    manager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0L, 0f, this, Looper.getMainLooper());
-                    requested = true;
-                }
-            } catch (SecurityException | IllegalArgumentException ignored) {
             }
 
             if (!requested) {
-                finish(best);
+                finish(isAcceptable(best) ? best : null);
                 return;
             }
-            handler.postDelayed(() -> finish(isAcceptable(best) ? best : null), 10_000L);
+            handler.postDelayed(() -> finish(isAcceptable(best) ? best : null), 15_000L);
+        }
+
+        private void acceptLocation(Location location) {
+            if (finished.get() || location == null) return;
+            if (isBetter(location, best)) best = location;
+            float accuracy = location.hasAccuracy() ? location.getAccuracy() : 99999f;
+            String provider = location.getProvider();
+            if (FUSED_PROVIDER.equals(provider) && accuracy <= 2000f) {
+                finish(location);
+                return;
+            }
+            if (LocationManager.NETWORK_PROVIDER.equals(provider) && accuracy <= 2000f) {
+                finish(location);
+                return;
+            }
+            if (accuracy <= 700f) finish(location);
         }
 
         @Override
         public void onLocationChanged(Location location) {
-            if (isBetter(location, best)) best = location;
-            if (location == null) return;
-            float accuracy = location.hasAccuracy() ? location.getAccuracy() : 99999f;
-            String provider = location.getProvider();
-            if ((LocationManager.NETWORK_PROVIDER.equals(provider) && accuracy <= 1500f) || accuracy <= 500f) {
-                finish(location);
-            }
+            acceptLocation(location);
         }
 
         @Override
@@ -167,16 +203,22 @@ public class MainActivity extends FlutterActivity {
         public void onProviderDisabled(String provider) {
         }
 
-
         private boolean isAcceptable(Location location) {
             if (location == null) return false;
             float accuracy = location.hasAccuracy() ? location.getAccuracy() : 99999f;
-            return accuracy <= 2000f;
+            return accuracy <= 2500f;
         }
 
         private void finish(Location location) {
             if (!finished.compareAndSet(false, true)) return;
             handler.removeCallbacksAndMessages(null);
+            for (CancellationSignal signal : cancellationSignals) {
+                try {
+                    signal.cancel();
+                } catch (Exception ignored) {
+                }
+            }
+            cancellationSignals.clear();
             try {
                 manager.removeUpdates(this);
             } catch (SecurityException ignored) {

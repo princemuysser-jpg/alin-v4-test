@@ -1,0 +1,10 @@
+ALIN Flutter 5.4.3+9 — System Fused Location
+
+- تحديد موقع التوصيل يبدأ تلقائياً عند اختيار التوصيل.
+- يستخدم آخر موقع حديث وصالح فوراً عند توفره.
+- Android native location يطلب fused + network + GPS من النظام نفسه.
+- Android 11+ يستخدم LocationManager.getCurrentLocation بالتوازي مع live updates.
+- Flutter Geolocator يعمل بالتوازي مع المسار الأصلي، وأول نتيجة صحيحة تُعتمد.
+- لا يعتمد المسار الأصلي على Google Play Services فقط، لتحسين أجهزة Huawei/non-GMS.
+- أقصى محاولة واحدة 15-16 ثانية بدلاً من انتظار مسارات متسلسلة.
+- لا تغيير على الويب أو Supabase في هذا الإصدار.

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -90,10 +91,52 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   Future<Position?> _tryCurrentPosition(LocationSettings settings) async {
     try {
       return await Geolocator.getCurrentPosition(locationSettings: settings)
-          .timeout(const Duration(seconds: 12));
+          .timeout(const Duration(seconds: 15));
     } catch (_) {
       return null;
     }
+  }
+
+  Future<_DeliveryLocation?> _raceFreshLocation() async {
+    final completer = Completer<_DeliveryLocation?>();
+    var finished = 0;
+
+    void settle(_DeliveryLocation? value) {
+      if (value != null && !completer.isCompleted) {
+        completer.complete(value);
+      }
+      finished++;
+      if (finished >= 2 && !completer.isCompleted) {
+        completer.complete(null);
+      }
+    }
+
+    Future<void> runNative() async {
+      try {
+        settle(await _tryNativeQuickLocation());
+      } catch (_) {
+        settle(null);
+      }
+    }
+
+    Future<void> runFlutterLocation() async {
+      try {
+        final position = await _tryCurrentPosition(
+          const LocationSettings(accuracy: LocationAccuracy.medium),
+        );
+        settle(position == null ? null : _DeliveryLocation.fromPosition(position));
+      } catch (_) {
+        settle(null);
+      }
+    }
+
+    unawaited(runNative());
+    unawaited(runFlutterLocation());
+
+    return completer.future.timeout(
+      const Duration(seconds: 16),
+      onTimeout: () => null,
+    );
   }
 
   bool _usableCachedPosition(Position position) {
@@ -146,31 +189,23 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
       _DeliveryLocation? selected;
 
-      // Android first: ask the operating system directly for a recent network/GPS
-      // location. This does not depend on Google Play Services and works better on
-      // devices such as Huawei tablets.
-      selected = await _tryNativeQuickLocation();
+      // Use a recent location immediately when Android already has one, exactly as
+      // browser geolocation can reuse a recent fix (maximumAge). This avoids making
+      // the customer wait indoors for a new satellite fix.
+      try {
+        final cached = await Geolocator.getLastKnownPosition();
+        if (cached != null && _usableCachedPosition(cached)) {
+          selected = _DeliveryLocation.fromPosition(cached);
+        }
+      } catch (_) {}
 
-      // Fast fallback: reuse a recent system location instead of making the user wait.
-      if (selected == null) {
-        try {
-          final cached = await Geolocator.getLastKnownPosition();
-          if (cached != null && _usableCachedPosition(cached)) {
-            selected = _DeliveryLocation.fromPosition(cached);
-          }
-        } catch (_) {}
-      }
-
-      // Final fallback for Android/iOS: obtain a fresh location through geolocator.
-      if (selected == null) {
-        final current = await _tryCurrentPosition(
-          const LocationSettings(accuracy: LocationAccuracy.high),
-        );
-        if (current != null) selected = _DeliveryLocation.fromPosition(current);
-      }
+      // If there is no usable cache, request Android system fused/network/GPS and
+      // Flutter geolocation in parallel. The first valid result wins, so Huawei and
+      // non-GMS devices do not have to wait for one provider to time out first.
+      selected ??= await _raceFreshLocation();
 
       if (selected == null) {
-        throw Exception('تعذر تحديد موقعك تلقائياً. تأكد أن خدمة الموقع وWi‑Fi أو بيانات الهاتف مفعلة ثم اضغط تحديث الموقع');
+        throw Exception('تعذر تحديد الموقع من النظام. تأكد أن خدمة الموقع مفعلة ثم اضغط تحديث الموقع');
       }
 
       if (!mounted) return;

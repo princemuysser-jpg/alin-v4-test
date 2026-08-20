@@ -1,4 +1,4 @@
-name: Build Alin Flutter Android 5.4.2 Auto Location Signed
+name: Build Alin Flutter Android 5.4.3 System Fused Location Signed
 
 on:
   push:
@@ -108,7 +108,7 @@ jobs:
       - name: Upload signed Android release artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: alin-flutter-v5.4.2-build8-AUTO-LOCATION-SIGNED
+          name: alin-flutter-v5.4.3-build9-SYSTEM-FUSED-LOCATION-SIGNED
           if-no-files-found: error
           path: |
             flutter_app/build/app/outputs/bundle/release/*.aab
