@@ -1,7 +1,10 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:app_links/app_links.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:geolocator/geolocator.dart';
 import '../core/app_scope.dart';
 import '../core/alin_config.dart';
@@ -17,6 +20,10 @@ class CheckoutScreen extends StatefulWidget {
 
 class _CheckoutScreenState extends State<CheckoutScreen> {
   static const MethodChannel _nativeLocationChannel = MethodChannel('com.alin.platform/native_location');
+  final AppLinks _appLinks = AppLinks();
+  StreamSubscription<Uri>? _linkSubscription;
+  Timer? _locationBridgeTimer;
+  String? _locationBridgeState;
   final name = TextEditingController();
   final phone = TextEditingController();
   final notes = TextEditingController();
@@ -33,6 +40,41 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   bool quoteRequested = false;
   bool busy = false;
   String? error;
+
+
+  @override
+  void initState() {
+    super.initState();
+    _linkSubscription = _appLinks.uriLinkStream.listen(_handleLocationBridgeLink);
+  }
+
+  void _handleLocationBridgeLink(Uri uri) {
+    if (uri.scheme != 'alinplatform' || uri.host != 'gps') return;
+    final state = uri.queryParameters['state'];
+    if (state == null || state != _locationBridgeState) return;
+    final latitude = double.tryParse(uri.queryParameters['lat'] ?? '');
+    final longitude = double.tryParse(uri.queryParameters['lng'] ?? '');
+    final accuracy = double.tryParse(uri.queryParameters['accuracy'] ?? '') ?? 0;
+    if (latitude == null || longitude == null) return;
+    if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) return;
+    _locationBridgeTimer?.cancel();
+    _locationBridgeState = null;
+    if (!mounted) return;
+    setState(() {
+      deliveryPosition = _DeliveryLocation(
+        latitude: latitude,
+        longitude: longitude,
+        accuracy: accuracy,
+      );
+      locationBusy = false;
+      locationError = null;
+    });
+  }
+
+  String _newLocationBridgeState() {
+    final random = Random.secure();
+    return List.generate(32, (_) => random.nextInt(16).toRadixString(16)).join();
+  }
 
   @override
   void didChangeDependencies() {
@@ -67,6 +109,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     notes.dispose();
     coupon.dispose();
     landmark.dispose();
+    _linkSubscription?.cancel();
+    _locationBridgeTimer?.cancel();
     super.dispose();
   }
 
@@ -170,6 +214,33 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       locationBusy = true;
       locationError = null;
     });
+
+    final state = _newLocationBridgeState();
+    _locationBridgeState = state;
+    final bridge = Uri.parse(
+      'https://dgaikazhbtyjmswpyvrl.supabase.co/functions/v1/flutter-location-bridge',
+    ).replace(queryParameters: {'state': state});
+
+    try {
+      final opened = await launchUrl(bridge, mode: LaunchMode.externalApplication);
+      if (opened) {
+        _locationBridgeTimer?.cancel();
+        _locationBridgeTimer = Timer(const Duration(seconds: 45), () {
+          if (!mounted || _locationBridgeState != state || deliveryPosition != null) return;
+          setState(() {
+            locationBusy = false;
+            locationError = 'لم يرجع الموقع من المتصفح. افتح تحديث الموقع وحاول مرة ثانية.';
+          });
+        });
+        return;
+      }
+    } catch (_) {}
+
+    // Fallback only when the browser bridge cannot be opened.
+    await _captureNativeLocationFallback();
+  }
+
+  Future<void> _captureNativeLocationFallback() async {
     try {
       final enabled = await Geolocator.isLocationServiceEnabled();
       if (!enabled) {
@@ -188,10 +259,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       }
 
       _DeliveryLocation? selected;
-
-      // Use a recent location immediately when Android already has one, exactly as
-      // browser geolocation can reuse a recent fix (maximumAge). This avoids making
-      // the customer wait indoors for a new satellite fix.
       try {
         final cached = await Geolocator.getLastKnownPosition();
         if (cached != null && _usableCachedPosition(cached)) {
@@ -199,26 +266,24 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         }
       } catch (_) {}
 
-      // If there is no usable cache, request Android system fused/network/GPS and
-      // Flutter geolocation in parallel. The first valid result wins, so Huawei and
-      // non-GMS devices do not have to wait for one provider to time out first.
       selected ??= await _raceFreshLocation();
-
       if (selected == null) {
-        throw Exception('تعذر تحديد الموقع من النظام. تأكد أن خدمة الموقع مفعلة ثم اضغط تحديث الموقع');
+        throw Exception('تعذر تحديد الموقع. اضغط تحديث الموقع وحاول مرة ثانية.');
       }
 
       if (!mounted) return;
       setState(() {
         deliveryPosition = selected;
+        locationBusy = false;
         locationError = null;
       });
     } catch (e) {
       if (!mounted) return;
       final raw = '$e'.replaceFirst('Exception: ', '');
-      setState(() => locationError = raw.isEmpty ? 'تعذر تحديد الموقع. اضغط تحديث الموقع وحاول مرة ثانية.' : raw);
-    } finally {
-      if (mounted) setState(() => locationBusy = false);
+      setState(() {
+        locationBusy = false;
+        locationError = raw.isEmpty ? 'تعذر تحديد الموقع.' : raw;
+      });
     }
   }
 
