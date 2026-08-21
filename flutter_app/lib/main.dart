@@ -1,4 +1,7 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -7,12 +10,20 @@ import 'core/alin_config.dart';
 import 'core/alin_theme.dart';
 import 'core/app_scope.dart';
 import 'core/device_store.dart';
+import 'core/native_notification_service.dart';
 import 'data/alin_repository.dart';
 import 'screens/splash_screen.dart';
 import 'state/app_controller.dart';
 
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+}
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   await Supabase.initialize(
     url: AlinConfig.supabaseUrl,
     publishableKey: AlinConfig.supabasePublishableKey,
@@ -34,10 +45,20 @@ class AlinApp extends StatefulWidget {
 }
 
 class _AlinAppState extends State<AlinApp> {
+  late final NativeNotificationService _notifications;
   @override
   void initState() {
     super.initState();
     widget.controller.addListener(_controllerChanged);
+    _notifications = NativeNotificationService(
+      client: Supabase.instance.client,
+      store: widget.controller.store,
+      studentTokenProvider: () => widget.controller.studentToken,
+      onNotificationReceived: widget.controller.refreshNotifications,
+    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _notifications.start();
+    });
   }
 
   void _controllerChanged() {
@@ -47,6 +68,7 @@ class _AlinAppState extends State<AlinApp> {
   @override
   void dispose() {
     widget.controller.removeListener(_controllerChanged);
+    unawaited(_notifications.dispose());
     widget.controller.disposeController();
     widget.controller.dispose();
     super.dispose();

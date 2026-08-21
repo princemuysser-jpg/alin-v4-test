@@ -1,4 +1,4 @@
-name: Build Alin Flutter Android 5.4.8 Honor Live Fused GPS Signed
+name: Build Alin Flutter Android 5.5.0 Native Realtime Notifications Signed
 
 on:
   push:
@@ -108,7 +108,7 @@ jobs:
       - name: Upload signed Android release artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: alin-flutter-v5.4.8-build14-HONOR-LIVE-FUSED-GPS-SIGNED
+          name: alin-flutter-v5.5.0-build16-FCM-PUSH-NOTIFICATIONS-SIGNED
           if-no-files-found: error
           path: |
             flutter_app/build/app/outputs/bundle/release/*.aab

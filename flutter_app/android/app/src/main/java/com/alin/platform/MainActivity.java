@@ -2,9 +2,14 @@ package com.alin.platform;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Intent;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -48,10 +53,14 @@ import io.flutter.plugin.common.MethodChannel;
 
 public class MainActivity extends FlutterActivity {
     private static final String LOCATION_CHANNEL = "com.alin.platform/native_location";
+    private static final String NOTIFICATION_CHANNEL = "com.alin.platform/native_notifications";
+    private static final String NOTIFICATION_CHANNEL_ID = "alin_general";
+    private static final int NOTIFICATION_PERMISSION_REQUEST_CODE = 4301;
     private static final String FUSED_PROVIDER = "fused";
     private static final String WEB_LOCATION_URL = "https://dgaikazhbtyjmswpyvrl.supabase.co/functions/v1/flutter-location-bridge";
     private static final int LOCATION_SETTINGS_REQUEST_CODE = 4201;
     private GoogleFusedLocationRequest pendingGoogleLocationRequest;
+    private MethodChannel.Result pendingNotificationPermissionResult;
 
     @Override
     public void configureFlutterEngine(FlutterEngine flutterEngine) {
@@ -60,6 +69,106 @@ public class MainActivity extends FlutterActivity {
                 flutterEngine.getDartExecutor().getBinaryMessenger(),
                 LOCATION_CHANNEL
         ).setMethodCallHandler(this::handleLocationCall);
+        new MethodChannel(
+                flutterEngine.getDartExecutor().getBinaryMessenger(),
+                NOTIFICATION_CHANNEL
+        ).setMethodCallHandler(this::handleNotificationCall);
+        ensureNotificationChannel();
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode != NOTIFICATION_PERMISSION_REQUEST_CODE) return;
+        MethodChannel.Result pending = pendingNotificationPermissionResult;
+        pendingNotificationPermissionResult = null;
+        if (pending == null) return;
+        boolean granted = grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED;
+        pending.success(granted);
+    }
+
+    private void handleNotificationCall(MethodCall call, MethodChannel.Result result) {
+        if ("requestPermission".equals(call.method)) {
+            requestNotificationPermission(result);
+            return;
+        }
+        if ("showNotification".equals(call.method)) {
+            String title = call.argument("title");
+            String message = call.argument("message");
+            showNativeNotification(title, message);
+            result.success(true);
+            return;
+        }
+        result.notImplemented();
+    }
+
+    private void requestNotificationPermission(MethodChannel.Result result) {
+        ensureNotificationChannel();
+        if (Build.VERSION.SDK_INT < 33) {
+            result.success(true);
+            return;
+        }
+        if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
+            result.success(true);
+            return;
+        }
+        if (pendingNotificationPermissionResult != null) {
+            result.success(false);
+            return;
+        }
+        pendingNotificationPermissionResult = result;
+        requestPermissions(
+                new String[]{Manifest.permission.POST_NOTIFICATIONS},
+                NOTIFICATION_PERMISSION_REQUEST_CODE
+        );
+    }
+
+    private void ensureNotificationChannel() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
+        NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        if (manager == null || manager.getNotificationChannel(NOTIFICATION_CHANNEL_ID) != null) return;
+        NotificationChannel channel = new NotificationChannel(
+                NOTIFICATION_CHANNEL_ID,
+                "منصة آلين",
+                NotificationManager.IMPORTANCE_HIGH
+        );
+        channel.setDescription("إعلانات وتنبيهات منصة آلين");
+        channel.enableVibration(true);
+        channel.enableLights(true);
+        channel.setLightColor(Color.BLUE);
+        manager.createNotificationChannel(channel);
+    }
+
+    private void showNativeNotification(String title, String message) {
+        if (message == null || message.trim().isEmpty()) return;
+        if (Build.VERSION.SDK_INT >= 33
+                && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) return;
+
+        ensureNotificationChannel();
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        PendingIntent contentIntent = PendingIntent.getActivity(
+                this,
+                0,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+
+        Notification.Builder builder = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                ? new Notification.Builder(this, NOTIFICATION_CHANNEL_ID)
+                : new Notification.Builder(this);
+        builder.setSmallIcon(android.R.drawable.ic_dialog_info)
+                .setContentTitle(title == null || title.trim().isEmpty() ? "منصة آلين" : title.trim())
+                .setContentText(message.trim())
+                .setStyle(new Notification.BigTextStyle().bigText(message.trim()))
+                .setContentIntent(contentIntent)
+                .setAutoCancel(true)
+                .setDefaults(Notification.DEFAULT_ALL);
+
+        NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        if (manager != null) {
+            manager.notify((int) (System.currentTimeMillis() & 0x7fffffff), builder.build());
+        }
     }
 
     @Override

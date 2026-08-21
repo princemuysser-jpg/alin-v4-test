@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "622701050570",
+    "project_id": "alin-platform",
+    "storage_bucket": "alin-platform.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:622701050570:android:03331d662c3dddc2f49233",
+        "android_client_info": {
+          "package_name": "com.alin.platform"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDjd9BA_V6qqiN96OcqBtC521VPzew9occ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

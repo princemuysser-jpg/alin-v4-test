@@ -1,0 +1,13 @@
+منصة آلين - Flutter 5.5.0+16
+Firebase Cloud Messaging integration
+- google-services.json package: com.alin.platform
+- firebase_core + firebase_messaging
+- Android POST_NOTIFICATIONS
+- default channel: alin_general
+- FCM token registered through alin_register_fcm_token
+- foreground notifications shown using native channel
+- background/terminated notification payload handled by Android FCM
+- Supabase Realtime kept as foreground fallback with de-duplication
+- GPS/tracking/banner code retained from previous baseline
+- Server admin-send-push v5 supports Web Push + FCM HTTP v1
+- FCM server delivery activates after storing Firebase service account JSON in Supabase Vault.
