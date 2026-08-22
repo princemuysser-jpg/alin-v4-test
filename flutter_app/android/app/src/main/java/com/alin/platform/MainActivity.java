@@ -9,6 +9,7 @@ import android.app.PendingIntent;
 import android.content.Intent;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationListener;
@@ -19,6 +20,7 @@ import android.os.Bundle;
 import android.os.CancellationSignal;
 import android.os.Handler;
 import android.os.Looper;
+import android.provider.Settings;
 import android.view.ViewGroup;
 import android.webkit.GeolocationPermissions;
 import android.webkit.WebChromeClient;
@@ -85,9 +87,20 @@ public class MainActivity extends FlutterActivity {
         if (pending == null) return;
         boolean granted = grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED;
         pending.success(granted);
+        if (!granted
+                && Build.VERSION.SDK_INT >= 33
+                && !shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS)) {
+            // If Android no longer offers the runtime dialog, immediately give the
+            // user a working path to enable notifications for Alin.
+            openNotificationSettings();
+        }
     }
 
     private void handleNotificationCall(MethodCall call, MethodChannel.Result result) {
+        if ("permissionGranted".equals(call.method)) {
+            result.success(notificationPermissionGranted());
+            return;
+        }
         if ("requestPermission".equals(call.method)) {
             requestNotificationPermission(result);
             return;
@@ -102,20 +115,60 @@ public class MainActivity extends FlutterActivity {
         result.notImplemented();
     }
 
+    private boolean notificationPermissionGranted() {
+        NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        boolean appNotificationsEnabled = manager == null || Build.VERSION.SDK_INT < 24 || manager.areNotificationsEnabled();
+        if (!appNotificationsEnabled) return false;
+        if (Build.VERSION.SDK_INT < 33) return true;
+        return checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private void openNotificationSettings() {
+        try {
+            Intent intent = new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS);
+            intent.putExtra(Settings.EXTRA_APP_PACKAGE, getPackageName());
+            startActivity(intent);
+        } catch (Exception ignored) {
+            try {
+                Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                intent.setData(Uri.parse("package:" + getPackageName()));
+                startActivity(intent);
+            } catch (Exception ignoredAgain) {
+            }
+        }
+    }
+
     private void requestNotificationPermission(MethodChannel.Result result) {
         ensureNotificationChannel();
+        if (notificationPermissionGranted()) {
+            result.success(true);
+            return;
+        }
+
         if (Build.VERSION.SDK_INT < 33) {
-            result.success(true);
+            openNotificationSettings();
+            result.success(false);
             return;
         }
-        if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
-            result.success(true);
-            return;
-        }
+
         if (pendingNotificationPermissionResult != null) {
             result.success(false);
             return;
         }
+
+        SharedPreferences prefs = getSharedPreferences("alin_notification_permission", Context.MODE_PRIVATE);
+        boolean requestedBefore = prefs.getBoolean("requested_once", false);
+        boolean canShowRuntimePrompt = !requestedBefore || shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS);
+
+        if (!canShowRuntimePrompt) {
+            // Android can stop showing the runtime dialog after repeated denial.
+            // In that state the only reliable path is the app notification settings page.
+            openNotificationSettings();
+            result.success(false);
+            return;
+        }
+
+        prefs.edit().putBoolean("requested_once", true).apply();
         pendingNotificationPermissionResult = result;
         requestPermissions(
                 new String[]{Manifest.permission.POST_NOTIFICATIONS},

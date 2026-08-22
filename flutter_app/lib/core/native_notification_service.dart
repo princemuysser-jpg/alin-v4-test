@@ -56,6 +56,10 @@ class NativeNotificationService {
   Future<bool> notificationPermissionGranted() async {
     if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return true;
     try {
+      final nativeGranted = await _channel.invokeMethod<bool>('permissionGranted');
+      if (nativeGranted != null) return nativeGranted;
+    } catch (_) {}
+    try {
       final settings = await FirebaseMessaging.instance.getNotificationSettings();
       return settings.authorizationStatus == AuthorizationStatus.authorized ||
           settings.authorizationStatus == AuthorizationStatus.provisional;
@@ -69,7 +73,11 @@ class NativeNotificationService {
     if (await notificationPermissionGranted()) return true;
     try {
       final granted = await _channel.invokeMethod<bool>('requestPermission');
-      if (granted == true) return true;
+      if (granted == true) {
+        await _registerCurrentToken();
+        return true;
+      }
+      return notificationPermissionGranted();
     } catch (_) {
       try {
         final settings = await FirebaseMessaging.instance.requestPermission(
@@ -77,11 +85,14 @@ class NativeNotificationService {
           badge: true,
           sound: true,
         );
-        return settings.authorizationStatus == AuthorizationStatus.authorized ||
+        final granted = settings.authorizationStatus == AuthorizationStatus.authorized ||
             settings.authorizationStatus == AuthorizationStatus.provisional;
-      } catch (_) {}
+        if (granted) await _registerCurrentToken();
+        return granted;
+      } catch (_) {
+        return false;
+      }
     }
-    return notificationPermissionGranted();
   }
 
   Future<void> _registerCurrentToken() async {
