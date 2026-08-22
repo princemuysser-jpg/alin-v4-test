@@ -67,7 +67,7 @@ class _AlinAppState extends State<AlinApp> {
     if (await _notifications.notificationPermissionGranted()) return;
 
     final dialogContext = _navigatorKey.currentContext;
-    if (!mounted || dialogContext == null) return;
+    if (dialogContext == null || !dialogContext.mounted) return;
     final enableNow = await showDialog<bool>(
       context: dialogContext,
       barrierDismissible: false,
