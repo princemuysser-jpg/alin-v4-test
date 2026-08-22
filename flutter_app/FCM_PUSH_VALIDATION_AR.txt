@@ -1,4 +1,4 @@
-منصة آلين - Flutter 5.5.2+18
+منصة آلين - Flutter 5.5.3+19
 Firebase Cloud Messaging integration
 - google-services.json package: com.alin.platform
 - firebase_core + firebase_messaging
@@ -18,3 +18,5 @@ Permission behavior:
 - If permission remains denied, the primer returns on each fresh app launch.
 - Once permission is granted, neither the primer nor Android permission dialog is shown again.
 - Only one Android permission path is used per launch to prevent duplicate dialogs.
+
+تعديل 5.5.3: نافذة تفعيل الإشعارات لا تظهر على السبلاش. تظهر مباشرة بعد رسم واجهة المتجر، بدون تأخير زمني. إذا اختار المستخدم لاحقًا أو رفض إذن Android، تعود في التشغيل التالي. بعد السماح لا تظهر مجددًا.

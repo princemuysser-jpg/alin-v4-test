@@ -1,4 +1,4 @@
-name: Build Alin Flutter Android 5.5.2 FCM Permission Primer Signed
+name: Build Alin Flutter Android 5.5.3 Store Permission Prompt FCM Signed
 
 on:
   push:
@@ -108,7 +108,7 @@ jobs:
       - name: Upload signed Android release artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: alin-flutter-v5.5.2-build18-FCM-PERMISSION-PRIMER-SIGNED
+          name: alin-flutter-v5.5.3-build19-STORE-PERMISSION-PROMPT-FCM-SIGNED
           if-no-files-found: error
           path: |
             flutter_app/build/app/outputs/bundle/release/*.aab

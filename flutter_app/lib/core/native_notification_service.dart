@@ -12,7 +12,6 @@ class NativeNotificationService {
   final DeviceStore store;
   final String? Function() studentTokenProvider;
   final Future<void> Function()? onNotificationReceived;
-  final Future<bool> Function()? notificationPermissionPrimer;
   RealtimeChannel? _realtime;
   StreamSubscription<String>? _tokenRefreshSub;
   StreamSubscription<RemoteMessage>? _foregroundSub;
@@ -24,7 +23,6 @@ class NativeNotificationService {
     required this.store,
     required this.studentTokenProvider,
     this.onNotificationReceived,
-    this.notificationPermissionPrimer,
   });
 
   Future<void> start() async {
@@ -32,39 +30,8 @@ class NativeNotificationService {
     _started = true;
 
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-      // If notification permission is still not granted, show Alin's short benefit
-      // message first. The primer returns on every fresh launch while permission
-      // remains denied, and disappears permanently once Android reports granted.
-      var granted = false;
-      try {
-        final settings = await FirebaseMessaging.instance.getNotificationSettings();
-        granted = settings.authorizationStatus == AuthorizationStatus.authorized ||
-            settings.authorizationStatus == AuthorizationStatus.provisional;
-      } catch (_) {}
-
-      if (!granted) {
-        var requestNow = true;
-        try {
-          requestNow = await notificationPermissionPrimer?.call() ?? true;
-        } catch (_) {}
-
-        if (requestNow) {
-          // Use one Android permission path only, so the user never sees two
-          // permission dialogs in the same launch.
-          try {
-            await _channel.invokeMethod<bool>('requestPermission');
-          } catch (_) {
-            // Fallback only if the native MethodChannel is unavailable.
-            try {
-              await FirebaseMessaging.instance.requestPermission(
-                alert: true,
-                badge: true,
-                sound: true,
-              );
-            } catch (_) {}
-          }
-        }
-      }
+      // Permission is intentionally NOT requested here. The store UI owns the
+      // permission prompt so nothing appears over the splash screen.
       await _registerCurrentToken();
       _tokenRefreshSub = FirebaseMessaging.instance.onTokenRefresh.listen((token) {
         unawaited(_registerToken(token));
@@ -83,6 +50,38 @@ class NativeNotificationService {
           callback: (payload) => unawaited(_handleRealtimeInsert(payload.newRecord)),
         )
         .subscribe();
+  }
+
+
+  Future<bool> notificationPermissionGranted() async {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return true;
+    try {
+      final settings = await FirebaseMessaging.instance.getNotificationSettings();
+      return settings.authorizationStatus == AuthorizationStatus.authorized ||
+          settings.authorizationStatus == AuthorizationStatus.provisional;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> requestNotificationPermission() async {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return true;
+    if (await notificationPermissionGranted()) return true;
+    try {
+      final granted = await _channel.invokeMethod<bool>('requestPermission');
+      if (granted == true) return true;
+    } catch (_) {
+      try {
+        final settings = await FirebaseMessaging.instance.requestPermission(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
+        return settings.authorizationStatus == AuthorizationStatus.authorized ||
+            settings.authorizationStatus == AuthorizationStatus.provisional;
+      } catch (_) {}
+    }
+    return notificationPermissionGranted();
   }
 
   Future<void> _registerCurrentToken() async {

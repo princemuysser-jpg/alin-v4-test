@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../core/app_scope.dart';
 import '../core/alin_theme.dart';
@@ -9,7 +10,8 @@ import 'store_screen.dart';
 import 'tracking_screen.dart';
 
 class HomeShell extends StatefulWidget {
-  const HomeShell({super.key});
+  final Future<void> Function()? onStoreReady;
+  const HomeShell({super.key, this.onStoreReady});
 
   @override
   State<HomeShell> createState() => _HomeShellState();
@@ -30,6 +32,11 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && widget.onStoreReady != null) {
+        unawaited(widget.onStoreReady!());
+      }
+    });
   }
 
   @override

@@ -4,7 +4,8 @@ import '../core/alin_theme.dart';
 import 'home_shell.dart';
 
 class SplashScreen extends StatefulWidget {
-  const SplashScreen({super.key});
+  final Future<void> Function()? onStoreReady;
+  const SplashScreen({super.key, this.onStoreReady});
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -26,7 +27,9 @@ class _SplashScreenState extends State<SplashScreen> {
       await Future.delayed(const Duration(milliseconds: 1500) - elapsed);
     }
     if (!mounted) return;
-    Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const HomeShell()));
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => HomeShell(onStoreReady: widget.onStoreReady)),
+    );
   }
 
   @override

@@ -56,17 +56,19 @@ class _AlinAppState extends State<AlinApp> {
       store: widget.controller.store,
       studentTokenProvider: () => widget.controller.studentToken,
       onNotificationReceived: widget.controller.refreshNotifications,
-      notificationPermissionPrimer: _showNotificationPermissionPrimer,
     );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _notifications.start();
     });
   }
 
-  Future<bool> _showNotificationPermissionPrimer() async {
+  Future<void> _showNotificationPermissionPrimerFromStore() async {
+    if (!mounted) return;
+    if (await _notifications.notificationPermissionGranted()) return;
+
     final dialogContext = _navigatorKey.currentContext;
-    if (!mounted || dialogContext == null) return true;
-    final result = await showDialog<bool>(
+    if (!mounted || dialogContext == null) return;
+    final enableNow = await showDialog<bool>(
       context: dialogContext,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
@@ -83,7 +85,7 @@ class _AlinAppState extends State<AlinApp> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('ليس الآن'),
+            child: const Text('لاحقًا'),
           ),
           FilledButton.icon(
             onPressed: () => Navigator.of(context).pop(true),
@@ -93,7 +95,10 @@ class _AlinAppState extends State<AlinApp> {
         ],
       ),
     );
-    return result ?? false;
+
+    if (enableNow == true) {
+      await _notifications.requestNotificationPermission();
+    }
   }
 
   void _controllerChanged() {
@@ -131,7 +136,7 @@ class _AlinAppState extends State<AlinApp> {
           textDirection: widget.controller.languageCode == 'en' ? TextDirection.ltr : TextDirection.rtl,
           child: child ?? const SizedBox.shrink(),
         ),
-        home: const SplashScreen(),
+        home: SplashScreen(onStoreReady: _showNotificationPermissionPrimerFromStore),
       ),
     );
   }
