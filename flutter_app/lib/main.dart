@@ -45,6 +45,7 @@ class AlinApp extends StatefulWidget {
 }
 
 class _AlinAppState extends State<AlinApp> {
+  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
   late final NativeNotificationService _notifications;
   @override
   void initState() {
@@ -55,10 +56,44 @@ class _AlinAppState extends State<AlinApp> {
       store: widget.controller.store,
       studentTokenProvider: () => widget.controller.studentToken,
       onNotificationReceived: widget.controller.refreshNotifications,
+      notificationPermissionPrimer: _showNotificationPermissionPrimer,
     );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _notifications.start();
     });
+  }
+
+  Future<bool> _showNotificationPermissionPrimer() async {
+    final dialogContext = _navigatorKey.currentContext;
+    if (!mounted || dialogContext == null) return true;
+    final result = await showDialog<bool>(
+      context: dialogContext,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.notifications_active_rounded),
+            SizedBox(width: 10),
+            Expanded(child: Text('لا تفوّت العروض 🎁')),
+          ],
+        ),
+        content: const Text(
+          'فعّل الإشعارات حتى توصلك الخصومات، العروض الجديدة، وتحديثات طلبك أول بأول.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('ليس الآن'),
+          ),
+          FilledButton.icon(
+            onPressed: () => Navigator.of(context).pop(true),
+            icon: const Icon(Icons.notifications_active_outlined),
+            label: const Text('تفعيل الإشعارات'),
+          ),
+        ],
+      ),
+    );
+    return result ?? false;
   }
 
   void _controllerChanged() {
@@ -79,6 +114,7 @@ class _AlinAppState extends State<AlinApp> {
     return AppScope(
       controller: widget.controller,
       child: MaterialApp(
+        navigatorKey: _navigatorKey,
         debugShowCheckedModeBanner: false,
         title: AlinConfig.appName,
         locale: widget.controller.languageCode == 'en' ? const Locale('en', 'US') : const Locale('ar', 'IQ'),

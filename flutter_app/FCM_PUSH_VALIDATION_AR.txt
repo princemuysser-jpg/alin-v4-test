@@ -1,4 +1,4 @@
-منصة آلين - Flutter 5.5.0+16
+منصة آلين - Flutter 5.5.2+18
 Firebase Cloud Messaging integration
 - google-services.json package: com.alin.platform
 - firebase_core + firebase_messaging
@@ -11,3 +11,10 @@ Firebase Cloud Messaging integration
 - GPS/tracking/banner code retained from previous baseline
 - Server admin-send-push v5 supports Web Push + FCM HTTP v1
 - FCM server delivery activates after storing Firebase service account JSON in Supabase Vault.
+
+Permission behavior:
+- Before Android permission, Alin shows a benefit primer: لا تفوّت العروض 🎁
+- Primer text: فعّل الإشعارات حتى توصلك الخصومات، العروض الجديدة، وتحديثات طلبك أول بأول.
+- If permission remains denied, the primer returns on each fresh app launch.
+- Once permission is granted, neither the primer nor Android permission dialog is shown again.
+- Only one Android permission path is used per launch to prevent duplicate dialogs.
