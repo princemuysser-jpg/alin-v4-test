@@ -1,5 +1,5 @@
 // === admin/notifications.js ===
-/* ALIN v2.2.6 — admin notification center registered directly in the admin shell. */
+/* ALIN v2.2.7 — preserve notification draft during realtime/background refreshes. */
 (function(){
   'use strict';
 
@@ -9,7 +9,12 @@
   const roleLabel=role=>({
     all:'الجميع',teacher:'المدرسون',library:'المكتبات',student:'الطلبة والمتجر',courier:'المندوبون',accountant:'المحاسب'
   })[String(role||'all')]||'الجميع';
-  const state={query:'',role:'',sending:false};
+  const state={
+    query:'',
+    role:'',
+    sending:false,
+    draft:{audience:'all',priority:'normal',targetId:'',title:'',message:''}
+  };
 
   function service(){return window.AlinNotifications}
   function rows(){return service()?.rows?.()||[]}
@@ -35,22 +40,50 @@
     });
   }
 
+  function captureDraft(){
+    const audience=document.getElementById('v146Audience');
+    const priority=document.getElementById('v146Priority');
+    const target=document.getElementById('v146Target');
+    const title=document.getElementById('v146Title');
+    const message=document.getElementById('v146Message');
+    if(audience)state.draft.audience=audience.value||'all';
+    if(priority)state.draft.priority=priority.value||'normal';
+    if(target)state.draft.targetId=target.value||'';
+    if(title)state.draft.title=title.value||'';
+    if(message)state.draft.message=message.value||'';
+  }
+
+  function clearDraft(){
+    state.draft={audience:'all',priority:'normal',targetId:'',title:'',message:''};
+    const audience=document.getElementById('v146Audience');
+    const priority=document.getElementById('v146Priority');
+    const target=document.getElementById('v146Target');
+    const title=document.getElementById('v146Title');
+    const message=document.getElementById('v146Message');
+    if(audience)audience.value='all';
+    if(priority)priority.value='normal';
+    if(target)target.value='';
+    if(title)title.value='';
+    if(message)message.value='';
+  }
+
   function render(){
     const root=document.getElementById('adminContent');
     if(!root)return false;
+    captureDraft();
     const all=rows();
     const list=filteredRows();
     const week=all.filter(row=>Date.now()-new Date(row.created_at||0).getTime()<=7*864e5).length;
-    const accountOptions=users().map(account=>`<option value="${escapeHtml(account.id)}">${escapeHtml(account.name||account.username||account.email||'حساب')}</option>`).join('');
+    const accountOptions=users().map(account=>`<option value="${escapeHtml(account.id)}" ${state.draft.targetId===String(account.id)?'selected':''}>${escapeHtml(account.name||account.username||account.email||'حساب')}</option>`).join('');
     root.innerHTML=`<section class="admin-v146-notifications">
       <header class="admin-v146-head"><div><h2>مركز الإشعارات</h2><p>إرسال الإشعارات ومراجعة السجل من مصدر واحد.</p></div><div class="admin-v146-bell">🔔</div></header>
       <div class="admin-v146-grid">
         <article class="admin-v146-card"><h3>إرسال إشعار جديد</h3><div class="admin-v146-form">
-          <select id="v146Audience"><option value="all">الجميع</option><option value="teacher">المدرسون</option><option value="library">المكتبات</option><option value="student">الطلبة والمتجر</option><option value="courier">المندوبون</option><option value="accountant">المحاسب</option></select>
-          <select id="v146Priority"><option value="normal">عادي</option><option value="important">مهم</option><option value="urgent">عاجل</option></select>
-          <select id="v146Target" class="full"><option value="">بدون حساب محدد</option>${accountOptions}</select>
-          <input id="v146Title" class="full" placeholder="عنوان الإشعار">
-          <textarea id="v146Message" class="full" placeholder="اكتب نص الإشعار"></textarea>
+          <select id="v146Audience"><option value="all" ${state.draft.audience==='all'?'selected':''}>الجميع</option><option value="teacher" ${state.draft.audience==='teacher'?'selected':''}>المدرسون</option><option value="library" ${state.draft.audience==='library'?'selected':''}>المكتبات</option><option value="student" ${state.draft.audience==='student'?'selected':''}>الطلبة والمتجر</option><option value="courier" ${state.draft.audience==='courier'?'selected':''}>المندوبون</option><option value="accountant" ${state.draft.audience==='accountant'?'selected':''}>المحاسب</option></select>
+          <select id="v146Priority"><option value="normal" ${state.draft.priority==='normal'?'selected':''}>عادي</option><option value="important" ${state.draft.priority==='important'?'selected':''}>مهم</option><option value="urgent" ${state.draft.priority==='urgent'?'selected':''}>عاجل</option></select>
+          <select id="v146Target" class="full"><option value="" ${state.draft.targetId?'':'selected'}>بدون حساب محدد</option>${accountOptions}</select>
+          <input id="v146Title" class="full" placeholder="عنوان الإشعار" value="${escapeHtml(state.draft.title)}">
+          <textarea id="v146Message" class="full" placeholder="اكتب نص الإشعار">${escapeHtml(state.draft.message)}</textarea>
           <button id="v146SendButton" class="admin-v146-send" type="button" data-alin-click="AlinAdminNotifications.send">إرسال الإشعار</button>
           <div id="v146Status" class="admin-v146-status"></div>
         </div></article>
@@ -73,6 +106,7 @@
     const role=document.getElementById('v146Audience')?.value||'all';
     const priority=document.getElementById('v146Priority')?.value||'normal';
     const targetId=document.getElementById('v146Target')?.value||'';
+    captureDraft();
     if(!title||!message){if(status)status.textContent='اكتب العنوان ونص الإشعار.';return false}
     if(!service()?.send){if(status)status.textContent='خدمة الإشعارات غير جاهزة.';return false}
     state.sending=true;
@@ -93,6 +127,7 @@
         else if(role==='all'||role==='student')status.textContent=`تم حفظ الإشعار داخل المنصة${push?.error?'، لكن Push الخارجي تعذر: '+push.error:''}.`;
         else status.textContent='تم إرسال الإشعار داخل المنصة بنجاح.';
       }
+      clearDraft();
       render();
       return true;
     }catch(error){
@@ -101,18 +136,19 @@
       return false;
     }finally{
       state.sending=false;
-      if(button){button.disabled=false;button.textContent='إرسال الإشعار'}
+      if(button&&document.body.contains(button)){button.disabled=false;button.textContent='إرسال الإشعار'}
     }
   }
 
   async function refresh(){
+    captureDraft();
     await service()?.refresh?.();
     render();
   }
 
   async function remove(id){
     if(!confirm('حذف هذا الإشعار؟'))return false;
-    try{await service()?.remove?.(id);render();return true}
+    try{captureDraft();await service()?.remove?.(id);render();return true}
     catch(error){console.error(error);alert(error?.message||'تعذر حذف الإشعار');return false}
   }
 
@@ -124,6 +160,12 @@
   window.AlinAdminModules?.register?.('notifications',render);
 
   window.addEventListener('alin:notifications-updated',()=>{
-    if(window.activeAdminTab==='notifications')render();
+    if(window.activeAdminTab!=='notifications')return;
+    const active=document.activeElement;
+    if(active&&active.closest?.('.admin-v146-form')){
+      captureDraft();
+      return;
+    }
+    render();
   });
 })();
