@@ -70,6 +70,7 @@
     "modules/courier/core.js",
     "modules/courier/admin.js",
     "modules/courier/areas.js",
+    "modules/admin/delivery-pricing.js",
     "modules/courier/assignment.js",
     "modules/courier/dashboard.js",
     "modules/courier/finance.js",
