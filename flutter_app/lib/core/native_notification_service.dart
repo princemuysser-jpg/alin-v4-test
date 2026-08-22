@@ -12,9 +12,11 @@ class NativeNotificationService {
   final DeviceStore store;
   final String? Function() studentTokenProvider;
   final Future<void> Function()? onNotificationReceived;
+  final Future<void> Function(Map<String, dynamic>)? onNotificationOpened;
   RealtimeChannel? _realtime;
   StreamSubscription<String>? _tokenRefreshSub;
   StreamSubscription<RemoteMessage>? _foregroundSub;
+  StreamSubscription<RemoteMessage>? _openedSub;
   bool _started = false;
   final Set<String> _recentIds = <String>{};
 
@@ -23,6 +25,7 @@ class NativeNotificationService {
     required this.store,
     required this.studentTokenProvider,
     this.onNotificationReceived,
+    this.onNotificationOpened,
   });
 
   Future<void> start() async {
@@ -39,6 +42,14 @@ class NativeNotificationService {
       _foregroundSub = FirebaseMessaging.onMessage.listen((message) {
         unawaited(_handleFcmMessage(message));
       });
+      _openedSub = FirebaseMessaging.onMessageOpenedApp.listen((message) {
+        unawaited(_handleFcmOpened(message));
+      });
+
+      final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
+      if (initialMessage != null) {
+        unawaited(_handleFcmOpened(initialMessage));
+      }
     }
 
     _realtime = client
@@ -51,7 +62,6 @@ class NativeNotificationService {
         )
         .subscribe();
   }
-
 
   Future<bool> notificationPermissionGranted() async {
     if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return true;
@@ -125,7 +135,21 @@ class NativeNotificationService {
         await _channel.invokeMethod<void>('showNotification', {'title': title.isEmpty ? 'منصة آلين' : title, 'message': body});
       } catch (_) {}
     }
-    try { await onNotificationReceived?.call(); } catch (_) {}
+    try {
+      await onNotificationReceived?.call();
+    } catch (_) {}
+  }
+
+  Future<void> _handleFcmOpened(RemoteMessage message) async {
+    final payload = <String, dynamic>{
+      ...message.data,
+      if (message.messageId != null) 'message_id': message.messageId!,
+      if (message.notification?.title != null) 'title': message.notification!.title!,
+      if (message.notification?.body != null) 'message': message.notification!.body!,
+    };
+    try {
+      await onNotificationOpened?.call(payload);
+    } catch (_) {}
   }
 
   Future<void> _handleRealtimeInsert(Map<String, dynamic> row) async {
@@ -144,9 +168,13 @@ class NativeNotificationService {
     }
     if (id.isNotEmpty) _remember(id);
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-      try { await _channel.invokeMethod<void>('showNotification', {'title': title.isEmpty ? 'منصة آلين' : title, 'message': message}); } catch (_) {}
+      try {
+        await _channel.invokeMethod<void>('showNotification', {'title': title.isEmpty ? 'منصة آلين' : title, 'message': message});
+      } catch (_) {}
     }
-    try { await onNotificationReceived?.call(); } catch (_) {}
+    try {
+      await onNotificationReceived?.call();
+    } catch (_) {}
   }
 
   void _remember(String id) {
@@ -157,13 +185,17 @@ class NativeNotificationService {
   Future<void> dispose() async {
     await _tokenRefreshSub?.cancel();
     await _foregroundSub?.cancel();
+    await _openedSub?.cancel();
     _tokenRefreshSub = null;
     _foregroundSub = null;
+    _openedSub = null;
     final realtime = _realtime;
     _realtime = null;
     _started = false;
     if (realtime != null) {
-      try { await client.removeChannel(realtime); } catch (_) {}
+      try {
+        await client.removeChannel(realtime);
+      } catch (_) {}
     }
   }
 }

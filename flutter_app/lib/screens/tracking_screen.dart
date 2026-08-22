@@ -3,7 +3,9 @@ import '../core/app_scope.dart';
 import '../core/alin_theme.dart';
 
 class TrackingScreen extends StatefulWidget {
-  const TrackingScreen({super.key});
+  final String? initialOrderCode;
+
+  const TrackingScreen({super.key, this.initialOrderCode});
 
   @override
   State<TrackingScreen> createState() => _TrackingScreenState();
@@ -14,6 +16,18 @@ class _TrackingScreenState extends State<TrackingScreen> {
   bool busy = false;
   Map<String, dynamic>? result;
   String? error;
+
+  @override
+  void initState() {
+    super.initState();
+    final initial = widget.initialOrderCode?.trim() ?? '';
+    if (initial.isNotEmpty) {
+      input.text = initial;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) search();
+      });
+    }
+  }
 
   @override
   void dispose() {

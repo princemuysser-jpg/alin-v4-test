@@ -9,8 +9,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/alin_config.dart';
 import 'core/alin_theme.dart';
 import 'core/app_scope.dart';
+import 'core/app_update_service.dart';
 import 'core/device_store.dart';
 import 'core/native_notification_service.dart';
+import 'core/notification_navigation.dart';
 import 'data/alin_repository.dart';
 import 'screens/splash_screen.dart';
 import 'state/app_controller.dart';
@@ -47,6 +49,8 @@ class AlinApp extends StatefulWidget {
 class _AlinAppState extends State<AlinApp> {
   final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
   late final NativeNotificationService _notifications;
+  bool _storeReady = false;
+
   @override
   void initState() {
     super.initState();
@@ -56,10 +60,19 @@ class _AlinAppState extends State<AlinApp> {
       store: widget.controller.store,
       studentTokenProvider: () => widget.controller.studentToken,
       onNotificationReceived: widget.controller.refreshNotifications,
+      onNotificationOpened: _handleNotificationOpened,
     );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _notifications.start();
     });
+  }
+
+  Future<void> _handleNotificationOpened(Map<String, dynamic> payload) async {
+    NotificationNavigation.queue(payload);
+    if (!_storeReady) return;
+    final navigator = _navigatorKey.currentState;
+    if (navigator == null) return;
+    await NotificationNavigation.flush(navigator, widget.controller);
   }
 
   Future<void> _showNotificationPermissionPrimerFromStore() async {
@@ -101,6 +114,24 @@ class _AlinAppState extends State<AlinApp> {
     }
   }
 
+  Future<void> _onStoreReady() async {
+    _storeReady = true;
+
+    await _showNotificationPermissionPrimerFromStore();
+    if (!mounted) return;
+
+    final updateContext = _navigatorKey.currentContext;
+    final settings = widget.controller.bootstrap?.settings;
+    if (updateContext != null && updateContext.mounted && settings != null) {
+      await AppUpdateService.maybePrompt(updateContext, settings);
+    }
+
+    final navigator = _navigatorKey.currentState;
+    if (navigator != null) {
+      await NotificationNavigation.flush(navigator, widget.controller);
+    }
+  }
+
   void _controllerChanged() {
     if (mounted) setState(() {});
   }
@@ -136,7 +167,7 @@ class _AlinAppState extends State<AlinApp> {
           textDirection: widget.controller.languageCode == 'en' ? TextDirection.ltr : TextDirection.rtl,
           child: child ?? const SizedBox.shrink(),
         ),
-        home: SplashScreen(onStoreReady: _showNotificationPermissionPrimerFromStore),
+        home: SplashScreen(onStoreReady: _onStoreReady),
       ),
     );
   }
