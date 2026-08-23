@@ -1,0 +1,158 @@
+name: Fix ALIN delivery orders pricing controls
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/fix-delivery-orders-pricing.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: alin-delivery-orders-pricing-fix
+  cancel-in-progress: false
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Add pricing controls to delivery orders
+        shell: python
+        run: |
+          from pathlib import Path
+          import json
+          import re
+          from datetime import datetime, timezone
+
+          root = Path(".")
+          assignment_path = root / "modules" / "courier" / "assignment.js"
+          pricing_path = root / "modules" / "admin" / "delivery-pricing.js"
+
+          assignment = assignment_path.read_text(encoding="utf-8")
+
+          helper = """
+          function deliveryPricingControls(o,locked){
+            const mode=String(o?.delivery_pricing_mode||'area');
+            const labels={area:'سعر المنطقة',free:'مجاني للطالب',custom:'مبلغ خاص'};
+            return `<section class="v126-assign alin-v430-pricing v164-delivery-pricing"><h4>تسعير التوصيل</h4><div class="v126-detail-grid"><div><small>الوضع</small><b>${escv(labels[mode]||mode)}</b></div><div><small>على الطالب</small><b>${moneyv(o.delivery_fee||0)} د.ع</b></div><div><small>أجرة المندوب</small><b>${moneyv(o.courier_fee??0)} د.ع</b></div></div>${locked?'<small>الحساب مقفول بعد إكمال/إلغاء الطلب.</small>':`<div class="v126-detail-actions"><button data-alin-click="alinV430AreaPricing" data-alin-click-arg0="${escv(o.id)}">سعر المنطقة</button><button data-alin-click="alinV430FreePricing" data-alin-click-arg0="${escv(o.id)}">توصيل مجاني</button><button class="secondary" data-alin-click="alinV430CustomPricing" data-alin-click-arg0="${escv(o.id)}">مبلغ خاص</button></div>`}</section>`;
+          }
+          """.strip()
+
+          if "function deliveryPricingControls(o,locked)" not in assignment:
+              marker = "  function variantLabel(o){return o?.product_variant_id?[o.product_variant_code,o.product_variant_name].filter(Boolean).join(' — '):''}\n"
+              if marker not in assignment:
+                  raise SystemExit("Could not find assignment helper insertion point")
+              indented = "  " + helper.replace("\n", "\n  ") + "\n"
+              assignment = assignment.replace(marker, marker + indented, 1)
+
+          old_fragment = "${map?`<button type=\"button\" class=\"v164-map-btn\" data-alin-click=\"alinCourierOpenMap\" data-alin-click-arg0=\"${escv(o.id)}\">${exactGps?'فتح موقع الطالب GPS':'فتح النقطة الدالة على الخريطة'}</button>`:''}<div class=\"v164-match-list\">"
+          new_fragment = "${map?`<button type=\"button\" class=\"v164-map-btn\" data-alin-click=\"alinCourierOpenMap\" data-alin-click-arg0=\"${escv(o.id)}\">${exactGps?'فتح موقع الطالب GPS':'فتح النقطة الدالة على الخريطة'}</button>`:''}${deliveryPricingControls(o,locked)}<div class=\"v164-match-list\">"
+
+          if "${deliveryPricingControls(o,locked)}<div class=\"v164-match-list\">" not in assignment:
+              if old_fragment not in assignment:
+                  raise SystemExit("Could not find delivery-card pricing insertion point")
+              assignment = assignment.replace(old_fragment, new_fragment, 1)
+
+          assignment_path.write_text(assignment, encoding="utf-8")
+
+          pricing = pricing_path.read_text(encoding="utf-8")
+          old_refresh = "      if(typeof window.adminOrderDetails==='function')window.adminOrderDetails(orderId);\n"
+          new_refresh = (
+              "      if(window.activeAdminTab==='deliveryOrders'&&typeof window.renderDeliveryOrdersAdmin==='function')"
+              "window.renderDeliveryOrdersAdmin();\n"
+              "      else if(typeof window.adminOrderDetails==='function')window.adminOrderDetails(orderId);\n"
+          )
+          if "window.activeAdminTab==='deliveryOrders'" not in pricing:
+              if old_refresh not in pricing:
+                  raise SystemExit("Could not find pricing post-save refresh point")
+              pricing = pricing.replace(old_refresh, new_refresh, 1)
+              pricing_path.write_text(pricing, encoding="utf-8")
+
+          order = json.loads((root / "modules" / "module-order.json").read_text(encoding="utf-8"))
+          role_paths = order.get("role_runtime") or []
+          required = "modules/admin/delivery-pricing.js"
+          if required not in role_paths:
+              raise SystemExit(f"{required} missing from role_runtime")
+
+          chunks = []
+          for rel in role_paths:
+              p = root / rel
+              if not p.is_file():
+                  raise SystemExit(f"Missing runtime source: {rel}")
+              chunks.append(f"/* {rel} */\n{p.read_text(encoding='utf-8').rstrip()}\n;\n")
+
+          dist = root / "dist" / "alin-role-runtime.v4.js"
+          dist.write_text("\n".join(chunks), encoding="utf-8")
+
+          runtime = dist.read_text(encoding="utf-8")
+          for marker in (
+              "function deliveryPricingControls(o,locked)",
+              "${deliveryPricingControls(o,locked)}",
+              "alinV430FreePricing",
+              "alinV430CustomPricing",
+              "alinV430AreaPricing",
+              "توصيل مجاني",
+              "مبلغ خاص",
+              "أجرة المندوب",
+          ):
+              if marker not in runtime:
+                  raise SystemExit(f"Runtime validation marker missing: {marker}")
+
+          stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+          token = f"4.2.0-delivery-orders-pricing-{stamp}"
+
+          config_path = root / "alin-config.js"
+          config = config_path.read_text(encoding="utf-8")
+          config, count = re.subn(r"assetVersion:'[^']+'", f"assetVersion:'{token}'", config, count=1)
+          if count != 1:
+              raise SystemExit("Could not update assetVersion")
+          config_path.write_text(config, encoding="utf-8")
+
+          for name in ("store-desktop.html","store-mobile.html","store-tablet.html"):
+              p = root / name
+              text = p.read_text(encoding="utf-8")
+              text, count = re.subn(r'alin-config\.js\?v=[^"]+', f'alin-config.js?v={token}', text, count=1)
+              if count != 1:
+                  raise SystemExit(f"Could not update config URL in {name}")
+              p.write_text(text, encoding="utf-8")
+
+          print("Delivery orders pricing controls added successfully")
+          print("assetVersion:", token)
+
+      - name: Validate JavaScript and runtime markers
+        run: |
+          node --check modules/courier/assignment.js
+          node --check modules/admin/delivery-pricing.js
+          node --check dist/alin-role-runtime.v4.js
+          node --check alin-config.js
+          grep -F "function deliveryPricingControls(o,locked)" dist/alin-role-runtime.v4.js
+          grep -F 'data-alin-click="alinV430FreePricing"' dist/alin-role-runtime.v4.js
+          grep -F 'data-alin-click="alinV430CustomPricing"' dist/alin-role-runtime.v4.js
+          grep -F "window.activeAdminTab==='deliveryOrders'" modules/admin/delivery-pricing.js
+
+      - name: Commit fix to main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            modules/courier/assignment.js \
+            modules/admin/delivery-pricing.js \
+            dist/alin-role-runtime.v4.js \
+            alin-config.js \
+            store-desktop.html \
+            store-mobile.html \
+            store-tablet.html
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "fix: show pricing controls in delivery orders"
+          git push origin HEAD:main
