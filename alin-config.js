@@ -1,7 +1,7 @@
 // منصة آلين v4.2.0 Stable — Alin Platform.
 window.ALIN_CONFIG=Object.freeze({
   version:'4.2.0',
-  assetVersion:'4.2.0-delivery-orders-pricing-20260823-102338',
+  assetVersion:'4.2.0-stability5-20260823-2327',
   desktopPage:'./store-desktop.html',
   mobilePage:'./store-mobile.html',
   tabletPage:'./store-tablet.html',
@@ -14,6 +14,19 @@ window.ALIN_CONFIG=Object.freeze({
   supabaseUrl:'https://dgaikazhbtyjmswpyvrl.supabase.co',
   supabaseAnonKey:'sb_publishable_HjVoise8mRYVeMeBaM9pxw_oxf_mLp3'
 });
+
+/* ALIN 2026-08-23 stability batch loader.
+   Kept outside the compiled bundles so the fixes apply immediately on desktop,
+   mobile and tablet while source modules stay build-compatible. */
+(function loadAlinStabilityBatch(){
+  'use strict';
+  if(document.getElementById('alinStabilityBatchScript'))return;
+  const script=document.createElement('script');
+  script.id='alinStabilityBatchScript';
+  script.src=`./core/alin-stability-batch.js?v=${encodeURIComponent(window.ALIN_CONFIG.assetVersion)}`;
+  script.async=false;
+  document.head.appendChild(script);
+})();
 
 /* ALIN v4.3.0 courier-fee compatibility.
    The backend snapshots courier_fee independently from the customer delivery fee.
