@@ -1,79 +1,93 @@
-/* ALIN 2026-08-23 responsive stability — staff pages only. */
-@media (max-width: 1180px){
-  #teacherPage,#libraryPage,#courierPage,#adminPage{width:100%;max-width:100%;min-width:0;box-sizing:border-box;overflow-x:hidden}
-  #teacherPage *,#libraryPage *,#courierPage *,#adminPage *{box-sizing:border-box;min-width:0}
-  #teacherContent,#libraryV116Content,#courierV161Content,#adminContent{width:100%;max-width:100%;min-width:0;overflow-wrap:anywhere}
+/* ALIN unified role UI — teacher + library + courier — all devices. */
+:root{--alin-role-navy:#0b3568;--alin-role-navy-2:#154d7d;--alin-role-gold:#e2b43f;--alin-role-bg:#f4f7fb;--alin-role-card:#fff;--alin-role-border:#dce6f1;--alin-role-text:#0a2d5b;--alin-role-muted:#6d7d96}
 
-  #teacherPage>.teacher-tabs,#libraryPage>.library-v116-tabs,#courierPage>.courier-v161-tabs,#adminPage>.admin-tabs{
-    display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;width:100%;overflow:visible!important;
-    padding:8px;margin:10px 0 14px;position:relative;inset:auto;white-space:normal;
-  }
-  #teacherPage>.teacher-tabs>button,#libraryPage>.library-v116-tabs>button,#courierPage>.courier-v161-tabs>button,#adminPage>.admin-tabs>button{
-    width:100%;min-height:44px;margin:0!important;padding:9px 8px!important;border-radius:12px;white-space:normal;line-height:1.25;
-    display:flex;align-items:center;justify-content:center;gap:6px;text-align:center;
-  }
-
-  #teacherPage>h2,#teacherPage>#teacherStats,#teacherPage>#teacherContent{margin-inline:0;width:100%}
-  #teacherPage>h2{padding:14px 16px;margin-bottom:8px;border-radius:16px}
-  #teacherStats,.teacher-v155-stats,.teacher-dashboard-stats,.teacher-stats{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:10px!important}
-  #teacherContent.panel{padding:0!important;background:transparent!important;border:0!important;box-shadow:none!important}
-  #teacherContent section,#teacherContent article{max-width:100%}
-  #teacherContent table{min-width:680px}
-  #teacherContent .table-wrap,#teacherContent .responsive-table,#teacherContent .teacher-table,#teacherContent [class*="table-card"]{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
-  .teacher-v155-head,.teacher-v155-toolbar,.teacher-v155-card{gap:10px;flex-wrap:wrap}
-  .teacher-v155-actions,.teacher-v155-card-actions{display:flex;flex-wrap:wrap;gap:8px}
-
-  .library-v116-page{padding-inline:0!important}
-  .library-v116-header{display:grid!important;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;width:100%}
-  .library-v116-identity{min-width:0}.library-v116-identity>div:last-child{min-width:0}
-  .library-v116-status-card{max-width:100%}
-  .library-v116-stats,.library-v120-finance-cards{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:10px!important}
-  .library-v116-grid,.library-v120-grid{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:12px!important}
-  .library-v116-order{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:12px!important}
-  .library-v116-actions{display:flex!important;flex-wrap:wrap!important;gap:8px!important}
-  .library-v116-actions>button{flex:1 1 150px;min-height:42px}
-  .library-v116-toolbar{display:flex;flex-wrap:wrap;gap:10px}.library-v116-toolbar>input{flex:1 1 240px;width:auto!important}
-  .library-v116-filter-row{display:flex;flex-wrap:wrap;gap:7px}
-
-  .courier-v161-page{padding-inline:0!important}
-  .courier-v161-hero{display:flex!important;align-items:center;justify-content:space-between;gap:12px;width:100%}
-  .v174-metrics,.v164-admin-metrics,.v164-finance-grid{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:10px!important}
-  .v174-home-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important}
-  .v174-home-grid>.wide{grid-column:1/-1}
-  .v174-orders,.v164-delivery-admin-list{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:12px!important}
-  .v174-order,.v164-delivery-admin-card{width:100%;max-width:100%;overflow:hidden}
-  .v174-order>header,.v164-delivery-admin-card>header{display:flex;flex-wrap:wrap;align-items:flex-start;gap:10px}
-  .v174-order-data,.v164-order-grid,.v126-detail-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important}
-  .v174-order-data>.wide,.v164-order-grid>.wide{grid-column:1/-1}
-  .v174-links,.v174-actions,.v126-detail-actions,.v164-delivery-admin-card>footer{display:flex!important;flex-wrap:wrap!important;gap:8px!important;align-items:center}
-  .v174-links>a,.v174-links>button,.v174-actions>button,.v126-detail-actions>button,.v164-delivery-admin-card>footer>button{flex:1 1 150px;min-height:42px}
-  .v164-match-list label{display:grid!important;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:start;width:100%}
-  .v164-match-list label span{min-width:0}.v164-match-list label small{white-space:normal!important;overflow-wrap:anywhere}
-  .v164-delivery-pricing{width:100%;max-width:100%;overflow:hidden}
-  .v164-finance-list{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
-  .v164-finance-list>div{min-width:620px}
+#teacherPage.alin-role-shell,#libraryPage.alin-role-shell,#courierPage.alin-role-shell{
+  width:min(100%,1440px)!important;max-width:1440px!important;margin:0 auto!important;padding:24px!important;box-sizing:border-box!important;
+  background:linear-gradient(180deg,#f8fbff 0%,var(--alin-role-bg) 100%)!important;overflow-x:hidden!important;color:var(--alin-role-text)!important;
 }
+.alin-role-shell *{box-sizing:border-box;min-width:0}
+.alin-role-shell .alin-role-legacy-title{display:none!important}
 
-@media (max-width: 700px){
-  #teacherPage,#libraryPage,#courierPage,#adminPage{padding:10px!important}
-  #teacherPage>.teacher-tabs,#libraryPage>.library-v116-tabs,#courierPage>.courier-v161-tabs,#adminPage>.admin-tabs{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;padding:6px}
-  #teacherPage>.teacher-tabs>button,#libraryPage>.library-v116-tabs>button,#courierPage>.courier-v161-tabs>button,#adminPage>.admin-tabs>button{font-size:12px;min-height:43px;padding:8px 5px!important}
-  #teacherStats,.teacher-v155-stats,.teacher-dashboard-stats,.teacher-stats,.library-v116-stats,.library-v120-finance-cards,.v174-metrics,.v164-admin-metrics,.v164-finance-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}
-  .library-v116-header{grid-template-columns:minmax(0,1fr)!important}.library-v116-status-card{width:100%}
-  .courier-v161-hero{align-items:flex-start;flex-direction:column}
-  .v174-home-grid{grid-template-columns:minmax(0,1fr)!important}.v174-home-grid>.wide{grid-column:auto}
-  .v174-order-data,.v164-order-grid,.v126-detail-grid{grid-template-columns:minmax(0,1fr)!important}
-  .v174-order-data>.wide,.v164-order-grid>.wide{grid-column:auto}
-  .v174-links,.v174-actions,.v126-detail-actions,.v164-delivery-admin-card>footer{display:grid!important;grid-template-columns:minmax(0,1fr)!important}
-  .v174-links>a,.v174-links>button,.v174-actions>button,.v126-detail-actions>button,.v164-delivery-admin-card>footer>button{width:100%;min-height:44px}
-  .library-v116-actions{display:grid!important;grid-template-columns:minmax(0,1fr)!important}.library-v116-actions>button{width:100%}
-  .teacher-v155-head,.teacher-v155-toolbar,.teacher-v155-card{display:grid!important;grid-template-columns:minmax(0,1fr)!important}
-  .teacher-v155-actions,.teacher-v155-card-actions{display:grid!important;grid-template-columns:minmax(0,1fr)!important}.teacher-v155-actions>button,.teacher-v155-card-actions>button{width:100%}
+.alin-role-shell .alin-role-unified-hero{
+  width:100%!important;min-height:172px!important;margin:0 0 18px!important;padding:24px 28px!important;border:0!important;border-radius:28px!important;
+  background:linear-gradient(135deg,var(--alin-role-navy) 0%,var(--alin-role-navy-2) 100%)!important;color:#fff!important;
+  display:flex!important;align-items:center!important;justify-content:space-between!important;gap:22px!important;box-shadow:0 18px 44px rgba(8,47,95,.14)!important;overflow:hidden!important;position:relative!important;
 }
+.alin-role-shell .alin-role-unified-hero::after{content:"";position:absolute;inset:auto -80px -130px auto;width:330px;height:330px;border:2px solid rgba(255,255,255,.12);border-radius:50%;pointer-events:none}
+.alin-role-shell .alin-role-hero-main,.alin-role-shell .library-v116-identity{display:flex!important;align-items:center!important;gap:18px!important;position:relative;z-index:1}
+.alin-role-shell .alin-role-avatar,.alin-role-shell .library-v116-logo{width:92px!important;height:92px!important;min-width:92px!important;border-radius:28px!important;background:var(--alin-role-gold)!important;color:var(--alin-role-navy)!important;display:grid!important;place-items:center!important;font-size:38px!important;font-weight:900!important;box-shadow:none!important}
+.alin-role-shell .alin-role-hero-copy small,.alin-role-shell .library-v116-identity small,.alin-role-shell .courier-v161-hero small{display:block!important;color:#f5c94f!important;font-size:15px!important;font-weight:800!important;margin-bottom:5px!important}
+.alin-role-shell .alin-role-hero-copy h1,.alin-role-shell .library-v116-identity h2,.alin-role-shell .courier-v161-hero h1{color:#fff!important;font-size:clamp(28px,3vw,44px)!important;line-height:1.15!important;margin:0 0 7px!important;font-weight:900!important}
+.alin-role-shell .alin-role-hero-copy p,.alin-role-shell .library-v116-identity p,.alin-role-shell .courier-v161-hero p{color:rgba(255,255,255,.82)!important;font-size:16px!important;margin:0!important;line-height:1.65!important}
+.alin-role-platform-badge,.alin-role-shell .courier-v161-hero>span{position:relative;z-index:1;background:rgba(255,255,255,.11)!important;color:#fff!important;border:1px solid rgba(255,255,255,.18)!important;border-radius:18px!important;padding:11px 16px!important;font-weight:800!important;white-space:nowrap}
+.alin-role-shell .library-v116-header{grid-template-columns:minmax(0,1fr) auto!important}
+.alin-role-shell .library-v116-status-card{position:relative;z-index:1;background:rgba(255,255,255,.12)!important;border:1px solid rgba(255,255,255,.18)!important;color:#fff!important;border-radius:20px!important;padding:12px!important;box-shadow:none!important}
+.alin-role-shell .library-v116-status-card b{color:#fff!important}.alin-role-shell .library-v116-status-card small{color:#f5c94f!important}.alin-role-shell .library-v116-status-card button{background:rgba(255,255,255,.16)!important;color:#fff!important;border:1px solid rgba(255,255,255,.16)!important}
 
+#teacherPage.alin-role-shell>.teacher-tabs,#libraryPage.alin-role-shell>.library-v116-tabs,#courierPage.alin-role-shell>.courier-v161-tabs{
+  width:100%!important;margin:0 0 20px!important;padding:10px!important;background:#fff!important;border:1px solid var(--alin-role-border)!important;border-radius:22px!important;box-shadow:0 8px 24px rgba(12,48,91,.06)!important;
+  display:grid!important;grid-template-columns:repeat(auto-fit,minmax(128px,1fr))!important;gap:8px!important;overflow:visible!important;white-space:normal!important;position:relative!important;inset:auto!important;
+}
+#teacherPage.alin-role-shell>.teacher-tabs>button,#libraryPage.alin-role-shell>.library-v116-tabs>button,#courierPage.alin-role-shell>.courier-v161-tabs>button{
+  width:100%!important;min-height:48px!important;margin:0!important;padding:10px 12px!important;border:1px solid transparent!important;border-radius:14px!important;background:transparent!important;color:var(--alin-role-text)!important;font-size:14px!important;font-weight:800!important;line-height:1.35!important;display:flex!important;align-items:center!important;justify-content:center!important;gap:6px!important;text-align:center!important;white-space:normal!important;box-shadow:none!important;
+}
+#teacherPage.alin-role-shell>.teacher-tabs>button:hover,#libraryPage.alin-role-shell>.library-v116-tabs>button:hover,#courierPage.alin-role-shell>.courier-v161-tabs>button:hover{background:#eef4fb!important}
+#teacherPage.alin-role-shell>.teacher-tabs>button.active-teacher-tab,#libraryPage.alin-role-shell>.library-v116-tabs>button.active,#courierPage.alin-role-shell>.courier-v161-tabs>button.active{background:var(--alin-role-gold)!important;color:#082d59!important;border-color:#c99d31!important;box-shadow:inset 0 0 0 1px rgba(11,53,104,.08)!important}
+.alin-role-shell .teacher-v160-badge,.alin-role-shell #libraryV116OrdersBadge,.alin-role-shell #libraryV116NotifyBadge,.alin-role-shell #courierCurrentBadge,.alin-role-shell #courierNotifyBadge{background:#d9362e!important;color:#fff!important;border-radius:999px!important;min-width:22px!important;height:22px!important;padding:0 6px!important;display:inline-grid!important;place-items:center!important;font-size:11px!important}
+
+#teacherContent,#libraryV116Content,#courierV161Content{width:100%!important;max-width:100%!important;min-width:0!important;overflow-wrap:anywhere}
+#teacherContent.panel{padding:0!important;background:transparent!important;border:0!important;box-shadow:none!important}
+
+#teacherStats,.teacher-v155-stats,.teacher-dashboard-stats,.teacher-stats,.library-v116-stats,.library-v120-finance-cards,.v174-metrics,.v164-finance-grid{
+  display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:14px!important;margin:0 0 18px!important;
+}
+#teacherStats>*,.teacher-v155-stat,.teacher-dashboard-stats>*,.teacher-stats>*,.library-v116-stat,.library-v120-finance-cards>article,.v174-metrics>article,.v164-finance-grid>article{
+  min-height:126px!important;padding:18px!important;border:1px solid var(--alin-role-border)!important;border-radius:22px!important;background:#fff!important;box-shadow:0 8px 24px rgba(12,48,91,.055)!important;display:flex!important;flex-direction:column!important;justify-content:space-between!important;gap:9px!important;
+}
+.alin-role-shell .library-v116-stat strong,.alin-role-shell .v174-metrics strong,.alin-role-shell .v164-finance-grid strong,.alin-role-shell .teacher-v155-stat b{color:var(--alin-role-text)!important;font-size:28px!important;font-weight:900!important}
+.alin-role-shell .library-v116-stat small,.alin-role-shell .v174-metrics small,.alin-role-shell .v164-finance-grid small,.alin-role-shell .teacher-v155-stat small{color:var(--alin-role-muted)!important;font-weight:700!important}
+
+.alin-role-shell .library-v116-panel,.alin-role-shell .v174-panel,.alin-role-shell .v164-table-card,.alin-role-shell .v164-profile,.alin-role-shell .teacher-v155-notifications,.alin-role-shell #teacherContent>section{
+  border:1px solid var(--alin-role-border)!important;border-radius:24px!important;background:#fff!important;box-shadow:0 8px 26px rgba(12,48,91,.055)!important;padding:20px!important;
+}
+.alin-role-shell .library-v116-grid,.alin-role-shell .library-v120-grid,.alin-role-shell .v174-home-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:14px!important}
+.alin-role-shell .v174-home-grid>.wide{grid-column:1/-1}
+.alin-role-shell .library-v116-order,.alin-role-shell .v174-order{border:1px solid var(--alin-role-border)!important;border-radius:20px!important;background:#fff!important;padding:16px!important;box-shadow:none!important}
+.alin-role-shell .library-v116-actions,.alin-role-shell .v174-links,.alin-role-shell .v174-actions,.alin-role-shell .teacher-v155-actions,.alin-role-shell .teacher-v155-card-actions{display:flex!important;flex-wrap:wrap!important;gap:8px!important}
+.alin-role-shell button,.alin-role-shell a{transition:transform .12s ease,box-shadow .12s ease,background .12s ease}
+.alin-role-shell button:not(.active):hover,.alin-role-shell a:hover{transform:translateY(-1px)}
+.alin-role-shell .library-v116-actions>button,.alin-role-shell .v174-links>a,.alin-role-shell .v174-links>button,.alin-role-shell .v174-actions>button,.alin-role-shell .teacher-v155-actions>button,.alin-role-shell .teacher-v155-card-actions>button{min-height:42px;border-radius:12px!important;font-weight:800!important}
+.alin-role-shell input,.alin-role-shell select,.alin-role-shell textarea{max-width:100%!important;border:1px solid #d7e2ee!important;border-radius:12px!important;background:#fff!important;color:var(--alin-role-text)!important}
+.alin-role-shell table{max-width:none}.alin-role-shell .table-wrap,.alin-role-shell .responsive-table,.alin-role-shell .teacher-table,.alin-role-shell [class*="table-card"],.alin-role-shell .v164-finance-list{max-width:100%!important;overflow-x:auto!important;-webkit-overflow-scrolling:touch}
+
+/* Tablet */
 @media (min-width:701px) and (max-width:1180px){
-  #teacherPage,#libraryPage,#courierPage,#adminPage{padding:16px!important}
-  #teacherPage>.teacher-tabs,#libraryPage>.library-v116-tabs,#courierPage>.courier-v161-tabs,#adminPage>.admin-tabs{grid-template-columns:repeat(4,minmax(0,1fr))}
-  .v164-delivery-admin-list{grid-template-columns:repeat(2,minmax(0,1fr))!important;align-items:start}
-  .v164-delivery-admin-card{height:100%}
+  #teacherPage.alin-role-shell,#libraryPage.alin-role-shell,#courierPage.alin-role-shell{padding:18px!important}
+  .alin-role-shell .alin-role-unified-hero{min-height:150px!important;padding:20px 22px!important;border-radius:24px!important}
+  .alin-role-shell .alin-role-avatar,.alin-role-shell .library-v116-logo{width:78px!important;height:78px!important;min-width:78px!important;border-radius:24px!important;font-size:32px!important}
+  #teacherPage.alin-role-shell>.teacher-tabs,#libraryPage.alin-role-shell>.library-v116-tabs,#courierPage.alin-role-shell>.courier-v161-tabs{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+  #teacherStats,.teacher-v155-stats,.teacher-dashboard-stats,.teacher-stats,.library-v116-stats,.library-v120-finance-cards,.v174-metrics,.v164-finance-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+}
+
+/* Mobile */
+@media (max-width:700px){
+  #teacherPage.alin-role-shell,#libraryPage.alin-role-shell,#courierPage.alin-role-shell{padding:10px!important}
+  .alin-role-shell .alin-role-unified-hero{min-height:0!important;padding:18px!important;border-radius:22px!important;display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:14px!important}
+  .alin-role-shell .alin-role-hero-main,.alin-role-shell .library-v116-identity{gap:13px!important;align-items:center!important}
+  .alin-role-shell .alin-role-avatar,.alin-role-shell .library-v116-logo{width:68px!important;height:68px!important;min-width:68px!important;border-radius:20px!important;font-size:28px!important}
+  .alin-role-shell .alin-role-hero-copy h1,.alin-role-shell .library-v116-identity h2,.alin-role-shell .courier-v161-hero h1{font-size:27px!important}
+  .alin-role-shell .alin-role-hero-copy p,.alin-role-shell .library-v116-identity p,.alin-role-shell .courier-v161-hero p{font-size:13px!important}
+  .alin-role-platform-badge,.alin-role-shell .courier-v161-hero>span{justify-self:start!important;font-size:12px!important;padding:8px 11px!important}
+  .alin-role-shell .library-v116-header{grid-template-columns:minmax(0,1fr)!important}.alin-role-shell .library-v116-status-card{width:100%!important}
+
+  #teacherPage.alin-role-shell>.teacher-tabs,#libraryPage.alin-role-shell>.library-v116-tabs,#courierPage.alin-role-shell>.courier-v161-tabs{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px!important;padding:7px!important;border-radius:18px!important}
+  #teacherPage.alin-role-shell>.teacher-tabs>button,#libraryPage.alin-role-shell>.library-v116-tabs>button,#courierPage.alin-role-shell>.courier-v161-tabs>button{min-height:46px!important;font-size:12.5px!important;padding:8px 6px!important;border-radius:12px!important}
+
+  #teacherStats,.teacher-v155-stats,.teacher-dashboard-stats,.teacher-stats,.library-v116-stats,.library-v120-finance-cards,.v174-metrics,.v164-finance-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important}
+  #teacherStats>*,.teacher-v155-stat,.teacher-dashboard-stats>*,.teacher-stats>*,.library-v116-stat,.library-v120-finance-cards>article,.v174-metrics>article,.v164-finance-grid>article{min-height:108px!important;padding:14px!important;border-radius:18px!important}
+  .alin-role-shell .library-v116-grid,.alin-role-shell .library-v120-grid,.alin-role-shell .v174-home-grid{grid-template-columns:minmax(0,1fr)!important}
+  .alin-role-shell .v174-home-grid>.wide{grid-column:auto}
+  .alin-role-shell .library-v116-actions,.alin-role-shell .v174-links,.alin-role-shell .v174-actions,.alin-role-shell .teacher-v155-actions,.alin-role-shell .teacher-v155-card-actions{display:grid!important;grid-template-columns:minmax(0,1fr)!important}
+  .alin-role-shell .library-v116-actions>button,.alin-role-shell .v174-links>a,.alin-role-shell .v174-links>button,.alin-role-shell .v174-actions>button,.alin-role-shell .teacher-v155-actions>button,.alin-role-shell .teacher-v155-card-actions>button{width:100%!important;min-height:44px!important}
+  .alin-role-shell .library-v116-toolbar,.alin-role-shell .teacher-v155-toolbar{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:8px!important}
 }
