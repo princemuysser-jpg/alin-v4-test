@@ -65,7 +65,8 @@
       if(error)throw error;if(!data?.ok)throw new Error(data?.error||'تعذر حفظ التسعير');
       if(typeof load==='function')await load({force:true,reason:'delivery-pricing-v430'});
       notify(mode==='free'?'تم جعل التوصيل مجانياً للطالب مع حفظ أجرة المندوب':'تم تحديث كلفة التوصيل');
-      if(typeof window.adminOrderDetails==='function')window.adminOrderDetails(orderId);
+      if(window.activeAdminTab==='deliveryOrders'&&typeof window.renderDeliveryOrdersAdmin==='function')window.renderDeliveryOrdersAdmin();
+      else if(typeof window.adminOrderDetails==='function')window.adminOrderDetails(orderId);
       return true;
     }catch(error){alert(error?.message||'تعذر تعديل كلفة التوصيل');return false}
   }
