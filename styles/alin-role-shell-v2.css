@@ -1,0 +1,66 @@
+/* ALIN staff shell v2 — exact shared structure for teacher/library/courier. */
+:root{--ars-navy:#0b3568;--ars-navy2:#164e7e;--ars-gold:#e2b43f;--ars-bg:#f4f7fb;--ars-card:#fff;--ars-border:#dce6f1;--ars-text:#0b2f5d;--ars-muted:#718098}
+
+#teacherPage.alin-role-shell,#libraryPage.alin-role-shell,#courierPage.alin-role-shell{
+  width:min(100%,1440px)!important;max-width:1440px!important;margin:0 auto!important;padding:24px!important;background:linear-gradient(180deg,#f8fbff 0%,var(--ars-bg) 100%)!important;color:var(--ars-text)!important;overflow-x:hidden!important;box-sizing:border-box!important;
+}
+.alin-role-shell *{box-sizing:border-box;min-width:0}
+.alin-role-shell>.alin-role-source-header{display:none!important}
+.alin-role-shell .alin-role-unified-hero{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;align-items:center!important;gap:20px!important;width:100%!important;min-height:172px!important;margin:0 0 14px!important;padding:24px 28px!important;border:0!important;border-radius:28px!important;background:linear-gradient(135deg,var(--ars-navy),var(--ars-navy2))!important;color:#fff!important;box-shadow:0 18px 44px rgba(8,47,95,.14)!important;position:relative!important;overflow:hidden!important}
+.alin-role-shell .alin-role-unified-hero:after{content:"";position:absolute;width:340px;height:340px;border-radius:50%;border:2px solid rgba(255,255,255,.1);left:-110px;bottom:-220px;pointer-events:none}
+.alin-role-shell .alin-role-hero-main{display:flex!important;align-items:center!important;gap:18px!important;position:relative;z-index:1}
+.alin-role-shell .alin-role-avatar{width:92px!important;height:92px!important;min-width:92px!important;border-radius:28px!important;background:var(--ars-gold)!important;color:var(--ars-navy)!important;display:grid!important;place-items:center!important;font-size:38px!important;font-weight:900!important}
+.alin-role-shell .alin-role-hero-copy small{display:block!important;color:#f5c94f!important;font-size:15px!important;font-weight:800!important;margin:0 0 5px!important}
+.alin-role-shell .alin-role-hero-copy h1{margin:0 0 7px!important;color:#fff!important;font-size:clamp(28px,3vw,44px)!important;line-height:1.15!important;font-weight:900!important}
+.alin-role-shell .alin-role-hero-copy p{margin:0!important;color:rgba(255,255,255,.84)!important;font-size:16px!important;line-height:1.7!important}
+.alin-role-shell .alin-role-platform-badge{position:relative;z-index:1;padding:11px 16px!important;border:1px solid rgba(255,255,255,.18)!important;border-radius:18px!important;background:rgba(255,255,255,.1)!important;color:#fff!important;font-weight:800!important;white-space:nowrap!important}
+
+.alin-role-shell .alin-role-library-status-strip{margin:0 0 14px!important}
+.alin-role-shell .alin-role-library-status-strip #libraryV116Status{width:100%!important}
+.alin-role-shell .alin-role-library-status-strip .library-v116-status-card{width:100%!important;display:grid!important;grid-template-columns:auto minmax(0,1fr) auto!important;align-items:center!important;gap:12px!important;padding:14px 16px!important;border:1px solid var(--ars-border)!important;border-radius:18px!important;background:#fff!important;box-shadow:0 8px 24px rgba(12,48,91,.05)!important}
+
+.alin-role-shell>.alin-role-tabs{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(125px,1fr))!important;gap:8px!important;width:100%!important;margin:0 0 18px!important;padding:10px!important;border:1px solid var(--ars-border)!important;border-radius:22px!important;background:#fff!important;box-shadow:0 8px 24px rgba(12,48,91,.06)!important;overflow:visible!important;white-space:normal!important;position:relative!important;inset:auto!important}
+.alin-role-shell>.alin-role-tabs>.alin-role-tab{display:flex!important;align-items:center!important;justify-content:center!important;gap:6px!important;width:100%!important;min-height:48px!important;margin:0!important;padding:10px 12px!important;border:1px solid transparent!important;border-radius:14px!important;background:transparent!important;color:var(--ars-text)!important;font-size:14px!important;font-weight:800!important;line-height:1.35!important;text-align:center!important;white-space:normal!important;box-shadow:none!important}
+.alin-role-shell>.alin-role-tabs>.alin-role-tab.active,.alin-role-shell>.alin-role-tabs>.alin-role-tab.active-teacher-tab{background:var(--ars-gold)!important;color:#082d59!important;border-color:#c99d31!important}
+.alin-role-shell>.alin-role-tabs>.alin-role-tab:hover{background:#eef4fb!important}
+
+.alin-role-shell .alin-role-content{width:100%!important;max-width:100%!important;min-width:0!important;padding:0!important;background:transparent!important;border:0!important;box-shadow:none!important}
+.alin-role-shell .alin-role-stats{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:14px!important;width:100%!important;margin:0 0 18px!important}
+.alin-role-shell .alin-role-stat{min-height:126px!important;padding:18px!important;border:1px solid var(--ars-border)!important;border-radius:22px!important;background:#fff!important;box-shadow:0 8px 24px rgba(12,48,91,.055)!important;display:flex!important;flex-direction:column!important;justify-content:space-between!important;gap:9px!important;color:var(--ars-text)!important}
+.alin-role-shell .alin-role-stat small{color:var(--ars-muted)!important;font-weight:700!important}
+.alin-role-shell .alin-role-stat strong,.alin-role-shell .alin-role-stat b{color:var(--ars-text)!important;font-size:28px!important;font-weight:900!important}
+.alin-role-shell .alin-role-card{width:100%!important;max-width:100%!important;padding:20px!important;border:1px solid var(--ars-border)!important;border-radius:24px!important;background:#fff!important;box-shadow:0 8px 26px rgba(12,48,91,.055)!important}
+.alin-role-shell .library-v116-grid,.alin-role-shell .library-v120-grid,.alin-role-shell .v174-home-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:14px!important}
+.alin-role-shell .v174-home-grid>.wide{grid-column:1/-1!important}
+.alin-role-shell .library-v116-actions,.alin-role-shell .v174-links,.alin-role-shell .v174-actions,.alin-role-shell .teacher-v155-actions,.alin-role-shell .teacher-v155-card-actions{display:flex!important;flex-wrap:wrap!important;gap:8px!important}
+.alin-role-shell button,.alin-role-shell a{transition:transform .12s ease,box-shadow .12s ease,background .12s ease}
+.alin-role-shell button:not(.active):not(.active-teacher-tab):hover,.alin-role-shell a:hover{transform:translateY(-1px)}
+.alin-role-shell input,.alin-role-shell select,.alin-role-shell textarea{max-width:100%!important;border:1px solid #d7e2ee!important;border-radius:12px!important;background:#fff!important;color:var(--ars-text)!important}
+.alin-role-shell .table-wrap,.alin-role-shell .responsive-table,.alin-role-shell .teacher-table,.alin-role-shell [class*="table-card"],.alin-role-shell .v164-finance-list{max-width:100%!important;overflow-x:auto!important;-webkit-overflow-scrolling:touch}
+
+@media (min-width:701px) and (max-width:1180px){
+  #teacherPage.alin-role-shell,#libraryPage.alin-role-shell,#courierPage.alin-role-shell{padding:18px!important}
+  .alin-role-shell .alin-role-unified-hero{min-height:150px!important;padding:20px 22px!important;border-radius:24px!important}
+  .alin-role-shell .alin-role-avatar{width:78px!important;height:78px!important;min-width:78px!important;border-radius:24px!important;font-size:32px!important}
+  .alin-role-shell>.alin-role-tabs{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+  .alin-role-shell .alin-role-stats{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+}
+
+@media (max-width:700px){
+  #teacherPage.alin-role-shell,#libraryPage.alin-role-shell,#courierPage.alin-role-shell{padding:10px!important}
+  .alin-role-shell .alin-role-unified-hero{grid-template-columns:minmax(0,1fr)!important;min-height:0!important;padding:18px!important;border-radius:22px!important;gap:14px!important}
+  .alin-role-shell .alin-role-hero-main{gap:13px!important}
+  .alin-role-shell .alin-role-avatar{width:68px!important;height:68px!important;min-width:68px!important;border-radius:20px!important;font-size:28px!important}
+  .alin-role-shell .alin-role-hero-copy h1{font-size:27px!important}
+  .alin-role-shell .alin-role-hero-copy p{font-size:13px!important}
+  .alin-role-shell .alin-role-platform-badge{justify-self:start!important;font-size:12px!important;padding:8px 11px!important}
+  .alin-role-shell .alin-role-library-status-strip .library-v116-status-card{grid-template-columns:auto minmax(0,1fr)!important}.alin-role-shell .alin-role-library-status-strip .library-v116-status-card button{grid-column:1/-1!important;width:100%!important}
+  .alin-role-shell>.alin-role-tabs{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px!important;padding:7px!important;border-radius:18px!important}
+  .alin-role-shell>.alin-role-tabs>.alin-role-tab{min-height:46px!important;font-size:12.5px!important;padding:8px 6px!important;border-radius:12px!important}
+  .alin-role-shell .alin-role-stats{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important}
+  .alin-role-shell .alin-role-stat{min-height:108px!important;padding:14px!important;border-radius:18px!important}
+  .alin-role-shell .library-v116-grid,.alin-role-shell .library-v120-grid,.alin-role-shell .v174-home-grid{grid-template-columns:minmax(0,1fr)!important}
+  .alin-role-shell .v174-home-grid>.wide{grid-column:auto!important}
+  .alin-role-shell .library-v116-actions,.alin-role-shell .v174-links,.alin-role-shell .v174-actions,.alin-role-shell .teacher-v155-actions,.alin-role-shell .teacher-v155-card-actions{display:grid!important;grid-template-columns:minmax(0,1fr)!important}
+  .alin-role-shell .library-v116-actions>*,.alin-role-shell .v174-links>*,.alin-role-shell .v174-actions>*,.alin-role-shell .teacher-v155-actions>*,.alin-role-shell .teacher-v155-card-actions>*{width:100%!important;min-height:44px!important}
+}
