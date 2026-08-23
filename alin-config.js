@@ -1,7 +1,7 @@
 // منصة آلين v4.2.0 Stable — Alin Platform.
 window.ALIN_CONFIG=Object.freeze({
   version:'4.2.0',
-  assetVersion:'4.2.0-unified-staff-shell-v2-20260823-2359',
+  assetVersion:'4.2.0-session-sticky-20260824-0008',
   desktopPage:'./store-desktop.html',
   mobilePage:'./store-mobile.html',
   tabletPage:'./store-tablet.html',
@@ -14,6 +14,17 @@ window.ALIN_CONFIG=Object.freeze({
   supabaseUrl:'https://dgaikazhbtyjmswpyvrl.supabase.co',
   supabaseAnonKey:'sb_publishable_HjVoise8mRYVeMeBaM9pxw_oxf_mLp3'
 });
+
+/* Keep authenticated staff on the same role/page/tab across refreshes. */
+(function loadAlinSessionBootGuard(){
+  'use strict';
+  if(document.getElementById('alinSessionBootGuardScript'))return;
+  const script=document.createElement('script');
+  script.id='alinSessionBootGuardScript';
+  script.src=`./core/alin-session-boot-guard.js?v=${encodeURIComponent(window.ALIN_CONFIG.assetVersion)}`;
+  script.async=false;
+  document.head.appendChild(script);
+})();
 
 /* ALIN 2026-08-23 stability batch loader. */
 (function loadAlinStabilityBatch(){
