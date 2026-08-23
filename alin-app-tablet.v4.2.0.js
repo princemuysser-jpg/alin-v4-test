@@ -1010,7 +1010,7 @@
     if(restorePromise)return restorePromise;
     restorePromise=(async()=>{
       const c=client();
-      if(!c?.auth)return openPublicStore();
+      if(!c?.auth){finishAuthBoot();return false;}
       const response=await c.auth.getSession();
       const session=response?.data?.session||null;
       if(response?.error||!session?.user)return openPublicStore();
