@@ -1,7 +1,7 @@
 // منصة آلين v4.2.0 Stable — Alin Platform.
 window.ALIN_CONFIG=Object.freeze({
   version:'4.2.0',
-  assetVersion:'4.2.0-unified-staff-shell-v2-20260823-2358',
+  assetVersion:'4.2.0-unified-staff-shell-v2-20260823-2359',
   desktopPage:'./store-desktop.html',
   mobilePage:'./store-mobile.html',
   tabletPage:'./store-tablet.html',
@@ -29,6 +29,13 @@ window.ALIN_CONFIG=Object.freeze({
 /* True shared shell for teacher/library/courier. */
 (function loadAlinRoleShellV2(){
   'use strict';
+  if(!document.getElementById('alinRoleShellV2CompatCss')){
+    const link=document.createElement('link');
+    link.id='alinRoleShellV2CompatCss';
+    link.rel='stylesheet';
+    link.href=`./styles/alin-role-shell-v2-compat.css?v=${encodeURIComponent(window.ALIN_CONFIG.assetVersion)}`;
+    document.head.appendChild(link);
+  }
   if(document.getElementById('alinRoleShellV2Script'))return;
   const script=document.createElement('script');
   script.id='alinRoleShellV2Script';
