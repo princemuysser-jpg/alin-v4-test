@@ -1,0 +1,2 @@
+/* Remove the legacy teacher hero created by the previous visual-only shell. */
+.alin-role-shell > .alin-role-unified-hero:not([data-alin-role-hero]){display:none!important}
