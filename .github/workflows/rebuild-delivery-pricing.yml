@@ -1,0 +1,149 @@
+name: Rebuild ALIN delivery pricing runtime
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/rebuild-delivery-pricing.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: alin-delivery-pricing-runtime-fix
+  cancel-in-progress: false
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Rebuild role runtime and permanently fix build list
+        shell: python
+        run: |
+          from pathlib import Path
+          import json
+          import re
+          from datetime import datetime, timezone
+
+          root = Path(".")
+          order_path = root / "modules" / "module-order.json"
+          order = json.loads(order_path.read_text(encoding="utf-8"))
+          role_paths = order.get("role_runtime") or []
+
+          required = "modules/admin/delivery-pricing.js"
+          if required not in role_paths:
+              raise SystemExit(f"{required} is missing from modules/module-order.json")
+
+          # Rebuild ONLY the staff role runtime from the authoritative role_runtime order.
+          chunks = []
+          for rel in role_paths:
+              path = root / rel
+              if not path.is_file():
+                  raise SystemExit(f"Missing runtime source: {rel}")
+              text = path.read_text(encoding="utf-8").rstrip()
+              chunks.append(f"/* {rel} */\n{text}\n;\n")
+
+          dist_path = root / "dist" / "alin-role-runtime.v4.js"
+          dist_path.parent.mkdir(parents=True, exist_ok=True)
+          dist_path.write_text("\n".join(chunks), encoding="utf-8")
+
+          dist_text = dist_path.read_text(encoding="utf-8")
+          checks = [
+              "/* modules/admin/delivery-pricing.js */",
+              "alinV430FreePricing",
+              "alinV430CustomPricing",
+              "alinV430AreaPricing",
+              "توصيل مجاني",
+              "مبلغ خاص",
+              "تعديل الأسعار",
+          ]
+          missing = [marker for marker in checks if marker not in dist_text]
+          if missing:
+              raise SystemExit("Rebuilt runtime is missing: " + ", ".join(missing))
+
+          # Permanently fix scripts/build-runtime.py so future full builds
+          # cannot drop the delivery-pricing module again.
+          build_path = root / "scripts" / "build-runtime.py"
+          build_text = build_path.read_text(encoding="utf-8")
+          if required not in build_text:
+              old = (
+                  "'modules/admin/couriers.js','modules/courier/core.js','modules/courier/admin.js','modules/courier/areas.js',\n"
+                  "'modules/courier/assignment.js'"
+              )
+              new = (
+                  "'modules/admin/couriers.js','modules/courier/core.js','modules/courier/admin.js','modules/courier/areas.js',\n"
+                  "'modules/admin/delivery-pricing.js','modules/courier/assignment.js'"
+              )
+              if old not in build_text:
+                  raise SystemExit("Could not find the expected ROLE_APP insertion point in scripts/build-runtime.py")
+              build_text = build_text.replace(old, new, 1)
+              build_path.write_text(build_text, encoding="utf-8")
+
+          # Force browsers and Cloudflare to request the newly rebuilt runtime.
+          stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+          token = f"4.2.0-delivery-pricing-runtime-{stamp}"
+
+          config_path = root / "alin-config.js"
+          config = config_path.read_text(encoding="utf-8")
+          config2, count = re.subn(
+              r"assetVersion:'[^']+'",
+              f"assetVersion:'{token}'",
+              config,
+              count=1,
+          )
+          if count != 1:
+              raise SystemExit("Could not update ALIN_CONFIG.assetVersion")
+          config_path.write_text(config2, encoding="utf-8")
+
+          # The HTML pages previously requested alin-config.js using one old,
+          # fixed query string. Give the config itself a fresh URL too.
+          for name in ("store-desktop.html", "store-mobile.html", "store-tablet.html"):
+              path = root / name
+              text = path.read_text(encoding="utf-8")
+              updated, count = re.subn(
+                  r'alin-config\.js\?v=[^"]+',
+                  f'alin-config.js?v={token}',
+                  text,
+                  count=1,
+              )
+              if count != 1:
+                  raise SystemExit(f"Could not update config cache token in {name}")
+              path.write_text(updated, encoding="utf-8")
+
+          print("ALIN delivery pricing runtime rebuilt successfully")
+          print("assetVersion:", token)
+          print("role sources:", len(role_paths))
+
+      - name: Validate JavaScript
+        run: |
+          node --check dist/alin-role-runtime.v4.js
+          node --check alin-config.js
+          grep -F "/* modules/admin/delivery-pricing.js */" dist/alin-role-runtime.v4.js
+          grep -F "alinV430FreePricing" dist/alin-role-runtime.v4.js
+          grep -F "alinV430CustomPricing" dist/alin-role-runtime.v4.js
+          grep -F "modules/admin/delivery-pricing.js" scripts/build-runtime.py
+
+      - name: Commit the rebuilt runtime
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            dist/alin-role-runtime.v4.js \
+            scripts/build-runtime.py \
+            alin-config.js \
+            store-desktop.html \
+            store-mobile.html \
+            store-tablet.html
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "fix: ship delivery pricing in role runtime"
+          git push origin HEAD:main
