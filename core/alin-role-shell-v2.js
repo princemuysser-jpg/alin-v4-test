@@ -4,6 +4,7 @@
   if(window.__ALIN_ROLE_SHELL_V2__)return;
   window.__ALIN_ROLE_SHELL_V2__=true;
 
+  const VERSION=String(window.ALIN_CONFIG?.assetVersion||'4.2.0-unified-staff-shell-v2');
   const text=v=>String(v??'').trim();
   const normalizeRole=v=>{const r=text(v).toLowerCase();return r==='delegate'?'courier':r};
   const context=()=>{const c=window.current||{};return {role:normalizeRole(c.role),name:text(c.name||c.username),area:text(c.area),landmark:text(c.landmark)}};
@@ -16,6 +17,14 @@
   const sourceHeader=(role,page)=>role==='teacher'?page?.querySelector(':scope > h2'):role==='library'?page?.querySelector('.library-v116-header'):page?.querySelector('.courier-v161-hero');
   const tabsFor=(role,page)=>role==='teacher'?page?.querySelector(':scope > .teacher-tabs'):role==='library'?page?.querySelector(':scope > .library-v116-tabs'):page?.querySelector(':scope > .courier-v161-tabs');
   const contentFor=role=>document.getElementById(role==='teacher'?'teacherContent':role==='library'?'libraryV116Content':'courierV161Content');
+
+  function loadCss(){
+    if(document.getElementById('alinRoleShellV2Css'))return;
+    const link=document.createElement('link');
+    link.id='alinRoleShellV2Css';link.rel='stylesheet';
+    link.href=`./styles/alin-role-shell-v2.css?v=${encodeURIComponent(VERSION)}`;
+    document.head.appendChild(link);
+  }
 
   function roleInfo(role){
     const c=context(),meta=roleMeta[role];
@@ -94,8 +103,8 @@
   let scheduled=false;
   function schedule(){if(scheduled)return;scheduled=true;requestAnimationFrame(()=>{scheduled=false;install()})}
   const observer=new MutationObserver(schedule);
-  function start(){install();observer.observe(document.body,{subtree:true,childList:true,characterData:true});}
+  function start(){loadCss();install();observer.observe(document.body,{subtree:true,childList:true,characterData:true});}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
   ['alin:role-runtime-ready','alin:auth-login','alin:auth-restored','alin:data-refreshed','alin:page-open','alin:teacher-rendered','alin:notifications-updated'].forEach(type=>window.addEventListener(type,schedule));
-  window.AlinRoleShellV2=Object.freeze({install,schedule,version:'2.0.0'});
+  window.AlinRoleShellV2=Object.freeze({install,schedule,version:'2.0.1'});
 })();
