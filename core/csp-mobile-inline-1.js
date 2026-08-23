@@ -2,10 +2,12 @@
   'use strict';
   try{
     var url=new URL(location.href);
+    var navEntry=performance&&performance.getEntriesByType?performance.getEntriesByType('navigation')[0]:null;
+    var isReload=(navEntry&&navEntry.type==='reload')||(performance&&performance.navigation&&performance.navigation.type===1);
     if(url.searchParams.get('__alin_entry')==='1'){
       url.searchParams.delete('__alin_entry');
       history.replaceState(history.state,'',url.pathname+(url.searchParams.toString()?'?'+url.searchParams.toString():'')+url.hash);
-    }else{
+    }else if(!isReload){
       url.searchParams.delete('view');
       url.searchParams.delete('splash');
       var tablet=/\/store-tablet(?:\.html)?$/i.test(url.pathname)||document.documentElement.dataset.alinDevice==='tablet';
@@ -15,7 +17,6 @@
       return;
     }
   }catch(_){ }
-'use strict';
   try{
     var standalone=(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true;
     if(standalone)document.documentElement.dataset.alinStandalone='1';
