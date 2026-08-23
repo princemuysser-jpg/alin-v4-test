@@ -30,7 +30,7 @@ ROLE_APP=[
 'modules/admin/booklets.js','modules/admin/products.js','modules/admin/accounts-advanced.js','modules/admin/finance.js',
 'modules/admin/coupons.js','modules/admin/retention.js','modules/admin/reports.js','modules/admin/settings.js','modules/admin/notifications.js',
 'modules/admin/couriers.js','modules/courier/core.js','modules/courier/admin.js','modules/courier/areas.js',
-'modules/courier/assignment.js','modules/courier/dashboard.js','modules/courier/finance.js','modules/core/security.js',
+'modules/admin/delivery-pricing.js','modules/courier/assignment.js','modules/courier/dashboard.js','modules/courier/finance.js','modules/core/security.js',
 'modules/admin/backup.js','modules/core/backend-check.js','modules/core/account-admin-service.js','modules/core/order-bell.js',
 'modules/teacher/admin-word-download.js','core/v2-runtime.js','modules/core/receipts-center.js',
 'modules/core/receipts-navigation-guard.js','modules/core/section-header.js','modules/admin/remove-diagnostic-tabs.js'
