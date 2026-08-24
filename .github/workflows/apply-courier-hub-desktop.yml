@@ -89,3 +89,5 @@ jobs:
           fi
           git commit -m "chore: lock v4.2 stable baseline without behavior changes"
           git push origin HEAD:main
+
+# stable-lock ref trigger 2026-08-25
