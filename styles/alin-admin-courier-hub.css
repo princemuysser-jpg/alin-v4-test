@@ -1,0 +1,80 @@
+/* ALIN courier administration hub */
+#adminContent > .alin-courier-admin-hub{
+  display:grid;
+  gap:14px;
+  margin:0 0 18px;
+  padding:18px;
+  border:1px solid #dce6f1;
+  border-radius:22px;
+  background:#fff;
+  box-shadow:0 10px 30px rgba(11,53,104,.07);
+}
+.alin-courier-admin-hub-title{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+.alin-courier-admin-hub-title>div{display:grid;gap:3px}
+.alin-courier-admin-hub-title small{color:#6d7d96;font-weight:700}
+.alin-courier-admin-hub-title strong{font-size:1.22rem;color:#0b3568}
+.alin-courier-admin-hub-title>span{
+  display:inline-flex;
+  align-items:center;
+  min-height:34px;
+  padding:0 12px;
+  border-radius:999px;
+  background:#fff7dd;
+  color:#7b5a00;
+  font-weight:800;
+}
+.alin-courier-admin-hub nav{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:10px;
+}
+.alin-courier-admin-hub nav button{
+  min-height:46px;
+  border:1px solid #dce6f1;
+  border-radius:14px;
+  background:#f7f9fc;
+  color:#0b3568;
+  font:inherit;
+  font-weight:800;
+  cursor:pointer;
+}
+.alin-courier-admin-hub nav button.active{
+  border-color:#e2b43f;
+  background:#e2b43f;
+  color:#0a2d5b;
+  box-shadow:0 6px 18px rgba(226,180,63,.22);
+}
+#adminContent .v164-admin-head button[data-alin-click="renderCouriersAdmin"],
+#adminContent .v164-admin-head button[data-alin-click="adminTab"][data-alin-click-arg0="deliveryOrders"],
+#adminContent .v164-admin-head button[data-alin-click="adminTab"][data-alin-click-arg0="courierAreas"],
+#adminContent .v164-admin-head button[data-alin-click="alinV161CourierForm"]:not([data-alin-click-arg0]){
+  display:none!important;
+}
+#adminContent .v131-accounts-head{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:10px;
+}
+#adminContent .v131-accounts-head>div:first-child{margin-inline-end:auto}
+#alinAccountsAddCourierButton{
+  background:#0b3568!important;
+  border-color:#0b3568!important;
+  color:#fff!important;
+}
+@media (max-width:900px){
+  .alin-courier-admin-hub nav{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:520px){
+  #adminContent > .alin-courier-admin-hub{padding:12px;border-radius:18px}
+  .alin-courier-admin-hub-title{align-items:flex-start}
+  .alin-courier-admin-hub-title>span{font-size:.78rem}
+  .alin-courier-admin-hub nav{grid-template-columns:1fr 1fr;gap:8px}
+  .alin-courier-admin-hub nav button{min-height:44px;font-size:.88rem;padding:8px 6px}
+  #adminContent .v131-accounts-head .v131-add-account{width:100%}
+}
