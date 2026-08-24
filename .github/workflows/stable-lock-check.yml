@@ -1,0 +1,69 @@
+name: ALIN v4.2 Stable Lock Check
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "README*.md"
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Syntax checks
+        run: |
+          set -e
+          node --check core/finance-runtime.js
+          node --check modules/teacher/finance.js
+          node --check modules/teacher/order-delivery-label-fix.js
+          node --check modules/admin/finance-settlement-ui.js
+          node --check modules/admin/courier-hub.js
+          node --check modules/admin/delivery-pricing.js
+          node --check alin-config.js
+          node --check dist/alin-core.v4.js
+          node --check dist/alin-role-runtime.v4.js
+          node --check alin-app-desktop.v4.2.0.js
+          node --check alin-app-mobile.v4.2.0.js
+          node --check alin-app-tablet.v4.2.0.js
+
+      - name: Protected finance and routing behavior
+        run: node scripts/stable-current-smoke.js
+
+      - name: Verify runtime source registry
+        run: |
+          set -e
+          grep -F "modules/admin/finance-settlement-ui.js" scripts/build-runtime.py
+          grep -F "modules/admin/courier-hub.js" scripts/build-runtime.py
+          grep -F "modules/admin/delivery-pricing.js" scripts/build-runtime.py
+          grep -F "installCourierFeeDisplayCompatibility" alin-config.js
+          grep -F "loadTeacherOrderDeliveryFix" alin-config.js
+          ! grep -F 'data-admin-tab="courierAreas"' store-desktop.html
+          ! grep -F 'data-admin-tab="deliveryOrders"' store-desktop.html
+          ! grep -F 'data-admin-tab="courierSettlements"' store-desktop.html
+          ! grep -F 'data-admin-tab="courierAreas"' store-mobile.html
+          ! grep -F 'data-admin-tab="deliveryOrders"' store-mobile.html
+          ! grep -F 'data-admin-tab="courierSettlements"' store-mobile.html
+          ! grep -F 'data-admin-tab="courierAreas"' store-tablet.html
+          ! grep -F 'data-admin-tab="deliveryOrders"' store-tablet.html
+          ! grep -F 'data-admin-tab="courierSettlements"' store-tablet.html
+
+      - name: Generated runtimes must match sources
+        run: |
+          python3 scripts/build-runtime.py
+          git diff --exit-code -- dist/alin-core.v4.js dist/alin-role-runtime.v4.js alin-app-desktop.v4.2.0.js alin-app-mobile.v4.2.0.js alin-app-tablet.v4.2.0.js
+
+      - name: Deterministic build
+        run: |
+          sha256sum dist/alin-core.v4.js dist/alin-role-runtime.v4.js alin-app-desktop.v4.2.0.js alin-app-mobile.v4.2.0.js alin-app-tablet.v4.2.0.js > /tmp/a.sha
+          python3 scripts/build-runtime.py
+          sha256sum dist/alin-core.v4.js dist/alin-role-runtime.v4.js alin-app-desktop.v4.2.0.js alin-app-mobile.v4.2.0.js alin-app-tablet.v4.2.0.js > /tmp/b.sha
+          diff -u /tmp/a.sha /tmp/b.sha
