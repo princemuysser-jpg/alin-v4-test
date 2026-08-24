@@ -1,0 +1,107 @@
+name: Apply unified courier hub to staff runtime
+
+on:
+  push:
+    paths:
+      - ".github/workflows/apply-courier-hub-desktop.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: alin-courier-hub-runtime
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Integrate courier hub and remove legacy admin tabs
+        shell: python
+        run: |
+          from pathlib import Path
+          from datetime import datetime, timezone
+          import re, subprocess
+
+          root=Path('.')
+          build=root/'scripts/build-runtime.py'
+          text=build.read_text(encoding='utf-8')
+          needle="'modules/admin/delivery-pricing.js','modules/courier/assignment.js','modules/courier/dashboard.js','modules/courier/finance.js','modules/core/security.js',"
+          replacement="'modules/admin/delivery-pricing.js','modules/courier/assignment.js','modules/courier/dashboard.js','modules/courier/finance.js','modules/admin/courier-hub.js','modules/core/security.js',"
+          if needle in text:
+              text=text.replace(needle,replacement,1)
+              build.write_text(text,encoding='utf-8')
+          elif "'modules/admin/courier-hub.js'" not in text:
+              raise SystemExit('Could not add courier hub to ROLE_APP')
+
+          # Remove old top-level courier subsections from all admin entry pages.
+          old_tabs=('courierAreas','deliveryOrders','courierSettlements')
+          for name in ('store-desktop.html','store-mobile.html','store-tablet.html'):
+              path=root/name
+              page=path.read_text(encoding='utf-8')
+              for tab in old_tabs:
+                  page=re.sub(r'<button\s+data-admin-tab="'+re.escape(tab)+r'"[^>]*>.*?</button>\s*','',page,count=1,flags=re.S)
+              path.write_text(page,encoding='utf-8')
+
+          # Remove create-courier button from courier management source; creation belongs to Accounts.
+          admin=root/'modules/courier/admin.js'
+          src=admin.read_text(encoding='utf-8')
+          src=src.replace('<button data-alin-click="alinV161CourierForm">+ إضافة مندوب</button>','')
+          src=src.replace('<button data-alin-click="adminTab" data-alin-click-arg0="deliveryOrders">طلبات التوصيل</button><button data-alin-click="adminTab" data-alin-click-arg0="courierAreas">إدارة المناطق</button>','')
+          admin.write_text(src,encoding='utf-8')
+
+          # Rebuild role/public runtimes from authoritative sources.
+          subprocess.run(['python3','scripts/build-runtime.py'],check=True)
+
+          stamp=datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')
+          token=f'4.2.0-courier-hub-runtime-{stamp}'
+
+          config=root/'alin-config.js'
+          cfg=config.read_text(encoding='utf-8')
+          cfg,count=re.subn(r"assetVersion:'[^']+'",f"assetVersion:'{token}'",cfg,count=1)
+          if count!=1: raise SystemExit('Could not bump assetVersion')
+          config.write_text(cfg,encoding='utf-8')
+
+          for name in ('store-desktop.html','store-mobile.html','store-tablet.html'):
+              path=root/name
+              page=path.read_text(encoding='utf-8')
+              page=re.sub(r'\?v=[A-Za-z0-9._:-]+',f'?v={token}',page)
+              path.write_text(page,encoding='utf-8')
+
+          print('asset token',token)
+
+      - name: Validate courier hub runtime
+        run: |
+          node --check modules/admin/courier-hub.js
+          node --check modules/courier/admin.js
+          node --check dist/alin-role-runtime.v4.js
+          grep -F "modules/admin/courier-hub.js" scripts/build-runtime.py
+          grep -F "ALIN_COURIER_ADMIN_HUB" dist/alin-role-runtime.v4.js
+          ! grep -F 'data-admin-tab="courierAreas"' store-desktop.html
+          ! grep -F 'data-admin-tab="deliveryOrders"' store-desktop.html
+          ! grep -F 'data-admin-tab="courierSettlements"' store-desktop.html
+          ! grep -F 'data-admin-tab="courierAreas"' store-mobile.html
+          ! grep -F 'data-admin-tab="deliveryOrders"' store-mobile.html
+          ! grep -F 'data-admin-tab="courierSettlements"' store-mobile.html
+          ! grep -F 'data-admin-tab="courierAreas"' store-tablet.html
+          ! grep -F 'data-admin-tab="deliveryOrders"' store-tablet.html
+          ! grep -F 'data-admin-tab="courierSettlements"' store-tablet.html
+
+      - name: Commit integrated runtime
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add scripts/build-runtime.py modules/courier/admin.js modules/admin/courier-hub.js dist/alin-role-runtime.v4.js dist/alin-core.v4.js alin-app-desktop.v4.2.0.js alin-app-mobile.v4.2.0.js alin-app-tablet.v4.2.0.js alin-config.js store-desktop.html store-mobile.html store-tablet.html
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "fix: apply unified courier hub on desktop and all staff views"
+          git push origin HEAD:main
