@@ -1,0 +1,14 @@
+'use strict';
+const fs=require('fs');
+const assert=require('assert');
+const source=fs.readFileSync('modules/admin/reports.js','utf8');
+assert(source.includes("const state={period:'all'"),'reports must open on all-time to match Finance by default');
+assert(source.includes('canonicalLedger?.()'),'reports must use canonicalLedger');
+assert(source.includes('function financialTotals(rows)'),'canonical financial reducer missing');
+assert(source.includes('out.platform+=num(row.admin||row.alin)'),'platform total must come from ledger');
+assert(source.includes('out.teacher+=num(row.teacher||row.teacher_amount)'),'teacher total must come from ledger');
+assert(source.includes('out.library+=num(row.library||row.library_amount)'),'library total must come from ledger');
+assert(source.includes('out.courier+=num(row.delegate||row.courier||row.courier_amount)'),'courier total must come from ledger');
+assert(!source.includes('o.courier_profit||o.delivery_fee'),'reports must never treat student delivery_fee as courier profit');
+assert(!source.includes('o.platform_profit||o.admin_profit'),'reports must not total profit directly from order fields');
+console.log('ALIN REPORT/FINANCE SOURCE CONSISTENCY PASSED');
