@@ -1,7 +1,7 @@
 // منصة آلين v4.2.0 Stable — Alin Platform.
 window.ALIN_CONFIG=Object.freeze({
   version:'4.2.0',
-  assetVersion:'4.2.0-refresh-session-stay-20260823-211745',
+  assetVersion:'4.2.0-courier-hub-20260824-0919',
   desktopPage:'./store-desktop.html',
   mobilePage:'./store-mobile.html',
   tabletPage:'./store-tablet.html',
@@ -53,6 +53,27 @@ window.ALIN_CONFIG=Object.freeze({
   script.src=`./core/alin-role-shell-v2.js?v=${encodeURIComponent(window.ALIN_CONFIG.assetVersion)}`;
   script.async=false;
   document.head.appendChild(script);
+})();
+
+/* One admin courier hub: couriers + areas + delivery orders + settlements. */
+(function loadAlinCourierAdminHub(){
+  'use strict';
+  let loading=false;
+  function ensure(){
+    if(window.__ALIN_COURIER_ADMIN_HUB__||loading)return;
+    if(!window.AlinAdminModules||typeof window.renderCouriersAdmin!=='function')return;
+    loading=true;
+    const script=document.createElement('script');
+    script.id='alinCourierAdminHubScript';
+    script.src=`./modules/admin/courier-hub.js?v=${encodeURIComponent(window.ALIN_CONFIG.assetVersion)}`;
+    script.async=false;
+    script.addEventListener('load',()=>{loading=false},{once:true});
+    script.addEventListener('error',()=>{loading=false;script.remove()},{once:true});
+    document.head.appendChild(script);
+  }
+  window.addEventListener('alin:role-runtime-ready',()=>setTimeout(ensure,0));
+  window.addEventListener('alin:page-open',()=>setTimeout(ensure,0));
+  if(window.AlinRoleRuntime?.ready?.())setTimeout(ensure,0);
 })();
 
 /* ALIN v4.3.0 courier-fee compatibility. */
