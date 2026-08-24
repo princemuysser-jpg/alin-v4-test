@@ -28,6 +28,7 @@ jobs:
           node --check modules/admin/finance-settlement-ui.js
           node --check modules/admin/courier-hub.js
           node --check modules/admin/delivery-pricing.js
+          node --check modules/admin/reports.js
           node --check alin-config.js
           node --check dist/alin-core.v4.js
           node --check dist/alin-role-runtime.v4.js
@@ -36,7 +37,9 @@ jobs:
           node --check alin-app-tablet.v4.2.0.js
 
       - name: Protected finance and routing behavior
-        run: node scripts/stable-current-smoke.js
+        run: |
+          node scripts/stable-current-smoke.js
+          node scripts/report-finance-source-smoke.js
 
       - name: Verify runtime source registry
         run: |
@@ -44,6 +47,9 @@ jobs:
           grep -F "modules/admin/finance-settlement-ui.js" scripts/build-runtime.py
           grep -F "modules/admin/courier-hub.js" scripts/build-runtime.py
           grep -F "modules/admin/delivery-pricing.js" scripts/build-runtime.py
+          grep -F "modules/admin/reports.js" scripts/build-runtime.py
+          grep -F "canonicalLedger?.()" modules/admin/reports.js
+          ! grep -F "o.courier_profit||o.delivery_fee" modules/admin/reports.js
           grep -F "installCourierFeeDisplayCompatibility" alin-config.js
           grep -F "loadTeacherOrderDeliveryFix" alin-config.js
           ! grep -F 'data-admin-tab="courierAreas"' store-desktop.html
