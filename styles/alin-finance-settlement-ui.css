@@ -1,0 +1,33 @@
+/* ALIN finance settlement modal */
+#alinFinanceSettlementLayer[hidden]{display:none!important}
+#alinFinanceSettlementLayer{position:fixed;inset:0;z-index:10080;display:grid;place-items:center;padding:20px;background:rgba(5,20,43,.58);backdrop-filter:blur(6px)}
+body.alin-finance-settlement-open{overflow:hidden}
+.alin-finance-settlement-card{position:relative;width:min(680px,100%);max-height:min(92vh,860px);overflow:auto;border:1px solid #dce6f1;border-radius:26px;background:#fff;box-shadow:0 28px 80px rgba(5,20,43,.26);color:#0b2f5d}
+.alin-finance-settlement-card>header{padding:24px 26px 18px;background:linear-gradient(135deg,#0b3568,#164e7e);color:#fff}
+.alin-finance-settlement-card>header small{display:block;margin-bottom:5px;color:#f2c75b;font-weight:900}
+.alin-finance-settlement-card>header h2{margin:0 0 8px;font-size:28px;color:#fff}
+.alin-finance-settlement-card>header p{margin:0;color:rgba(255,255,255,.82);line-height:1.7}
+.alin-finance-settlement-close{position:absolute;top:14px;left:14px;z-index:2;width:38px;height:38px;padding:0;border:1px solid rgba(255,255,255,.18);border-radius:12px;background:rgba(255,255,255,.12);color:#fff;font-size:24px;line-height:1;box-shadow:none}
+.alin-finance-settlement-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding:18px 22px 0}
+.alin-finance-settlement-summary>div{padding:13px 14px;border:1px solid #e2e9f1;border-radius:16px;background:#f8fbfe}
+.alin-finance-settlement-summary>div.balance{background:#fff8e6;border-color:#e7c46d}
+.alin-finance-settlement-summary small,.alin-finance-settlement-summary b{display:block}
+.alin-finance-settlement-summary small{color:#748196;font-weight:700}
+.alin-finance-settlement-summary b{margin-top:5px;font-size:17px;color:#0b3568}
+.alin-finance-settlement-summary .balance b{font-size:21px;color:#8a6412}
+.alin-finance-settlement-form{display:grid;gap:14px;padding:20px 22px 24px}
+.alin-finance-settlement-form label{display:grid;gap:7px}
+.alin-finance-settlement-form label>span{font-weight:900;color:#173f73}
+.alin-finance-settlement-form label>span small{font-weight:700;color:#8a96a7}
+.alin-finance-settlement-form input,.alin-finance-settlement-form select,.alin-finance-settlement-form textarea{width:100%;padding:12px 13px;border:1px solid #d7e2ee;border-radius:13px;background:#fff;color:#0b2f5d;font:inherit;outline:none}
+.alin-finance-settlement-form input:focus,.alin-finance-settlement-form select:focus,.alin-finance-settlement-form textarea:focus{border-color:#0b5fa5;box-shadow:0 0 0 3px rgba(11,95,165,.10)}
+.alin-finance-settlement-shortcuts{display:flex;justify-content:flex-start}
+.alin-finance-settlement-shortcuts button{padding:9px 12px;border-radius:11px;background:#eef4fb;color:#0b3568;box-shadow:none}
+.alin-finance-settlement-message{padding:11px 13px;border-radius:12px;background:#f6f8fb;color:#40526c;font-weight:800}
+.alin-finance-settlement-message[data-type="error"]{background:#fff1f1;color:#b42318;border:1px solid #fecaca}
+.alin-finance-settlement-message[data-type="success"]{background:#eefbf2;color:#16794a;border:1px solid #bbf7d0}
+.alin-finance-settlement-message[data-type="working"]{background:#eef5ff;color:#245c9c;border:1px solid #cfe0f6}
+.alin-finance-settlement-form footer{display:grid;grid-template-columns:1fr 1.2fr;gap:10px;margin-top:2px}
+.alin-finance-settlement-form footer button{min-height:46px;border-radius:13px;font-weight:900}
+.alin-finance-settlement-form footer button:disabled{opacity:.62;cursor:wait;transform:none!important}
+@media(max-width:640px){#alinFinanceSettlementLayer{padding:10px;align-items:end}.alin-finance-settlement-card{width:100%;max-height:94vh;border-radius:22px 22px 0 0}.alin-finance-settlement-card>header{padding:22px 18px 16px}.alin-finance-settlement-card>header h2{font-size:24px}.alin-finance-settlement-summary{grid-template-columns:1fr;padding:14px 14px 0}.alin-finance-settlement-form{padding:16px 14px 18px}.alin-finance-settlement-form footer{grid-template-columns:1fr}.alin-finance-settlement-close{top:12px;left:12px}}
