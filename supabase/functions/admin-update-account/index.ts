@@ -19,13 +19,16 @@ Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders(req) });
   if (req.method !== 'POST') return jsonResponse(req, { ok: false, error: 'الطريقة غير مسموحة' }, 405);
 
+  let stage = 'start';
   try {
+    stage = 'require-admin';
     const context = await requireAdmin(req, 'accounts');
     const { admin } = context;
     const body = await req.json();
     const accountId = cleanText(body.account_id, 80);
     if (!accountId) throw new Error('معرّف الحساب مطلوب');
 
+    stage = 'load-account';
     let { data: account, error: accountError } = await admin
       .from('accounts')
       .select('id,role,name,username,status,auth_user_id,deleted_at')
@@ -54,16 +57,20 @@ Deno.serve(async (req: Request) => {
       throw new Error('لتفعيل حساب مؤرشف عيّن كلمة مرور جديدة أولاً');
     }
 
+    let authWarning = '';
+
     // Seamless migration for a legacy courier row that has no accounts/Auth user yet.
     if (!account) {
       if (requestedRole !== 'courier') throw new Error('الحساب غير موجود');
       if (!username || !name || password.length < 12) {
         throw new Error('هذا مندوب قديم غير مربوط. اكتب اسمه واسم الدخول وكلمة مرور جديدة من 12 حرفاً تتضمن حروفاً وأرقاماً لترحيله');
       }
+      stage = 'legacy-courier-auth';
       const resolved = await ensureAuthUserForAccount(admin, {
         accountId, authUserId: null, username, password, name, role: 'courier',
       });
       try {
+        stage = 'legacy-courier-account-insert';
         account = await insertCompat(admin, 'accounts', {
           id: accountId,
           role: 'courier',
@@ -82,12 +89,18 @@ Deno.serve(async (req: Request) => {
         throw error;
       }
     } else {
-      const nextUsername = username || normalizeUsername(account.username);
-      const nextName = name || cleanText(account.name, 120);
+      const oldUsername = normalizeUsername(account.username);
+      const oldName = cleanText(account.name, 120);
+      const oldRole = cleanText(account.role, 30);
+      const nextUsername = username || oldUsername;
+      const nextName = name || oldName;
       if (!nextUsername || !nextName) throw new Error('الاسم واسم الدخول مطلوبان');
 
       let nextAuthUserId = account.auth_user_id ? String(account.auth_user_id) : '';
+
+      // Password changes always require an authoritative Auth update.
       if (password) {
+        stage = 'auth-password-sync';
         const resolved = await ensureAuthUserForAccount(admin, {
           accountId,
           authUserId: nextAuthUserId || null,
@@ -97,16 +110,28 @@ Deno.serve(async (req: Request) => {
           role: requestedRole,
         });
         nextAuthUserId = resolved.id;
-      } else if (nextAuthUserId) {
-        const authChanges: Record<string, unknown> = {
+      } else if (nextAuthUserId && nextUsername !== oldUsername) {
+        // Username is part of the login identity, so this sync is required.
+        stage = 'auth-username-sync';
+        const { error: authUpdateError } = await admin.auth.admin.updateUserById(nextAuthUserId, {
+          email: emailForUsername(nextUsername),
           user_metadata: { name: nextName, username: nextUsername, role: requestedRole },
-        };
-        if (nextUsername !== normalizeUsername(account.username)) authChanges.email = emailForUsername(nextUsername);
-        const { error: authUpdateError } = await admin.auth.admin.updateUserById(nextAuthUserId, authChanges);
+        });
         if (authUpdateError) throw authUpdateError;
+      } else if (nextAuthUserId && (nextName !== oldName || requestedRole !== oldRole)) {
+        // Name/role metadata is helpful but must never block ordinary account edits.
+        stage = 'auth-metadata-sync';
+        const { error: authMetaError } = await admin.auth.admin.updateUserById(nextAuthUserId, {
+          user_metadata: { name: nextName, username: nextUsername, role: requestedRole },
+        });
+        if (authMetaError) {
+          console.warn('[admin-update-account] metadata sync skipped', authMetaError.message);
+          authWarning = 'تم حفظ بيانات الحساب، لكن تعذر تحديث بيانات الدخول الثانوية';
+        }
       }
       account.auth_user_id = nextAuthUserId || null;
 
+      stage = 'update-account-row';
       account = await updateCompat(admin, 'accounts', {
         role: requestedRole,
         name: nextName,
@@ -124,6 +149,7 @@ Deno.serve(async (req: Request) => {
 
     const finalRole = cleanText(account?.role || requestedRole, 30);
     if (finalRole === 'courier' || requestedRole === 'courier') {
+      stage = 'update-courier-row';
       const areas = requestedAreas;
       const courierPayload: Record<string, unknown> = {
         name: cleanText(body.name ?? account?.name, 120),
@@ -138,14 +164,20 @@ Deno.serve(async (req: Request) => {
       Object.keys(courierPayload).forEach((key) => courierPayload[key] === undefined && delete courierPayload[key]);
       const updatedCourier = await updateCompat(admin, 'couriers', courierPayload, accountId);
       if (!updatedCourier) {
+        stage = 'insert-courier-row';
         await insertCompat(admin, 'couriers', { id: accountId, ...courierPayload, created_at: new Date().toISOString() });
       }
       await removeLegacyPassword(admin, 'couriers', accountId);
     }
     await removeLegacyPassword(admin, 'accounts', accountId);
 
-    return jsonResponse(req, { ok: true, account: publicAccount(account as Record<string, unknown>) });
+    return jsonResponse(req, {
+      ok: true,
+      account: publicAccount(account as Record<string, unknown>),
+      warning: authWarning || undefined,
+    });
   } catch (error) {
+    console.error(`[admin-update-account:${stage}]`, error);
     return jsonResponse(req, { ok: false, error: publicError(error, 'تعذر تحديث الحساب') }, 400);
   }
 });
