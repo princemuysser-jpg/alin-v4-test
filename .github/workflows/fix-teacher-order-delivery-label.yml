@@ -1,0 +1,117 @@
+name: Fix teacher order delivery labels
+
+on:
+  push:
+    paths:
+      - ".github/workflows/fix-teacher-order-delivery-label.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: alin-teacher-order-delivery-label
+  cancel-in-progress: false
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Fix teacher order delivery method and rebuild runtime
+        shell: python
+        run: |
+          from pathlib import Path
+          from datetime import datetime, timezone
+          import re, subprocess
+
+          root=Path('.')
+          path=root/'modules/teacher/finance.js'
+          text=path.read_text(encoding='utf-8')
+
+          anchor="  function statusGroup(value){const key=String(value||'').toLowerCase();return done.has(key)?'done':cancelled.has(key)?'cancelled':'active'}\n"
+          helper="""  function statusGroup(value){const key=String(value||'').toLowerCase();return done.has(key)?'done':cancelled.has(key)?'cancelled':'active'}
+  function deliveryInfo(order){
+    const fulfillment=String(order?.fulfillment_type||'').toLowerCase();
+    const deliveryType=String(order?.delivery_type||'').toLowerCase();
+    const courierId=order?.courier_id||order?.delegate_id||'';
+    const byCourier=fulfillment==='home_delivery'||deliveryType==='courier'||Boolean(courierId);
+    if(byCourier){
+      const couriers=arr(window.db?.accounts?.couriers||window.db?.couriers);
+      const courier=couriers.find(row=>same(row.id,courierId));
+      return {kind:'courier',label:courier?.name?`التوصيل: مندوب — ${courier.name}`:'التوصيل: مندوب'};
+    }
+    const libraries=arr(window.db?.accounts?.libraries);
+    const library=libraries.find(row=>same(row.id,order?.library_id));
+    return {kind:'library',label:`الاستلام: مكتبة — ${library?.name||'-'}`};
+  }
+"""
+          if 'function deliveryInfo(order)' not in text:
+            if anchor not in text:
+              raise SystemExit('statusGroup anchor not found')
+            text=text.replace(anchor,helper,1)
+
+          old="""    const libraries=arr(window.db?.accounts?.libraries);
+    const cards=d.orders.slice().sort((a,b)=>String(b.created_at||'').localeCompare(String(a.created_at||''))).map(order=>{
+      const book=d.books.find(row=>same(row.id,order.item_id||order.booklet_id));
+      const library=libraries.find(row=>same(row.id,order.library_id));
+      const group=statusGroup(order.status);
+      return `<article class=\"teacher-v154-order\" data-search=\"${escv(`${order.order_number||order.id} ${order.title||book?.title||''}`.toLowerCase())}\" data-status=\"${group}\" data-library=\"${escv(order.library_id||'')}\" data-date=\"${escv(dateOnly(order.created_at))}\"><div><h4>${escv(order.order_number||order.id)} — ${escv(order.title||book?.title||'ملزمة')}</h4><small>النسخ: ${Number(order.qty)||1} • المكتبة: ${escv(library?.name||'-')} • ${dateOnly(order.created_at)}</small></div><div class=\"teacher-v154-order-side\"><span class=\"teacher-v154-status ${group}\">${escv(statusText(order.status))}</span><b>${moneyv(order.total)} د.ع</b></div></article>`;
+    }).join('')||'<div class=\"teacher-v154-empty\">لا توجد طلبات مرتبطة بملازمك.</div>';
+"""
+          new="""    const cards=d.orders.slice().sort((a,b)=>String(b.created_at||'').localeCompare(String(a.created_at||''))).map(order=>{
+      const book=d.books.find(row=>same(row.id,order.item_id||order.booklet_id));
+      const group=statusGroup(order.status);
+      const delivery=deliveryInfo(order);
+      return `<article class=\"teacher-v154-order\" data-search=\"${escv(`${order.order_number||order.id} ${order.title||book?.title||''} ${delivery.label}`.toLowerCase())}\" data-status=\"${group}\" data-delivery=\"${delivery.kind}\" data-date=\"${escv(dateOnly(order.created_at))}\"><div><h4>${escv(order.order_number||order.id)} — ${escv(order.title||book?.title||'ملزمة')}</h4><small>النسخ: ${Number(order.qty)||1} • ${escv(delivery.label)} • ${dateOnly(order.created_at)}</small></div><div class=\"teacher-v154-order-side\"><span class=\"teacher-v154-status ${group}\">${escv(statusText(order.status))}</span><b>${moneyv(order.total)} د.ع</b></div></article>`;
+    }).join('')||'<div class=\"teacher-v154-empty\">لا توجد طلبات مرتبطة بملازمك.</div>';
+"""
+          if old in text:
+            text=text.replace(old,new,1)
+          elif 'const delivery=deliveryInfo(order);' not in text:
+            raise SystemExit('teacher order card block not found')
+
+          path.write_text(text,encoding='utf-8')
+
+          subprocess.run(['python3','scripts/build-runtime.py'],check=True)
+
+          stamp=datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')
+          token=f'4.2.0-teacher-delivery-label-{stamp}'
+
+          cfg_path=root/'alin-config.js'
+          cfg=cfg_path.read_text(encoding='utf-8')
+          cfg,count=re.subn(r"assetVersion:'[^']+'",f"assetVersion:'{token}'",cfg,count=1)
+          if count!=1: raise SystemExit('Could not bump assetVersion')
+          cfg_path.write_text(cfg,encoding='utf-8')
+
+          for name in ('store-desktop.html','store-mobile.html','store-tablet.html'):
+            page_path=root/name
+            page=page_path.read_text(encoding='utf-8')
+            page=re.sub(r'\?v=[A-Za-z0-9._:-]+',f'?v={token}',page)
+            page_path.write_text(page,encoding='utf-8')
+
+      - name: Validate rebuilt teacher runtime
+        run: |
+          node --check modules/teacher/finance.js
+          node --check dist/alin-role-runtime.v4.js
+          grep -F "function deliveryInfo(order)" modules/teacher/finance.js
+          grep -F "التوصيل: مندوب" modules/teacher/finance.js
+          grep -F "الاستلام: مكتبة" modules/teacher/finance.js
+          grep -F "function deliveryInfo(order)" dist/alin-role-runtime.v4.js
+
+      - name: Commit rebuilt runtime
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add modules/teacher/finance.js dist/alin-role-runtime.v4.js dist/alin-core.v4.js alin-app-desktop.v4.2.0.js alin-app-mobile.v4.2.0.js alin-app-tablet.v4.2.0.js alin-config.js store-desktop.html store-mobile.html store-tablet.html
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "fix: show correct delivery method in teacher orders"
+          git push origin HEAD:main
