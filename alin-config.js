@@ -1,7 +1,7 @@
 // منصة آلين v4.2.0 Stable — Alin Platform.
 window.ALIN_CONFIG=Object.freeze({
   version:'4.2.0',
-  assetVersion:'4.2.0-courier-hub-runtime-20260824-063908',
+  assetVersion:'4.2.0-teacher-delivery-label-20260824-0953',
   desktopPage:'./store-desktop.html',
   mobilePage:'./store-mobile.html',
   tabletPage:'./store-tablet.html',
@@ -66,6 +66,27 @@ window.ALIN_CONFIG=Object.freeze({
     const script=document.createElement('script');
     script.id='alinCourierAdminHubScript';
     script.src=`./modules/admin/courier-hub.js?v=${encodeURIComponent(window.ALIN_CONFIG.assetVersion)}`;
+    script.async=false;
+    script.addEventListener('load',()=>{loading=false},{once:true});
+    script.addEventListener('error',()=>{loading=false;script.remove()},{once:true});
+    document.head.appendChild(script);
+  }
+  window.addEventListener('alin:role-runtime-ready',()=>setTimeout(ensure,0));
+  window.addEventListener('alin:page-open',()=>setTimeout(ensure,0));
+  if(window.AlinRoleRuntime?.ready?.())setTimeout(ensure,0);
+})();
+
+/* Teacher orders: show the real delivery method (courier/library) in the orders tab. */
+(function loadTeacherOrderDeliveryFix(){
+  'use strict';
+  let loading=false;
+  function ensure(){
+    if(window.__ALIN_TEACHER_ORDER_DELIVERY_FIX__||loading)return;
+    if(!window.TeacherApp)return;
+    loading=true;
+    const script=document.createElement('script');
+    script.id='alinTeacherOrderDeliveryFixScript';
+    script.src=`./modules/teacher/order-delivery-label-fix.js?v=${encodeURIComponent(window.ALIN_CONFIG.assetVersion)}`;
     script.async=false;
     script.addEventListener('load',()=>{loading=false},{once:true});
     script.addEventListener('error',()=>{loading=false;script.remove()},{once:true});
