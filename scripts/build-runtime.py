@@ -27,7 +27,7 @@ ROLE_APP=[
 'modules/teacher/booklets.js','modules/teacher/finance.js','modules/teacher/dashboard.js','modules/teacher/publishing.js',
 'modules/teacher/notifications.js','modules/teacher/profile.js','modules/library/dashboard.js','modules/library/orders.js',
 'modules/library/finance.js','modules/library/printing.js','modules/admin/dashboard.js','modules/admin/orders.js',
-'modules/admin/booklets.js','modules/admin/products.js','modules/admin/accounts-advanced.js','modules/admin/finance.js','modules/admin/finance-settlement-ui.js',
+'modules/admin/booklets.js','modules/admin/products.js','modules/admin/accounts-advanced.js','modules/admin/finance.js','modules/admin/finance-settlement-ui.js','modules/admin/finance-settlement-ui.js',
 'modules/admin/coupons.js','modules/admin/retention.js','modules/admin/reports.js','modules/admin/settings.js','modules/admin/notifications.js',
 'modules/admin/couriers.js','modules/courier/core.js','modules/courier/admin.js','modules/courier/areas.js',
 'modules/admin/delivery-pricing.js','modules/courier/assignment.js','modules/courier/dashboard.js','modules/courier/finance.js','modules/admin/courier-hub.js','modules/core/security.js',
