@@ -60,6 +60,11 @@ jobs:
           grep -F "function bookletPrep(o)" modules/admin/orders.js
           grep -F 'aria-label="بيانات التجهيز"' modules/admin/orders.js
           grep -F 'prep?.subject,prep?.term,prep?.teacher' modules/admin/orders.js
+          grep -F "canonical admin reports responsive layout" styles/alin-shared.css
+          grep -F "@media (min-width:701px) and (max-width:1180px)" styles/alin-shared.css
+          grep -F "@media (max-width:700px)" styles/alin-shared.css
+          grep -F "#adminPage .admin-v143-table-wrap" styles/alin-shared.css
+          grep -F "#adminPage .admin-v143-grid" styles/alin-shared.css
           grep -F "installCourierFeeDisplayCompatibility" alin-config.js
           grep -F "loadTeacherOrderDeliveryFix" alin-config.js
           ! grep -F 'data-admin-tab="courierAreas"' store-desktop.html
