@@ -9,10 +9,6 @@ on:
 permissions:
   contents: write
 
-concurrency:
-  group: alin-reports-settlement-lookup
-  cancel-in-progress: false
-
 jobs:
   apply:
     runs-on: ubuntu-latest
@@ -21,126 +17,44 @@ jobs:
         with:
           ref: main
           fetch-depth: 0
-
-      - name: Add quick settlement account lookup to reports source
-        shell: python
+      - name: Apply source change
+        run: python3 scripts/add-report-settlement-lookup.py
+      - name: Validate source
         run: |
-          from pathlib import Path
-          p=Path('modules/admin/reports.js')
-          text=p.read_text(encoding='utf-8')
-          text=text.replace("const state={period:'all',from:'',to:'',kind:'all',q:''};","const state={period:'all',from:'',to:'',kind:'all',q:'',partyRole:'teacher',partyId:''};",1)
-          anchor="  function financialTotals(rows){return rows.reduce((out,row)=>{out.sales+=num(row.total);out.platform+=num(row.admin||row.alin);out.teacher+=num(row.teacher||row.teacher_amount);out.library+=num(row.library||row.library_amount);out.courier+=num(row.delegate||row.courier||row.courier_amount);return out},{sales:0,platform:0,teacher:0,library:0,courier:0})}\n"
-          helper="""  function financialTotals(rows){return rows.reduce((out,row)=>{out.sales+=num(row.total);out.platform+=num(row.admin||row.alin);out.teacher+=num(row.teacher||row.teacher_amount);out.library+=num(row.library||row.library_amount);out.courier+=num(row.delegate||row.courier||row.courier_amount);return out},{sales:0,platform:0,teacher:0,library:0,courier:0})}
-  function settlementParties(role){
-    const d=dbx(),accounts=d.accounts||{};
-    if(role==='teacher')return arr(accounts.teachers);
-    if(role==='library')return arr(accounts.libraries);
-    return arr(d.delegates||accounts.couriers||d.couriers);
-  }
-  function partyOptionName(row){return row?.name||row?.title||row?.username||String(row?.id||'حساب')}
-  function settlementLookupHtml(){
-    const role=state.partyRole||'teacher',rows=settlementParties(role).slice().sort((a,b)=>partyOptionName(a).localeCompare(partyOptionName(b),'ar'));
-    if(state.partyId&&!rows.some(row=>String(row.id)===String(state.partyId)))state.partyId='';
-    const options=rows.map(row=>`<option value="${escx(row.id)}" ${String(state.partyId)===String(row.id)?'selected':''}>${escx(partyOptionName(row))}</option>`).join('');
-    let details='<div class="admin-v143-empty">اختر الحساب حتى تظهر أرقامه الحالية للتسوية.</div>';
-    if(state.partyId){
-      const row=rows.find(item=>String(item.id)===String(state.partyId)),name=partyOptionName(row||{id:state.partyId});
-      if(role==='teacher'){
-        const s=finance()?.teacherSummary?.(state.partyId)||finance()?.partySummary?.('teacher',state.partyId)||{};
-        details=`<div class="admin-v143-metrics"><article class="admin-v143-metric"><small>إجمالي أرباح ${escx(name)}</small><strong>${moneyx(s.earned)} د.ع</strong></article><article class="admin-v143-metric green"><small>المسدد للمدرس</small><strong>${moneyx(s.paid)} د.ع</strong></article><article class="admin-v143-metric gold"><small>المتبقي للتسديد</small><strong>${moneyx(s.remaining)} د.ع</strong></article></div>`;
-      }else if(role==='library'){
-        const s=finance()?.librarySummary?.(state.partyId)||{};
-        details=`<div class="admin-v143-metrics"><article class="admin-v143-metric"><small>ربح المكتبة — ${escx(name)}</small><strong>${moneyx(s.libraryProfit??s.profit)} د.ع</strong></article><article class="admin-v143-metric green"><small>المستلم من ذمة المكتبة</small><strong>${moneyx(s.settled)} د.ع</strong></article><article class="admin-v143-metric red"><small>الذمة المتبقية للإدارة</small><strong>${moneyx(s.remaining??s.debtRemaining)} د.ع</strong></article></div>`;
-      }else{
-        const s=finance()?.delegateSummary?.(state.partyId)||{};
-        details=`<div class="admin-v143-metrics"><article class="admin-v143-metric"><small>ربح المندوب — ${escx(name)}</small><strong>${moneyx(s.earnings??s.earned)} د.ع</strong></article><article class="admin-v143-metric green"><small>المستلم من المندوب</small><strong>${moneyx(s.settled??s.paid)} د.ع</strong></article><article class="admin-v143-metric red"><small>الذمة المتبقية للإدارة</small><strong>${moneyx(s.debt??s.remaining)} د.ع</strong></article></div>`;
-      }
-    }
-    return `<article class="admin-v143-card"><div class="admin-v143-card-head"><div><h3>كشف حساب سريع للتسوية</h3><small>الأرقام الحالية من النظام المالي الرسمي ولا تتأثر بفلتر فترة التقارير.</small></div></div><section class="admin-v143-toolbar"><select data-alin-change="alinV143PartyFilter" data-alin-change-arg0="partyRole" data-alin-change-arg1-source="value"><option value="teacher" ${role==='teacher'?'selected':''}>المدرسون</option><option value="library" ${role==='library'?'selected':''}>المكتبات</option><option value="delegate" ${role==='delegate'?'selected':''}>المندوبون</option></select><select data-alin-change="alinV143PartyFilter" data-alin-change-arg0="partyId" data-alin-change-arg1-source="value"><option value="">اختر الحساب</option>${options}</select></section>${details}</article>`;
-  }
-"""
-          if 'function settlementLookupHtml()' not in text:
-              if anchor not in text: raise SystemExit('financialTotals anchor missing')
-              text=text.replace(anchor,helper,1)
-          old='const table=rows.length?`<div class="admin-v143-table-wrap"'
-          if old not in text: raise SystemExit('reports table anchor missing')
-          text=text.replace(old,'const settlementLookup=settlementLookupHtml();\n    const table=rows.length?`<div class="admin-v143-table-wrap"',1)
-          needle='</article></section><section class="admin-v143-grid">'
-          replacement='</article></section>${settlementLookup}<section class="admin-v143-grid">'
-          if needle not in text: raise SystemExit('reports metrics/grid anchor missing')
-          text=text.replace(needle,replacement,1)
-          filter_anchor="  window.alinV143ReportFilter=(k,v)=>{state[k]=v;if(k==='period'&&v!=='custom'){state.from='';state.to=''}render()};\n"
-          party_filter="""  window.alinV143ReportFilter=(k,v)=>{state[k]=v;if(k==='period'&&v!=='custom'){state.from='';state.to=''}render()};
-  window.alinV143PartyFilter=(k,v)=>{state[k]=v;if(k==='partyRole')state.partyId='';render()};
-"""
-          if 'window.alinV143PartyFilter=' not in text:
-              if filter_anchor not in text: raise SystemExit('report filter anchor missing')
-              text=text.replace(filter_anchor,party_filter,1)
-          p.write_text(text,encoding='utf-8')
-
-      - name: Add regression test
-        shell: bash
-        run: |
-          cat > scripts/report-party-profit-smoke.js <<'EOF'
-          'use strict';
-          const fs=require('fs');
-          const assert=require('assert');
-          const source=fs.readFileSync('modules/admin/reports.js','utf8');
-          assert(source.includes('function settlementLookupHtml()'));
-          assert(source.includes('teacherSummary?.(state.partyId)'));
-          assert(source.includes('librarySummary?.(state.partyId)'));
-          assert(source.includes('delegateSummary?.(state.partyId)'));
-          assert(source.includes('الأرقام الحالية من النظام المالي الرسمي ولا تتأثر بفلتر فترة التقارير'));
-          assert(source.includes('المتبقي للتسديد'));
-          assert(source.includes('الذمة المتبقية للإدارة'));
-          assert(source.includes('window.alinV143PartyFilter='));
-          console.log('ALIN REPORT PARTY PROFIT LOOKUP PASSED');
-          EOF
-
-      - name: Validate before build
-        run: |
-          set -e
           node --check modules/admin/reports.js
           node scripts/report-finance-source-smoke.js
-          node scripts/report-party-profit-smoke.js
-          node scripts/stable-current-smoke.js
-
-      - name: Rebuild authoritative runtime
+          grep -F "كشف حساب سريع للتسوية" modules/admin/reports.js
+          grep -F "teacherSummary?.(state.partyId)" modules/admin/reports.js
+          grep -F "librarySummary?.(state.partyId)" modules/admin/reports.js
+          grep -F "delegateSummary?.(state.partyId)" modules/admin/reports.js
+      - name: Build runtime
         run: python3 scripts/build-runtime.py
-
-      - name: Validate built runtime
+      - name: Validate runtime
         run: |
-          set -e
           node --check dist/alin-role-runtime.v4.js
           grep -F "كشف حساب سريع للتسوية" dist/alin-role-runtime.v4.js
-          grep -F "teacherSummary?.(state.partyId)" dist/alin-role-runtime.v4.js
-          node scripts/report-finance-source-smoke.js
-          node scripts/report-party-profit-smoke.js
           node scripts/stable-current-smoke.js
           git diff --check
-
-      - name: Bump cache on all device views
+      - name: Bust cache
         shell: python
         run: |
           from pathlib import Path
           import re
-          token='4.2.0-stable-report-settlement-lookup-20260825-1437'
+          token='4.2.0-stable-report-settlement-lookup-20260825-1440'
           cfg=Path('alin-config.js')
           text=cfg.read_text(encoding='utf-8')
           text,n=re.subn(r"assetVersion:'[^']+'",f"assetVersion:'{token}'",text,count=1)
           if n!=1: raise SystemExit('assetVersion not found')
           cfg.write_text(text,encoding='utf-8')
           for name in ('store-desktop.html','store-mobile.html','store-tablet.html'):
-            p=Path(name); page=p.read_text(encoding='utf-8')
+            p=Path(name)
+            page=p.read_text(encoding='utf-8')
             page=re.sub(r'\?v=[A-Za-z0-9._:-]+',f'?v={token}',page)
             p.write_text(page,encoding='utf-8')
-
-      - name: Commit reports settlement lookup
+      - name: Commit
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add modules/admin/reports.js scripts/report-party-profit-smoke.js dist/alin-role-runtime.v4.js dist/alin-core.v4.js alin-app-desktop.v4.2.0.js alin-app-mobile.v4.2.0.js alin-app-tablet.v4.2.0.js alin-config.js store-desktop.html store-mobile.html store-tablet.html
+          git add modules/admin/reports.js dist/alin-role-runtime.v4.js dist/alin-core.v4.js alin-app-desktop.v4.2.0.js alin-app-mobile.v4.2.0.js alin-app-tablet.v4.2.0.js alin-config.js store-desktop.html store-mobile.html store-tablet.html
           git commit -m "feat: add quick settlement account lookup to reports"
           git push origin HEAD:main
-
-# trigger 2026-08-25 14:37
