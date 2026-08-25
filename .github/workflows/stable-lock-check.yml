@@ -29,6 +29,7 @@ jobs:
           node --check modules/admin/courier-hub.js
           node --check modules/admin/delivery-pricing.js
           node --check modules/admin/reports.js
+          node --check modules/admin/orders.js
           node --check alin-config.js
           node --check dist/alin-core.v4.js
           node --check dist/alin-role-runtime.v4.js
@@ -48,6 +49,7 @@ jobs:
           grep -F "modules/admin/courier-hub.js" scripts/build-runtime.py
           grep -F "modules/admin/delivery-pricing.js" scripts/build-runtime.py
           grep -F "modules/admin/reports.js" scripts/build-runtime.py
+          grep -F "modules/admin/orders.js" scripts/build-runtime.py
           grep -F "canonicalLedger?.()" modules/admin/reports.js
           grep -F "function settlementLookupHtml()" modules/admin/reports.js
           grep -F "teacherSummary?.(state.partyId)" modules/admin/reports.js
@@ -55,6 +57,9 @@ jobs:
           grep -F "delegateSummary?.(state.partyId)" modules/admin/reports.js
           grep -F "كشف حساب سريع للتسوية" modules/admin/reports.js
           ! grep -F "o.courier_profit||o.delivery_fee" modules/admin/reports.js
+          grep -F "function bookletPrep(o)" modules/admin/orders.js
+          grep -F 'aria-label="بيانات التجهيز"' modules/admin/orders.js
+          grep -F 'prep?.subject,prep?.term,prep?.teacher' modules/admin/orders.js
           grep -F "installCourierFeeDisplayCompatibility" alin-config.js
           grep -F "loadTeacherOrderDeliveryFix" alin-config.js
           ! grep -F 'data-admin-tab="courierAreas"' store-desktop.html
