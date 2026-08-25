@@ -10,7 +10,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: alin-order-prep-one-time
+  group: alin-finance-settlement-ui
   cancel-in-progress: false
 
 jobs:
@@ -22,34 +22,59 @@ jobs:
         with:
           ref: main
           fetch-depth: 0
-      - name: Apply order preparation display
-        run: python3 scripts/add-order-preparation-details.py
-      - name: Validate protected behavior
+
+      - name: Integrate finance settlement UI and bust caches
+        shell: python
         run: |
-          set -e
-          node --check modules/admin/orders.js
-          grep -F 'function bookletPrep(o)' modules/admin/orders.js
-          grep -F 'aria-label="بيانات التجهيز"' modules/admin/orders.js
-          grep -F 'prep?.subject,prep?.term,prep?.teacher' modules/admin/orders.js
-          node scripts/stable-current-smoke.js
-          node scripts/report-finance-source-smoke.js
-      - name: Rebuild role runtime
-        run: python3 scripts/build-runtime.py
-      - name: Validate runtime
+          from pathlib import Path
+          from datetime import datetime, timezone
+          import re, subprocess
+
+          root=Path('.')
+          build=root/'scripts/build-runtime.py'
+          text=build.read_text(encoding='utf-8')
+          needle="'modules/admin/accounts-advanced.js','modules/admin/finance.js',"
+          replacement="'modules/admin/accounts-advanced.js','modules/admin/finance.js','modules/admin/finance-settlement-ui.js',"
+          if needle in text:
+              text=text.replace(needle,replacement,1)
+              build.write_text(text,encoding='utf-8')
+          elif "'modules/admin/finance-settlement-ui.js'" not in text:
+              raise SystemExit('Could not add finance settlement UI to role runtime')
+
+          subprocess.run(['python3','scripts/build-runtime.py'],check=True)
+
+          stamp=datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')
+          token=f'4.2.0-finance-settlement-ui-{stamp}'
+          config=root/'alin-config.js'
+          cfg=config.read_text(encoding='utf-8')
+          cfg,count=re.subn(r"assetVersion:'[^']+'",f"assetVersion:'{token}'",cfg,count=1)
+          if count!=1: raise SystemExit('Could not bump assetVersion')
+          config.write_text(cfg,encoding='utf-8')
+
+          for name in ('store-desktop.html','store-mobile.html','store-tablet.html'):
+              path=root/name
+              page=path.read_text(encoding='utf-8')
+              page=re.sub(r'\?v=[A-Za-z0-9._:-]+',f'?v={token}',page)
+              path.write_text(page,encoding='utf-8')
+
+          print('asset token',token)
+
+      - name: Validate settlement UI runtime
         run: |
-          set -e
+          node --check modules/admin/finance-settlement-ui.js
           node --check dist/alin-role-runtime.v4.js
-          grep -F 'function bookletPrep(o)' dist/alin-role-runtime.v4.js
-          grep -F 'aria-label="بيانات التجهيز"' dist/alin-role-runtime.v4.js
-          git diff --check
-      - name: Commit display-only change
+          grep -F "ALIN_FINANCE_SETTLEMENT_UI" dist/alin-role-runtime.v4.js
+          grep -F "modules/admin/finance-settlement-ui.js" scripts/build-runtime.py
+          grep -F "AlinFinanceSettlementUI.open" dist/alin-role-runtime.v4.js
+
+      - name: Commit integrated runtime
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add modules/admin/orders.js styles/alin-shared.css alin-config.js store-desktop.html store-mobile.html store-tablet.html dist/alin-role-runtime.v4.js dist/alin-core.v4.js alin-app-desktop.v4.2.0.js alin-app-mobile.v4.2.0.js alin-app-tablet.v4.2.0.js
+          git add scripts/build-runtime.py modules/admin/finance-settlement-ui.js styles/alin-finance-settlement-ui.css dist/alin-role-runtime.v4.js dist/alin-core.v4.js alin-app-desktop.v4.2.0.js alin-app-mobile.v4.2.0.js alin-app-tablet.v4.2.0.js alin-config.js store-desktop.html store-mobile.html store-tablet.html
           if git diff --cached --quiet; then
             echo "No changes to commit"
             exit 0
           fi
-          git commit -m "fix: show clear booklet preparation details in admin orders"
+          git commit -m "feat: replace finance prompts with safe settlement modal"
           git push origin HEAD:main
