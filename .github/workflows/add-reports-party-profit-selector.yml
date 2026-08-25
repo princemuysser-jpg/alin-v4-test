@@ -26,12 +26,9 @@ jobs:
         shell: python
         run: |
           from pathlib import Path
-          import re
           p=Path('modules/admin/reports.js')
           text=p.read_text(encoding='utf-8')
-
           text=text.replace("const state={period:'all',from:'',to:'',kind:'all',q:''};","const state={period:'all',from:'',to:'',kind:'all',q:'',partyRole:'teacher',partyId:''};",1)
-
           anchor="  function financialTotals(rows){return rows.reduce((out,row)=>{out.sales+=num(row.total);out.platform+=num(row.admin||row.alin);out.teacher+=num(row.teacher||row.teacher_amount);out.library+=num(row.library||row.library_amount);out.courier+=num(row.delegate||row.courier||row.courier_amount);return out},{sales:0,platform:0,teacher:0,library:0,courier:0})}\n"
           helper="""  function financialTotals(rows){return rows.reduce((out,row)=>{out.sales+=num(row.total);out.platform+=num(row.admin||row.alin);out.teacher+=num(row.teacher||row.teacher_amount);out.library+=num(row.library||row.library_amount);out.courier+=num(row.delegate||row.courier||row.courier_amount);return out},{sales:0,platform:0,teacher:0,library:0,courier:0})}
   function settlementParties(role){
@@ -65,16 +62,13 @@ jobs:
           if 'function settlementLookupHtml()' not in text:
               if anchor not in text: raise SystemExit('financialTotals anchor missing')
               text=text.replace(anchor,helper,1)
-
-          old="const table=rows.length?`<div class=\"admin-v143-table-wrap\""
+          old='const table=rows.length?`<div class="admin-v143-table-wrap"'
           if old not in text: raise SystemExit('reports table anchor missing')
-          text=text.replace(old,"const settlementLookup=settlementLookupHtml();\n    const table=rows.length?`<div class=\"admin-v143-table-wrap\"",1)
-
+          text=text.replace(old,'const settlementLookup=settlementLookupHtml();\n    const table=rows.length?`<div class="admin-v143-table-wrap"',1)
           needle='</article></section><section class="admin-v143-grid">'
           replacement='</article></section>${settlementLookup}<section class="admin-v143-grid">'
           if needle not in text: raise SystemExit('reports metrics/grid anchor missing')
           text=text.replace(needle,replacement,1)
-
           filter_anchor="  window.alinV143ReportFilter=(k,v)=>{state[k]=v;if(k==='period'&&v!=='custom'){state.from='';state.to=''}render()};\n"
           party_filter="""  window.alinV143ReportFilter=(k,v)=>{state[k]=v;if(k==='period'&&v!=='custom'){state.from='';state.to=''}render()};
   window.alinV143PartyFilter=(k,v)=>{state[k]=v;if(k==='partyRole')state.partyId='';render()};
@@ -82,7 +76,6 @@ jobs:
           if 'window.alinV143PartyFilter=' not in text:
               if filter_anchor not in text: raise SystemExit('report filter anchor missing')
               text=text.replace(filter_anchor,party_filter,1)
-
           p.write_text(text,encoding='utf-8')
 
       - name: Add regression test
@@ -131,7 +124,7 @@ jobs:
         run: |
           from pathlib import Path
           import re
-          token='4.2.0-stable-report-settlement-lookup-20260825-1434'
+          token='4.2.0-stable-report-settlement-lookup-20260825-1437'
           cfg=Path('alin-config.js')
           text=cfg.read_text(encoding='utf-8')
           text,n=re.subn(r"assetVersion:'[^']+'",f"assetVersion:'{token}'",text,count=1)
@@ -149,3 +142,5 @@ jobs:
           git add modules/admin/reports.js scripts/report-party-profit-smoke.js dist/alin-role-runtime.v4.js dist/alin-core.v4.js alin-app-desktop.v4.2.0.js alin-app-mobile.v4.2.0.js alin-app-tablet.v4.2.0.js alin-config.js store-desktop.html store-mobile.html store-tablet.html
           git commit -m "feat: add quick settlement account lookup to reports"
           git push origin HEAD:main
+
+# trigger 2026-08-25 14:37
