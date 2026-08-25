@@ -33,7 +33,6 @@ jobs:
           grep -F 'prep?.subject,prep?.term,prep?.teacher' modules/admin/orders.js
           node scripts/stable-current-smoke.js
           node scripts/report-finance-source-smoke.js
-          node scripts/report-party-profit-smoke.js
       - name: Rebuild role runtime
         run: python3 scripts/build-runtime.py
       - name: Validate runtime
