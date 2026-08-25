@@ -49,6 +49,11 @@ jobs:
           grep -F "modules/admin/delivery-pricing.js" scripts/build-runtime.py
           grep -F "modules/admin/reports.js" scripts/build-runtime.py
           grep -F "canonicalLedger?.()" modules/admin/reports.js
+          grep -F "function settlementLookupHtml()" modules/admin/reports.js
+          grep -F "teacherSummary?.(state.partyId)" modules/admin/reports.js
+          grep -F "librarySummary?.(state.partyId)" modules/admin/reports.js
+          grep -F "delegateSummary?.(state.partyId)" modules/admin/reports.js
+          grep -F "كشف حساب سريع للتسوية" modules/admin/reports.js
           ! grep -F "o.courier_profit||o.delivery_fee" modules/admin/reports.js
           grep -F "installCourierFeeDisplayCompatibility" alin-config.js
           grep -F "loadTeacherOrderDeliveryFix" alin-config.js
