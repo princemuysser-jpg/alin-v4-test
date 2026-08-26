@@ -136,6 +136,12 @@
     });
   }
 
+  function refreshRoleView(){
+    const currentRole=role();
+    if(currentRole==='library'&&typeof window.AlinLibraryV116?.render==='function')window.AlinLibraryV116.render();
+    setTimeout(refreshUI,0);
+  }
+
   function orderSignature(rows){
     return arr(rows).map(row=>[
       orderId(row),text(row?.updated_at||row?.created_at),status(row),
@@ -190,13 +196,16 @@
   function boot(){
     const currentRole=role();if(!currentRole)return;
     lastSignature=orderSignature(window.db?.orders||[]);
-    refreshUI();
+    refreshRoleView();
     setTimeout(()=>pollOrders(true),700);
   }
 
   document.addEventListener('click',onCardInteraction,true);
+  document.addEventListener('click',event=>{
+    if(event.target?.closest?.('[data-library-tab],[data-courier-tab]'))setTimeout(refreshUI,0);
+  });
   window.addEventListener('alin:new-order-bell',onNewOrder);
-  window.addEventListener('alin:data-refreshed',()=>setTimeout(refreshUI,0));
+  window.addEventListener('alin:data-refreshed',refreshRoleView);
   window.addEventListener('alin:realtime-change',event=>{if(text(event?.detail?.table).toLowerCase()==='orders')setTimeout(()=>pollOrders(true),120)});
   window.addEventListener('alin:admin-tab',()=>refreshUI());
   window.addEventListener('alin:page-open',()=>refreshUI());
