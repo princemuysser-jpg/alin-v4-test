@@ -1,0 +1,71 @@
+name: Build staff order attention
+
+on:
+  push:
+    branches:
+      - feat/staff-new-order-attention-20260826
+    paths:
+      - '.github/workflows/build-staff-order-attention.yml'
+      - 'modules/core/order-attention.js'
+      - 'styles/alin-order-attention.css'
+      - 'scripts/staff-order-attention-smoke.js'
+      - 'scripts/stable-current-smoke.js'
+      - 'scripts/build-runtime.py'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  validate-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/staff-new-order-attention-20260826
+          fetch-depth: 0
+
+      - name: Validate source and stable behavior
+        run: |
+          set -e
+          node --check modules/core/order-attention.js
+          node scripts/staff-order-attention-smoke.js
+          node scripts/stable-current-smoke.js
+          node scripts/report-finance-source-smoke.js
+
+      - name: Build authoritative runtimes
+        run: python3 scripts/build-runtime.py
+
+      - name: Verify built runtime
+        run: |
+          set -e
+          node --check dist/alin-role-runtime.v4.js
+          grep -F 'modules/core/order-attention.js' dist/alin-role-runtime.v4.js
+          grep -F 'window.AlinOrderAttention' dist/alin-role-runtime.v4.js
+          git diff --check
+
+      - name: Bump cache tokens
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+          token='4.2.0-stable-staff-order-attention-20260826-2215'
+          p=Path('alin-config.js')
+          s=p.read_text(encoding='utf-8')
+          s,n=re.subn(r"assetVersion:'[^']+'",f"assetVersion:'{token}'",s,count=1)
+          if n!=1: raise SystemExit('assetVersion not found')
+          p.write_text(s,encoding='utf-8')
+          for name in ('store-desktop.html','store-mobile.html','store-tablet.html'):
+            p=Path(name)
+            s=p.read_text(encoding='utf-8')
+            s=re.sub(r'\?v=[A-Za-z0-9._:-]+',f'?v={token}',s)
+            p.write_text(s,encoding='utf-8')
+
+      - name: Commit generated build
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add dist/alin-role-runtime.v4.js alin-config.js store-desktop.html store-mobile.html store-tablet.html
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'build: ship unified staff order attention'
+          git push origin HEAD:feat/staff-new-order-attention-20260826
