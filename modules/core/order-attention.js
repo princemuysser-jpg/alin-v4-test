@@ -21,6 +21,16 @@
   const orderId=order=>text(order?.id||order?.order_id||order?.order_number||order?.tracking_code);
   const status=order=>text(order?.status||'new').toLowerCase();
 
+  function loadStyle(){
+    if(document.getElementById('alinOrderAttentionCss'))return;
+    const link=document.createElement('link');
+    link.id='alinOrderAttentionCss';
+    link.rel='stylesheet';
+    link.href=`./styles/alin-order-attention.css?v=${encodeURIComponent(window.ALIN_CONFIG?.assetVersion||VERSION)}`;
+    document.head.appendChild(link);
+  }
+  loadStyle();
+
   function accountIds(currentRole=role()){
     const current=window.current||{};
     const ids=new Set([
@@ -54,10 +64,13 @@
     return ['assigned','new','pending_admin'].includes(s);
   }
 
-  function storageKey(currentRole=role()){
-    const ids=[...accountIds(currentRole)].sort();
-    return `${READ_PREFIX}:${currentRole}:${ids[0]||text(window.current?.id)||'session'}`;
+  function accountKey(currentRole=role()){
+    const current=window.current||{};
+    if(currentRole==='library')return text(current.id||current.library_id||current.account_id||current.username||'session');
+    if(currentRole==='courier')return text(current.id||current.courier_id||current.delegate_id||current.account_id||current.username||'session');
+    return text(current.id||current.account_id||current.username||'session');
   }
+  function storageKey(currentRole=role()){return `${READ_PREFIX}:${currentRole}:${accountKey(currentRole)}`}
   function readSet(currentRole=role()){
     try{return new Set(JSON.parse(localStorage.getItem(storageKey(currentRole))||'[]').map(text).filter(Boolean))}catch(_){return new Set()}
   }
@@ -156,10 +169,8 @@
 
   function openRelevantPage(currentRole=role()){
     if(currentRole==='admin')window.adminTab?.('orders');
-    else if(currentRole==='library'){
-      const tab=document.querySelector('#libraryPage [data-library-tab="orders"]');
-      tab?.click();
-    }else if(currentRole==='courier')window.renderCourierDashboard?.('current',{force:true});
+    else if(currentRole==='library')document.querySelector('#libraryPage [data-library-tab="orders"]')?.click();
+    else if(currentRole==='courier')window.renderCourierDashboard?.('current',{force:true});
   }
 
   function onCardInteraction(event){
