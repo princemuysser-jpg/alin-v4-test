@@ -1,0 +1,49 @@
+/* ALIN v4.2 Stable — unified staff new-order attention. */
+.alin-order-attention-badge,
+#libraryV116OrdersBadge,
+#courierCurrentBadge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:20px;
+  height:20px;
+  padding:0 6px;
+  margin-inline-start:7px;
+  border-radius:999px;
+  background:#c62828;
+  color:#fff;
+  font-size:11px;
+  font-weight:800;
+  line-height:1;
+  vertical-align:middle;
+}
+.alin-order-attention-badge[hidden],
+#libraryV116OrdersBadge[hidden],
+#courierCurrentBadge[hidden]{display:none!important}
+.alin-order-attention-unread{
+  position:relative;
+  outline:2px solid rgba(198,40,40,.18);
+  box-shadow:0 10px 26px rgba(198,40,40,.08);
+}
+.alin-order-attention-new{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:22px;
+  padding:3px 8px;
+  margin-inline-start:6px;
+  border-radius:999px;
+  background:#c62828;
+  color:#fff;
+  font-size:11px;
+  font-style:normal;
+  font-weight:800;
+  line-height:1;
+}
+.admin-order-v126-title .alin-order-attention-new,
+.library-v116-status .alin-order-attention-new,
+.v174-order-state .alin-order-attention-new{vertical-align:middle}
+@media(max-width:700px){
+  .alin-order-attention-badge,#libraryV116OrdersBadge,#courierCurrentBadge{min-width:19px;height:19px;padding:0 5px;font-size:10px}
+  .alin-order-attention-new{font-size:10px;min-height:20px;padding:3px 7px}
+}

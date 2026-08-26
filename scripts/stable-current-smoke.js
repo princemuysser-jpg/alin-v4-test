@@ -3,8 +3,9 @@ const fs=require('fs');
 const vm=require('vm');
 const assert=require('assert');
 
-// Stable Lock must also protect targeted student order notifications.
+// Stable Lock protects secure student notification plumbing and staff new-order attention.
 require('./student-notifications-smoke.js');
+require('./staff-order-attention-smoke.js');
 
 global.window={};
 window.window=window;
