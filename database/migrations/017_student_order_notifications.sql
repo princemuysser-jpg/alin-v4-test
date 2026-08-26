@@ -1,5 +1,15 @@
 -- ALIN v4.2 Stable Lock — secure per-student order notifications.
--- Registered students use the existing custom token + device session. No private notification is exposed to anon reads.
+-- Registered students use the existing custom token + device session. Private notifications remain inaccessible to anonymous table reads.
+
+create table if not exists public.student_notification_reads(
+  notification_id text not null references public.notifications(id) on delete cascade,
+  student_id text not null references public.student_profiles(id) on delete cascade,
+  read_at timestamptz not null default now(),
+  primary key(notification_id,student_id)
+);
+
+alter table public.student_notification_reads enable row level security;
+revoke all on table public.student_notification_reads from anon,authenticated;
 
 create or replace function public.alin_student_notifications(p_token text,p_device text)
 returns table(
@@ -31,8 +41,8 @@ begin
   select
     n.id,n.title,n.message,n.role,n.account_id,n.type,n.link,n.status,n.created_by,n.created_at,n.expires_at,
     exists(
-      select 1 from public.notification_reads r
-      where r.notification_id=n.id and r.account_id=v_student
+      select 1 from public.student_notification_reads r
+      where r.notification_id=n.id and r.student_id=v_student
     ) as is_read
   from public.notifications n
   where n.status='active'
@@ -68,9 +78,9 @@ begin
   ) into v_allowed;
   if not v_allowed then return false; end if;
 
-  insert into public.notification_reads(notification_id,account_id,read_at)
+  insert into public.student_notification_reads(notification_id,student_id,read_at)
   values(p_notification_id,v_student,now())
-  on conflict(notification_id,account_id) do update set read_at=excluded.read_at;
+  on conflict(notification_id,student_id) do update set read_at=excluded.read_at;
   return true;
 end
 $$;
@@ -88,13 +98,13 @@ begin
   v_student:=public.alin_student_session_id(p_token,p_device);
   if coalesce(v_student,'')='' then raise exception 'جلسة الطالب غير صالحة'; end if;
 
-  insert into public.notification_reads(notification_id,account_id,read_at)
+  insert into public.student_notification_reads(notification_id,student_id,read_at)
   select n.id,v_student,now()
   from public.notifications n
   where n.status='active'
     and (n.expires_at is null or n.expires_at>=now())
     and (n.account_id=v_student or (n.account_id is null and n.role in ('all','student')))
-  on conflict(notification_id,account_id) do update set read_at=excluded.read_at;
+  on conflict(notification_id,student_id) do update set read_at=excluded.read_at;
   get diagnostics v_count=row_count;
   return v_count;
 end
