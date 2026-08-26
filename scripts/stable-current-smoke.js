@@ -3,6 +3,9 @@ const fs=require('fs');
 const vm=require('vm');
 const assert=require('assert');
 
+// Stable Lock must also protect targeted student order notifications.
+require('./student-notifications-smoke.js');
+
 global.window={};
 window.window=window;
 window.current={role:'admin',id:'admin'};
