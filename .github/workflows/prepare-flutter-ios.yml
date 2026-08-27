@@ -1,0 +1,174 @@
+name: Prepare Alin Flutter iOS
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feat/flutter-ios-ready-20260827
+    paths:
+      - 'flutter_app/**'
+      - '.github/workflows/prepare-flutter-ios.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  prepare-ios:
+    runs-on: macos-15
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: flutter_app
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: feat/flutter-ios-ready-20260827
+
+      - name: Install Flutter 3.44.9 stable
+        working-directory: ${{ github.workspace }}
+        run: |
+          git clone --depth 1 --branch 3.44.9 https://github.com/flutter/flutter.git "$HOME/flutter"
+          echo "$HOME/flutter/bin" >> "$GITHUB_PATH"
+          "$HOME/flutter/bin/flutter" config --no-analytics
+          "$HOME/flutter/bin/flutter" --version
+
+      - name: Generate iOS platform files
+        run: |
+          set -euo pipefail
+          flutter create --platforms=ios --org com.alin --project-name alin_flutter .
+
+      - name: Configure Alin iOS identity and permissions
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          project = Path('ios/Runner.xcodeproj/project.pbxproj')
+          text = project.read_text()
+          text = text.replace('PRODUCT_BUNDLE_IDENTIFIER = com.alin.alinFlutter;', 'PRODUCT_BUNDLE_IDENTIFIER = com.alin.platform;')
+          text = text.replace('PRODUCT_BUNDLE_IDENTIFIER = com.alin.alinFlutter.RunnerTests;', 'PRODUCT_BUNDLE_IDENTIFIER = com.alin.platform.RunnerTests;')
+          text = text.replace('IPHONEOS_DEPLOYMENT_TARGET = 13.0;', 'IPHONEOS_DEPLOYMENT_TARGET = 15.0;')
+          text = text.replace('IPHONEOS_DEPLOYMENT_TARGET = 12.0;', 'IPHONEOS_DEPLOYMENT_TARGET = 15.0;')
+          project.write_text(text)
+
+          plist = Path('ios/Runner/Info.plist')
+          p = plist.read_text()
+          p = p.replace('<string>alin_flutter</string>', '<string>منصة آلين</string>')
+          p = p.replace('<string>Alin Flutter</string>', '<string>منصة آلين</string>')
+          marker = '\t<key>UILaunchStoryboardName</key>'
+          permissions = '''\t<key>NSLocationWhenInUseUsageDescription</key>\n\t<string>نستخدم موقعك فقط لتحديد عنوان التوصيل بدقة.</string>\n\t<key>NSUserTrackingUsageDescription</key>\n\t<string>منصة آلين لا تستخدم التتبع الإعلاني عبر التطبيقات.</string>\n'''
+          if 'NSLocationWhenInUseUsageDescription' not in p:
+              p = p.replace(marker, permissions + marker)
+          plist.write_text(p)
+          PY
+
+      - name: Configure iOS push capability
+        run: |
+          set -euo pipefail
+          cat > ios/Runner/Runner.entitlements <<'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>aps-environment</key>
+              <string>production</string>
+          </dict>
+          </plist>
+          EOF
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('ios/Runner.xcodeproj/project.pbxproj')
+          s = p.read_text()
+          # Add entitlements reference to all Runner build configurations if absent.
+          if 'CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;' not in s:
+              s = s.replace('CODE_SIGN_STYLE = Automatic;', 'CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;\n\t\t\t\tCODE_SIGN_STYLE = Automatic;')
+          p.write_text(s)
+          PY
+
+      - name: Generate iOS app icons from Alin icon
+        run: |
+          set -euo pipefail
+          ICON='assets/images/alin_icon.png'
+          DEST='ios/Runner/Assets.xcassets/AppIcon.appiconset'
+          test -f "$ICON"
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          items = [
+            ('20x20','2x',40),('20x20','3x',60),
+            ('29x29','2x',58),('29x29','3x',87),
+            ('40x40','2x',80),('40x40','3x',120),
+            ('60x60','2x',120),('60x60','3x',180),
+            ('76x76','1x',76),('76x76','2x',152),
+            ('83.5x83.5','2x',167),('1024x1024','1x',1024),
+          ]
+          images=[]
+          for size,scale,pixels in items:
+            name=f'Icon-App-{pixels}.png'
+            idiom='ios-marketing' if pixels==1024 else ('ipad' if size in ('76x76','83.5x83.5') else 'iphone')
+            images.append({'size':size,'idiom':idiom,'filename':name,'scale':scale})
+          Path('ios/Runner/Assets.xcassets/AppIcon.appiconset/Contents.json').write_text(json.dumps({'images':images,'info':{'version':1,'author':'xcode'}},indent=2))
+          PY
+          for px in 40 58 60 76 80 87 120 152 167 180 1024; do
+            sips -z "$px" "$px" "$ICON" --out "$DEST/Icon-App-$px.png" >/dev/null
+          done
+
+      - name: Ensure CocoaPods configuration
+        run: |
+          set -euo pipefail
+          if [ -f ios/Podfile ]; then
+            sed -i '' "s/platform :ios, '13.0'/platform :ios, '15.0'/" ios/Podfile || true
+            sed -i '' "s/# platform :ios, '13.0'/platform :ios, '15.0'/" ios/Podfile || true
+          fi
+
+      - name: Flutter pub get
+        run: flutter pub get
+
+      - name: Install CocoaPods
+        run: |
+          cd ios
+          pod install --repo-update
+
+      - name: Flutter analyze
+        run: flutter analyze
+
+      - name: Flutter tests
+        run: flutter test
+
+      - name: Build iOS release without signing
+        run: flutter build ios --release --no-codesign --no-pub
+
+      - name: Verify iOS bundle configuration
+        run: |
+          set -euo pipefail
+          grep -q 'com.alin.platform' ios/Runner.xcodeproj/project.pbxproj
+          grep -q 'منصة آلين' ios/Runner/Info.plist
+          grep -q 'NSLocationWhenInUseUsageDescription' ios/Runner/Info.plist
+          grep -q 'aps-environment' ios/Runner/Runner.entitlements
+          test -f build/ios/iphoneos/Runner.app/Info.plist
+          echo 'iOS project and unsigned release build are valid.'
+
+      - name: Commit generated iOS platform files
+        if: success()
+        working-directory: ${{ github.workspace }}
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add flutter_app/ios
+          if git diff --cached --quiet; then
+            echo 'No iOS platform changes to commit.'
+          else
+            git commit -m 'feat: add production-ready Flutter iOS platform'
+            git push origin HEAD:feat/flutter-ios-ready-20260827
+          fi
+
+      - name: Upload unsigned iOS build for validation
+        uses: actions/upload-artifact@v4
+        with:
+          name: alin-flutter-ios-unsigned-v5.6.0-build22
+          if-no-files-found: error
+          path: flutter_app/build/ios/iphoneos/Runner.app
+          retention-days: 7
