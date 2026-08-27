@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -17,14 +18,31 @@ import 'data/alin_repository.dart';
 import 'screens/splash_screen.dart';
 import 'state/app_controller.dart';
 
+const FirebaseOptions _alinIOSFirebaseOptions = FirebaseOptions(
+  apiKey: 'AIzaSyCaZ4S-1o2mPv2o-n0WbH9p23EWtG1EZ_Y',
+  appId: '1:622701050570:ios:9b1cd7dc67be549cf49233',
+  messagingSenderId: '622701050570',
+  projectId: 'alin-platform',
+  storageBucket: 'alin-platform.firebasestorage.app',
+  iosBundleId: 'com.alin.platform',
+);
+
+Future<void> _initializeFirebase() async {
+  if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
+    await Firebase.initializeApp(options: _alinIOSFirebaseOptions);
+    return;
+  }
+  await Firebase.initializeApp();
+}
+
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp();
+  await _initializeFirebase();
 }
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+  await _initializeFirebase();
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   await Supabase.initialize(
     url: AlinConfig.supabaseUrl,
