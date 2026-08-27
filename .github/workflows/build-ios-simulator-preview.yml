@@ -1,0 +1,67 @@
+name: ALIN iOS Simulator Preview
+
+on:
+  push:
+    branches:
+      - test/ios-simulator-appetize-20260827
+    paths:
+      - 'flutter_app/**'
+      - '.github/workflows/build-ios-simulator-preview.yml'
+  workflow_dispatch:
+
+jobs:
+  simulator-preview:
+    runs-on: macos-15
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: flutter_app
+
+    steps:
+      - name: Checkout preview branch
+        uses: actions/checkout@v4
+
+      - name: Install Flutter 3.44.9 stable
+        working-directory: ${{ github.workspace }}
+        run: |
+          git clone --depth 1 --branch 3.44.9 https://github.com/flutter/flutter.git "$HOME/flutter"
+          echo "$HOME/flutter/bin" >> "$GITHUB_PATH"
+          "$HOME/flutter/bin/flutter" config --no-analytics
+          "$HOME/flutter/bin/flutter" --version
+
+      - name: Flutter pub get
+        run: flutter pub get
+
+      - name: Analyze preview sources
+        run: flutter analyze lib
+
+      - name: Build iOS Simulator preview
+        run: |
+          flutter build ios \
+            --simulator \
+            --debug \
+            --no-pub \
+            --dart-define=ALIN_IOS_SIMULATOR_PREVIEW=true
+
+      - name: Verify simulator app
+        run: |
+          set -euo pipefail
+          test -d build/ios/iphonesimulator/Runner.app
+          test -f build/ios/iphonesimulator/Runner.app/Info.plist
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' build/ios/iphonesimulator/Runner.app/Info.plist
+          echo 'ALIN iOS Simulator preview is ready.'
+
+      - name: Package Appetize upload ZIP
+        run: |
+          set -euo pipefail
+          cd build/ios/iphonesimulator
+          ditto -c -k --sequesterRsrc --keepParent Runner.app alin-ios-simulator-appetize.zip
+          test -f alin-ios-simulator-appetize.zip
+
+      - name: Upload Appetize simulator artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: alin-ios-simulator-appetize
+          path: flutter_app/build/ios/iphonesimulator/alin-ios-simulator-appetize.zip
+          if-no-files-found: error
+          retention-days: 7
