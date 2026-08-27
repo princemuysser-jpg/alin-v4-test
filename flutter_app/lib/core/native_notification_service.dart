@@ -28,13 +28,26 @@ class NativeNotificationService {
     this.onNotificationOpened,
   });
 
+  bool get _isAndroid => !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+  bool get _isIOS => !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
+  bool get _supportsNativePush => _isAndroid || _isIOS;
+  String get _pushPlatform => _isIOS ? 'ios' : 'android';
+
   Future<void> start() async {
     if (_started) return;
     _started = true;
 
-    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+    if (_supportsNativePush) {
       // Permission is intentionally NOT requested here. The store UI owns the
       // permission prompt so nothing appears over the splash screen.
+      if (_isIOS) {
+        await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
+      }
+
       await _registerCurrentToken();
       _tokenRefreshSub = FirebaseMessaging.instance.onTokenRefresh.listen((token) {
         unawaited(_registerToken(token));
@@ -64,11 +77,15 @@ class NativeNotificationService {
   }
 
   Future<bool> notificationPermissionGranted() async {
-    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return true;
-    try {
-      final nativeGranted = await _channel.invokeMethod<bool>('permissionGranted');
-      if (nativeGranted != null) return nativeGranted;
-    } catch (_) {}
+    if (!_supportsNativePush) return true;
+
+    if (_isAndroid) {
+      try {
+        final nativeGranted = await _channel.invokeMethod<bool>('permissionGranted');
+        if (nativeGranted != null) return nativeGranted;
+      } catch (_) {}
+    }
+
     try {
       final settings = await FirebaseMessaging.instance.getNotificationSettings();
       return settings.authorizationStatus == AuthorizationStatus.authorized ||
@@ -79,34 +96,52 @@ class NativeNotificationService {
   }
 
   Future<bool> requestNotificationPermission() async {
-    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return true;
-    if (await notificationPermissionGranted()) return true;
-    try {
-      final granted = await _channel.invokeMethod<bool>('requestPermission');
-      if (granted == true) {
-        await _registerCurrentToken();
-        return true;
-      }
-      return notificationPermissionGranted();
-    } catch (_) {
-      try {
-        final settings = await FirebaseMessaging.instance.requestPermission(
-          alert: true,
-          badge: true,
-          sound: true,
-        );
-        final granted = settings.authorizationStatus == AuthorizationStatus.authorized ||
-            settings.authorizationStatus == AuthorizationStatus.provisional;
-        if (granted) await _registerCurrentToken();
-        return granted;
-      } catch (_) {
-        return false;
-      }
+    if (!_supportsNativePush) return true;
+    if (await notificationPermissionGranted()) {
+      await _registerCurrentToken();
+      return true;
     }
+
+    if (_isAndroid) {
+      try {
+        final granted = await _channel.invokeMethod<bool>('requestPermission');
+        if (granted == true) {
+          await _registerCurrentToken();
+          return true;
+        }
+      } catch (_) {}
+    }
+
+    try {
+      final settings = await FirebaseMessaging.instance.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+      final granted = settings.authorizationStatus == AuthorizationStatus.authorized ||
+          settings.authorizationStatus == AuthorizationStatus.provisional;
+      if (granted) await _registerCurrentToken();
+      return granted;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> _waitForApnsToken() async {
+    if (!_isIOS) return true;
+    for (var attempt = 0; attempt < 12; attempt++) {
+      try {
+        final token = await FirebaseMessaging.instance.getAPNSToken();
+        if (token != null && token.isNotEmpty) return true;
+      } catch (_) {}
+      await Future<void>.delayed(const Duration(milliseconds: 250));
+    }
+    return false;
   }
 
   Future<void> _registerCurrentToken() async {
     try {
+      if (!await _waitForApnsToken()) return;
       final token = await FirebaseMessaging.instance.getToken();
       if (token != null && token.isNotEmpty) await _registerToken(token);
     } catch (_) {}
@@ -120,7 +155,7 @@ class NativeNotificationService {
         'p_device': store.deviceId(),
         'p_student_token': studentToken,
         'p_student_device': studentToken == null ? null : store.deviceId(),
-        'p_platform': 'android',
+        'p_platform': _pushPlatform,
       });
     } catch (_) {}
   }
@@ -130,11 +165,18 @@ class NativeNotificationService {
     if (id.isNotEmpty) _remember(id);
     final title = (message.notification?.title ?? '${message.data['title'] ?? 'منصة آلين'}').trim();
     final body = (message.notification?.body ?? '${message.data['message'] ?? message.data['body'] ?? ''}').trim();
-    if (body.isNotEmpty) {
+
+    // Android uses the existing native local notification channel while iOS
+    // relies on Firebase Messaging foreground presentation options above.
+    if (_isAndroid && body.isNotEmpty) {
       try {
-        await _channel.invokeMethod<void>('showNotification', {'title': title.isEmpty ? 'منصة آلين' : title, 'message': body});
+        await _channel.invokeMethod<void>('showNotification', {
+          'title': title.isEmpty ? 'منصة آلين' : title,
+          'message': body,
+        });
       } catch (_) {}
     }
+
     try {
       await onNotificationReceived?.call();
     } catch (_) {}
@@ -167,9 +209,12 @@ class NativeNotificationService {
       if (expires != null && expires.isBefore(DateTime.now().toUtc())) return;
     }
     if (id.isNotEmpty) _remember(id);
-    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+    if (_isAndroid) {
       try {
-        await _channel.invokeMethod<void>('showNotification', {'title': title.isEmpty ? 'منصة آلين' : title, 'message': message});
+        await _channel.invokeMethod<void>('showNotification', {
+          'title': title.isEmpty ? 'منصة آلين' : title,
+          'message': message,
+        });
       } catch (_) {}
     }
     try {
