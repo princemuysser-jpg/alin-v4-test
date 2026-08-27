@@ -58,7 +58,7 @@ jobs:
           p = p.replace('<string>alin_flutter</string>', '<string>منصة آلين</string>')
           p = p.replace('<string>Alin Flutter</string>', '<string>منصة آلين</string>')
           marker = '\t<key>UILaunchStoryboardName</key>'
-          permissions = '''\t<key>NSLocationWhenInUseUsageDescription</key>\n\t<string>نستخدم موقعك فقط لتحديد عنوان التوصيل بدقة.</string>\n\t<key>NSUserTrackingUsageDescription</key>\n\t<string>منصة آلين لا تستخدم التتبع الإعلاني عبر التطبيقات.</string>\n'''
+          permissions = '''\t<key>NSLocationWhenInUseUsageDescription</key>\n\t<string>نستخدم موقعك فقط لتحديد عنوان التوصيل بدقة.</string>\n'''
           if 'NSLocationWhenInUseUsageDescription' not in p:
               p = p.replace(marker, permissions + marker)
           plist.write_text(p)
@@ -81,7 +81,6 @@ jobs:
           from pathlib import Path
           p = Path('ios/Runner.xcodeproj/project.pbxproj')
           s = p.read_text()
-          # Add entitlements reference to all Runner build configurations if absent.
           if 'CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;' not in s:
               s = s.replace('CODE_SIGN_STYLE = Automatic;', 'CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;\n\t\t\t\tCODE_SIGN_STYLE = Automatic;')
           p.write_text(s)
@@ -115,21 +114,29 @@ jobs:
             sips -z "$px" "$px" "$ICON" --out "$DEST/Icon-App-$px.png" >/dev/null
           done
 
-      - name: Ensure CocoaPods configuration
+      - name: Configure dependency manager
         run: |
           set -euo pipefail
           if [ -f ios/Podfile ]; then
             sed -i '' "s/platform :ios, '13.0'/platform :ios, '15.0'/" ios/Podfile || true
             sed -i '' "s/# platform :ios, '13.0'/platform :ios, '15.0'/" ios/Podfile || true
+            echo 'Using CocoaPods for iOS dependencies.'
+          else
+            echo 'No Podfile generated; Flutter Swift Package Manager configuration will be used.'
           fi
 
       - name: Flutter pub get
         run: flutter pub get
 
-      - name: Install CocoaPods
+      - name: Install CocoaPods when present
         run: |
-          cd ios
-          pod install --repo-update
+          set -euo pipefail
+          if [ -f ios/Podfile ]; then
+            cd ios
+            pod install --repo-update
+          else
+            echo 'Skipping pod install: no Podfile.'
+          fi
 
       - name: Flutter analyze
         run: flutter analyze
