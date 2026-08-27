@@ -17,6 +17,11 @@ import 'data/alin_repository.dart';
 import 'screens/splash_screen.dart';
 import 'state/app_controller.dart';
 
+const bool _iosSimulatorPreview = bool.fromEnvironment(
+  'ALIN_IOS_SIMULATOR_PREVIEW',
+  defaultValue: false,
+);
+
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
@@ -24,8 +29,10 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
-  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  if (!_iosSimulatorPreview) {
+    await Firebase.initializeApp();
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  }
   await Supabase.initialize(
     url: AlinConfig.supabaseUrl,
     publishableKey: AlinConfig.supabasePublishableKey,
