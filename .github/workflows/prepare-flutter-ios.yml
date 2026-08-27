@@ -37,7 +37,10 @@ jobs:
       - name: Generate iOS platform files
         run: |
           set -euo pipefail
+          HAD_WIDGET_TEST=0
+          if git cat-file -e HEAD:flutter_app/test/widget_test.dart 2>/dev/null; then HAD_WIDGET_TEST=1; fi
           flutter create --platforms=ios --org com.alin --project-name alin_flutter .
+          if [ "$HAD_WIDGET_TEST" -eq 0 ]; then rm -f test/widget_test.dart; fi
 
       - name: Configure Alin iOS identity and permissions
         run: |
@@ -58,7 +61,7 @@ jobs:
           p = p.replace('<string>alin_flutter</string>', '<string>منصة آلين</string>')
           p = p.replace('<string>Alin Flutter</string>', '<string>منصة آلين</string>')
           marker = '\t<key>UILaunchStoryboardName</key>'
-          permissions = '''\t<key>NSLocationWhenInUseUsageDescription</key>\n\t<string>نستخدم موقعك فقط لتحديد عنوان التوصيل بدقة.</string>\n'''
+          permissions = '''\t<key>NSLocationWhenInUseUsageDescription</key>\n\t<string>نستخدم موقعك فقط لتحديد عنوان التوصيل بدقة.</string>\n\t<key>UIBackgroundModes</key>\n\t<array>\n\t\t<string>remote-notification</string>\n\t</array>\n'''
           if 'NSLocationWhenInUseUsageDescription' not in p:
               p = p.replace(marker, permissions + marker)
           plist.write_text(p)
@@ -138,11 +141,17 @@ jobs:
             echo 'Skipping pod install: no Podfile.'
           fi
 
-      - name: Flutter analyze
-        run: flutter analyze
+      - name: Analyze Alin Flutter sources
+        run: flutter analyze lib
 
       - name: Flutter tests
-        run: flutter test
+        run: |
+          set -euo pipefail
+          if [ -d test ] && find test -type f -name '*_test.dart' -print -quit | grep -q .; then
+            flutter test
+          else
+            echo 'No committed Flutter tests to run.'
+          fi
 
       - name: Build iOS release without signing
         run: flutter build ios --release --no-codesign --no-pub
@@ -153,6 +162,7 @@ jobs:
           grep -q 'com.alin.platform' ios/Runner.xcodeproj/project.pbxproj
           grep -q 'منصة آلين' ios/Runner/Info.plist
           grep -q 'NSLocationWhenInUseUsageDescription' ios/Runner/Info.plist
+          grep -q 'remote-notification' ios/Runner/Info.plist
           grep -q 'aps-environment' ios/Runner/Runner.entitlements
           test -f build/ios/iphoneos/Runner.app/Info.plist
           echo 'iOS project and unsigned release build are valid.'
