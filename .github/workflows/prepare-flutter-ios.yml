@@ -1,0 +1,83 @@
+name: ALIN Flutter iOS Build
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'flutter_app/**'
+      - '.github/workflows/prepare-flutter-ios.yml'
+  push:
+    branches:
+      - main
+      - feat/flutter-ios-ready-20260827
+    paths:
+      - 'flutter_app/**'
+      - '.github/workflows/prepare-flutter-ios.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  ios-build:
+    runs-on: macos-15
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: flutter_app
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Flutter 3.44.9 stable
+        working-directory: ${{ github.workspace }}
+        run: |
+          git clone --depth 1 --branch 3.44.9 https://github.com/flutter/flutter.git "$HOME/flutter"
+          echo "$HOME/flutter/bin" >> "$GITHUB_PATH"
+          "$HOME/flutter/bin/flutter" config --no-analytics
+          "$HOME/flutter/bin/flutter" --version
+
+      - name: Flutter pub get
+        run: flutter pub get
+
+      - name: Analyze Alin Flutter sources
+        run: flutter analyze lib
+
+      - name: Flutter tests
+        run: |
+          set -euo pipefail
+          if [ -d test ] && find test -type f -name '*_test.dart' -print -quit | grep -q .; then
+            flutter test
+          else
+            echo 'No committed Flutter tests to run.'
+          fi
+
+      - name: Verify iOS project configuration
+        run: |
+          set -euo pipefail
+          test -f ios/Runner/Info.plist
+          test -f ios/Runner/Runner.entitlements
+          grep -q 'PRODUCT_BUNDLE_IDENTIFIER = com.alin.platform;' ios/Runner.xcodeproj/project.pbxproj
+          grep -q 'منصة آلين' ios/Runner/Info.plist
+          grep -q 'NSLocationWhenInUseUsageDescription' ios/Runner/Info.plist
+          grep -q 'remote-notification' ios/Runner/Info.plist
+          grep -q 'aps-environment' ios/Runner/Runner.entitlements
+          grep -q 'CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements' ios/Flutter/Debug.xcconfig
+          grep -q 'CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements' ios/Flutter/Release.xcconfig
+
+      - name: Build iOS release without signing
+        run: flutter build ios --release --no-codesign --no-pub
+
+      - name: Verify unsigned iPhone app
+        run: |
+          set -euo pipefail
+          test -f build/ios/iphoneos/Runner.app/Info.plist
+          echo 'ALIN iOS unsigned release build is valid.'
+
+      - name: Upload unsigned iOS validation build
+        uses: actions/upload-artifact@v4
+        with:
+          name: alin-flutter-ios-unsigned-v5.6.0-build22
+          if-no-files-found: error
+          path: flutter_app/build/ios/iphoneos/Runner.app
+          retention-days: 7
