@@ -10,6 +10,7 @@ on:
     branches:
       - main
       - feat/flutter-ios-ready-20260827
+      - feat/flutter-ios-fcm-20260827
     paths:
       - 'flutter_app/**'
       - '.github/workflows/prepare-flutter-ios.yml'
@@ -51,6 +52,16 @@ jobs:
           else
             echo 'No committed Flutter tests to run.'
           fi
+
+      - name: Verify iOS Firebase messaging support
+        run: |
+          set -euo pipefail
+          grep -q "TargetPlatform.iOS" lib/core/native_notification_service.dart
+          grep -q "getAPNSToken" lib/core/native_notification_service.dart
+          grep -q "setForegroundNotificationPresentationOptions" lib/core/native_notification_service.dart
+          grep -q "'ios'" lib/core/native_notification_service.dart
+          grep -q "p_platform" lib/core/native_notification_service.dart
+          echo 'Flutter notification service has iOS FCM/APNs support.'
 
       - name: Verify iOS project configuration
         run: |
