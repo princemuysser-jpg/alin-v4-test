@@ -105,12 +105,11 @@ jobs:
           ASC_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_KEY_P8_BASE64 }}
         run: |
           set -euo pipefail
-          KEY_DIR="$HOME/.appstoreconnect/private_keys"
-          KEY_PATH="$KEY_DIR/AuthKey_${APP_STORE_CONNECT_KEY_ID}.p8"
-          mkdir -p "$KEY_DIR"
+          KEY_PATH="$RUNNER_TEMP/AuthKey_${APP_STORE_CONNECT_KEY_ID}.p8"
           printf '%s' "$ASC_KEY_BASE64" | base64 --decode > "$KEY_PATH"
           chmod 600 "$KEY_PATH"
           grep -q 'BEGIN PRIVATE KEY' "$KEY_PATH"
+          openssl pkey -in "$KEY_PATH" -noout
           echo "ASC_KEY_PATH=$KEY_PATH" >> "$GITHUB_ENV"
 
       - name: Prepare release
@@ -169,22 +168,26 @@ jobs:
       - name: Validate IPA
         run: |
           set -euo pipefail
+          test -s "$ASC_KEY_PATH"
           xcrun altool \
             --validate-app \
             --type ios \
             -f "$IPA_PATH" \
             --apiKey "$APP_STORE_CONNECT_KEY_ID" \
-            --apiIssuer "$APP_STORE_CONNECT_ISSUER_ID"
+            --apiIssuer "$APP_STORE_CONNECT_ISSUER_ID" \
+            --p8-file-path "$ASC_KEY_PATH"
 
       - name: Upload to TestFlight
         run: |
           set -euo pipefail
+          test -s "$ASC_KEY_PATH"
           xcrun altool \
             --upload-app \
             --type ios \
             -f "$IPA_PATH" \
             --apiKey "$APP_STORE_CONNECT_KEY_ID" \
-            --apiIssuer "$APP_STORE_CONNECT_ISSUER_ID"
+            --apiIssuer "$APP_STORE_CONNECT_ISSUER_ID" \
+            --p8-file-path "$ASC_KEY_PATH"
 
       - name: Cleanup
         if: always()
