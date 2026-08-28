@@ -53,18 +53,75 @@ class _StoreScreenState extends State<StoreScreen> {
       return const Center(child: CircularProgressIndicator());
     }
     if (data == null) {
+      final width = MediaQuery.sizeOf(context).width;
+      final roomy = width >= 700;
+      final title = c.tr(
+        'تعذر الاتصال بالإنترنت',
+        ku: 'پەیوەندی بە ئینتەرنێتەوە نەکرا',
+        en: 'No internet connection',
+      );
+      final message = c.tr(
+        'تحقق من اتصالك بالإنترنت وحاول مرة ثانية.',
+        ku: 'پەیوەندی ئینتەرنێتەکەت بپشکنە و دووبارە هەوڵ بدە.',
+        en: 'Check your internet connection and try again.',
+      );
+      final retry = c.tr('إعادة المحاولة', ku: 'دووبارە هەوڵ بدە', en: 'Try again');
+
       return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.cloud_off_outlined, size: 54, color: AlinTheme.muted),
-              const SizedBox(height: 12),
-              Text(c.error ?? 'تعذر تحميل المتجر', textAlign: TextAlign.center),
-              const SizedBox(height: 14),
-              ElevatedButton(onPressed: c.refreshCatalog, child: const Text('إعادة المحاولة')),
-            ],
+        child: SingleChildScrollView(
+          padding: EdgeInsets.symmetric(horizontal: roomy ? 40 : 24, vertical: 32),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 520),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: roomy ? 108 : 92,
+                  height: roomy ? 108 : 92,
+                  decoration: BoxDecoration(
+                    color: AlinTheme.navy.withValues(alpha: .08),
+                    shape: BoxShape.circle,
+                  ),
+                  alignment: Alignment.center,
+                  child: Icon(
+                    Icons.sentiment_dissatisfied_rounded,
+                    size: roomy ? 62 : 54,
+                    color: AlinTheme.navy,
+                  ),
+                ),
+                SizedBox(height: roomy ? 24 : 20),
+                Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: roomy ? 24 : 21,
+                    fontWeight: FontWeight.w900,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 9),
+                Text(
+                  message,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: roomy ? 16 : 14.5,
+                    height: 1.65,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                SizedBox(height: roomy ? 28 : 24),
+                SizedBox(
+                  width: roomy ? 220 : 205,
+                  height: 50,
+                  child: ElevatedButton.icon(
+                    onPressed: c.refreshCatalog,
+                    icon: const Icon(Icons.refresh_rounded),
+                    label: Text(retry, style: const TextStyle(fontWeight: FontWeight.w900)),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       );
