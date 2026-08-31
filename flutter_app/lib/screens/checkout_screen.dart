@@ -63,7 +63,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     super.dispose();
   }
 
-
   Future<void> _loadQuote() async {
     try {
       final result = await AppScope.of(context).quoteCart(couponCode: coupon.text.trim());
@@ -242,7 +241,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     try {
       final enabled = await Geolocator.isLocationServiceEnabled();
       if (!enabled) {
-        throw Exception('فعّل خدمة الموقع من الجهاز حتى نحدد موقع التوصيل');
+        if (!mounted) return;
+        setState(() => locationError = 'خدمة الموقع غير مفعلة. تقدر تكمل الطلب بدونها بإدخال عنوان التوصيل أو أقرب نقطة دالة.');
+        return;
       }
 
       var permission = await Geolocator.checkPermission();
@@ -250,17 +251,18 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         permission = await Geolocator.requestPermission();
       }
       if (permission == LocationPermission.denied) {
-        throw Exception('لازم تسمح للتطبيق باستخدام الموقع للتوصيل');
+        if (!mounted) return;
+        setState(() => locationError = 'لم تسمح باستخدام الموقع. تقدر تكمل الطلب بإدخال عنوان التوصيل أو أقرب نقطة دالة.');
+        return;
       }
       if (permission == LocationPermission.deniedForever) {
-        throw Exception('صلاحية الموقع مرفوضة نهائياً. فعّلها من إعدادات التطبيق');
+        if (!mounted) return;
+        setState(() => locationError = 'صلاحية الموقع غير مفعلة. تقدر تكمل الطلب بدونها بإدخال عنوان التوصيل أو أقرب نقطة دالة.');
+        return;
       }
 
       _DeliveryLocation? selected;
 
-      // Accept a very recent fix immediately. Otherwise race Google Play Services
-      // Fused Location, Android system providers, Flutter geolocation, and the hidden
-      // WebView fallback. Nothing opens outside the app; the first valid coordinates win.
       try {
         final cached = await Geolocator.getLastKnownPosition();
         if (cached != null && _usableCachedPosition(cached)) {
@@ -274,8 +276,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         final diagnostic = await _locationDiagnostics();
         throw Exception(
           diagnostic.isEmpty
-              ? 'تعذر تحديد موقعك. تأكد من تشغيل خدمة الموقع واسمح للتطبيق بالموقع ثم حاول مرة ثانية'
-              : 'تعذر تحديد موقعك. تشخيص الجهاز: $diagnostic',
+              ? 'تعذر تحديد موقعك. تقدر تكمل الطلب بدون الموقع بإدخال عنوان التوصيل أو أقرب نقطة دالة.'
+              : 'تعذر تحديد موقعك. تقدر تكمل الطلب بدون الموقع بإدخال عنوان التوصيل أو أقرب نقطة دالة. تشخيص الجهاز: $diagnostic',
         );
       }
 
@@ -287,7 +289,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     } catch (e) {
       if (!mounted) return;
       final raw = '$e'.replaceFirst('Exception: ', '');
-      setState(() => locationError = raw.isEmpty ? 'تعذر تحديد الموقع. اضغط تحديث الموقع وحاول مرة ثانية.' : raw);
+      setState(() => locationError = raw.isEmpty ? 'تعذر تحديد الموقع. تقدر تكمل الطلب بإدخال عنوان التوصيل أو أقرب نقطة دالة.' : raw);
     } finally {
       if (mounted) setState(() => locationBusy = false);
     }
@@ -317,15 +319,22 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       };
     } else {
       if (area == null) return _setError('اختر منطقة التوصيل');
-      if (deliveryPosition == null) return _setError('حدد موقعك GPS حتى يعرف المندوب مكان التوصيل');
+      final deliveryLandmark = landmark.text.trim();
+      if (deliveryPosition == null && deliveryLandmark.length < 3) {
+        return _setError('اكتب عنوان التوصيل أو أقرب نقطة دالة، أو استخدم تحديد الموقع الاختياري.');
+      }
       fulfillment = {
         'fulfillment_type': 'home_delivery',
         'delivery_area': area!.name,
-        'delivery_landmark': landmark.text.trim(),
-        'delivery_latitude': deliveryPosition!.latitude,
-        'delivery_longitude': deliveryPosition!.longitude,
-        'delivery_location_accuracy': deliveryPosition!.accuracy.round(),
+        'delivery_landmark': deliveryLandmark,
       };
+      if (deliveryPosition != null) {
+        fulfillment.addAll({
+          'delivery_latitude': deliveryPosition!.latitude,
+          'delivery_longitude': deliveryPosition!.longitude,
+          'delivery_location_accuracy': deliveryPosition!.accuracy.round(),
+        });
+      }
     }
 
     setState(() {
@@ -470,13 +479,18 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             items: data.deliveryAreas.map((e) => DropdownMenuItem(value: e, child: Text(e.deliveryFee > 0 ? '${e.name} — ${e.deliveryFee.toStringAsFixed(0)} د.ع' : e.name))).toList(),
                             onChanged: busy ? null : (value) => setState(() => area = value),
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 10),
+                          const Text(
+                            'تحديد الموقع اختياري. تقدر تكمل الطلب بدون تشغيل خدمات الموقع بإدخال عنوان التوصيل أو أقرب نقطة دالة.',
+                            style: TextStyle(color: AlinTheme.muted, fontSize: 12, fontWeight: FontWeight.w700, height: 1.5),
+                          ),
+                          const SizedBox(height: 10),
                           FilledButton.tonalIcon(
                             onPressed: busy || locationBusy ? null : captureLocation,
                             icon: locationBusy
                                 ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
                                 : Icon(deliveryPosition == null ? Icons.my_location_rounded : Icons.location_on_rounded),
-                            label: Text(locationBusy ? 'جاري تحديد موقعك...' : (deliveryPosition == null ? 'تحديد موقعي *' : 'تحديث الموقع')),
+                            label: Text(locationBusy ? 'جاري تحديد موقعك...' : (deliveryPosition == null ? 'تحديد موقعي (اختياري)' : 'تحديث الموقع')),
                           ),
                           if (deliveryPosition != null) ...[
                             const SizedBox(height: 8),
@@ -498,10 +512,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           ],
                           if (locationError != null) ...[
                             const SizedBox(height: 8),
-                            Text(locationError!, style: TextStyle(color: Colors.red.shade700, fontWeight: FontWeight.w700)),
+                            Text(locationError!, style: TextStyle(color: Colors.orange.shade900, fontWeight: FontWeight.w700)),
                           ],
                           const SizedBox(height: 12),
-                          TextField(controller: landmark, maxLength: 300, decoration: const InputDecoration(labelText: 'أقرب نقطة دالة — اختياري')),
+                          TextField(
+                            controller: landmark,
+                            maxLength: 300,
+                            decoration: const InputDecoration(
+                              labelText: 'عنوان التوصيل / أقرب نقطة دالة',
+                              helperText: 'مطلوب إذا ما استخدمت تحديد الموقع.',
+                            ),
+                          ),
                         ],
                       ],
                     ),
@@ -576,7 +597,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 }
-
 
 class _DeliveryLocation {
   final double latitude;
