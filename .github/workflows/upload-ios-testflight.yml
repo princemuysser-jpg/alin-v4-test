@@ -58,6 +58,36 @@ jobs:
             flutter test
           fi
 
+      - name: Prepare final ALIN iOS app icons
+        run: |
+          set -euo pipefail
+          SOURCE_ICON="assets/images/alin_icon.png"
+          ICON_DIR="ios/Runner/Assets.xcassets/AppIcon.appiconset"
+          FLAT_JPG="$RUNNER_TEMP/alin-icon-flat.jpg"
+          test -s "$SOURCE_ICON"
+          mkdir -p "$ICON_DIR"
+          # Flatten any alpha channel first so App Store marketing icon is fully opaque.
+          sips -s format jpeg "$SOURCE_ICON" --out "$FLAT_JPG" >/dev/null
+          make_icon() {
+            local size="$1"
+            local file="$2"
+            sips -z "$size" "$size" -s format png "$FLAT_JPG" --out "$ICON_DIR/$file" >/dev/null
+            test "$(sips -g pixelWidth "$ICON_DIR/$file" | awk '/pixelWidth/ {print $2}')" = "$size"
+            test "$(sips -g pixelHeight "$ICON_DIR/$file" | awk '/pixelHeight/ {print $2}')" = "$size"
+          }
+          make_icon 40 Icon-App-40.png
+          make_icon 60 Icon-App-60.png
+          make_icon 58 Icon-App-58.png
+          make_icon 87 Icon-App-87.png
+          make_icon 80 Icon-App-80.png
+          make_icon 120 Icon-App-120.png
+          make_icon 180 Icon-App-180.png
+          make_icon 76 Icon-App-76.png
+          make_icon 152 Icon-App-152.png
+          make_icon 167 Icon-App-167.png
+          make_icon 1024 Icon-App-1024.png
+          sips -g hasAlpha "$ICON_DIR/Icon-App-1024.png" | grep -q 'hasAlpha: no'
+
       - name: Install signing certificate
         env:
           P12_BASE64: ${{ secrets.IOS_DISTRIBUTION_P12_BASE64 }}
