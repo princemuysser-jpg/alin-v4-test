@@ -2,6 +2,9 @@ name: ALIN iOS TestFlight Upload
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
 
 permissions:
   contents: read
@@ -66,7 +69,6 @@ jobs:
           FLAT_JPG="$RUNNER_TEMP/alin-icon-flat.jpg"
           test -s "$SOURCE_ICON"
           mkdir -p "$ICON_DIR"
-          # Flatten any alpha channel first so App Store marketing icon is fully opaque.
           sips -s format jpeg "$SOURCE_ICON" --out "$FLAT_JPG" >/dev/null
           make_icon() {
             local size="$1"
