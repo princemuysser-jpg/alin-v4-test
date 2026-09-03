@@ -1,5 +1,5 @@
 // === modules/store/order-routing.js ===
-/* ALIN v2.6.0 Stage 3 — checkout routing intent only. Prices, fees and payment state are server-owned. */
+/* ALIN v2.7.0 — checkout routing intent only. Prices, fees and payment state are server-owned. */
 (function(){
   'use strict';
   const $=id=>document.getElementById(id);
@@ -9,7 +9,17 @@
   let pending=false;
 
   function cartRows(){return Array.isArray(window.cart)?window.cart:[]}
+  function booklets(){return Array.isArray(window.db?.booklets)?window.db.booklets:[]}
+  function findBooklet(id){return booklets().find(item=>same(item?.id,id))||null}
   function hasProducts(){return cartRows().some(line=>line.kind!=='booklet')}
+  function hasCourierOnlyBooklets(){
+    return cartRows().some(line=>{
+      if(String(line?.kind||'').toLowerCase()!=='booklet')return false;
+      const booklet=findBooklet(line?.id);
+      return booklet&&num(booklet.library_share_percent)<=0;
+    });
+  }
+  function requiresHomeDelivery(){return hasProducts()||hasCourierOnlyBooklets()}
   function activeLibraries(){return window.db?.accounts?.libraries||[]}
   function findLibrary(id){
     const wanted=String(id||'').trim();
@@ -19,11 +29,43 @@
     const library=findLibrary(id);if(!library)return false;
     try{return typeof window.libIsOpen==='function'?!!window.libIsOpen(library):!(library.is_open===false||String(library.is_open)==='false'||String(library.open_status||'').toLowerCase()==='closed')}catch(_){return true}
   }
-  function fulfillmentType(){return document.querySelector('#checkoutBox input[name="fulfillment"]:checked')?.value||(hasProducts()?'home_delivery':'pickup')}
+  function fulfillmentType(){return document.querySelector('#checkoutBox input[name="fulfillment"]:checked')?.value||(requiresHomeDelivery()?'home_delivery':'pickup')}
+
+  function enforceHomeDeliveryUi(){
+    const checkout=$('checkoutBox');
+    if(!checkout||!requiresHomeDelivery())return;
+
+    const pickupInput=checkout.querySelector('input[name="fulfillment"][value="pickup"]');
+    const pickupLabel=pickupInput?.closest('label');
+    if(pickupLabel)pickupLabel.remove();
+
+    const homeInput=checkout.querySelector('input[name="fulfillment"][value="home_delivery"]');
+    if(homeInput)homeInput.checked=true;
+
+    const pickupFields=$('pickupFields');
+    const deliveryFields=$('deliveryFields');
+    if(pickupFields)pickupFields.classList.add('hidden');
+    if(deliveryFields)deliveryFields.classList.remove('hidden');
+
+    checkout.querySelectorAll('.alin-delivery-options label').forEach(label=>label.classList.toggle('selected',!!label.querySelector('input:checked')));
+
+    const options=checkout.querySelector('.alin-delivery-options');
+    if(options&&!$('alinCourierOnlyNotice')){
+      const note=document.createElement('div');
+      note.id='alinCourierOnlyNotice';
+      note.className='notice';
+      note.textContent=hasCourierOnlyBooklets()
+        ? 'السلة تحتوي ملزمة حصة المكتبة فيها صفر، لذلك هذا الطلب متاح بالتوصيل عن طريق المندوب فقط.'
+        : 'القرطاسية والهدايا متاحة بالتوصيل عن طريق المندوب فقط.';
+      options.insertAdjacentElement('afterend',note);
+    }
+
+    document.dispatchEvent(new CustomEvent('alin:fulfillment-changed',{detail:{fulfillment:'home_delivery',forced:true}}));
+  }
 
   // هذه الدالة ترسل نية الاستلام فقط. الخادم يعيد التحقق من المكتبة والمنطقة ويحسب الأجرة.
   function alinOrderExtra(){
-    const type=hasProducts()?'home_delivery':fulfillmentType();
+    const type=requiresHomeDelivery()?'home_delivery':fulfillmentType();
     if(type==='pickup'){
       const libraryId=value('libSelect');
       if(!libraryId)throw new Error('اختر مكتبة الاستلام');
@@ -61,6 +103,7 @@
     const button=document.querySelector('#checkoutBox .alin-cart-submit');const oldText=button?.textContent;
     try{
       pending=true;if(button){button.disabled=true;button.textContent='جاري إنشاء الطلب...'}
+      enforceHomeDeliveryUi();
       if(typeof window.ALINAuth?.secureCheckout!=='function')return await createFallback();
       return await window.ALINAuth.secureCheckout();
     }catch(error){
@@ -73,5 +116,17 @@
     }finally{pending=false;if(button){button.disabled=false;button.textContent=oldText||'تأكيد الطلب الآن'}}
   }
 
-  Object.assign(window,{alinOrderExtra,confirmCartCheckout,confirmCheckout:confirmCartCheckout,alinConfirmRoutedCart:confirmCartCheckout,alinLegacyCreateOrder:createFallback,alinEmitOrderCreated:emitCreated});
+  document.addEventListener('alin:cart-rendered',enforceHomeDeliveryUi);
+  document.addEventListener('alin:data-refreshed',()=>setTimeout(enforceHomeDeliveryUi,0));
+
+  Object.assign(window,{
+    alinOrderExtra,
+    confirmCartCheckout,
+    confirmCheckout:confirmCartCheckout,
+    alinConfirmRoutedCart:confirmCartCheckout,
+    alinLegacyCreateOrder:createFallback,
+    alinEmitOrderCreated:emitCreated,
+    alinRequiresHomeDelivery:requiresHomeDelivery,
+    alinEnforceHomeDeliveryUi:enforceHomeDeliveryUi
+  });
 })();
