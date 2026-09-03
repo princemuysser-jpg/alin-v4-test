@@ -80,6 +80,7 @@ class StoreItem {
   final int packSize;
   final int stock;
   final String teacherId;
+  final num librarySharePercent;
   final List<VariantModel> variants;
 
   const StoreItem({
@@ -102,6 +103,7 @@ class StoreItem {
     required this.packSize,
     required this.stock,
     required this.teacherId,
+    required this.librarySharePercent,
     required this.variants,
   });
 
@@ -123,9 +125,7 @@ class StoreItem {
     final type = _str(map['type']).isNotEmpty ? _str(map['type']) : 'product';
     return StoreItem(
       id: id,
-      // Keep Flutter's internal product kind stable so existing carts/favorites survive upgrades.
       kind: 'product',
-      // Reviews use the same kind as the web storefront (stationery/gift/product).
       reviewKind: type,
       title: _str(map['name']).isNotEmpty ? _str(map['name']) : _str(map['title']),
       subtitle: category,
@@ -143,6 +143,7 @@ class StoreItem {
       packSize: _num(map['pack_size']).toInt(),
       stock: _num(map['stock']).toInt(),
       teacherId: _str(map['teacher_id']),
+      librarySharePercent: 0,
       variants: allVariants.where((v) => v.productId == id).toList()..sort((a, b) => a.sortOrder.compareTo(b.sortOrder)),
     );
   }
@@ -172,12 +173,14 @@ class StoreItem {
       packSize: 0,
       stock: 999999,
       teacherId: _str(map['teacher_id']),
+      librarySharePercent: _num(map['library_share_percent']),
       variants: const [],
     );
   }
 
   bool get isBooklet => kind == 'booklet';
   bool get isProduct => !isBooklet;
+  bool get isCourierOnlyBooklet => isBooklet && librarySharePercent <= 0;
   bool get hasPack => isProduct && packPrice != null && packSize > 1;
   bool get hasVariants => variants.isNotEmpty;
   bool get hasDiscount => oldPrice != null && oldPrice! > price && price > 0;
