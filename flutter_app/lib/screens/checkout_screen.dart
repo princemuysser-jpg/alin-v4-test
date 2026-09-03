@@ -33,20 +33,29 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   bool busy = false;
   String? error;
 
+  bool _requiresHomeDelivery(AppScope c) =>
+      c.cart.any((line) => line.item.isProduct || line.item.isCourierOnlyBooklet);
+
+  bool _hasCourierOnlyBooklet(AppScope c) =>
+      c.cart.any((line) => line.item.isCourierOnlyBooklet);
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final student = AppScope.of(context).student;
+    final scope = AppScope.of(context);
+    final student = scope.student;
     if (student != null) {
       if (name.text.isEmpty) name.text = student.name;
       if (phone.text.isEmpty) phone.text = student.phone;
     }
     if (coupon.text.isEmpty) {
-      final pending = AppScope.of(context).takePendingCoupon();
+      final pending = scope.takePendingCoupon();
       if (pending != null && pending.isNotEmpty) coupon.text = pending;
     }
-    final hasPhysical = AppScope.of(context).cart.any((line) => line.item.isProduct);
-    if (hasPhysical && fulfillmentType == 'pickup') fulfillmentType = 'home_delivery';
+    if (_requiresHomeDelivery(scope) && fulfillmentType == 'pickup') {
+      fulfillmentType = 'home_delivery';
+      library = null;
+    }
     if (!quoteRequested && coupon.text.isNotEmpty) {
       quoteRequested = true;
       Future.microtask(_loadQuote);
@@ -95,48 +104,25 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     const sourceCount = 4;
 
     void settle(_DeliveryLocation? value) {
-      if (value != null && !completer.isCompleted) {
-        completer.complete(value);
-      }
+      if (value != null && !completer.isCompleted) completer.complete(value);
       finished++;
-      if (finished >= sourceCount && !completer.isCompleted) {
-        completer.complete(null);
-      }
+      if (finished >= sourceCount && !completer.isCompleted) completer.complete(null);
     }
 
     Future<void> runGoogleFused() async {
-      try {
-        settle(await _tryGoogleFusedLocation());
-      } catch (_) {
-        settle(null);
-      }
+      try { settle(await _tryGoogleFusedLocation()); } catch (_) { settle(null); }
     }
-
     Future<void> runNative() async {
-      try {
-        settle(await _tryNativeQuickLocation());
-      } catch (_) {
-        settle(null);
-      }
+      try { settle(await _tryNativeQuickLocation()); } catch (_) { settle(null); }
     }
-
     Future<void> runFlutterLocation() async {
       try {
-        final position = await _tryCurrentPosition(
-          const LocationSettings(accuracy: LocationAccuracy.high),
-        );
+        final position = await _tryCurrentPosition(const LocationSettings(accuracy: LocationAccuracy.high));
         settle(position == null ? null : _DeliveryLocation.fromPosition(position));
-      } catch (_) {
-        settle(null);
-      }
+      } catch (_) { settle(null); }
     }
-
     Future<void> runWebEngineLocation() async {
-      try {
-        settle(await _tryHiddenWebLocation());
-      } catch (_) {
-        settle(null);
-      }
+      try { settle(await _tryHiddenWebLocation()); } catch (_) { settle(null); }
     }
 
     unawaited(runGoogleFused());
@@ -144,10 +130,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     unawaited(runFlutterLocation());
     unawaited(runWebEngineLocation());
 
-    return completer.future.timeout(
-      const Duration(seconds: 25),
-      onTimeout: () => null,
-    );
+    return completer.future.timeout(const Duration(seconds: 25), onTimeout: () => null);
   }
 
   bool _usableCachedPosition(Position position) {
@@ -165,14 +148,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       final accuracy = num.tryParse('${raw['accuracy']}')?.toDouble() ?? 0;
       if (latitude == null || longitude == null) return null;
       if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) return null;
-      return _DeliveryLocation(
-        latitude: latitude,
-        longitude: longitude,
-        accuracy: accuracy,
-      );
-    } catch (_) {
-      return null;
-    }
+      return _DeliveryLocation(latitude: latitude, longitude: longitude, accuracy: accuracy);
+    } catch (_) { return null; }
   }
 
   Future<_DeliveryLocation?> _tryNativeQuickLocation() async {
@@ -185,14 +162,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       final accuracy = num.tryParse('${raw['accuracy']}')?.toDouble() ?? 0;
       if (latitude == null || longitude == null) return null;
       if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) return null;
-      return _DeliveryLocation(
-        latitude: latitude,
-        longitude: longitude,
-        accuracy: accuracy,
-      );
-    } catch (_) {
-      return null;
-    }
+      return _DeliveryLocation(latitude: latitude, longitude: longitude, accuracy: accuracy);
+    } catch (_) { return null; }
   }
 
   Future<_DeliveryLocation?> _tryHiddenWebLocation() async {
@@ -205,14 +176,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       final accuracy = num.tryParse('${raw['accuracy']}')?.toDouble() ?? 0;
       if (latitude == null || longitude == null) return null;
       if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) return null;
-      return _DeliveryLocation(
-        latitude: latitude,
-        longitude: longitude,
-        accuracy: accuracy,
-      );
-    } catch (_) {
-      return null;
-    }
+      return _DeliveryLocation(latitude: latitude, longitude: longitude, accuracy: accuracy);
+    } catch (_) { return null; }
   }
 
   Future<String> _locationDiagnostics() async {
@@ -227,17 +192,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       final locationEnabled = raw['location_enabled'];
       final providers = '${raw['providers'] ?? ''}';
       return 'FINE=$fine COARSE=$coarse GMS=$gms ACC=$googleAccuracy LOC=$locationEnabled ${providers.isEmpty ? '' : 'PROV=$providers'}'.trim();
-    } catch (_) {
-      return '';
-    }
+    } catch (_) { return ''; }
   }
 
   Future<void> captureLocation() async {
     if (locationBusy) return;
-    setState(() {
-      locationBusy = true;
-      locationError = null;
-    });
+    setState(() { locationBusy = true; locationError = null; });
     try {
       final enabled = await Geolocator.isLocationServiceEnabled();
       if (!enabled) {
@@ -245,11 +205,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         setState(() => locationError = 'خدمة الموقع غير مفعلة. تقدر تكمل الطلب بدونها بإدخال عنوان التوصيل أو أقرب نقطة دالة.');
         return;
       }
-
       var permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
+      if (permission == LocationPermission.denied) permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
         if (!mounted) return;
         setState(() => locationError = 'لم تسمح باستخدام الموقع. تقدر تكمل الطلب بإدخال عنوان التوصيل أو أقرب نقطة دالة.');
@@ -262,30 +219,19 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       }
 
       _DeliveryLocation? selected;
-
       try {
         final cached = await Geolocator.getLastKnownPosition();
-        if (cached != null && _usableCachedPosition(cached)) {
-          selected = _DeliveryLocation.fromPosition(cached);
-        }
+        if (cached != null && _usableCachedPosition(cached)) selected = _DeliveryLocation.fromPosition(cached);
       } catch (_) {}
-
       selected ??= await _raceFreshLocation();
-
       if (selected == null) {
         final diagnostic = await _locationDiagnostics();
-        throw Exception(
-          diagnostic.isEmpty
-              ? 'تعذر تحديد موقعك. تقدر تكمل الطلب بدون الموقع بإدخال عنوان التوصيل أو أقرب نقطة دالة.'
-              : 'تعذر تحديد موقعك. تقدر تكمل الطلب بدون الموقع بإدخال عنوان التوصيل أو أقرب نقطة دالة. تشخيص الجهاز: $diagnostic',
-        );
+        throw Exception(diagnostic.isEmpty
+            ? 'تعذر تحديد موقعك. تقدر تكمل الطلب بدون الموقع بإدخال عنوان التوصيل أو أقرب نقطة دالة.'
+            : 'تعذر تحديد موقعك. تقدر تكمل الطلب بدون الموقع بإدخال عنوان التوصيل أو أقرب نقطة دالة. تشخيص الجهاز: $diagnostic');
       }
-
       if (!mounted) return;
-      setState(() {
-        deliveryPosition = selected;
-        locationError = null;
-      });
+      setState(() { deliveryPosition = selected; locationError = null; });
     } catch (e) {
       if (!mounted) return;
       final raw = '$e'.replaceFirst('Exception: ', '');
@@ -302,9 +248,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     if (customerName.length < 2) return _setError('اكتب اسم الطالب بصورة صحيحة');
     if (!RegExp(r'^\+?[0-9٠-٩]{7,15}$').hasMatch(customerPhone.replaceAll(' ', ''))) return _setError('اكتب رقم هاتف صحيح');
 
-    final hasPhysical = c.cart.any((line) => line.item.isProduct);
-    if (hasPhysical && fulfillmentType == 'pickup') {
+    final requiresHomeDelivery = _requiresHomeDelivery(c);
+    if (requiresHomeDelivery && fulfillmentType == 'pickup') {
       fulfillmentType = 'home_delivery';
+      library = null;
     }
 
     Map<String, dynamic> fulfillment;
@@ -337,10 +284,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       }
     }
 
-    setState(() {
-      busy = true;
-      error = null;
-    });
+    setState(() { busy = true; error = null; });
     try {
       final result = await c.placeOrder(
         name: customerName,
@@ -409,8 +353,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     final c = AppScope.of(context);
     final data = c.bootstrap;
     final tablet = MediaQuery.sizeOf(context).shortestSide >= 600;
-    final hasPhysical = c.cart.any((line) => line.item.isProduct);
+    final requiresHomeDelivery = _requiresHomeDelivery(c);
+    final hasCourierOnlyBooklet = _hasCourierOnlyBooklet(c);
     if (data == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+
     return Scaffold(
       appBar: AppBar(title: const Text('تأكيد الطلب')),
       body: ListView(
@@ -442,27 +388,45 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        SegmentedButton<String>(
-                          segments: const [
-                            ButtonSegment(value: 'pickup', icon: Icon(Icons.store_mall_directory_outlined), label: Text('استلام من مكتبة')),
-                            ButtonSegment(value: 'home_delivery', icon: Icon(Icons.delivery_dining), label: Text('توصيل')),
-                          ],
-                          selected: {fulfillmentType},
-                          onSelectionChanged: busy ? null : (value) {
-                            final next = value.first;
-                            if (hasPhysical && next == 'pickup') return;
-                            setState(() {
-                              fulfillmentType = next;
-                              if (next == 'pickup') locationError = null;
-                            });
-                          },
-                        ),
-                        if (hasPhysical) ...[
-                          const SizedBox(height: 8),
-                          const Text('القرطاسية والهدايا متاحة بالتوصيل فقط.', style: TextStyle(color: AlinTheme.muted, fontSize: 12, fontWeight: FontWeight.w700)),
-                        ],
+                        if (requiresHomeDelivery)
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.delivery_dining),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    hasCourierOnlyBooklet
+                                        ? 'هذه السلة تحتوي ملزمة حصة المكتبة فيها صفر، لذلك التوصيل عن طريق المندوب هو الخيار الوحيد.'
+                                        : 'القرطاسية والهدايا متاحة بالتوصيل فقط.',
+                                    style: const TextStyle(fontWeight: FontWeight.w800),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        else
+                          SegmentedButton<String>(
+                            segments: const [
+                              ButtonSegment(value: 'pickup', icon: Icon(Icons.store_mall_directory_outlined), label: Text('استلام من مكتبة')),
+                              ButtonSegment(value: 'home_delivery', icon: Icon(Icons.delivery_dining), label: Text('توصيل')),
+                            ],
+                            selected: {fulfillmentType},
+                            onSelectionChanged: busy ? null : (value) {
+                              final next = value.first;
+                              setState(() {
+                                fulfillmentType = next;
+                                if (next == 'pickup') locationError = null;
+                              });
+                            },
+                          ),
                         const SizedBox(height: 14),
-                        if (fulfillmentType == 'pickup')
+                        if (!requiresHomeDelivery && fulfillmentType == 'pickup')
                           DropdownButtonFormField<LibraryModel>(
                             initialValue: library,
                             decoration: const InputDecoration(labelText: 'اختر المكتبة'),
@@ -602,11 +566,7 @@ class _DeliveryLocation {
   final double latitude;
   final double longitude;
   final double accuracy;
-  const _DeliveryLocation({
-    required this.latitude,
-    required this.longitude,
-    required this.accuracy,
-  });
+  const _DeliveryLocation({required this.latitude, required this.longitude, required this.accuracy});
 
   factory _DeliveryLocation.fromPosition(Position position) => _DeliveryLocation(
         latitude: position.latitude,
