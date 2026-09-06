@@ -1,9 +1,6 @@
 name: ALIN iOS TestFlight Upload
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
 permissions:
@@ -150,7 +147,7 @@ jobs:
       - name: Prepare release
         run: |
           set -euo pipefail
-          BUILD_NUMBER=31
+          BUILD_NUMBER=$((22 + GITHUB_RUN_NUMBER))
           echo "IOS_BUILD_NUMBER=$BUILD_NUMBER" >> "$GITHUB_ENV"
           flutter build ios --release --no-codesign --no-pub --build-number="$BUILD_NUMBER"
 
