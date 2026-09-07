@@ -4713,6 +4713,7 @@ window.deleteCoupon = deleteCoupon;
   wrapDashboard();
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',decorate,{once:true});else decorate();
   window.addEventListener('alin:data-refreshed',()=>setTimeout(decorate,0));
+  window.addEventListener('alin:page-open',event=>{if(event.detail?.page==='courier')setTimeout(decorate,0)});
 })();
 ;
 
