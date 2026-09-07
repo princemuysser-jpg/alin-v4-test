@@ -7,6 +7,7 @@ import '../core/app_scope.dart';
 import '../core/alin_config.dart';
 import '../core/alin_theme.dart';
 import '../models/catalog.dart';
+import '../state/app_controller.dart';
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key});
@@ -33,10 +34,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   bool busy = false;
   String? error;
 
-  bool _requiresHomeDelivery(AppScope c) =>
+  bool _requiresHomeDelivery(AppController c) =>
       c.cart.any((line) => line.item.isProduct || line.item.isCourierOnlyBooklet);
 
-  bool _hasCourierOnlyBooklet(AppScope c) =>
+  bool _hasCourierOnlyBooklet(AppController c) =>
       c.cart.any((line) => line.item.isCourierOnlyBooklet);
 
   @override
@@ -403,7 +404,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                   child: Text(
                                     hasCourierOnlyBooklet
                                         ? 'هذه السلة تحتوي ملزمة حصة المكتبة فيها صفر، لذلك التوصيل عن طريق المندوب هو الخيار الوحيد.'
-                                        : 'القرطاسية والهدايا متاحة بالتوصيل فقط.',
+                                        : 'الكتب والقرطاسية والهدايا متاحة بالتوصيل فقط.',
                                     style: const TextStyle(fontWeight: FontWeight.w800),
                                   ),
                                 ),
