@@ -1,0 +1,46 @@
+name: Books Feature Runtime Sync
+
+on:
+  push:
+    branches:
+      - feature/books-independent-finance
+    paths:
+      - 'modules/**'
+      - 'scripts/build-runtime.py'
+      - '.github/workflows/books-runtime-sync.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  sync-runtime:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/books-independent-finance
+          fetch-depth: 0
+
+      - name: Regenerate deterministic runtimes
+        run: python3 scripts/build-runtime.py
+
+      - name: Validate generated JavaScript
+        run: |
+          node --check dist/alin-core.v4.js
+          node --check dist/alin-role-runtime.v4.js
+          node --check alin-app-desktop.v4.2.0.js
+          node --check alin-app-mobile.v4.2.0.js
+          node --check alin-app-tablet.v4.2.0.js
+
+      - name: Commit generated runtimes if needed
+        run: |
+          if git diff --quiet -- dist/alin-core.v4.js dist/alin-role-runtime.v4.js alin-app-desktop.v4.2.0.js alin-app-mobile.v4.2.0.js alin-app-tablet.v4.2.0.js; then
+            echo 'Generated runtimes are already synchronized.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add dist/alin-core.v4.js dist/alin-role-runtime.v4.js alin-app-desktop.v4.2.0.js alin-app-mobile.v4.2.0.js alin-app-tablet.v4.2.0.js
+          git commit -m 'build: synchronize generated runtimes for books feature'
+          git push origin HEAD:feature/books-independent-finance
