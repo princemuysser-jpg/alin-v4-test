@@ -20,11 +20,19 @@
     });
   }
 
-  const observer=new MutationObserver(()=>decorate());
-  function boot(){
-    decorate();
-    const root=document.getElementById('courierV161Content');if(root)observer.observe(root,{childList:true,subtree:true});
+  function wrapDashboard(){
+    const original=window.renderCourierDashboard;
+    if(typeof original!=='function'||original.__alinBookPickupWrapped)return;
+    const wrapped=async function(...args){
+      const result=await original.apply(this,args);
+      decorate();
+      return result;
+    };
+    Object.defineProperty(wrapped,'__alinBookPickupWrapped',{value:true});
+    window.renderCourierDashboard=wrapped;
   }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
-  window.addEventListener('alin:data-refreshed',decorate);
+
+  wrapDashboard();
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',decorate,{once:true});else decorate();
+  window.addEventListener('alin:data-refreshed',()=>setTimeout(decorate,0));
 })();
