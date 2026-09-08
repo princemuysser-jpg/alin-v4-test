@@ -10,7 +10,7 @@ import {
   assertStrongPassword,
 } from '../_shared/admin.ts';
 
-const ALLOWED_ROLES = new Set(['teacher', 'library', 'courier', 'accountant']);
+const ALLOWED_ROLES = new Set(['teacher', 'library', 'courier', 'accountant', 'printer']);
 
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders(req) });
