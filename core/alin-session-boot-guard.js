@@ -5,12 +5,14 @@
   window.__ALIN_SESSION_BOOT_GUARD__=true;
 
   const HINT_KEY='alin_staff_session_hint_v2';
-  const STAFF_ROLES=new Set(['admin','accountant','teacher','library','courier','delegate']);
+  const STAFF_ROLES=new Set(['admin','accountant','teacher','library','printer','courier','delegate']);
   const normalizeRole=value=>String(value||'').toLowerCase()==='delegate'?'courier':String(value||'').toLowerCase();
   const cfg=()=>window.ALIN_CONFIG||{};
   let locked=false;
   let originalOpenPage=null;
   let resolveTimer=null;
+  let restoreAttempts=0;
+  const MAX_RESTORE_ATTEMPTS=8;
 
   function safeGet(key){try{return localStorage.getItem(key)}catch(_){return null}}
   function safeSet(key,value){try{localStorage.setItem(key,value)}catch(_){}}
@@ -24,9 +26,7 @@
     }catch(_){return null}
   }
 
-  function projectRef(){
-    try{return new URL(String(cfg().supabaseUrl||'')).hostname.split('.')[0]||''}catch(_){return ''}
-  }
+  function projectRef(){try{return new URL(String(cfg().supabaseUrl||'')).hostname.split('.')[0]||''}catch(_){return ''}}
   function hasPersistedSupabaseSession(){
     try{
       const ref=projectRef();
@@ -74,20 +74,9 @@
     style.textContent='html[data-alin-staff-session-boot="1"] #app,html[data-alin-staff-session-boot="1"] #login{visibility:hidden!important}#alinStaffSessionBootOverlay{position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;background:#f4f7fb;color:#0b3568;font-family:Tahoma,"Segoe UI",sans-serif;text-align:center;padding:24px}#alinStaffSessionBootOverlay>div{background:#fff;border:1px solid #dce6f1;border-radius:20px;padding:22px 26px;box-shadow:0 12px 34px rgba(11,53,104,.12);font-weight:800}';
     document.head.appendChild(style);
   }
-
-  function showOverlay(){
-    if(!locked||!document.body||document.getElementById('alinStaffSessionBootOverlay'))return;
-    const overlay=document.createElement('div');overlay.id='alinStaffSessionBootOverlay';overlay.innerHTML='<div>جارٍ استعادة جلستك ونفس الصفحة...</div>';document.body.appendChild(overlay);
-  }
-  function unlock(){
-    locked=false;
-    document.documentElement.removeAttribute('data-alin-staff-session-boot');
-    document.getElementById('alinStaffSessionBootOverlay')?.remove();
-  }
-  function lock(){
-    locked=true;ensureBootStyle();document.documentElement.setAttribute('data-alin-staff-session-boot','1');
-    if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',showOverlay,{once:true});else showOverlay();
-  }
+  function showOverlay(){if(!locked||!document.body||document.getElementById('alinStaffSessionBootOverlay'))return;const overlay=document.createElement('div');overlay.id='alinStaffSessionBootOverlay';overlay.innerHTML='<div>جارٍ استعادة جلستك ونفس الصفحة...</div>';document.body.appendChild(overlay)}
+  function unlock(){locked=false;restoreAttempts=0;document.documentElement.removeAttribute('data-alin-staff-session-boot');document.getElementById('alinStaffSessionBootOverlay')?.remove()}
+  function lock(){locked=true;ensureBootStyle();document.documentElement.setAttribute('data-alin-staff-session-boot','1');if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',showOverlay,{once:true});else showOverlay()}
 
   function patchOpenPage(){
     const fn=window.openPage;
@@ -100,10 +89,7 @@
       if(result!==false&&window.current?.id)setTimeout(()=>saveHint(target),0);
       return result;
     };
-    guarded.__alinStaffSessionGuard=true;
-    guarded.__alinOriginalOpenPage=fn;
-    window.openPage=guarded;
-    return true;
+    guarded.__alinStaffSessionGuard=true;guarded.__alinOriginalOpenPage=fn;window.openPage=guarded;return true;
   }
 
   function restoreTab(hint){
@@ -125,29 +111,35 @@
   }
 
   function restoreRememberedPage(){
-    const hint=readHint();
-    const current=window.current||{};
-    const role=normalizeRole(current.role);
+    const hint=readHint();const current=window.current||{};const role=normalizeRole(current.role);
     if(!hint||!current.id||normalizeRole(hint.role)!==role)return;
     const defaultPage=role==='accountant'?'admin':role;
-    const page=hint.page==='store'?'store':defaultPage;
+    const page=hint.page==='store'&&role!=='printer'?'store':defaultPage;
     const opener=window.openPage;
     if(typeof opener==='function')opener(page,{render:false});
-    if(page!== 'store')restoreTab(hint);
+    if(page!=='store')restoreTab(hint);
+  }
+
+  async function abortRestore(){
+    clearTimeout(resolveTimer);
+    safeRemove(HINT_KEY);
+    unlock();
+    window.current=null;
+    try{await (window.ALINAuthRuntime?.client?.()||window.sb||window.AlinCloud?.client?.())?.auth?.signOut?.()}catch(_){ }
+    const opener=originalOpenPage||window.openPage;
+    if(typeof opener==='function')opener('store',{render:true});
   }
 
   async function verifyAndRestore(){
     if(!locked)return;
     patchOpenPage();
+    restoreAttempts+=1;
+    if(restoreAttempts>MAX_RESTORE_ATTEMPTS){console.warn('[ALIN session guard] restore timeout');return abortRestore()}
     const client=window.ALINAuthRuntime?.client?.()||window.sb||window.AlinCloud?.client?.();
     if(!client?.auth){clearTimeout(resolveTimer);resolveTimer=setTimeout(verifyAndRestore,700);return}
     let session=null;
     try{session=(await client.auth.getSession())?.data?.session||null}catch(_){ }
-    if(!session?.user){
-      safeRemove(HINT_KEY);unlock();
-      const opener=originalOpenPage||window.openPage;if(typeof opener==='function')opener('store',{render:true});
-      return;
-    }
+    if(!session?.user){safeRemove(HINT_KEY);unlock();const opener=originalOpenPage||window.openPage;if(typeof opener==='function')opener('store',{render:true});return}
     try{
       const ok=await window.ALINAuth?.restoreSession?.();
       if(ok||window.current?.id){unlock();restoreRememberedPage();return}
@@ -155,11 +147,7 @@
     clearTimeout(resolveTimer);resolveTimer=setTimeout(verifyAndRestore,900);
   }
 
-  function onAuthReady(){
-    if(window.current?.id){saveHint();unlock();restoreRememberedPage();return}
-    if(locked)verifyAndRestore();
-  }
-
+  function onAuthReady(){if(window.current?.id){saveHint();unlock();restoreRememberedPage();return}if(locked)verifyAndRestore()}
   function onLogout(){safeRemove(HINT_KEY);unlock()}
 
   document.addEventListener('click',event=>{
@@ -179,8 +167,7 @@
   window.addEventListener('alin:logout',onLogout);
 
   if(readHint()||hasPersistedSupabaseSession())lock();
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{patchOpenPage();if(locked)showOverlay()},{once:true});
-  else patchOpenPage();
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{patchOpenPage();if(locked)showOverlay()},{once:true});else patchOpenPage();
   let attempts=0;const patchTimer=setInterval(()=>{patchOpenPage();attempts+=1;if(attempts>=40||originalOpenPage)clearInterval(patchTimer)},100);
 
   window.AlinSessionBootGuard=Object.freeze({saveHint,verifyAndRestore,locked:()=>locked,clear:onLogout});
