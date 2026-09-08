@@ -1,7 +1,7 @@
 // منصة آلين v4.2.0 Stable — Alin Platform.
 window.ALIN_CONFIG=Object.freeze({
   version:'4.2.0',
-  assetVersion:'4.2.0-books-library-profit-20260908-0950',
+  assetVersion:'4.2.0-printer-finance-20260908-1040',
   desktopPage:'./store-desktop.html',
   mobilePage:'./store-mobile.html',
   tabletPage:'./store-tablet.html',
@@ -53,29 +53,6 @@ window.ALIN_CONFIG=Object.freeze({
   script.src=`./core/alin-role-shell-v2.js?v=${encodeURIComponent(window.ALIN_CONFIG.assetVersion)}`;
   script.async=false;
   document.head.appendChild(script);
-})();
-
-/* Library: show independent book-supplier earnings in its finance page. */
-(function loadLibraryBookSupplierProfit(){
-  'use strict';
-  let loading=false;
-  function ensure(){
-    if(window.__ALIN_LIBRARY_BOOK_SUPPLIER_PROFIT__||loading)return;
-    const role=String(window.current?.role||'');
-    if(role&&role!=='library')return;
-    if(!window.AlinLibraryModules&&typeof window.renderLibrary!=='function')return;
-    loading=true;
-    const script=document.createElement('script');
-    script.id='alinLibraryBookSupplierProfitScript';
-    script.src=`./modules/library/book-supplier-profit.js?v=${encodeURIComponent(window.ALIN_CONFIG.assetVersion)}`;
-    script.async=false;
-    script.addEventListener('load',()=>{loading=false},{once:true});
-    script.addEventListener('error',()=>{loading=false;script.remove()},{once:true});
-    document.head.appendChild(script);
-  }
-  window.addEventListener('alin:role-runtime-ready',()=>setTimeout(ensure,0));
-  window.addEventListener('alin:page-open',()=>setTimeout(ensure,0));
-  if(window.AlinRoleRuntime?.ready?.())setTimeout(ensure,0);
 })();
 
 /* One admin courier hub: couriers + areas + delivery orders + settlements. */
