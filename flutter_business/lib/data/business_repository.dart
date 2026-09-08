@@ -91,6 +91,45 @@ class BusinessRepository {
     }
   }
 
+  Future<List<Map<String, dynamic>>> courierOrders(String courierId) async {
+    final raw = await client
+        .from('orders')
+        .select('id,order_number,title,kind,status,student_name,student_phone,qty,total,delivery_fee,courier_fee,delegate_profit,courier_profit,delivery_area,delivery_landmark,delivery_latitude,delivery_longitude,delivery_location_url,delivery_note,notes,pickup_source_label,pickup_source_type,library_id,pickup_library_id,product_variant_code,product_variant_name,created_at,updated_at,delivered_at,completed_at,courier_id,delegate_id')
+        .or('courier_id.eq.$courierId,delegate_id.eq.$courierId')
+        .order('created_at', ascending: false)
+        .limit(300);
+    return (raw as List).cast<Map<String, dynamic>>();
+  }
+
+  Future<Map<String, dynamic>> courierTransition(String orderId, String status, {String reason = ''}) async {
+    final raw = await client.rpc('alin_order_transition_atomic', params: {
+      'p_order_id': orderId,
+      'p_status': status,
+      'p_reason': reason.trim().isEmpty ? null : reason.trim(),
+    });
+    if (raw is! Map) throw Exception('تعذر تحديث الطلب');
+    final map = Map<String, dynamic>.from(raw);
+    if (map['ok'] != true) throw Exception('${map['error'] ?? 'تعذر تحديث الطلب'}');
+    return map;
+  }
+
+  Future<void> courierSetNote(String orderId, String note) async {
+    final text = note.trim();
+    if (text.length < 2) throw Exception('اكتب ملاحظة واضحة');
+    final raw = await client.rpc('alin_courier_set_order_note', params: {
+      'p_order_id': orderId,
+      'p_note': text,
+    });
+    if (raw is Map && raw['ok'] == true) return;
+    throw Exception('تعذر إرسال الملاحظة');
+  }
+
+  Future<void> courierSetAvailability(String value) async {
+    final raw = await client.rpc('alin_courier_set_availability', params: {'p_value': value});
+    if (raw is Map && raw['ok'] == true) return;
+    throw Exception('تعذر تحديث حالة المندوب');
+  }
+
   Future<Map<String, dynamic>> _adminSummary() async {
     final results = await Future.wait([
       client.from('orders').select('id,status,total').limit(500),
@@ -110,17 +149,15 @@ class BusinessRepository {
   }
 
   Future<Map<String, dynamic>> _courierSummary(String id) async {
-    final data = await client
-        .from('orders')
-        .select('id,status,total,delivery_fee,courier_fee')
-        .or('courier_id.eq.$id,delegate_id.eq.$id')
-        .limit(300);
-    final list = data.cast<Map<String, dynamic>>();
+    final list = await courierOrders(id);
     return {
       'orders': list.length,
-      'active': list.where((e) => !['completed', 'delivered', 'cancelled'].contains('${e['status']}')).length,
+      'active': list.where((e) => !['completed', 'delivered', 'cancelled', 'rejected'].contains('${e['status']}')).length,
       'completed': list.where((e) => ['completed', 'delivered'].contains('${e['status']}')).length,
-      'profit': list.fold<num>(0, (sum, e) => sum + (num.tryParse('${e['courier_fee']}') ?? 0)),
+      'profit': list.fold<num>(0, (sum, e) {
+        final v = e['courier_fee'] ?? e['courier_profit'] ?? e['delegate_profit'];
+        return sum + (num.tryParse('$v') ?? 0);
+      }),
     };
   }
 
