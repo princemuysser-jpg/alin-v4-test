@@ -1,7 +1,7 @@
 // منصة آلين v4.2.0 Stable — Alin Platform.
 window.ALIN_CONFIG=Object.freeze({
   version:'4.2.0',
-  assetVersion:'4.2.0-printer-session-fix-20260908-1055',
+  assetVersion:'4.2.0-printer-runtime-20260908-080910',
   desktopPage:'./store-desktop.html',
   mobilePage:'./store-mobile.html',
   tabletPage:'./store-tablet.html',
