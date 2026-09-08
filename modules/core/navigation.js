@@ -2,16 +2,17 @@
 /* ALIN V214 — one owner for login shell, page navigation, role guards and logout UI. */
 (function(){
   'use strict';
-  const labels={store:'المتجر',teacher:'المدرس',library:'المكتبة',courier:'المندوب',admin:'الإدارة'};
+  const labels={store:'المتجر',teacher:'المدرس',library:'المكتبة',printer:'المطبعة',courier:'المندوب',admin:'الإدارة'};
   const loginLabels={
     teacher:{title:'دخول المدرس',username:'اسم دخول المدرس',password:'الرمز السري للمدرس'},
     library:{title:'دخول المكتبة',username:'اسم دخول المكتبة',password:'الرمز السري للمكتبة'},
+    printer:{title:'دخول المطبعة',username:'اسم دخول المطبعة',password:'الرمز السري للمطبعة'},
     courier:{title:'دخول المندوب',username:'اسم دخول المندوب',password:'الرمز السري للمندوب'},
     admin:{title:'دخول لوحة آلين',username:'اسم دخول الإدارة',password:'الرمز السري للإدارة'}
   };
   const allowed={
     admin:new Set(['admin','store']),accountant:new Set(['admin','store']),teacher:new Set(['teacher','store']),
-    library:new Set(['library','store']),courier:new Set(['courier','store']),student:new Set(['store']),store:new Set(['store'])
+    library:new Set(['library','store']),printer:new Set(['printer']),courier:new Set(['courier','store']),student:new Set(['store']),store:new Set(['store'])
   };
   let logoutPromise=null;
   const el=id=>document.getElementById(id);
@@ -54,7 +55,8 @@
     el('app')?.classList.remove('hidden');
     el('app')?.classList.toggle('store-mode',page==='store');
     document.querySelectorAll('.page').forEach(node=>node.classList.add('hidden'));
-    const target=el(page+'Page');if(!target){notify('الصفحة المطلوبة غير موجودة');return false}target.classList.remove('hidden');
+    const targetId=page==='printer'?'libraryPage':page+'Page';
+    const target=el(targetId);if(!target){notify('الصفحة المطلوبة غير موجودة');return false}target.classList.remove('hidden');
     const nav=el('activeNav');if(nav)nav.innerHTML=`<button>${labels[page]||page}</button>`;
     if(options.render!==false&&typeof window.renderAll==='function')window.renderAll();
     if(page==='admin'&&typeof window.adminTab==='function'){
@@ -64,6 +66,7 @@
       if(role==='accountant')document.querySelectorAll('.admin-tabs button').forEach(button=>{button.style.display=(button.textContent||'').includes('الأرباح')?'':'none'});
     }
     if(page==='courier'&&typeof window.renderCourierDashboard==='function')window.renderCourierDashboard();
+    if(page==='printer'&&typeof window.AlinPrinterDashboard?.render==='function')window.AlinPrinterDashboard.render(false);
     decorate();
     window.dispatchEvent(new CustomEvent('alin:page-open',{detail:{page,account:user(),rendered:options.render!==false}}));
     return true;
@@ -90,5 +93,5 @@
   window.doLogin=doLogin;
   window.openPage=openPage;
   window.logout=logout;
-  window.ALINNavigation=Object.freeze({version:'214.1',showLogin,doLogin,openPage,logout,showSignedOut,canOpen});
+  window.ALINNavigation=Object.freeze({version:'214.2-printer',showLogin,doLogin,openPage,logout,showSignedOut,canOpen});
 })();
