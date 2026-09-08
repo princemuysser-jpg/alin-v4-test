@@ -19,4 +19,5 @@
   load('alinPrinterRoleBridgeScript','./core/printer-role-bridge.js');
   load('alinPrinterAccountsScript','./modules/admin/printer-accounts.js');
   load('alinBooksPrinterOnlyScript','./modules/admin/books-printer-only.js');
+  load('alinAdminPrinterFinanceScript','./modules/admin/printer-finance.js');
 })();
