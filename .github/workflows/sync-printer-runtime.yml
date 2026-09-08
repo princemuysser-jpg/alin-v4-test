@@ -49,14 +49,15 @@ jobs:
               '<option value="printer">مطبعة</option>',
               'modules/admin/accounts.js',
               'modules/admin/orders-grouped.js',
-              'إدارة مواد الطلب',
+              'عرض القائمة',
+              'قائمة تجهيز الطلب',
           ]
           missing=[x for x in required if x not in text]
           if missing:
               raise SystemExit('Runtime markers missing: '+', '.join(missing))
 
           stamp=datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')
-          token=f'4.2.0-grouped-orders-{stamp}'
+          token=f'4.2.0-prep-list-{stamp}'
           cfg=root/'alin-config.js'
           config=cfg.read_text(encoding='utf-8')
           config,count=re.subn(r"assetVersion:'[^']+'",f"assetVersion:'{token}'",config,count=1)
@@ -78,7 +79,8 @@ jobs:
           grep -F "printer:'مطبعة'" dist/alin-role-runtime.v4.js
           grep -F '<option value="printer">مطبعة</option>' dist/alin-role-runtime.v4.js
           grep -F 'modules/admin/orders-grouped.js' dist/alin-role-runtime.v4.js
-          grep -F 'إدارة مواد الطلب' dist/alin-role-runtime.v4.js
+          grep -F 'عرض القائمة' dist/alin-role-runtime.v4.js
+          grep -F 'قائمة تجهيز الطلب' dist/alin-role-runtime.v4.js
 
       - name: Commit rebuilt runtime
         run: |
@@ -89,5 +91,5 @@ jobs:
             echo "No runtime changes"
             exit 0
           fi
-          git commit -m "fix: sync grouped orders into role runtime"
+          git commit -m "fix: sync preparation list into role runtime"
           git push origin HEAD:main
