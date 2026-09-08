@@ -1,7 +1,7 @@
 // منصة آلين v4.2.0 Stable — Alin Platform.
 window.ALIN_CONFIG=Object.freeze({
-  version:'4.2.0',
-  assetVersion:'4.2.0-stable-staff-order-attention-20260826-2228',
+  version:'4.2.0-test',
+  assetVersion:'4.2.0-books-test-20260908-0905',
   desktopPage:'./store-desktop.html',
   mobilePage:'./store-mobile.html',
   tabletPage:'./store-tablet.html',
@@ -11,8 +11,8 @@ window.ALIN_CONFIG=Object.freeze({
   authEnabled:true,
   authEmailDomain:'users.alin.local',
   teacherCoursesEnabled:true,
-  supabaseUrl:'https://dgaikazhbtyjmswpyvrl.supabase.co',
-  supabaseAnonKey:'sb_publishable_HjVoise8mRYVeMeBaM9pxw_oxf_mLp3'
+  supabaseUrl:'https://jyavewwlgiaibtdqyzpd.supabase.co',
+  supabaseAnonKey:'sb_publishable_LsabRtE9eFADYCMZRlji4Q_uwSjs9Ax'
 });
 
 /* Keep authenticated staff on the same role/page/tab across refreshes. */
