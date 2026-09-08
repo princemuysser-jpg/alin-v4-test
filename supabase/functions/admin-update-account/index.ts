@@ -13,7 +13,7 @@ import {
   requireSuperAdmin,
 } from '../_shared/admin.ts';
 
-const ALLOWED_ROLES = new Set(['admin', 'teacher', 'library', 'courier', 'accountant']);
+const ALLOWED_ROLES = new Set(['admin', 'teacher', 'library', 'courier', 'accountant', 'printer']);
 
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders(req) });
@@ -98,7 +98,6 @@ Deno.serve(async (req: Request) => {
 
       let nextAuthUserId = account.auth_user_id ? String(account.auth_user_id) : '';
 
-      // Password changes always require an authoritative Auth update.
       if (password) {
         stage = 'auth-password-sync';
         const resolved = await ensureAuthUserForAccount(admin, {
@@ -111,7 +110,6 @@ Deno.serve(async (req: Request) => {
         });
         nextAuthUserId = resolved.id;
       } else if (nextAuthUserId && nextUsername !== oldUsername) {
-        // Username is part of the login identity, so this sync is required.
         stage = 'auth-username-sync';
         const { error: authUpdateError } = await admin.auth.admin.updateUserById(nextAuthUserId, {
           email: emailForUsername(nextUsername),
@@ -119,7 +117,6 @@ Deno.serve(async (req: Request) => {
         });
         if (authUpdateError) throw authUpdateError;
       } else if (nextAuthUserId && (nextName !== oldName || requestedRole !== oldRole)) {
-        // Name/role metadata is helpful but must never block ordinary account edits.
         stage = 'auth-metadata-sync';
         const { error: authMetaError } = await admin.auth.admin.updateUserById(nextAuthUserId, {
           user_metadata: { name: nextName, username: nextUsername, role: requestedRole },
