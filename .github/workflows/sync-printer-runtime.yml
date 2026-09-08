@@ -4,6 +4,8 @@ on:
   push:
     paths:
       - ".github/workflows/sync-printer-runtime.yml"
+      - "modules/module-order.json"
+      - "modules/admin/orders-grouped.js"
 
 permissions:
   contents: write
@@ -27,8 +29,10 @@ jobs:
           root=Path('.')
           order=json.loads((root/'modules/module-order.json').read_text(encoding='utf-8'))
           role_paths=order.get('role_runtime') or []
-          if 'modules/admin/accounts.js' not in role_paths:
-              raise SystemExit('modules/admin/accounts.js missing from role runtime order')
+          required_sources=['modules/admin/accounts.js','modules/admin/orders-grouped.js']
+          for required in required_sources:
+              if required not in role_paths:
+                  raise SystemExit(f'{required} missing from role runtime order')
 
           chunks=[]
           for rel in role_paths:
@@ -44,13 +48,15 @@ jobs:
               "printer:'مطبعة'",
               '<option value="printer">مطبعة</option>',
               'modules/admin/accounts.js',
+              'modules/admin/orders-grouped.js',
+              'إدارة مواد الطلب',
           ]
           missing=[x for x in required if x not in text]
           if missing:
-              raise SystemExit('Printer runtime markers missing: '+', '.join(missing))
+              raise SystemExit('Runtime markers missing: '+', '.join(missing))
 
           stamp=datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')
-          token=f'4.2.0-printer-runtime-{stamp}'
+          token=f'4.2.0-grouped-orders-{stamp}'
           cfg=root/'alin-config.js'
           config=cfg.read_text(encoding='utf-8')
           config,count=re.subn(r"assetVersion:'[^']+'",f"assetVersion:'{token}'",config,count=1)
@@ -71,6 +77,8 @@ jobs:
           node --check dist/alin-role-runtime.v4.js
           grep -F "printer:'مطبعة'" dist/alin-role-runtime.v4.js
           grep -F '<option value="printer">مطبعة</option>' dist/alin-role-runtime.v4.js
+          grep -F 'modules/admin/orders-grouped.js' dist/alin-role-runtime.v4.js
+          grep -F 'إدارة مواد الطلب' dist/alin-role-runtime.v4.js
 
       - name: Commit rebuilt runtime
         run: |
@@ -81,5 +89,5 @@ jobs:
             echo "No runtime changes"
             exit 0
           fi
-          git commit -m "fix: sync printer account UI into role runtime"
+          git commit -m "fix: sync grouped orders into role runtime"
           git push origin HEAD:main
