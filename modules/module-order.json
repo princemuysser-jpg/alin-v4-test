@@ -57,6 +57,7 @@
     "modules/library/printing.js",
     "modules/admin/dashboard.js",
     "modules/admin/orders.js",
+    "modules/admin/orders-grouped.js",
     "modules/admin/booklets.js",
     "modules/admin/products.js",
     "modules/admin/accounts-advanced.js",
