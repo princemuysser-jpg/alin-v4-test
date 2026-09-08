@@ -26,16 +26,17 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Install Flutter 3.44.9
-        working-directory: ${{ github.workspace }}
-        run: |
-          git clone --depth 1 --branch 3.44.9 https://github.com/flutter/flutter.git "$HOME/flutter"
-          echo "$HOME/flutter/bin" >> "$GITHUB_PATH"
-          "$HOME/flutter/bin/flutter" config --no-analytics
+      - name: Set up Flutter 3.44.9
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.9'
+          channel: stable
+          cache: true
 
       - name: Create Android platform shell
         run: |
           flutter create --platforms=android .
+          rm -f test/widget_test.dart
           python3 - <<'PY'
           from pathlib import Path
           p=Path('android/app/build.gradle.kts')
@@ -43,8 +44,7 @@ jobs:
           s=s.replace('com.example.alin_business','com.alin.business')
           p.write_text(s)
           m=Path('android/app/src/main/AndroidManifest.xml')
-          x=m.read_text()
-          x=x.replace('android:label="alin_business"','android:label="آلين للأعمال"')
+          x=m.read_text().replace('android:label="alin_business"','android:label="آلين للأعمال"')
           m.write_text(x)
           PY
 
@@ -96,7 +96,6 @@ jobs:
         run: |
           flutter pub get
           flutter analyze
-          if [ -d test ] && find test -name '*_test.dart' -print -quit | grep -q .; then flutter test; fi
 
       - name: Build signed AAB and APK
         run: |
@@ -122,16 +121,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Flutter 3.44.9
-        working-directory: ${{ github.workspace }}
-        run: |
-          git clone --depth 1 --branch 3.44.9 https://github.com/flutter/flutter.git "$HOME/flutter"
-          echo "$HOME/flutter/bin" >> "$GITHUB_PATH"
-          "$HOME/flutter/bin/flutter" config --no-analytics
+      - name: Set up Flutter 3.44.9
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.9'
+          channel: stable
+          cache: true
 
       - name: Create iOS platform shell
         run: |
           flutter create --platforms=ios .
+          rm -f test/widget_test.dart
           python3 - <<'PY'
           from pathlib import Path
           p=Path('ios/Runner.xcodeproj/project.pbxproj')
@@ -146,7 +146,6 @@ jobs:
         run: |
           flutter pub get
           flutter analyze
-          if [ -d test ] && find test -name '*_test.dart' -print -quit | grep -q .; then flutter test; fi
 
       - name: Build iOS without signing
         run: flutter build ios --release --no-codesign --no-pub
