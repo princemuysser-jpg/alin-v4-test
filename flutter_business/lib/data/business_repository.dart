@@ -28,8 +28,13 @@ class BusinessRepository {
     if (accessToken.isEmpty || refreshToken.isEmpty || userId.isEmpty) {
       throw Exception('جلسة الدخول غير مكتملة');
     }
-    final set = await client.auth.setSession(accessToken, refreshToken);
-    if (set.session == null || set.user == null) throw Exception('تعذر تثبيت جلسة الدخول');
+    final set = await client.auth.setSession(
+      refreshToken,
+      accessToken: accessToken,
+    );
+    if (set.session == null || set.user == null || set.user!.id != userId) {
+      throw Exception('تعذر تثبيت جلسة الدخول');
+    }
     final account = await accountForUser(set.user!.id);
     if (!account.isBusinessRole) {
       await client.auth.signOut();
