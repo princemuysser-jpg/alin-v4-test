@@ -13,6 +13,7 @@ class ProductCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = AppScope.of(context);
     final favorite = c.isFavorite(item);
+    final isBook = item.reviewKind == 'book';
     return InkWell(
       borderRadius: BorderRadius.circular(18),
       onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => DetailsScreen(item: item))),
@@ -45,6 +46,29 @@ class ProductCard extends StatelessWidget {
                       ),
                     ),
                   ),
+                  if (isBook)
+                    Positioned(
+                      bottom: 9,
+                      right: 9,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surface.withValues(alpha: .94),
+                          borderRadius: BorderRadius.circular(99),
+                          border: Border.all(color: Theme.of(context).dividerColor),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          child: Text(
+                            c.tr('كتاب', ku: 'کتێب', en: 'Book'),
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.primary,
+                              fontWeight: FontWeight.w900,
+                              fontSize: 10.5,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                   if (item.hasDiscount)
                     Positioned(
                       top: 10,
@@ -69,9 +93,14 @@ class ProductCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(item.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
-                  if (item.subtitle.isNotEmpty) ...[
+                  if (item.subtitle.isNotEmpty || isBook) ...[
                     const SizedBox(height: 3),
-                    Text(item.subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 11)),
+                    Text(
+                      isBook ? c.tr('كتاب', ku: 'کتێب', en: 'Book') : item.subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 11),
+                    ),
                   ],
                   const SizedBox(height: 8),
                   Text(
