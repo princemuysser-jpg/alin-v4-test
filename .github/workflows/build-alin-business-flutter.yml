@@ -1,0 +1,152 @@
+name: Build ALIN Business Flutter
+
+on:
+  push:
+    paths:
+      - 'flutter_business/**'
+      - '.github/workflows/build-alin-business-flutter.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: flutter_business
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install Flutter 3.44.9
+        working-directory: ${{ github.workspace }}
+        run: |
+          git clone --depth 1 --branch 3.44.9 https://github.com/flutter/flutter.git "$HOME/flutter"
+          echo "$HOME/flutter/bin" >> "$GITHUB_PATH"
+          "$HOME/flutter/bin/flutter" config --no-analytics
+
+      - name: Create Android platform shell
+        run: |
+          flutter create --platforms=android .
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('android/app/build.gradle.kts')
+          s=p.read_text()
+          s=s.replace('com.example.alin_business','com.alin.business')
+          p.write_text(s)
+          m=Path('android/app/src/main/AndroidManifest.xml')
+          x=m.read_text()
+          x=x.replace('android:label="alin_business"','android:label="آلين للأعمال"')
+          m.write_text(x)
+          PY
+
+      - name: Restore Android release signing key
+        env:
+          ALIN_KEYSTORE_BASE64: ${{ secrets.ALIN_KEYSTORE_BASE64 }}
+          ALIN_KEYSTORE_PASSWORD: ${{ secrets.ALIN_KEYSTORE_PASSWORD }}
+          ALIN_KEY_ALIAS: ${{ secrets.ALIN_KEY_ALIAS }}
+          ALIN_KEY_PASSWORD: ${{ secrets.ALIN_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          for name in ALIN_KEYSTORE_BASE64 ALIN_KEYSTORE_PASSWORD ALIN_KEY_ALIAS ALIN_KEY_PASSWORD; do
+            test -n "${!name:-}" || { echo "Missing $name"; exit 1; }
+          done
+          printf '%s' "$ALIN_KEYSTORE_BASE64" | base64 --decode > android/app/alin-release.jks
+          cat > android/key.properties <<EOF
+          storePassword=$ALIN_KEYSTORE_PASSWORD
+          keyPassword=$ALIN_KEY_PASSWORD
+          keyAlias=$ALIN_KEY_ALIAS
+          storeFile=alin-release.jks
+          EOF
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('android/app/build.gradle.kts')
+          s=p.read_text()
+          s='import java.io.FileInputStream\nimport java.util.Properties\n'+s
+          marker='android {'
+          pre='''val keystoreProperties = Properties()\nval keystorePropertiesFile = rootProject.file("key.properties")\nval hasReleaseKey = keystorePropertiesFile.exists()\nif (hasReleaseKey) keystoreProperties.load(FileInputStream(keystorePropertiesFile))\n\n'''
+          s=s.replace(marker,pre+marker,1)
+          anchor='    buildTypes {'
+          signing='''    signingConfigs {\n        if (hasReleaseKey) {\n            create("release") {\n                keyAlias = keystoreProperties["keyAlias"] as String\n                keyPassword = keystoreProperties["keyPassword"] as String\n                storeFile = file(keystoreProperties["storeFile"] as String)\n                storePassword = keystoreProperties["storePassword"] as String\n            }\n        }\n    }\n\n'''
+          s=s.replace(anchor,signing+anchor,1)
+          s=s.replace('signingConfig = signingConfigs.getByName("debug")','signingConfig = if (hasReleaseKey) signingConfigs.getByName("release") else signingConfigs.getByName("debug")')
+          p.write_text(s)
+          PY
+
+      - name: Prepare Android SDK
+        working-directory: ${{ github.workspace }}
+        run: |
+          SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
+          SDKMANAGER="$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+          if [ ! -x "$SDKMANAGER" ]; then
+            SDKMANAGER="$(find "$SDK_ROOT/cmdline-tools" -type f -name sdkmanager 2>/dev/null | head -n 1)"
+          fi
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Flutter checks
+        run: |
+          flutter pub get
+          flutter analyze
+          if [ -d test ] && find test -name '*_test.dart' -print -quit | grep -q .; then flutter test; fi
+
+      - name: Build signed AAB and APK
+        run: |
+          flutter build appbundle --release --no-pub
+          flutter build apk --release --no-pub
+
+      - name: Upload Android artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: alin-business-android-v1.0.0-build1
+          if-no-files-found: error
+          path: |
+            flutter_business/build/app/outputs/bundle/release/*.aab
+            flutter_business/build/app/outputs/flutter-apk/*.apk
+          retention-days: 7
+
+  ios-check:
+    runs-on: macos-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: flutter_business
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Flutter 3.44.9
+        working-directory: ${{ github.workspace }}
+        run: |
+          git clone --depth 1 --branch 3.44.9 https://github.com/flutter/flutter.git "$HOME/flutter"
+          echo "$HOME/flutter/bin" >> "$GITHUB_PATH"
+          "$HOME/flutter/bin/flutter" config --no-analytics
+
+      - name: Create iOS platform shell
+        run: |
+          flutter create --platforms=ios .
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('ios/Runner.xcodeproj/project.pbxproj')
+          s=p.read_text().replace('com.example.alinBusiness','com.alin.business')
+          p.write_text(s)
+          info=Path('ios/Runner/Info.plist')
+          x=info.read_text().replace('<string>alin_business</string>','<string>آلين للأعمال</string>')
+          info.write_text(x)
+          PY
+
+      - name: Flutter checks
+        run: |
+          flutter pub get
+          flutter analyze
+          if [ -d test ] && find test -name '*_test.dart' -print -quit | grep -q .; then flutter test; fi
+
+      - name: Build iOS without signing
+        run: flutter build ios --release --no-codesign --no-pub
