@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/business_config.dart';
 import 'data/business_repository.dart';
 import 'models/business_account.dart';
+import 'screens/admin_dashboard_screen.dart';
 import 'screens/courier_dashboard_screen.dart';
 import 'screens/library_dashboard_screen.dart';
 import 'screens/printer_dashboard_screen.dart';
@@ -64,6 +65,7 @@ class AlinBusinessApp extends StatelessWidget {
 
 class BusinessGate extends StatefulWidget {
   const BusinessGate({super.key});
+
   @override
   State<BusinessGate> createState() => _BusinessGateState();
 }
@@ -97,55 +99,46 @@ class _BusinessGateState extends State<BusinessGate> {
 
   @override
   Widget build(BuildContext context) {
-    if (loading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
+    if (loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+
     if (account == null) {
       return LoginScreen(
         repository: repository,
         onLoggedIn: (value) => setState(() => account = value),
       );
     }
-    if (account!.role == 'courier') {
-      return CourierDashboardScreen(
-        repository: repository,
-        account: account!,
-        onLogout: _logout,
-      );
+
+    switch (account!.role) {
+      case 'admin':
+      case 'accountant':
+        return AdminDashboardScreen(repository: repository, account: account!, onLogout: _logout);
+      case 'courier':
+        return CourierDashboardScreen(repository: repository, account: account!, onLogout: _logout);
+      case 'library':
+        return LibraryDashboardScreen(repository: repository, account: account!, onLogout: _logout);
+      case 'printer':
+        return PrinterDashboardScreen(repository: repository, account: account!, onLogout: _logout);
+      case 'teacher':
+        return TeacherDashboardScreen(repository: repository, account: account!, onLogout: _logout);
+      default:
+        return Scaffold(
+          appBar: AppBar(title: const Text('آلين للأعمال')),
+          body: Center(child: Text('نوع الحساب غير مدعوم: ${account!.role}')),
+        );
     }
-    if (account!.role == 'library') {
-      return LibraryDashboardScreen(
-        repository: repository,
-        account: account!,
-        onLogout: _logout,
-      );
-    }
-    if (account!.role == 'printer') {
-      return PrinterDashboardScreen(
-        repository: repository,
-        account: account!,
-        onLogout: _logout,
-      );
-    }
-    if (account!.role == 'teacher') {
-      return TeacherDashboardScreen(
-        repository: repository,
-        account: account!,
-        onLogout: _logout,
-      );
-    }
-    return GenericRoleDashboard(
-      repository: repository,
-      account: account!,
-      onLogout: _logout,
-    );
   }
 }
 
 class LoginScreen extends StatefulWidget {
   final BusinessRepository repository;
   final ValueChanged<BusinessAccount> onLoggedIn;
-  const LoginScreen({super.key, required this.repository, required this.onLoggedIn});
+
+  const LoginScreen({
+    super.key,
+    required this.repository,
+    required this.onLoggedIn,
+  });
+
   @override
   State<LoginScreen> createState() => _LoginScreenState();
 }
@@ -208,8 +201,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: const Icon(Icons.business_center_rounded, color: Colors.white, size: 50),
                 ),
                 const SizedBox(height: 22),
-                Text(BusinessConfig.appName,
-                    style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w900, color: Color(0xFF143B68))),
+                Text(
+                  BusinessConfig.appName,
+                  style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w900, color: Color(0xFF143B68)),
+                ),
                 const SizedBox(height: 6),
                 Text(BusinessConfig.appSubtitle, style: TextStyle(color: Colors.grey.shade600)),
                 const SizedBox(height: 32),
@@ -262,154 +257,4 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
-}
-
-class GenericRoleDashboard extends StatefulWidget {
-  final BusinessRepository repository;
-  final BusinessAccount account;
-  final Future<void> Function() onLogout;
-  const GenericRoleDashboard({
-    super.key,
-    required this.repository,
-    required this.account,
-    required this.onLogout,
-  });
-  @override
-  State<GenericRoleDashboard> createState() => _GenericRoleDashboardState();
-}
-
-class _GenericRoleDashboardState extends State<GenericRoleDashboard> {
-  Map<String, dynamic> summary = {};
-  bool loading = true;
-  String? error;
-
-  @override
-  void initState() {
-    super.initState();
-    load();
-  }
-
-  Future<void> load() async {
-    setState(() {
-      loading = true;
-      error = null;
-    });
-    try {
-      final data = await widget.repository.dashboardSummary(widget.account);
-      if (!mounted) return;
-      setState(() => summary = data);
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => error = '$e'.replaceFirst('Exception: ', ''));
-    } finally {
-      if (mounted) setState(() => loading = false);
-    }
-  }
-
-  List<_Section> get sections => switch (widget.account.role) {
-        'admin' || 'accountant' => const [
-            _Section('الطلبات', Icons.receipt_long_rounded),
-            _Section('الحسابات', Icons.groups_rounded),
-            _Section('المالية', Icons.account_balance_wallet_rounded),
-            _Section('الكتب والملازم', Icons.menu_book_rounded),
-          ],
-        _ => const [],
-      };
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('لوحة ${widget.account.roleLabel}', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
-          Text(widget.account.name, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w400)),
-        ]),
-        actions: [
-          IconButton(onPressed: load, icon: const Icon(Icons.refresh_rounded)),
-          PopupMenuButton<String>(
-            onSelected: (value) { if (value == 'logout') widget.onLogout(); },
-            itemBuilder: (_) => const [PopupMenuItem(value: 'logout', child: Text('تسجيل الخروج'))],
-          ),
-        ],
-      ),
-      body: RefreshIndicator(
-        onRefresh: load,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            Container(
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(colors: [Color(0xFF143B68), Color(0xFF255B91)]),
-                borderRadius: BorderRadius.circular(22),
-              ),
-              child: Text('مرحباً ${widget.account.name}', style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900)),
-            ),
-            const SizedBox(height: 14),
-            if (loading)
-              const Padding(padding: EdgeInsets.all(30), child: Center(child: CircularProgressIndicator()))
-            else if (error != null)
-              Card(child: Padding(padding: const EdgeInsets.all(16), child: Text(error!)))
-            else
-              _SummaryView(role: widget.account.role, summary: summary),
-            const SizedBox(height: 18),
-            const Text('الأقسام', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
-            const SizedBox(height: 8),
-            ...sections.map((section) => Card(
-                  child: ListTile(
-                    leading: Icon(section.icon, color: const Color(0xFF143B68)),
-                    title: Text(section.title, style: const TextStyle(fontWeight: FontWeight.w800)),
-                    trailing: const Icon(Icons.chevron_left_rounded),
-                    onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('قسم ${section.title} هو المرحلة التالية بالبناء')),
-                    ),
-                  ),
-                )),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SummaryView extends StatelessWidget {
-  final String role;
-  final Map<String, dynamic> summary;
-  const _SummaryView({required this.role, required this.summary});
-
-  @override
-  Widget build(BuildContext context) {
-    final entries = summary.entries.take(4).toList();
-    if (entries.isEmpty) return const SizedBox.shrink();
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 10,
-        mainAxisSpacing: 10,
-        childAspectRatio: 1.5,
-      ),
-      itemCount: entries.length,
-      itemBuilder: (_, index) {
-        final item = entries[index];
-        return Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18)),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
-            const Icon(Icons.analytics_outlined, color: Color(0xFF143B68)),
-            const Spacer(),
-            Text('${item.value}', style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w900)),
-            Text(item.key, maxLines: 1, overflow: TextOverflow.ellipsis),
-          ]),
-        );
-      },
-    );
-  }
-}
-
-class _Section {
-  final String title;
-  final IconData icon;
-  const _Section(this.title, this.icon);
 }
