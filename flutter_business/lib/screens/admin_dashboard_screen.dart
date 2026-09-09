@@ -344,14 +344,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         title: const Text('تعيين الطلب'),
         content: Column(mainAxisSize: MainAxisSize.min, children: [
           DropdownButtonFormField<String?>(
-            value: courierId,
+            initialValue: courierId,
             decoration: const InputDecoration(labelText: 'المندوب'),
             items: [const DropdownMenuItem<String?>(value: null, child: Text('بدون مندوب')), ...courierItems.map((e) => DropdownMenuItem<String?>(value: '${e['id']}', child: Text('${e['name']}')))],
             onChanged: (v) => setLocal(() => courierId = v),
           ),
           const SizedBox(height: 10),
           DropdownButtonFormField<String?>(
-            value: libraryId,
+            initialValue: libraryId,
             decoration: const InputDecoration(labelText: 'المكتبة'),
             items: [const DropdownMenuItem<String?>(value: null, child: Text('بدون مكتبة')), ...libraryItems.map((e) => DropdownMenuItem<String?>(value: '${e['id']}', child: Text('${e['name']}')))],
             onChanged: (v) => setLocal(() => libraryId = v),
@@ -377,7 +377,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       builder: (context) => AlertDialog(
         title: const Text('تغيير حالة الطلب'),
         content: StatefulBuilder(builder: (context, setLocal) => DropdownButtonFormField<String>(
-          value: value,
+          initialValue: value,
           items: statuses.map((e) => DropdownMenuItem(value: e, child: Text(_status(e)))).toList(),
           onChanged: (v) { if (v != null) setLocal(() => value = v); },
         )),
@@ -432,7 +432,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           const SizedBox(height: 8),
           TextField(controller: password, obscureText: true, decoration: InputDecoration(labelText: existing == null ? 'كلمة المرور' : 'كلمة مرور جديدة (اختياري)')),
           const SizedBox(height: 8),
-          DropdownButtonFormField<String>(value: role, decoration: const InputDecoration(labelText: 'نوع الحساب'), items: const [
+          DropdownButtonFormField<String>(initialValue: role, decoration: const InputDecoration(labelText: 'نوع الحساب'), items: const [
             DropdownMenuItem(value: 'teacher', child: Text('مدرس')),
             DropdownMenuItem(value: 'library', child: Text('مكتبة')),
             DropdownMenuItem(value: 'courier', child: Text('مندوب')),
@@ -444,7 +444,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           const SizedBox(height: 8),
           TextField(controller: area, decoration: const InputDecoration(labelText: 'المنطقة')),
           const SizedBox(height: 8),
-          DropdownButtonFormField<String>(value: status, decoration: const InputDecoration(labelText: 'الحالة'), items: const [
+          DropdownButtonFormField<String>(initialValue: status, decoration: const InputDecoration(labelText: 'الحالة'), items: const [
             DropdownMenuItem(value: 'active', child: Text('فعال')),
             DropdownMenuItem(value: 'inactive', child: Text('غير فعال')),
             DropdownMenuItem(value: 'pending', child: Text('معلق')),
@@ -480,7 +480,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         title: const Text('تثبيت تسوية'),
         content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
           DropdownButtonFormField<String>(
-            value: partyId,
+            initialValue: partyId,
             decoration: const InputDecoration(labelText: 'الحساب'),
             items: parties.map((e) => DropdownMenuItem(value: '${e['id']}', child: Text('${e['name']} — ${_roleLabel('${e['role']}')}'))).toList(),
             onChanged: (v) { if (v != null) setLocal(() { partyId = v; role = '${parties.firstWhere((e) => '${e['id']}' == v)['role']}'; }); },
@@ -488,7 +488,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           const SizedBox(height: 8),
           TextField(controller: amount, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'المبلغ')),
           const SizedBox(height: 8),
-          DropdownButtonFormField<String>(value: method, decoration: const InputDecoration(labelText: 'طريقة الدفع'), items: const [
+          DropdownButtonFormField<String>(initialValue: method, decoration: const InputDecoration(labelText: 'طريقة الدفع'), items: const [
             DropdownMenuItem(value: 'cash', child: Text('نقدي')),
             DropdownMenuItem(value: 'transfer', child: Text('تحويل')),
           ], onChanged: (v) { if (v != null) setLocal(() => method = v); }),
