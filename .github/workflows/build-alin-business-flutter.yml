@@ -44,6 +44,15 @@ jobs:
           gradle = Path('android/app/build.gradle.kts')
           text = gradle.read_text()
           text = text.replace('com.example.alin_business', 'com.alin.business')
+
+          # flutter_local_notifications requires Java core library desugaring.
+          if 'isCoreLibraryDesugaringEnabled = true' not in text:
+              marker = '    compileOptions {\n'
+              if marker not in text:
+                  raise SystemExit('compileOptions block not found')
+              text = text.replace(marker, marker + '        isCoreLibraryDesugaringEnabled = true\n', 1)
+          if 'coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:' not in text:
+              text += '\n\ndependencies {\n    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")\n}\n'
           gradle.write_text(text)
 
           activity = Path('android/app/src/main/kotlin/com/example/alin_business/MainActivity.kt')
@@ -71,6 +80,8 @@ jobs:
               raise SystemExit('INTERNET permission missing')
           if 'android.permission.POST_NOTIFICATIONS' not in manifest.read_text():
               raise SystemExit('POST_NOTIFICATIONS permission missing')
+          if 'isCoreLibraryDesugaringEnabled = true' not in gradle.read_text():
+              raise SystemExit('core library desugaring missing')
           PY
 
       - name: Restore Android release signing key
@@ -165,16 +176,27 @@ jobs:
 
       - name: Create iOS platform shell
         run: |
+          set -euo pipefail
           flutter create --platforms=ios .
           rm -f test/widget_test.dart
           python3 - <<'PY'
           from pathlib import Path
           p=Path('ios/Runner.xcodeproj/project.pbxproj')
           s=p.read_text().replace('com.example.alinBusiness','com.alin.business')
+          s=s.replace('IPHONEOS_DEPLOYMENT_TARGET = 13.0;', 'IPHONEOS_DEPLOYMENT_TARGET = 15.0;')
           p.write_text(s)
+
           info=Path('ios/Runner/Info.plist')
           x=info.read_text().replace('<string>alin_business</string>','<string>آلين للأعمال</string>')
           info.write_text(x)
+
+          framework=Path('ios/Flutter/AppFrameworkInfo.plist')
+          if framework.exists():
+              f=framework.read_text().replace('<string>13.0</string>', '<string>15.0</string>')
+              framework.write_text(f)
+
+          if 'IPHONEOS_DEPLOYMENT_TARGET = 15.0;' not in p.read_text():
+              raise SystemExit('iOS deployment target was not raised to 15.0')
           PY
 
       - name: Flutter checks
