@@ -12,10 +12,14 @@ import 'core/business_notification_service.dart';
 import 'data/business_repository.dart';
 import 'models/business_account.dart';
 import 'screens/admin_dashboard_screen.dart';
+import 'screens/business_order_details_screen.dart';
 import 'screens/courier_dashboard_screen.dart';
 import 'screens/library_dashboard_screen.dart';
 import 'screens/printer_dashboard_screen.dart';
 import 'screens/teacher_dashboard_screen.dart';
+import 'widgets/business_notification_bell.dart';
+
+final GlobalKey<NavigatorState> businessNavigatorKey = GlobalKey<NavigatorState>();
 
 const FirebaseOptions _alinBusinessAndroidFirebaseOptions = FirebaseOptions(
   apiKey: 'AIzaSyDjd9BA_V6qqiN96OcqBtC521VPzew9occ',
@@ -66,6 +70,7 @@ class AlinBusinessApp extends StatelessWidget {
   Widget build(BuildContext context) {
     const navy = Color(0xFF143B68);
     return MaterialApp(
+      navigatorKey: businessNavigatorKey,
       debugShowCheckedModeBanner: false,
       title: BusinessConfig.appName,
       locale: const Locale('ar'),
@@ -109,6 +114,7 @@ class _BusinessGateState extends State<BusinessGate> {
   BusinessAccount? account;
   bool loading = true;
   int notificationTick = 0;
+  String? pendingOrderId;
 
   @override
   void initState() {
@@ -128,9 +134,42 @@ class _BusinessGateState extends State<BusinessGate> {
     setState(() => notificationTick++);
   }
 
+  String? _orderIdFromPayload(Map<String, dynamic> payload) {
+    final direct = '${payload['order_id'] ?? ''}'.trim();
+    if (direct.isNotEmpty) return direct;
+    final link = '${payload['url'] ?? payload['link'] ?? ''}'.trim();
+    if (link.isEmpty) return null;
+    final uri = Uri.tryParse(link);
+    final value = uri?.queryParameters['order'] ?? uri?.queryParameters['order_id'];
+    return value == null || value.trim().isEmpty ? null : value.trim();
+  }
+
   Future<void> _notificationOpened(Map<String, dynamic> payload) async {
+    final orderId = _orderIdFromPayload(payload);
     if (!mounted) return;
-    setState(() => notificationTick++);
+    setState(() {
+      notificationTick++;
+      if (orderId != null) pendingOrderId = orderId;
+    });
+    _openPendingOrderAfterFrame();
+  }
+
+  void _openPendingOrderAfterFrame() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || account == null) return;
+      final orderId = pendingOrderId;
+      final navigator = businessNavigatorKey.currentState;
+      if (orderId == null || navigator == null) return;
+      pendingOrderId = null;
+      navigator.push(
+        MaterialPageRoute(
+          builder: (_) => BusinessOrderDetailsScreen(
+            repository: repository,
+            orderId: orderId,
+          ),
+        ),
+      );
+    });
   }
 
   Future<void> _restore() async {
@@ -141,25 +180,54 @@ class _BusinessGateState extends State<BusinessGate> {
       account = restored;
       loading = false;
     });
+    _openPendingOrderAfterFrame();
   }
 
   Future<void> _loggedIn(BusinessAccount value) async {
     await notifications.registerCurrentDevice();
     if (!mounted) return;
     setState(() => account = value);
+    _openPendingOrderAfterFrame();
   }
 
   Future<void> _logout() async {
     await notifications.unregisterCurrentDevice();
     await repository.logout();
     if (!mounted) return;
-    setState(() => account = null);
+    setState(() {
+      account = null;
+      pendingOrderId = null;
+    });
   }
 
   @override
   void dispose() {
     unawaited(notifications.dispose());
     super.dispose();
+  }
+
+  Widget _withNotificationBell(Widget child) {
+    return Stack(
+      children: [
+        Positioned.fill(child: child),
+        Positioned(
+          right: 14,
+          bottom: 88,
+          child: Material(
+            elevation: 8,
+            color: const Color(0xFF143B68),
+            shape: const CircleBorder(),
+            child: IconTheme(
+              data: const IconThemeData(color: Colors.white),
+              child: BusinessNotificationBell(
+                key: ValueKey('bell-$notificationTick'),
+                repository: repository,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   @override
@@ -171,24 +239,26 @@ class _BusinessGateState extends State<BusinessGate> {
     }
 
     final pageKey = ValueKey('${account!.role}-$notificationTick');
+    Widget page;
     switch (account!.role) {
       case 'admin':
       case 'accountant':
-        return AdminDashboardScreen(key: pageKey, repository: repository, account: account!, onLogout: _logout);
+        page = AdminDashboardScreen(key: pageKey, repository: repository, account: account!, onLogout: _logout);
       case 'courier':
-        return CourierDashboardScreen(key: pageKey, repository: repository, account: account!, onLogout: _logout);
+        page = CourierDashboardScreen(key: pageKey, repository: repository, account: account!, onLogout: _logout);
       case 'library':
-        return LibraryDashboardScreen(key: pageKey, repository: repository, account: account!, onLogout: _logout);
+        page = LibraryDashboardScreen(key: pageKey, repository: repository, account: account!, onLogout: _logout);
       case 'printer':
-        return PrinterDashboardScreen(key: pageKey, repository: repository, account: account!, onLogout: _logout);
+        page = PrinterDashboardScreen(key: pageKey, repository: repository, account: account!, onLogout: _logout);
       case 'teacher':
-        return TeacherDashboardScreen(key: pageKey, repository: repository, account: account!, onLogout: _logout);
+        page = TeacherDashboardScreen(key: pageKey, repository: repository, account: account!, onLogout: _logout);
       default:
-        return Scaffold(
+        page = Scaffold(
           appBar: AppBar(title: const Text('آلين للأعمال')),
           body: Center(child: Text('نوع الحساب غير مدعوم: ${account!.role}')),
         );
     }
+    return _withNotificationBell(page);
   }
 }
 
