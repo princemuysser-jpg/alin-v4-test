@@ -6,6 +6,7 @@ import 'data/business_repository.dart';
 import 'models/business_account.dart';
 import 'screens/courier_dashboard_screen.dart';
 import 'screens/library_dashboard_screen.dart';
+import 'screens/printer_dashboard_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -113,6 +114,13 @@ class _BusinessGateState extends State<BusinessGate> {
     }
     if (account!.role == 'library') {
       return LibraryDashboardScreen(
+        repository: repository,
+        account: account!,
+        onLogout: _logout,
+      );
+    }
+    if (account!.role == 'printer') {
+      return PrinterDashboardScreen(
         repository: repository,
         account: account!,
         onLogout: _logout,
@@ -291,11 +299,6 @@ class _GenericRoleDashboardState extends State<GenericRoleDashboard> {
   }
 
   List<_Section> get sections => switch (widget.account.role) {
-        'printer' => const [
-            _Section('طلبات التجهيز', Icons.inventory_2_rounded),
-            _Section('توريد الكتب', Icons.menu_book_rounded),
-            _Section('الذمة والتسويات', Icons.account_balance_wallet_rounded),
-          ],
         'teacher' => const [
             _Section('ملازمي', Icons.menu_book_rounded),
             _Section('رفع ملزمة', Icons.upload_file_rounded),
