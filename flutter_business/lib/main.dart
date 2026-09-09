@@ -108,6 +108,7 @@ class _BusinessGateState extends State<BusinessGate> {
   late final BusinessNotificationService notifications;
   BusinessAccount? account;
   bool loading = true;
+  int notificationTick = 0;
 
   @override
   void initState() {
@@ -124,12 +125,12 @@ class _BusinessGateState extends State<BusinessGate> {
 
   Future<void> _notificationReceived() async {
     if (!mounted) return;
-    setState(() {});
+    setState(() => notificationTick++);
   }
 
   Future<void> _notificationOpened(Map<String, dynamic> payload) async {
     if (!mounted) return;
-    setState(() {});
+    setState(() => notificationTick++);
   }
 
   Future<void> _restore() async {
@@ -149,6 +150,7 @@ class _BusinessGateState extends State<BusinessGate> {
   }
 
   Future<void> _logout() async {
+    await notifications.unregisterCurrentDevice();
     await repository.logout();
     if (!mounted) return;
     setState(() => account = null);
@@ -168,18 +170,19 @@ class _BusinessGateState extends State<BusinessGate> {
       return LoginScreen(repository: repository, onLoggedIn: _loggedIn);
     }
 
+    final pageKey = ValueKey('${account!.role}-$notificationTick');
     switch (account!.role) {
       case 'admin':
       case 'accountant':
-        return AdminDashboardScreen(repository: repository, account: account!, onLogout: _logout);
+        return AdminDashboardScreen(key: pageKey, repository: repository, account: account!, onLogout: _logout);
       case 'courier':
-        return CourierDashboardScreen(repository: repository, account: account!, onLogout: _logout);
+        return CourierDashboardScreen(key: pageKey, repository: repository, account: account!, onLogout: _logout);
       case 'library':
-        return LibraryDashboardScreen(repository: repository, account: account!, onLogout: _logout);
+        return LibraryDashboardScreen(key: pageKey, repository: repository, account: account!, onLogout: _logout);
       case 'printer':
-        return PrinterDashboardScreen(repository: repository, account: account!, onLogout: _logout);
+        return PrinterDashboardScreen(key: pageKey, repository: repository, account: account!, onLogout: _logout);
       case 'teacher':
-        return TeacherDashboardScreen(repository: repository, account: account!, onLogout: _logout);
+        return TeacherDashboardScreen(key: pageKey, repository: repository, account: account!, onLogout: _logout);
       default:
         return Scaffold(
           appBar: AppBar(title: const Text('آلين للأعمال')),
