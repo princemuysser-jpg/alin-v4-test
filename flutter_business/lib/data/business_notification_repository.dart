@@ -1,5 +1,3 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
-
 import 'business_repository.dart';
 
 extension BusinessNotificationRepository on BusinessRepository {
