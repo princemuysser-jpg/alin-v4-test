@@ -130,6 +130,54 @@ class BusinessRepository {
     throw Exception('تعذر تحديث حالة المندوب');
   }
 
+  Future<List<Map<String, dynamic>>> libraryOrders(String libraryId) async {
+    final raw = await client
+        .from('orders')
+        .select('id,order_number,title,kind,status,student_name,student_phone,qty,unit_price,total,library_profit,library_cash_collected,payment_status,payment_method,fulfillment_type,delivery_type,library_id,pickup_library_id,notes,library_note,created_at,updated_at,processing_at,ready_at,completed_at,delivered_at,cancellation_reason')
+        .or('library_id.eq.$libraryId,pickup_library_id.eq.$libraryId')
+        .order('created_at', ascending: false)
+        .limit(400);
+    return (raw as List).cast<Map<String, dynamic>>();
+  }
+
+  Future<Map<String, dynamic>> libraryProfile(String libraryId) async {
+    final raw = await client
+        .from('accounts')
+        .select('id,name,phone,area,landmark,is_open,open_status,status')
+        .eq('id', libraryId)
+        .maybeSingle();
+    if (raw == null) throw Exception('تعذر قراءة بيانات المكتبة');
+    return Map<String, dynamic>.from(raw);
+  }
+
+  Future<void> librarySetOpen(bool open) async {
+    final raw = await client.rpc('alin_set_library_open', params: {'p_open': open});
+    if (raw is Map && raw['ok'] == true) return;
+    throw Exception('تعذر تحديث حالة المكتبة');
+  }
+
+  Future<Map<String, dynamic>> libraryTransition(String orderId, String status, {String reason = ''}) async {
+    final raw = await client.rpc('alin_library_set_order_status', params: {
+      'p_order_id': orderId,
+      'p_status': status,
+      'p_reason': reason.trim().isEmpty ? null : reason.trim(),
+    });
+    if (raw is! Map) throw Exception('تعذر تحديث الطلب');
+    final map = Map<String, dynamic>.from(raw);
+    if (map['ok'] != true) throw Exception('${map['error'] ?? 'تعذر تحديث الطلب'}');
+    return map;
+  }
+
+  Future<List<Map<String, dynamic>>> librarySettlements(String libraryId) async {
+    final raw = await client
+        .from('settlements')
+        .select('id,receipt_number,party_role,party_id,amount,payment_method,status,note,created_at,updated_at')
+        .eq('party_id', libraryId)
+        .order('created_at', ascending: false)
+        .limit(200);
+    return (raw as List).cast<Map<String, dynamic>>();
+  }
+
   Future<Map<String, dynamic>> _adminSummary() async {
     final results = await Future.wait([
       client.from('orders').select('id,status,total').limit(500),
@@ -162,16 +210,12 @@ class BusinessRepository {
   }
 
   Future<Map<String, dynamic>> _librarySummary(String id) async {
-    final data = await client
-        .from('orders')
-        .select('id,status,total,library_id')
-        .eq('library_id', id)
-        .limit(300);
-    final list = data.cast<Map<String, dynamic>>();
+    final list = await libraryOrders(id);
     return {
       'orders': list.length,
-      'new_orders': list.where((e) => ['new', 'pending', 'processing', 'printing'].contains('${e['status']}')).length,
+      'new_orders': list.where((e) => ['new', 'pending', 'pending_admin', 'accepted', 'processing', 'printing'].contains('${e['status']}')).length,
       'completed': list.where((e) => ['ready', 'completed', 'delivered'].contains('${e['status']}')).length,
+      'profit': list.where((e) => ['completed', 'delivered'].contains('${e['status']}')).fold<num>(0, (sum, e) => sum + (num.tryParse('${e['library_profit']}') ?? 0)),
     };
   }
 
