@@ -107,7 +107,7 @@ class _BusinessNotificationsScreenState extends State<BusinessNotificationsScree
       body: RefreshIndicator(
         onRefresh: load,
         child: loading
-            ? const ListView(children: [SizedBox(height: 260), Center(child: CircularProgressIndicator())])
+            ? ListView(children: const [SizedBox(height: 260), Center(child: CircularProgressIndicator())])
             : error != null
                 ? ListView(children: [
                     const SizedBox(height: 180),
@@ -121,7 +121,7 @@ class _BusinessNotificationsScreenState extends State<BusinessNotificationsScree
                     ),
                   ])
                 : items.isEmpty
-                    ? const ListView(children: [SizedBox(height: 220), Center(child: Text('لا توجد إشعارات حالياً'))])
+                    ? ListView(children: const [SizedBox(height: 220), Center(child: Text('لا توجد إشعارات حالياً'))])
                     : ListView.separated(
                         padding: const EdgeInsets.all(12),
                         itemCount: items.length,
