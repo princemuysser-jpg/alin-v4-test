@@ -35,17 +35,38 @@ jobs:
 
       - name: Create Android platform shell
         run: |
+          set -euo pipefail
           flutter create --platforms=android .
           rm -f test/widget_test.dart
           python3 - <<'PY'
           from pathlib import Path
-          p=Path('android/app/build.gradle.kts')
-          s=p.read_text()
-          s=s.replace('com.example.alin_business','com.alin.business')
-          p.write_text(s)
-          m=Path('android/app/src/main/AndroidManifest.xml')
-          x=m.read_text().replace('android:label="alin_business"','android:label="آلين للأعمال"')
-          m.write_text(x)
+
+          gradle = Path('android/app/build.gradle.kts')
+          text = gradle.read_text()
+          text = text.replace('com.example.alin_business', 'com.alin.business')
+          gradle.write_text(text)
+
+          activity = Path('android/app/src/main/kotlin/com/example/alin_business/MainActivity.kt')
+          if not activity.exists():
+              matches = list(Path('android/app/src/main/kotlin').rglob('MainActivity.kt'))
+              if not matches:
+                  raise SystemExit('MainActivity.kt not found')
+              activity = matches[0]
+          activity_text = activity.read_text()
+          activity_text = activity_text.replace('package com.example.alin_business', 'package com.alin.business')
+          activity.write_text(activity_text)
+
+          manifest = Path('android/app/src/main/AndroidManifest.xml')
+          xml = manifest.read_text()
+          xml = xml.replace('android:label="alin_business"', 'android:label="آلين للأعمال"')
+          if 'android.permission.INTERNET' not in xml:
+              xml = xml.replace('<manifest xmlns:android="http://schemas.android.com/apk/res/android">', '<manifest xmlns:android="http://schemas.android.com/apk/res/android">\n    <uses-permission android:name="android.permission.INTERNET" />')
+          manifest.write_text(xml)
+
+          if 'package com.alin.business' not in activity.read_text():
+              raise SystemExit('MainActivity package was not updated')
+          if 'android.permission.INTERNET' not in manifest.read_text():
+              raise SystemExit('INTERNET permission missing')
           PY
 
       - name: Restore Android release signing key
@@ -102,10 +123,19 @@ jobs:
           flutter build appbundle --release --no-pub
           flutter build apk --release --no-pub
 
+      - name: Verify APK signing and launch package
+        run: |
+          set -euo pipefail
+          APK="$(find build/app/outputs/flutter-apk -maxdepth 1 -name '*.apk' -print -quit)"
+          test -s "$APK"
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose --print-certs "$APK"
+          grep -q 'package com.alin.business' android/app/src/main/kotlin/com/example/alin_business/MainActivity.kt
+          grep -q 'android.permission.INTERNET' android/app/src/main/AndroidManifest.xml
+
       - name: Upload Android artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: alin-business-android-v1.0.0-build1
+          name: alin-business-android-v1.0.0-build2-fixed-launch
           if-no-files-found: error
           path: |
             flutter_business/build/app/outputs/bundle/release/*.aab
