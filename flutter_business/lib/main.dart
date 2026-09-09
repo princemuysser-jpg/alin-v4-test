@@ -1,7 +1,14 @@
+import 'dart:async';
+
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
 import 'core/business_config.dart';
+import 'core/business_notification_service.dart';
 import 'data/business_repository.dart';
 import 'models/business_account.dart';
 import 'screens/admin_dashboard_screen.dart';
@@ -10,8 +17,41 @@ import 'screens/library_dashboard_screen.dart';
 import 'screens/printer_dashboard_screen.dart';
 import 'screens/teacher_dashboard_screen.dart';
 
+const FirebaseOptions _alinBusinessAndroidFirebaseOptions = FirebaseOptions(
+  apiKey: 'AIzaSyDjd9BA_V6qqiN96OcqBtC521VPzew9occ',
+  appId: '1:622701050570:android:03331d662c3dddc2f49233',
+  messagingSenderId: '622701050570',
+  projectId: 'alin-platform',
+  storageBucket: 'alin-platform.firebasestorage.app',
+);
+
+const FirebaseOptions _alinBusinessIOSFirebaseOptions = FirebaseOptions(
+  apiKey: 'AIzaSyCaZ4S-1o2mPv2o-n0WbH9p23EWtG1EZ_Y',
+  appId: '1:622701050570:ios:9b1cd7dc67be549cf49233',
+  messagingSenderId: '622701050570',
+  projectId: 'alin-platform',
+  storageBucket: 'alin-platform.firebasestorage.app',
+  iosBundleId: 'com.alin.business',
+);
+
+Future<void> _initializeFirebase() async {
+  if (kIsWeb) return;
+  if (defaultTargetPlatform == TargetPlatform.iOS) {
+    await Firebase.initializeApp(options: _alinBusinessIOSFirebaseOptions);
+  } else if (defaultTargetPlatform == TargetPlatform.android) {
+    await Firebase.initializeApp(options: _alinBusinessAndroidFirebaseOptions);
+  }
+}
+
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  if (Firebase.apps.isEmpty) await _initializeFirebase();
+}
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await _initializeFirebase();
+  if (!kIsWeb) FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   await Supabase.initialize(
     url: BusinessConfig.supabaseUrl,
     publishableKey: BusinessConfig.supabasePublishableKey,
@@ -39,18 +79,11 @@ class AlinBusinessApp extends StatelessWidget {
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(seedColor: navy),
         scaffoldBackgroundColor: const Color(0xFFF5F8FC),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: navy,
-          foregroundColor: Colors.white,
-          elevation: 0,
-        ),
+        appBarTheme: const AppBarTheme(backgroundColor: navy, foregroundColor: Colors.white, elevation: 0),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
           fillColor: Colors.white,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide.none,
-          ),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
         ),
         cardTheme: CardThemeData(
           elevation: 0,
@@ -72,6 +105,7 @@ class BusinessGate extends StatefulWidget {
 
 class _BusinessGateState extends State<BusinessGate> {
   late final BusinessRepository repository;
+  late final BusinessNotificationService notifications;
   BusinessAccount? account;
   bool loading = true;
 
@@ -79,16 +113,39 @@ class _BusinessGateState extends State<BusinessGate> {
   void initState() {
     super.initState();
     repository = BusinessRepository(Supabase.instance.client);
+    notifications = BusinessNotificationService(
+      client: Supabase.instance.client,
+      onReceived: _notificationReceived,
+      onOpen: _notificationOpened,
+    );
+    unawaited(notifications.start());
     _restore();
+  }
+
+  Future<void> _notificationReceived() async {
+    if (!mounted) return;
+    setState(() {});
+  }
+
+  Future<void> _notificationOpened(Map<String, dynamic> payload) async {
+    if (!mounted) return;
+    setState(() {});
   }
 
   Future<void> _restore() async {
     final restored = await repository.restoreAccount();
+    if (restored != null) await notifications.registerCurrentDevice();
     if (!mounted) return;
     setState(() {
       account = restored;
       loading = false;
     });
+  }
+
+  Future<void> _loggedIn(BusinessAccount value) async {
+    await notifications.registerCurrentDevice();
+    if (!mounted) return;
+    setState(() => account = value);
   }
 
   Future<void> _logout() async {
@@ -98,14 +155,17 @@ class _BusinessGateState extends State<BusinessGate> {
   }
 
   @override
+  void dispose() {
+    unawaited(notifications.dispose());
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     if (loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
 
     if (account == null) {
-      return LoginScreen(
-        repository: repository,
-        onLoggedIn: (value) => setState(() => account = value),
-      );
+      return LoginScreen(repository: repository, onLoggedIn: _loggedIn);
     }
 
     switch (account!.role) {
@@ -133,11 +193,7 @@ class LoginScreen extends StatefulWidget {
   final BusinessRepository repository;
   final ValueChanged<BusinessAccount> onLoggedIn;
 
-  const LoginScreen({
-    super.key,
-    required this.repository,
-    required this.onLoggedIn,
-  });
+  const LoginScreen({super.key, required this.repository, required this.onLoggedIn});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -168,11 +224,8 @@ class _LoginScreenState extends State<LoginScreen> {
       error = null;
     });
     try {
-      final account = await widget.repository.login(
-        username: username.text.trim(),
-        password: password.text,
-      );
-      widget.onLoggedIn(account);
+      final loggedAccount = await widget.repository.login(username: username.text.trim(), password: password.text);
+      widget.onLoggedIn(loggedAccount);
     } catch (e) {
       if (!mounted) return;
       setState(() => error = '$e'.replaceFirst('Exception: ', ''));
@@ -194,17 +247,11 @@ class _LoginScreenState extends State<LoginScreen> {
                 Container(
                   width: 94,
                   height: 94,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF143B68),
-                    borderRadius: BorderRadius.circular(28),
-                  ),
+                  decoration: BoxDecoration(color: const Color(0xFF143B68), borderRadius: BorderRadius.circular(28)),
                   child: const Icon(Icons.business_center_rounded, color: Colors.white, size: 50),
                 ),
                 const SizedBox(height: 22),
-                Text(
-                  BusinessConfig.appName,
-                  style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w900, color: Color(0xFF143B68)),
-                ),
+                Text(BusinessConfig.appName, style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w900, color: Color(0xFF143B68))),
                 const SizedBox(height: 6),
                 Text(BusinessConfig.appSubtitle, style: TextStyle(color: Colors.grey.shade600)),
                 const SizedBox(height: 32),
@@ -242,9 +289,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   height: 54,
                   child: FilledButton.icon(
                     onPressed: busy ? null : submit,
-                    icon: busy
-                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                        : const Icon(Icons.login_rounded),
+                    icon: busy ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.login_rounded),
                     label: Text(busy ? 'جارٍ تسجيل الدخول...' : 'تسجيل الدخول'),
                   ),
                 ),
