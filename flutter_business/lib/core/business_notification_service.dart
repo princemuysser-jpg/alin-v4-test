@@ -122,6 +122,15 @@ class BusinessNotificationService {
     } catch (_) {}
   }
 
+  Future<void> unregisterCurrentDevice() async {
+    if (!_started || client.auth.currentSession == null) return;
+    try {
+      final token = await FirebaseMessaging.instance.getToken();
+      if (token == null || token.isEmpty) return;
+      await client.rpc('alin_unregister_business_fcm_token', params: {'p_token': token});
+    } catch (_) {}
+  }
+
   Future<String> _deviceId() async {
     final prefs = await SharedPreferences.getInstance();
     var id = prefs.getString(_deviceKey)?.trim() ?? '';
