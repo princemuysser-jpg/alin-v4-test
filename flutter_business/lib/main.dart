@@ -17,6 +17,7 @@ import 'screens/courier_dashboard_screen.dart';
 import 'screens/library_dashboard_screen.dart';
 import 'screens/printer_dashboard_screen.dart';
 import 'screens/teacher_dashboard_screen.dart';
+import 'widgets/admin_quick_actions_button.dart';
 import 'widgets/business_notification_bell.dart';
 
 final GlobalKey<NavigatorState> businessNavigatorKey = GlobalKey<NavigatorState>();
@@ -206,10 +207,24 @@ class _BusinessGateState extends State<BusinessGate> {
     super.dispose();
   }
 
-  Widget _withNotificationBell(Widget child) {
+  Future<void> _refreshBusinessView() async {
+    if (!mounted) return;
+    setState(() => notificationTick++);
+  }
+
+  Widget _withBusinessOverlays(Widget child) {
     return Stack(
       children: [
         Positioned.fill(child: child),
+        if (account?.role == 'admin')
+          Positioned(
+            left: 14,
+            bottom: 88,
+            child: AdminQuickActionsButton(
+              repository: repository,
+              onChanged: _refreshBusinessView,
+            ),
+          ),
         Positioned(
           right: 14,
           bottom: 88,
@@ -258,7 +273,7 @@ class _BusinessGateState extends State<BusinessGate> {
           body: Center(child: Text('نوع الحساب غير مدعوم: ${account!.role}')),
         );
     }
-    return _withNotificationBell(page);
+    return _withBusinessOverlays(page);
   }
 }
 
