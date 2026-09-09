@@ -37,7 +37,7 @@ class _AdminQuickActionsButtonState extends State<AdminQuickActionsButton> {
             const Text('إجراءات سريعة', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
             const SizedBox(height: 12),
             _tile(sheetContext, Icons.person_add_alt_1_rounded, 'إضافة حساب', 'مدرس، مكتبة، مندوب، مطبعة أو حسابات', createAccount),
-            _tile(sheetContext, Icons.assignment_ind_rounded, 'تعيين طلب', 'تعيين مندوب للتوصيل أو مكتبة للاستلام', assignOrder),
+            _tile(sheetContext, Icons.delivery_dining_rounded, 'تعيين مندوب', 'تعيين مندوب لطلبات التوصيل فقط', assignCourier),
           ]),
         ),
       ),
@@ -150,92 +150,103 @@ class _AdminQuickActionsButtonState extends State<AdminQuickActionsButton> {
 
   bool closed(Map<String, dynamic> order) => const {'completed', 'delivered', 'cancelled', 'rejected'}.contains('${order['status']}');
 
-  Future<void> assignOrder() async {
+  bool delivery(Map<String, dynamic> order) {
+    final fulfillment = '${order['fulfillment_type']}'.toLowerCase();
+    final deliveryType = '${order['delivery_type']}'.toLowerCase();
+    return fulfillment == 'home_delivery' || fulfillment == 'courier' || fulfillment == 'delivery' || deliveryType == 'courier';
+  }
+
+  Future<void> assignCourier() async {
     setState(() => busy = true);
     try {
       final values = await Future.wait([
         widget.repository.adminOrders(),
         widget.repository.adminCouriers(),
-        widget.repository.adminAccounts(),
       ]);
       if (!mounted) return;
-      final orders = (values[0] as List).cast<Map<String, dynamic>>().where((e) => !closed(e)).toList();
-      final couriers = (values[1] as List).cast<Map<String, dynamic>>().where((e) => '${e['status']}' == 'active').toList();
-      final accounts = (values[2] as List).cast<Map<String, dynamic>>();
-      final libraries = accounts.where((e) => '${e['role']}' == 'library' && '${e['status']}' == 'active' && e['deleted_at'] == null).toList();
+      final orders = (values[0] as List)
+          .cast<Map<String, dynamic>>()
+          .where((e) => !closed(e) && delivery(e))
+          .toList();
+      final couriers = (values[1] as List)
+          .cast<Map<String, dynamic>>()
+          .where((e) => '${e['status']}' == 'active')
+          .toList();
       setState(() => busy = false);
       if (orders.isEmpty) {
-        snack('لا توجد طلبات حالية تحتاج تعيين');
+        snack('لا توجد طلبات توصيل حالية تحتاج مندوب');
         return;
       }
-      await chooseAssignment(orders, couriers, libraries);
+      if (couriers.isEmpty) {
+        snack('لا يوجد مندوب فعّال حالياً');
+        return;
+      }
+      await chooseCourier(orders, couriers);
     } catch (e) {
       if (mounted) setState(() => busy = false);
       snack('$e'.replaceFirst('Exception: ', ''));
     }
   }
 
-  Future<void> chooseAssignment(List<Map<String, dynamic>> orders, List<Map<String, dynamic>> couriers, List<Map<String, dynamic>> libraries) async {
+  Future<void> chooseCourier(List<Map<String, dynamic>> orders, List<Map<String, dynamic>> couriers) async {
     String orderId = '${orders.first['id']}';
-    String? targetId;
-    Map<String, dynamic> current() => orders.firstWhere((e) => '${e['id']}' == orderId);
-    bool delivery(Map<String, dynamic> order) => '${order['fulfillment_type']}' == 'home_delivery' || '${order['delivery_type']}' == 'courier';
+    String? courierId;
 
     final ok = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
-        builder: (dialogContext, setLocal) {
-          final order = current();
-          final isDelivery = delivery(order);
-          final targets = isDelivery ? couriers : libraries;
-          return AlertDialog(
-            title: const Text('تعيين طلب'),
-            content: SingleChildScrollView(
-              child: Column(mainAxisSize: MainAxisSize.min, children: [
-                DropdownButtonFormField<String>(
-                  initialValue: orderId,
-                  isExpanded: true,
-                  decoration: const InputDecoration(labelText: 'الطلب'),
-                  items: orders.map((e) => DropdownMenuItem(value: '${e['id']}', child: Text('${e['order_number'] ?? e['id']} — ${e['title'] ?? 'طلب'}', overflow: TextOverflow.ellipsis))).toList(),
-                  onChanged: (value) {
-                    if (value != null) setLocal(() {
+        builder: (dialogContext, setLocal) => AlertDialog(
+          title: const Text('تعيين مندوب'),
+          content: SingleChildScrollView(
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              DropdownButtonFormField<String>(
+                initialValue: orderId,
+                isExpanded: true,
+                decoration: const InputDecoration(labelText: 'طلب التوصيل'),
+                items: orders
+                    .map((e) => DropdownMenuItem(
+                          value: '${e['id']}',
+                          child: Text('${e['order_number'] ?? e['id']} — ${e['title'] ?? 'طلب'}', overflow: TextOverflow.ellipsis),
+                        ))
+                    .toList(),
+                onChanged: (value) {
+                  if (value != null) {
+                    setLocal(() {
                       orderId = value;
-                      targetId = null;
+                      courierId = null;
                     });
-                  },
-                ),
-                const SizedBox(height: 10),
-                Text(isDelivery ? 'اختر مندوباً لهذا الطلب' : 'اختر مكتبة لهذا الطلب', style: const TextStyle(fontWeight: FontWeight.w800)),
-                const SizedBox(height: 8),
-                DropdownButtonFormField<String>(
-                  initialValue: targetId,
-                  isExpanded: true,
-                  decoration: InputDecoration(labelText: isDelivery ? 'المندوب' : 'المكتبة'),
-                  items: targets.map((e) => DropdownMenuItem(value: '${e['id']}', child: Text('${e['name'] ?? e['id']}', overflow: TextOverflow.ellipsis))).toList(),
-                  onChanged: targets.isEmpty ? null : (value) => setLocal(() => targetId = value),
-                ),
-                if (targets.isEmpty) ...[
-                  const SizedBox(height: 8),
-                  Text(isDelivery ? 'لا يوجد مندوب فعّال حالياً' : 'لا توجد مكتبة فعّالة حالياً', style: const TextStyle(color: Colors.red)),
-                ],
-              ]),
-            ),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('إلغاء')),
-              FilledButton(onPressed: targetId == null ? null : () => Navigator.pop(dialogContext, true), child: const Text('تعيين')),
-            ],
-          );
-        },
+                  }
+                },
+              ),
+              const SizedBox(height: 10),
+              DropdownButtonFormField<String>(
+                initialValue: courierId,
+                isExpanded: true,
+                decoration: const InputDecoration(labelText: 'المندوب'),
+                items: couriers
+                    .map((e) => DropdownMenuItem(
+                          value: '${e['id']}',
+                          child: Text('${e['name'] ?? e['id']}', overflow: TextOverflow.ellipsis),
+                        ))
+                    .toList(),
+                onChanged: (value) => setLocal(() => courierId = value),
+              ),
+            ]),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('إلغاء')),
+            FilledButton(onPressed: courierId == null ? null : () => Navigator.pop(dialogContext, true), child: const Text('تعيين')),
+          ],
+        ),
       ),
     );
 
-    if (ok != true || targetId == null) return;
-    final isDelivery = delivery(current());
+    if (ok != true || courierId == null) return;
     setState(() => busy = true);
     try {
-      await widget.repository.adminAssignOrder(orderId, courierId: isDelivery ? targetId : null, libraryId: isDelivery ? null : targetId);
+      await widget.repository.adminAssignOrder(orderId, courierId: courierId);
       await changed();
-      snack(isDelivery ? 'تم تعيين المندوب' : 'تم تعيين المكتبة');
+      snack('تم تعيين المندوب');
     } catch (e) {
       snack('$e'.replaceFirst('Exception: ', ''));
     } finally {
