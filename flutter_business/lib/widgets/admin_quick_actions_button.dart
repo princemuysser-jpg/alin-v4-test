@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../data/business_repository.dart';
 import '../screens/admin_delivery_pricing_screen.dart';
 import '../screens/admin_finance_v2_screen.dart';
+import '../screens/admin_growth_controls_screen.dart';
 
 class AdminQuickActionsButton extends StatefulWidget {
   final BusinessRepository repository;
@@ -41,6 +42,13 @@ class _AdminQuickActionsButtonState extends State<AdminQuickActionsButton> {
     await changed();
   }
 
+  Future<void> openGrowthControls() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => AdminGrowthControlsScreen(repository: widget.repository)),
+    );
+    await changed();
+  }
+
   Future<void> openActions() async {
     if (busy) return;
     await showModalBottomSheet<void>(
@@ -56,6 +64,7 @@ class _AdminQuickActionsButtonState extends State<AdminQuickActionsButton> {
               _tile(sheetContext, Icons.person_add_alt_1_rounded, 'إضافة حساب', 'مدرس، مكتبة، مندوب، مطبعة أو حسابات', createAccount),
               _tile(sheetContext, Icons.delivery_dining_rounded, 'تعيين مندوب', 'تعيين مندوب لطلبات التوصيل فقط', assignCourier),
               _tile(sheetContext, Icons.local_shipping_rounded, 'التوصيل والمناطق', 'أسعار المناطق، أجرة المندوب وتسعير طلبات التوصيل', openDeliveryPricing),
+              _tile(sheetContext, Icons.campaign_rounded, 'الطلبات والعملاء والعروض', 'إيقاف الطلبات، العملاء النشطين وغير النشطين وإرسال عرض خاص', openGrowthControls),
               _tile(sheetContext, Icons.account_balance_wallet_rounded, 'المالية والتسويات', 'الأرصدة الرسمية، التسويات، العكس ومستحقات المطابع', openFinance),
             ]),
           ),
