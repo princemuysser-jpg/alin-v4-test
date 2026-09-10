@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../data/business_courier_repository.dart';
 import '../data/business_repository.dart';
 import '../models/business_account.dart';
 
@@ -25,6 +26,8 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
   String? error;
   String filter = 'active';
   String availability = 'available';
+  String courierArea = '';
+  List<String> courierAreas = [];
   final Set<String> busyOrders = {};
 
   static const doneStatuses = {'completed', 'delivered'};
@@ -42,9 +45,22 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
       error = null;
     });
     try {
-      final value = await widget.repository.courierOrders(widget.account.id);
+      final values = await Future.wait([
+        widget.repository.courierOrders(widget.account.id),
+        widget.repository.courierProfile(),
+      ]);
       if (!mounted) return;
-      setState(() => orders = value);
+      final profile = Map<String, dynamic>.from(values[1] as Map);
+      final rawAreas = profile['areas'];
+      final areas = rawAreas is List
+          ? rawAreas.map((e) => '$e'.trim()).where((e) => e.isNotEmpty).toList()
+          : <String>[];
+      setState(() {
+        orders = (values[0] as List).cast<Map<String, dynamic>>();
+        availability = '${profile['availability'] ?? 'available'}';
+        courierArea = '${profile['area'] ?? ''}'.trim();
+        courierAreas = areas;
+      });
     } catch (e) {
       if (!mounted) return;
       setState(() => error = '$e'.replaceFirst('Exception: ', ''));
@@ -56,14 +72,39 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
   bool isDone(Map<String, dynamic> o) => doneStatuses.contains('${o['status']}');
   bool isClosed(Map<String, dynamic> o) => closedStatuses.contains('${o['status']}');
 
+  int areaPriority(Map<String, dynamic> order) {
+    final area = '${order['delivery_area'] ?? ''}'.trim().toLowerCase();
+    if (area.isEmpty) return 2;
+    final preferred = <String>{
+      if (courierArea.isNotEmpty) courierArea.toLowerCase(),
+      ...courierAreas.map((e) => e.toLowerCase()),
+    };
+    return preferred.contains(area) ? 0 : 1;
+  }
+
   List<Map<String, dynamic>> get visibleOrders {
-    if (filter == 'completed') return orders.where(isDone).toList();
-    if (filter == 'all') return orders;
-    return orders.where((o) => !isClosed(o)).toList();
+    Iterable<Map<String, dynamic>> rows;
+    if (filter == 'completed') {
+      rows = orders.where(isDone);
+    } else if (filter == 'all') {
+      rows = orders;
+    } else {
+      rows = orders.where((o) => !isClosed(o));
+    }
+    final list = rows.toList();
+    list.sort((a, b) {
+      final p = areaPriority(a).compareTo(areaPriority(b));
+      if (p != 0) return p;
+      final ad = DateTime.tryParse('${a['created_at'] ?? ''}');
+      final bd = DateTime.tryParse('${b['created_at'] ?? ''}');
+      if (ad != null && bd != null) return bd.compareTo(ad);
+      return 0;
+    });
+    return list;
   }
 
   num number(dynamic value) => num.tryParse('$value') ?? 0;
-  String money(dynamic value) => '${number(value).round().toString()} د.ع';
+  String money(dynamic value) => '${number(value).round()} د.ع';
 
   String statusLabel(String status) => switch (status) {
         'new' => 'جديد',
@@ -162,7 +203,7 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
     final lng = num.tryParse('${order['delivery_longitude']}');
     Uri? uri;
     if (lat != null && lng != null) {
-      uri = Uri.parse('https://www.google.com/maps/search/?api=1&query=$lat,$lng');
+      uri = Uri.parse('https://www.google.com/maps/dir/?api=1&destination=$lat,$lng');
     } else {
       final stored = '${order['delivery_location_url'] ?? ''}'.trim();
       if (stored.startsWith('https://')) uri = Uri.tryParse(stored);
@@ -170,7 +211,7 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
         final q = [order['delivery_landmark'], order['delivery_area'], 'كركوك', 'العراق']
             .where((v) => '${v ?? ''}'.trim().isNotEmpty)
             .join('، ');
-        if (q.isNotEmpty) uri = Uri.parse('https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(q)}');
+        if (q.isNotEmpty) uri = Uri.parse('https://www.google.com/maps/dir/?api=1&destination=${Uri.encodeComponent(q)}');
       }
     }
     if (uri != null) await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -208,6 +249,10 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
               ),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text('مرحباً ${widget.account.name}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 20)),
+                if (courierArea.isNotEmpty || courierAreas.isNotEmpty) ...[
+                  const SizedBox(height: 5),
+                  Text('مناطقك: ${[courierArea, ...courierAreas].where((e) => e.isNotEmpty).toSet().join('، ')}', style: const TextStyle(color: Colors.white70)),
+                ],
                 const SizedBox(height: 10),
                 Wrap(spacing: 8, runSpacing: 8, children: [
                   ChoiceChip(label: const Text('متاح'), selected: availability == 'available', onSelected: (_) => setAvailability('available')),
@@ -256,6 +301,7 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
     final phone = '${order['student_phone'] ?? ''}';
     final fee = order['courier_fee'] ?? order['courier_profit'] ?? order['delegate_profit'] ?? 0;
     final pickup = '${order['pickup_source_label'] ?? ''}'.trim();
+    final preferred = areaPriority(order) == 0;
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
@@ -267,6 +313,7 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
               const SizedBox(height: 3),
               Text('${order['title'] ?? 'طلب توصيل'}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
             ])),
+            if (preferred) const Padding(padding: EdgeInsets.only(left: 6), child: Chip(label: Text('ضمن منطقتك'))),
             Chip(label: Text(statusLabel(status))),
           ]),
           const Divider(),
@@ -285,7 +332,7 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
           Wrap(spacing: 8, runSpacing: 8, children: [
             if (phone.isNotEmpty) OutlinedButton.icon(onPressed: () => openPhone(phone), icon: const Icon(Icons.call), label: const Text('اتصال')),
             if (phone.isNotEmpty) OutlinedButton.icon(onPressed: () => openWhatsApp(phone), icon: const Icon(Icons.chat_outlined), label: const Text('واتساب')),
-            OutlinedButton.icon(onPressed: () => openMap(order), icon: const Icon(Icons.map_outlined), label: const Text('الخريطة')),
+            OutlinedButton.icon(onPressed: () => openMap(order), icon: const Icon(Icons.navigation_rounded), label: const Text('المسار')),
             if (!isClosed(order)) OutlinedButton.icon(onPressed: () => sendNote(order), icon: const Icon(Icons.note_alt_outlined), label: const Text('ملاحظة')),
           ]),
           const SizedBox(height: 10),
