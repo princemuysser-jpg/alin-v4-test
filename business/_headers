@@ -2,8 +2,6 @@
   Cache-Control: no-cache, no-store, must-revalidate
 /business/flutter_bootstrap.js
   Cache-Control: no-cache, no-store, must-revalidate
-/business/flutter_service_worker.js
-  Cache-Control: no-cache, no-store, must-revalidate
 /business/assets/*
   Cache-Control: public, max-age=31536000, immutable
 /business/canvaskit/*
