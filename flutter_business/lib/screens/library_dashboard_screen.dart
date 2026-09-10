@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+
 import '../data/business_repository.dart';
+import '../data/library_print_repository.dart';
 import '../models/business_account.dart';
+import 'library_booklet_preview_screen.dart';
 
 class LibraryDashboardScreen extends StatefulWidget {
   final BusinessRepository repository;
@@ -52,9 +55,9 @@ class _LibraryDashboardScreenState extends State<LibraryDashboardScreen> {
       ]);
       if (!mounted) return;
       setState(() {
-        orders = (values[0] as List<Map<String, dynamic>>);
+        orders = values[0] as List<Map<String, dynamic>>;
         profile = values[1] as Map<String, dynamic>;
-        settlements = (values[2] as List<Map<String, dynamic>>);
+        settlements = values[2] as List<Map<String, dynamic>>;
       });
     } catch (e) {
       if (!mounted) return;
@@ -146,6 +149,59 @@ class _LibraryDashboardScreenState extends State<LibraryDashboardScreen> {
     await transition(order, 'cancelled', reason: reason);
   }
 
+  Future<void> saveLibraryNote(Map<String, dynamic> order) async {
+    final controller = TextEditingController(text: '${order['library_note'] ?? ''}');
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('ملاحظة المكتبة'),
+        content: TextField(
+          controller: controller,
+          maxLines: 4,
+          maxLength: 1000,
+          decoration: const InputDecoration(hintText: 'اكتب ملاحظة خاصة بهذا الطلب'),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
+          FilledButton(onPressed: () => Navigator.pop(context, controller.text.trim()), child: const Text('حفظ')),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (result == null || result.length < 2) return;
+
+    final id = '${order['id']}';
+    if (busyOrders.contains(id)) return;
+    setState(() => busyOrders.add(id));
+    try {
+      await widget.repository.librarySetOrderNote(id, result);
+      await load();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم حفظ ملاحظة المكتبة')));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e'.replaceFirst('Exception: ', ''))));
+    } finally {
+      if (mounted) setState(() => busyOrders.remove(id));
+    }
+  }
+
+  Future<void> openBookletPreview(Map<String, dynamic> order) async {
+    final status = '${order['status']}';
+    if (!['processing', 'printing', 'ready'].contains(status)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ابدأ تجهيز الطلب أولاً حتى تتاح المعاينة والطباعة')),
+      );
+      return;
+    }
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => LibraryBookletPreviewScreen(repository: widget.repository, order: order),
+      ),
+    );
+    await load();
+  }
+
   @override
   Widget build(BuildContext context) {
     final isOpen = profile['is_open'] != false && '${profile['open_status'] ?? 'open'}' != 'closed';
@@ -164,7 +220,9 @@ class _LibraryDashboardScreenState extends State<LibraryDashboardScreen> {
         actions: [
           IconButton(onPressed: load, icon: const Icon(Icons.refresh_rounded)),
           PopupMenuButton<String>(
-            onSelected: (value) { if (value == 'logout') widget.onLogout(); },
+            onSelected: (value) {
+              if (value == 'logout') widget.onLogout();
+            },
             itemBuilder: (_) => const [PopupMenuItem(value: 'logout', child: Text('تسجيل الخروج'))],
           ),
         ],
@@ -250,6 +308,9 @@ class _LibraryDashboardScreenState extends State<LibraryDashboardScreen> {
     final status = '${order['status'] ?? 'new'}';
     final id = '${order['id']}';
     final busy = busyOrders.contains(id);
+    final booklet = '${order['kind']}' == 'booklet';
+    final previewAllowed = booklet && ['processing', 'printing', 'ready'].contains(status);
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
@@ -271,6 +332,25 @@ class _LibraryDashboardScreenState extends State<LibraryDashboardScreen> {
           _line(Icons.account_balance_wallet_outlined, 'ربح المكتبة', money(order['library_profit'])),
           if ('${order['notes'] ?? ''}'.trim().isNotEmpty) _line(Icons.note_alt_outlined, 'ملاحظة الطالب', '${order['notes']}'),
           if ('${order['library_note'] ?? ''}'.trim().isNotEmpty) _line(Icons.sticky_note_2_outlined, 'ملاحظة المكتبة', '${order['library_note']}'),
+          const SizedBox(height: 10),
+          if (!isClosed(order))
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                OutlinedButton.icon(
+                  onPressed: busy ? null : () => saveLibraryNote(order),
+                  icon: const Icon(Icons.sticky_note_2_outlined),
+                  label: const Text('ملاحظة المكتبة'),
+                ),
+                if (booklet)
+                  FilledButton.tonalIcon(
+                    onPressed: busy || !previewAllowed ? null : () => openBookletPreview(order),
+                    icon: const Icon(Icons.picture_as_pdf_rounded),
+                    label: Text(previewAllowed ? 'معاينة / طباعة' : 'ابدأ التجهيز أولاً'),
+                  ),
+              ],
+            ),
           const SizedBox(height: 10),
           if (busy) const LinearProgressIndicator(),
           if (!busy) _actions(order, status),
