@@ -20,7 +20,7 @@ jobs:
 
       - name: Keep final checkout total stable after order creation
         run: |
-          echo "Applying checkout total display fix"
+          echo "Applying checkout total display fix v2"
           python3 - <<'PY'
           from pathlib import Path
           p = Path('flutter_app/lib/screens/checkout_screen.dart')
