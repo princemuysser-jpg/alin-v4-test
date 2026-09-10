@@ -118,7 +118,6 @@ class AppController extends ChangeNotifier {
     notifyListeners();
   }
 
-
   Future<void> setThemeMode(String value) async {
     final next = value == 'dark' ? 'dark' : 'light';
     if (themeMode == next) return;
@@ -473,7 +472,6 @@ class AppController extends ChangeNotifier {
       studentToken: studentToken,
       studentDevice: studentToken == null ? null : store.deviceId(),
     );
-    await clearCart();
     await touchStudent();
     return result;
   }
