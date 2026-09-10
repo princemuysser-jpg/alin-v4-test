@@ -6,6 +6,15 @@
   "background_color": "#F5F8FC",
   "theme_color": "#143B68",
   "description": "إدارة أعمال منصة آلين",
-  "orientation": "portrait-primary",
-  "icons": []
+  "orientation": "any",
+  "dir": "rtl",
+  "lang": "ar",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
 }
