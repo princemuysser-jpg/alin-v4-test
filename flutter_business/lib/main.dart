@@ -13,6 +13,7 @@ import 'data/business_repository.dart';
 import 'models/business_account.dart';
 import 'screens/admin_dashboard_screen.dart';
 import 'screens/business_order_details_screen.dart';
+import 'screens/business_party_finance_screen.dart';
 import 'screens/courier_dashboard_screen.dart';
 import 'screens/library_dashboard_screen.dart';
 import 'screens/printer_dashboard_screen.dart';
@@ -212,6 +213,25 @@ class _BusinessGateState extends State<BusinessGate> {
     setState(() => notificationTick++);
   }
 
+  bool get _hasPersonalFinance {
+    final role = account?.role;
+    return role == 'courier' || role == 'library' || role == 'printer' || role == 'teacher';
+  }
+
+  void _openPersonalFinance() {
+    final value = account;
+    final navigator = businessNavigatorKey.currentState;
+    if (value == null || navigator == null || !_hasPersonalFinance) return;
+    navigator.push(
+      MaterialPageRoute(
+        builder: (_) => BusinessPartyFinanceScreen(
+          repository: repository,
+          account: value,
+        ),
+      ),
+    );
+  }
+
   Widget _withBusinessOverlays(Widget child) {
     return Stack(
       children: [
@@ -223,6 +243,17 @@ class _BusinessGateState extends State<BusinessGate> {
             child: AdminQuickActionsButton(
               repository: repository,
               onChanged: _refreshBusinessView,
+            ),
+          ),
+        if (_hasPersonalFinance)
+          Positioned(
+            left: 14,
+            bottom: 88,
+            child: FloatingActionButton.extended(
+              heroTag: 'business-personal-finance',
+              onPressed: _openPersonalFinance,
+              icon: const Icon(Icons.account_balance_wallet_rounded),
+              label: const Text('حسابي المالي'),
             ),
           ),
         Positioned(
