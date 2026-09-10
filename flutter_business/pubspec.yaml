@@ -1,7 +1,7 @@
 name: alin_business
 description: تطبيق آلين للأعمال للإدارة والمدرس والمكتبة والمطبعة والمندوب
 publish_to: 'none'
-version: 1.0.0+3
+version: 1.0.0+4
 
 environment:
   sdk: '>=3.10.0 <4.0.0'
@@ -17,6 +17,8 @@ dependencies:
   firebase_messaging: ^16.5.0
   flutter_local_notifications: ^19.4.2
   shared_preferences: ^2.5.3
+  pdfx: ^2.11.0
+  printing: ^5.14.3
 
 dev_dependencies:
   flutter_test:
