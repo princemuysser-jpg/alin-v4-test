@@ -337,6 +337,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       );
       if (!mounted) return;
       Navigator.of(context).popUntil((route) => route.isFirst);
+      await c.clearCart();
     } catch (e) {
       _setError('$e'.replaceFirst('Exception: ', ''));
     } finally {
