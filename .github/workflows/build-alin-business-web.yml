@@ -1,0 +1,54 @@
+name: Build ALIN Business Web
+
+on:
+  push:
+    paths:
+      - 'flutter_business/**'
+      - '.github/workflows/build-alin-business-web.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: flutter_business
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Flutter 3.44.9
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.9'
+          channel: stable
+          cache: true
+
+      - name: Flutter checks
+        run: |
+          flutter pub get
+          flutter analyze lib
+
+      - name: Build Flutter Web
+        run: |
+          flutter build web --release --no-pub --base-href=/business/
+
+      - name: Verify web output
+        run: |
+          set -euo pipefail
+          test -s build/web/index.html
+          test -s build/web/flutter_bootstrap.js
+          test -s build/web/main.dart.js
+          grep -q '<base href="/business/">' build/web/index.html
+          grep -q 'آلين للأعمال' build/web/index.html
+
+      - name: Upload web artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: alin-business-web-v1.0.0-build5
+          if-no-files-found: error
+          path: flutter_business/build/web/**
+          retention-days: 7
