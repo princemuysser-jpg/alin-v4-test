@@ -1,0 +1,77 @@
+name: Deploy ALIN Business Web
+
+on:
+  push:
+    paths:
+      - 'flutter_business/**'
+      - '.github/workflows/deploy-alin-business-web.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: alin-business-web-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Set up Flutter 3.44.9
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.9'
+          channel: stable
+          cache: true
+
+      - name: Build ALIN Business Web
+        working-directory: flutter_business
+        run: |
+          set -euo pipefail
+          flutter pub get
+          flutter analyze lib
+          flutter build web --release --no-pub --base-href=/business/
+
+      - name: Publish build into /business
+        run: |
+          set -euo pipefail
+          rm -rf business
+          mkdir -p business
+          cp -a flutter_business/build/web/. business/
+          touch business/.nojekyll
+          cat > business/_headers <<'EOF'
+          /business/index.html
+            Cache-Control: no-cache, no-store, must-revalidate
+          /business/flutter_bootstrap.js
+            Cache-Control: no-cache, no-store, must-revalidate
+          /business/flutter_service_worker.js
+            Cache-Control: no-cache, no-store, must-revalidate
+          /business/assets/*
+            Cache-Control: public, max-age=31536000, immutable
+          /business/canvaskit/*
+            Cache-Control: public, max-age=31536000, immutable
+          EOF
+          test -s business/index.html
+          test -s business/flutter_bootstrap.js
+          test -s business/main.dart.js
+          grep -q '<base href="/business/">' business/index.html
+
+      - name: Commit deployed web build
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A business
+          if git diff --cached --quiet; then
+            echo 'Business web build is already current.'
+            exit 0
+          fi
+          git commit -m 'deploy: ALIN Business Flutter Web [skip ci]'
+          git push origin HEAD:main
