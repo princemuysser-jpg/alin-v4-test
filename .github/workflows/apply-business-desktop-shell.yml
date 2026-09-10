@@ -19,6 +19,7 @@ jobs:
           fetch-depth: 0
       - name: Wire desktop admin UI
         run: |
+          echo 'Applying responsive desktop shell...'
           python3 - <<'PY'
           from pathlib import Path
           p = Path('flutter_business/lib/main.dart')
