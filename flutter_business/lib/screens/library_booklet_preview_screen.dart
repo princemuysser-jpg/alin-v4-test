@@ -25,7 +25,7 @@ class _LibraryBookletPreviewScreenState extends State<LibraryBookletPreviewScree
   bool loading = true;
   bool printing = false;
   String? error;
-  Map<String, dynamic> context = {};
+  Map<String, dynamic> printContext = {};
   Uint8List? bytes;
   PdfControllerPinch? controller;
 
@@ -53,7 +53,7 @@ class _LibraryBookletPreviewScreenState extends State<LibraryBookletPreviewScree
       }
       controller?.dispose();
       setState(() {
-        context = ctx;
+        printContext = ctx;
         bytes = data;
         controller = pdfController;
       });
@@ -66,7 +66,7 @@ class _LibraryBookletPreviewScreenState extends State<LibraryBookletPreviewScree
 
   Future<void> printBooklet() async {
     if (printing || bytes == null) return;
-    if (context['print_available'] != true) {
+    if (printContext['print_available'] != true) {
       _snack('إذن الطباعة مستخدم أو غير متاح لهذا الطلب');
       return;
     }
@@ -74,14 +74,19 @@ class _LibraryBookletPreviewScreenState extends State<LibraryBookletPreviewScree
     setState(() => printing = true);
     try {
       final printed = await Printing.layoutPdf(
-        name: '${context['order_number'] ?? widget.order['id']} - ${context['title'] ?? 'ملزمة'}',
+        name: '${printContext['order_number'] ?? widget.order['id']} - ${printContext['title'] ?? 'ملزمة'}',
         onLayout: (_) async => bytes!,
       );
       if (!printed) return;
 
-      await widget.repository.libraryUsePrintPermit('${context['permit_id']}');
+      await widget.repository.libraryUsePrintPermit('${printContext['permit_id']}');
       if (!mounted) return;
-      setState(() => context = {...context, 'print_available': false, 'permit_used': 1, 'permit_status': 'used'});
+      setState(() => printContext = {
+            ...printContext,
+            'print_available': false,
+            'permit_used': 1,
+            'permit_status': 'used',
+          });
       _snack('تم تسجيل استخدام إذن الطباعة');
     } catch (e) {
       _snack('$e'.replaceFirst('Exception: ', ''));
@@ -103,15 +108,15 @@ class _LibraryBookletPreviewScreenState extends State<LibraryBookletPreviewScree
 
   @override
   Widget build(BuildContext context) {
-    final copies = int.tryParse('${this.context['copies']}') ?? int.tryParse('${widget.order['qty']}') ?? 1;
-    final canPrint = this.context['print_available'] == true;
+    final copies = int.tryParse('${printContext['copies']}') ?? int.tryParse('${widget.order['qty']}') ?? 1;
+    final canPrint = printContext['print_available'] == true;
 
     return Scaffold(
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('${this.context['title'] ?? widget.order['title'] ?? 'معاينة الملزمة'}', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
+            Text('${printContext['title'] ?? widget.order['title'] ?? 'معاينة الملزمة'}', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
             Text('المطلوب $copies نسخة', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w400)),
           ],
         ),
