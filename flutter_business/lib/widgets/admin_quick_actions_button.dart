@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../data/business_repository.dart';
+import '../screens/admin_delivery_pricing_screen.dart';
 import '../screens/admin_finance_v2_screen.dart';
 
 class AdminQuickActionsButton extends StatefulWidget {
@@ -28,9 +29,14 @@ class _AdminQuickActionsButtonState extends State<AdminQuickActionsButton> {
 
   Future<void> openFinance() async {
     await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => AdminFinanceV2Screen(repository: widget.repository),
-      ),
+      MaterialPageRoute(builder: (_) => AdminFinanceV2Screen(repository: widget.repository)),
+    );
+    await changed();
+  }
+
+  Future<void> openDeliveryPricing() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => AdminDeliveryPricingScreen(repository: widget.repository)),
     );
     await changed();
   }
@@ -43,13 +49,16 @@ class _AdminQuickActionsButtonState extends State<AdminQuickActionsButton> {
       builder: (sheetContext) => SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            const Text('إجراءات سريعة', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
-            const SizedBox(height: 12),
-            _tile(sheetContext, Icons.person_add_alt_1_rounded, 'إضافة حساب', 'مدرس، مكتبة، مندوب، مطبعة أو حسابات', createAccount),
-            _tile(sheetContext, Icons.delivery_dining_rounded, 'تعيين مندوب', 'تعيين مندوب لطلبات التوصيل فقط', assignCourier),
-            _tile(sheetContext, Icons.account_balance_wallet_rounded, 'المالية والتسويات', 'الأرصدة الرسمية، التسويات، العكس ومستحقات المطابع', openFinance),
-          ]),
+          child: SingleChildScrollView(
+            child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              const Text('إجراءات سريعة', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
+              const SizedBox(height: 12),
+              _tile(sheetContext, Icons.person_add_alt_1_rounded, 'إضافة حساب', 'مدرس، مكتبة، مندوب، مطبعة أو حسابات', createAccount),
+              _tile(sheetContext, Icons.delivery_dining_rounded, 'تعيين مندوب', 'تعيين مندوب لطلبات التوصيل فقط', assignCourier),
+              _tile(sheetContext, Icons.local_shipping_rounded, 'التوصيل والمناطق', 'أسعار المناطق، أجرة المندوب وتسعير طلبات التوصيل', openDeliveryPricing),
+              _tile(sheetContext, Icons.account_balance_wallet_rounded, 'المالية والتسويات', 'الأرصدة الرسمية، التسويات، العكس ومستحقات المطابع', openFinance),
+            ]),
+          ),
         ),
       ),
     );
@@ -159,7 +168,7 @@ class _AdminQuickActionsButtonState extends State<AdminQuickActionsButton> {
     }
   }
 
-  bool closed(Map<String, dynamic> order) => const {'completed', 'delivered', 'cancelled', 'rejected'}.contains('${order['status']}');
+  bool closed(Map<String, dynamic> order) => const {'completed', 'delivered', 'cancelled', 'rejected'}.contains('${order['status']}'.toLowerCase());
 
   bool delivery(Map<String, dynamic> order) {
     final fulfillment = '${order['fulfillment_type']}'.toLowerCase();
@@ -270,7 +279,9 @@ class _AdminQuickActionsButtonState extends State<AdminQuickActionsButton> {
     return FloatingActionButton.extended(
       heroTag: 'admin-quick-actions',
       onPressed: busy ? null : openActions,
-      icon: busy ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.bolt_rounded),
+      icon: busy
+          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+          : const Icon(Icons.bolt_rounded),
       label: Text(busy ? 'جارٍ التنفيذ' : 'إجراء سريع'),
     );
   }
