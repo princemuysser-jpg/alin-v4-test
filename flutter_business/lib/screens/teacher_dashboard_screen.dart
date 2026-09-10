@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../data/business_repository.dart';
 import '../models/business_account.dart';
+import 'teacher_publishing_screen.dart';
 
 class TeacherDashboardScreen extends StatefulWidget {
   final BusinessRepository repository;
@@ -74,6 +75,18 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     }
   }
 
+  Future<void> openPublishing() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => TeacherPublishingScreen(
+          repository: widget.repository,
+          account: widget.account,
+        ),
+      ),
+    );
+    if (mounted) await load();
+  }
+
   num number(dynamic value) => num.tryParse('$value') ?? 0;
   String money(dynamic value) => '${number(value).round()} د.ع';
 
@@ -105,6 +118,11 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
           Text(widget.account.name, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w400)),
         ]),
         actions: [
+          IconButton(
+            tooltip: 'رفع ومتابعة الملازم',
+            onPressed: openPublishing,
+            icon: const Icon(Icons.upload_file_rounded),
+          ),
           IconButton(onPressed: load, icon: const Icon(Icons.refresh_rounded)),
           PopupMenuButton<String>(
             onSelected: (value) {
@@ -133,6 +151,11 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                   const SizedBox(height: 4),
                   const Text('ملازمك ومبيعاتك وأرباحك', style: TextStyle(color: Colors.white70)),
                 ])),
+                FilledButton.tonalIcon(
+                  onPressed: openPublishing,
+                  icon: const Icon(Icons.upload_file_rounded),
+                  label: const Text('رفع ملزمة'),
+                ),
               ]),
             ),
             const SizedBox(height: 12),
