@@ -1,0 +1,59 @@
+name: Apply ALIN Business Desktop Shell
+
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-business-desktop-shell.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Wire desktop admin UI
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('flutter_business/lib/main.dart')
+          s = p.read_text()
+          old_import = "import 'screens/admin_dashboard_screen.dart';\n"
+          new_import = old_import + "import 'screens/admin_desktop_dashboard_screen.dart';\n"
+          if "admin_desktop_dashboard_screen.dart" not in s:
+              if old_import not in s:
+                  raise SystemExit('admin dashboard import not found')
+              s = s.replace(old_import, new_import, 1)
+
+          old = """      case 'admin':
+      case 'accountant':
+        page = AdminDashboardScreen(key: pageKey, repository: repository, account: account!, onLogout: _logout);
+"""
+          new = """      case 'admin':
+      case 'accountant':
+        final desktopAdmin = kIsWeb && MediaQuery.sizeOf(context).width >= 1100;
+        page = desktopAdmin
+            ? AdminDesktopDashboardScreen(key: pageKey, repository: repository, account: account!, onLogout: _logout)
+            : AdminDashboardScreen(key: pageKey, repository: repository, account: account!, onLogout: _logout);
+"""
+          if old in s:
+              s = s.replace(old, new, 1)
+          elif 'final desktopAdmin = kIsWeb' not in s:
+              raise SystemExit('admin switch block not found')
+          p.write_text(s)
+          PY
+          git diff --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add flutter_business/lib/main.dart
+          if git diff --cached --quiet; then
+            echo 'Desktop shell already wired.'
+            exit 0
+          fi
+          git commit -m 'feat: use desktop admin shell on wide web screens [skip ci]'
+          git push origin HEAD:main
