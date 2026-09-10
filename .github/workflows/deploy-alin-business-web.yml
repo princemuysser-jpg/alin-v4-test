@@ -37,7 +37,7 @@ jobs:
           set -euo pipefail
           flutter pub get
           flutter analyze lib
-          flutter build web --release --no-pub --base-href=/business/ --pwa-strategy=none
+          flutter build web --release --no-pub --base-href=/business/ --pwa-strategy=none --no-web-resources-cdn
           python3 - <<'PY'
           from pathlib import Path
           p = Path('build/web/index.html')
@@ -58,6 +58,8 @@ jobs:
             Cache-Control: no-cache, no-store, must-revalidate
           /business/flutter_bootstrap.js
             Cache-Control: no-cache, no-store, must-revalidate
+          /business/main.dart.js
+            Cache-Control: no-cache, no-store, must-revalidate
           /business/assets/*
             Cache-Control: public, max-age=31536000, immutable
           /business/canvaskit/*
@@ -66,6 +68,7 @@ jobs:
           test -s business/index.html
           test -s business/flutter_bootstrap.js
           test -s business/main.dart.js
+          test -s business/canvaskit/canvaskit.js
           grep -q '<base href="./">' business/index.html
 
       - name: Commit deployed web build
