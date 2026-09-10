@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../data/business_repository.dart';
+import '../screens/admin_finance_v2_screen.dart';
 
 class AdminQuickActionsButton extends StatefulWidget {
   final BusinessRepository repository;
@@ -25,6 +26,15 @@ class _AdminQuickActionsButtonState extends State<AdminQuickActionsButton> {
     if (callback != null) await callback();
   }
 
+  Future<void> openFinance() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => AdminFinanceV2Screen(repository: widget.repository),
+      ),
+    );
+    await changed();
+  }
+
   Future<void> openActions() async {
     if (busy) return;
     await showModalBottomSheet<void>(
@@ -38,6 +48,7 @@ class _AdminQuickActionsButtonState extends State<AdminQuickActionsButton> {
             const SizedBox(height: 12),
             _tile(sheetContext, Icons.person_add_alt_1_rounded, 'إضافة حساب', 'مدرس، مكتبة، مندوب، مطبعة أو حسابات', createAccount),
             _tile(sheetContext, Icons.delivery_dining_rounded, 'تعيين مندوب', 'تعيين مندوب لطلبات التوصيل فقط', assignCourier),
+            _tile(sheetContext, Icons.account_balance_wallet_rounded, 'المالية والتسويات', 'الأرصدة الرسمية، التسويات، العكس ومستحقات المطابع', openFinance),
           ]),
         ),
       ),
