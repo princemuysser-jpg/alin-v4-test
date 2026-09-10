@@ -1,0 +1,11 @@
+{
+  "name": "آلين للأعمال",
+  "short_name": "آلين للأعمال",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#F5F8FC",
+  "theme_color": "#143B68",
+  "description": "إدارة أعمال منصة آلين",
+  "orientation": "portrait-primary",
+  "icons": []
+}
