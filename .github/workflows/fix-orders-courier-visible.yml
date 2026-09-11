@@ -1,0 +1,115 @@
+name: Show courier assignment in admin orders
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/fix-orders-courier-visible.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Patch grouped orders UI
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p = Path('modules/admin/orders-grouped.js')
+          text = p.read_text(encoding='utf-8')
+
+          css_old = ".alin-order-group-courier{margin:0 20px 18px;padding:14px;border:1px solid #d9e3ee;border-radius:14px;background:#f8fbff}"
+          css_new = ".alin-order-group-items{margin:0 16px 12px;padding:12px 14px;border:1px solid #e6edf5;border-radius:14px;background:#fbfdff}.alin-order-group-items h4{margin:0 0 8px;font-size:14px;color:#173b67}.alin-order-group-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px dashed #e2e8f0}.alin-order-group-item:last-child{border-bottom:0}.alin-order-group-item b{font-size:13px}.alin-order-group-item span{font-size:12px;color:#64748b;white-space:nowrap}.alin-order-group-courier{margin:0 16px 16px;padding:14px;border:1px solid #b9d3ef;border-radius:14px;background:#f1f7ff}"
+          if css_old not in text:
+              raise SystemExit('CSS insertion point not found')
+          text = text.replace(css_old, css_new, 1)
+
+          helper_old = "function groupCourierId(list){return String(list.map(o=>o.courier_id||o.delegate_id).find(Boolean)||'')}\nfunction courierAssignmentHtml(g){"
+          helper_new = """function groupCourierId(list){return String(list.map(o=>o.courier_id||o.delegate_id).find(Boolean)||'')}\nfunction materialsInlineHtml(g){\n const list=g.rows||[];if(!list.length)return'';\n return `<section class=\"alin-order-group-items\"><h4>مواد الطلب</h4>${list.map((o,i)=>`<div class=\"alin-order-group-item\"><b>${i+1}. ${esc(o.title||'مادة')}</b><span>× ${Math.max(1,num(o.qty||o.quantity))} • ${money(o.total||0)} د.ع</span></div>`).join('')}</section>`\n}\nfunction courierAssignmentHtml(g){"""
+          if helper_old not in text:
+              raise SystemExit('Helper insertion point not found')
+          text = text.replace(helper_old, helper_new, 1)
+
+          old_assign = """function courierAssignmentHtml(g){
+ const first=g.rows[0];if(!isHomeDelivery(first))return'';
+ const core=window.AlinCourierCore;if(!core)return '<section class=\"alin-order-group-courier\">خدمة المندوب غير جاهزة.</section>';
+ const area=window.alinNormalizeDeliveryArea?.(first.delivery_area)||first.delivery_area||'';
+ let options=core.matchingCouriers?.(area)||core.activeCouriers?.()||[];
+ const current=groupCourierId(g.rows),all=core.allCouriers?.()||[];
+ const currentCourier=all.find(c=>[c.id,c.account_id,c.courier_row_id].filter(Boolean).map(String).includes(current));
+ if(currentCourier&&!options.some(c=>String(c.id)===String(currentCourier.id)))options=[currentCourier,...options];
+ return `<section class=\"alin-order-group-courier\"><h3>تعيين مندوب للطلب كامل</h3><div class=\"alin-order-group-courier-row\"><label>المندوب<select class=\"alin-order-group-courier-select\"><option value=\"\">بدون مندوب</option>${options.map(c=>`<option value=\"${esc(c.id)}\" ${current&&String(c.id)===current?'selected':''}>${esc(c.name||c.username||'مندوب')} • ${esc(c.phone||'')}</option>`).join('')}</select></label><button type=\"button\" class=\"alin-order-group-assign-btn\" data-group-key=\"${esc(g.key)}\">${current?'حفظ المندوب':'تعيين المندوب'}</button></div><small>التعيين يطبق على كل مواد هذا الطلب دفعة واحدة.</small></section>`
+}
+"""
+          new_assign = """function courierAssignmentHtml(g){
+ const first=g.rows[0];if(!isHomeDelivery(first))return'';
+ const core=window.AlinCourierCore;
+ const fallbackAll=[...arr(window.db?.accounts?.couriers),...arr(window.db?.couriers)].filter(c=>String(c?.status||'active')!=='inactive');
+ const all=core?.allCouriers?.()||fallbackAll;
+ const area=window.alinNormalizeDeliveryArea?.(first.delivery_area)||first.delivery_area||'';
+ let options=core?.matchingCouriers?.(area)||[];
+ if(!options.length&&String(area).trim()==='كركوك')options=core?.activeCouriers?.()||all;
+ const current=groupCourierId(g.rows);
+ const currentCourier=all.find(c=>[c.id,c.account_id,c.courier_row_id].filter(Boolean).map(String).includes(current));
+ if(currentCourier&&!options.some(c=>String(c.id)===String(currentCourier.id)))options=[currentCourier,...options];
+ const optionsHtml=options.length?options.map(c=>`<option value=\"${esc(c.id)}\" ${current&&[c.id,c.account_id,c.courier_row_id].filter(Boolean).map(String).includes(current)?'selected':''}>${esc(c.name||c.username||'مندوب')} • ${esc(c.phone||'')}</option>`).join(''):'<option value=\"\" disabled>لا يوجد مندوب مطابق للمنطقة</option>';
+ return `<section class=\"alin-order-group-courier\"><h3>تعيين مندوب للطلب كامل</h3><div class=\"alin-order-group-courier-row\"><label>المندوب<select class=\"alin-order-group-courier-select\"><option value=\"\">بدون مندوب</option>${optionsHtml}</select></label><button type=\"button\" class=\"alin-order-group-assign-btn\" data-group-key=\"${esc(g.key)}\" ${!core?.assignOrder?'disabled':''}>${current?'حفظ المندوب':'تعيين المندوب'}</button></div><small>${core?.assignOrder?'التعيين يطبق على كل مواد هذا الطلب دفعة واحدة.':'خدمة التعيين غير جاهزة، حدّث الصفحة.'}</small></section>`
+}
+"""
+          if old_assign not in text:
+              raise SystemExit('Assignment function block not found')
+          text = text.replace(old_assign, new_assign, 1)
+
+          old_loop = """ order.forEach(k=>{const g=groups.get(k);if(g.rows.length<2||g.rows.length!==g.cards.length){g.cards.forEach(c=>host.appendChild(c));return}
+  const first=g.rows[0],total=g.rows.reduce((s,o)=>s+num(o.total),0),qty=g.rows.reduce((s,o)=>s+Math.max(1,num(o.qty||o.quantity)),0),delivery=g.rows.reduce((s,o)=>s+num(o.delivery_fee),0);
+  const a=document.createElement('article');a.className='alin-order-group';
+  const parking=document.createElement('div');parking.hidden=true;parking.className='alin-order-card-parking';g.cards.forEach(c=>parking.appendChild(c));g.cardParking=parking;groupsByKey.set(k,g);
+  a.innerHTML=`<div class=\"alin-order-group-head\"><div><h3>${esc(first.order_number||first.id)}</h3><p>${esc(first.student_name||'بدون اسم')} • ${esc(first.student_phone||'بدون هاتف')}</p><div class=\"alin-order-group-main\"><span class=\"alin-order-pill\">${g.rows.length} مواد</span><span class=\"alin-order-pill\">${qty} قطعة/نسخة</span><span class=\"alin-order-pill\">${esc(groupStatus(g.rows))}</span></div></div><div class=\"alin-order-group-actions\"><div><small>الإجمالي</small><div class=\"alin-order-group-total\">${money(total)} د.ع</div>${delivery?`<small>منها توصيل ${money(delivery)} د.ع</small>`:''}</div><button type=\"button\" class=\"alin-order-list-btn\" data-group-key=\"${esc(k)}\">عرض القائمة</button></div></div>`;
+  a.appendChild(parking);host.appendChild(a)
+ });
+"""
+          new_loop = """ order.forEach(k=>{const g=groups.get(k);groupsByKey.set(k,g);
+  if(!g.rows.length||g.rows.length!==g.cards.length){g.cards.forEach(c=>host.appendChild(c));return}
+  if(g.rows.length===1){
+   const card=g.cards[0];host.appendChild(card);
+   if(isHomeDelivery(g.rows[0])&&!card.querySelector('.alin-order-group-courier'))card.insertAdjacentHTML('beforeend',courierAssignmentHtml(g));
+   return
+  }
+  const first=g.rows[0],total=g.rows.reduce((s,o)=>s+num(o.total),0),qty=g.rows.reduce((s,o)=>s+Math.max(1,num(o.qty||o.quantity)),0),delivery=g.rows.reduce((s,o)=>s+num(o.delivery_fee),0);
+  const a=document.createElement('article');a.className='alin-order-group';
+  const parking=document.createElement('div');parking.hidden=true;parking.className='alin-order-card-parking';g.cards.forEach(c=>parking.appendChild(c));g.cardParking=parking;
+  a.innerHTML=`<div class=\"alin-order-group-head\"><div><h3>${esc(first.order_number||first.id)}</h3><p>${esc(first.student_name||'بدون اسم')} • ${esc(first.student_phone||'بدون هاتف')}</p><div class=\"alin-order-group-main\"><span class=\"alin-order-pill\">${g.rows.length} مواد</span><span class=\"alin-order-pill\">${qty} قطعة/نسخة</span><span class=\"alin-order-pill\">${esc(groupStatus(g.rows))}</span></div></div><div class=\"alin-order-group-actions\"><div><small>الإجمالي</small><div class=\"alin-order-group-total\">${money(total)} د.ع</div>${delivery?`<small>منها توصيل ${money(delivery)} د.ع</small>`:''}</div><button type=\"button\" class=\"alin-order-list-btn\" data-group-key=\"${esc(k)}\">عرض القائمة</button></div></div>${materialsInlineHtml(g)}${courierAssignmentHtml(g)}`;
+  a.appendChild(parking);host.appendChild(a)
+ });
+"""
+          if old_loop not in text:
+              raise SystemExit('Grouped render loop not found')
+          text = text.replace(old_loop, new_loop, 1)
+
+          p.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Syntax check
+        run: node --check modules/admin/orders-grouped.js
+
+      - name: Commit patch
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add modules/admin/orders-grouped.js
+          if git diff --cached --quiet; then
+            echo 'No changes'
+            exit 0
+          fi
+          git commit -m 'fix: show courier assignment directly in admin orders'
+          git push origin HEAD:main
