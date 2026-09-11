@@ -234,7 +234,7 @@ class BusinessRepository {
   }
 
   Future<Map<String, dynamic>> adminAssignOrder(String orderId, {String? courierId, String? libraryId}) async {
-    final raw = await client.rpc('alin_admin_assign_order', params: {
+    final raw = await client.rpc('alin_admin_assign_order_group', params: {
       'p_order_id': orderId,
       'p_courier_id': courierId?.trim().isEmpty == true ? null : courierId,
       'p_library_id': libraryId?.trim().isEmpty == true ? null : libraryId,

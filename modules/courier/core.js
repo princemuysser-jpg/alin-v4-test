@@ -156,7 +156,7 @@
   async function assignOrder(orderId,courierId=null,libraryId=null){
     const courier=courierId?courierById(courierId):null;
     const canonicalCourier=courier?String(courier.account_id||courier.id||courierId):(courierId?String(courierId):null);
-    const result=await rpc('alin_admin_assign_order',{
+    const result=await rpc('alin_admin_assign_order_group',{
       p_order_id:String(orderId),
       p_courier_id:canonicalCourier,
       p_library_id:libraryId?String(libraryId):null
