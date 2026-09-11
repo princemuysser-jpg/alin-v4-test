@@ -285,6 +285,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       }
     }
 
+    final submittedCartTotal = _quoteNumber('total', c.cartTotal);
+    final submittedDeliveryFee = fulfillmentType == 'home_delivery' ? (area?.deliveryFee ?? 0) : 0;
+    final submittedFinalTotal = submittedCartTotal + submittedDeliveryFee;
+
     setState(() { busy = true; error = null; });
     try {
       final result = await c.placeOrder(
@@ -296,46 +300,66 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       );
       if (!mounted) return;
       final number = '${result['order_number'] ?? result['order_id'] ?? 'تم إنشاء الطلب'}';
-      await showDialog<void>(
+      final confirmed = await showDialog<bool>(
         context: context,
         barrierDismissible: false,
-        builder: (dialogContext) => AlertDialog(
-          icon: const Icon(Icons.check_circle, color: Colors.green, size: 54),
-          title: const Text('تم إرسال طلبك'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('احتفظ برقم الطلب حتى تگدر تتابعه.'),
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: Theme.of(dialogContext).colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(12),
+        builder: (dialogContext) => PopScope(
+          canPop: false,
+          child: AlertDialog(
+            icon: const Icon(Icons.check_circle, color: Colors.green, size: 54),
+            title: const Text('تم إرسال طلبك'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('احتفظ برقم الطلب حتى تگدر تتابعه.'),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Theme.of(dialogContext).colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Flexible(child: SelectableText(number, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: AlinTheme.navy))),
+                      const SizedBox(width: 6),
+                      IconButton(
+                        tooltip: 'نسخ رقم الطلب',
+                        onPressed: () async {
+                          await Clipboard.setData(ClipboardData(text: number));
+                          if (!dialogContext.mounted) return;
+                          ScaffoldMessenger.of(dialogContext).showSnackBar(const SnackBar(content: Text('تم نسخ رقم الطلب')));
+                        },
+                        icon: const Icon(Icons.copy_rounded),
+                      ),
+                    ],
+                  ),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Flexible(child: SelectableText(number, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: AlinTheme.navy))),
-                    const SizedBox(width: 6),
-                    IconButton(
-                      tooltip: 'نسخ رقم الطلب',
-                      onPressed: () async {
-                        await Clipboard.setData(ClipboardData(text: number));
-                        if (!dialogContext.mounted) return;
-                        ScaffoldMessenger.of(dialogContext).showSnackBar(const SnackBar(content: Text('تم نسخ رقم الطلب')));
-                      },
-                      icon: const Icon(Icons.copy_rounded),
-                    ),
-                  ],
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Theme.of(dialogContext).colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      const Expanded(child: Text('إجمالي الطلب', style: TextStyle(fontWeight: FontWeight.w800))),
+                      Text(
+                        '${submittedFinalTotal.toStringAsFixed(0)} ${AlinConfig.currency}',
+                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: AlinTheme.navy),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
+            actions: [FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: const Text('تم'))],
           ),
-          actions: [FilledButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('تم'))],
         ),
       );
-      if (!mounted) return;
+      if (!mounted || confirmed != true) return;
       Navigator.of(context).popUntil((route) => route.isFirst);
       await c.clearCart();
     } catch (e) {
