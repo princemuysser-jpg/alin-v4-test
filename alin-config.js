@@ -1,7 +1,7 @@
 // منصة آلين v4.2.0 Stable — Alin Platform.
 window.ALIN_CONFIG=Object.freeze({
   version:'4.2.0',
-  assetVersion:'4.2.0-prep-list-20260908-094507',
+  assetVersion:'4.2.0-prep-list-20260911-121350',
   desktopPage:'./store-desktop.html',
   mobilePage:'./store-mobile.html',
   tabletPage:'./store-tablet.html',

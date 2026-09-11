@@ -1844,9 +1844,7 @@ window.AlinTeacherModules.unpublishTeacherBooklet=unpublishTeacherBooklet;
 ;
 
 /* modules/admin/orders-grouped.js */
-// Group rows created by the same checkout into one compact admin card.
-// A dedicated "عرض القائمة" modal shows the full preparation list while
-// keeping each underlying order row intact for stock, finance and actions.
+// Group checkout rows into one admin order card and expose courier assignment directly.
 (function(){
 'use strict';
 const old=window.renderOrdersAdmin;if(typeof old!=='function')return;
@@ -1870,67 +1868,58 @@ function css(){
  .alin-order-group-head h3{margin:0 0 4px;font-size:17px}.alin-order-group-head p{margin:0;color:#667085;font-size:13px}
  .alin-order-group-main{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.alin-order-pill{display:inline-flex;align-items:center;border-radius:999px;background:#f1f5f9;color:#334155;padding:6px 10px;font-size:12px;font-weight:700}
  .alin-order-group-total{font-weight:800;color:#172b4d;white-space:nowrap}.alin-order-group-actions{display:flex;align-items:center;gap:8px}
- .alin-order-list-btn{border:0;border-radius:12px;padding:10px 15px;background:#173b67;color:#fff;font-weight:800;cursor:pointer}.alin-order-list-btn:hover{filter:brightness(.96)}
- .alin-order-prep-backdrop{position:fixed;inset:0;z-index:10050;background:rgba(15,23,42,.55);display:flex;align-items:center;justify-content:center;padding:18px}
- .alin-order-prep-modal{width:min(1040px,96vw);max-height:92vh;overflow:auto;background:#fff;border-radius:22px;box-shadow:0 30px 70px rgba(15,23,42,.25)}
- .alin-order-prep-head{position:sticky;top:0;z-index:2;display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:18px 20px;background:#fff;border-bottom:1px solid #e7edf4}
- .alin-order-prep-head h2{margin:0 0 5px}.alin-order-prep-head p{margin:0;color:#667085}.alin-order-prep-close{border:0;background:#f1f5f9;border-radius:11px;width:40px;height:40px;font-size:22px;cursor:pointer}
- .alin-order-prep-info{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:16px 20px}.alin-order-prep-info span{background:#f8fafc;border-radius:12px;padding:10px;color:#667085;font-size:12px}.alin-order-prep-info b{display:block;margin-top:4px;color:#172b4d;font-size:14px}
- .alin-order-prep-table-wrap{padding:0 20px 18px;overflow:auto}.alin-order-prep-table{width:100%;border-collapse:separate;border-spacing:0;min-width:760px}.alin-order-prep-table th{background:#eef3f8;text-align:right;padding:10px;font-size:12px;color:#475569}.alin-order-prep-table td{padding:11px 10px;border-bottom:1px solid #edf1f5;vertical-align:top}.alin-order-prep-table td b{display:block}.alin-order-prep-table td small{display:block;color:#667085;margin-top:3px}
- .alin-order-prep-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:0 20px 18px}.alin-order-prep-summary span{background:#f8fafc;border-radius:12px;padding:10px;color:#667085;font-size:12px}.alin-order-prep-summary b{display:block;margin-top:3px;color:#172b4d}
- .alin-order-prep-notes{margin:0 20px 18px;padding:13px 14px;background:#fff7ed;border-radius:12px;color:#7c2d12}.alin-order-prep-notes b{display:block;margin-bottom:5px}
- .alin-order-prep-actions{padding:0 20px 20px}.alin-order-prep-actions details{border:1px solid #e3e9f0;border-radius:14px}.alin-order-prep-actions summary{cursor:pointer;padding:12px 14px;font-weight:800}.alin-order-group-manage{padding:0 10px 10px}.alin-order-group-manage .admin-order-v126{margin-top:10px}
- @media(max-width:760px){.alin-order-group-head{align-items:flex-start;flex-direction:column}.alin-order-group-actions{width:100%;justify-content:space-between}.alin-order-prep-info,.alin-order-prep-summary{grid-template-columns:1fr 1fr}.alin-order-prep-backdrop{padding:6px}.alin-order-prep-modal{width:100%;max-height:96vh;border-radius:16px}}
+ .alin-order-list-btn{border:0;border-radius:12px;padding:10px 15px;background:#173b67;color:#fff;font-weight:800;cursor:pointer}
+ .alin-order-group-items{margin:0 16px 12px;padding:12px 14px;border:1px solid #e6edf5;border-radius:14px;background:#fbfdff}.alin-order-group-items h4{margin:0 0 8px;font-size:14px;color:#173b67}.alin-order-group-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px dashed #e2e8f0}.alin-order-group-item:last-child{border-bottom:0}.alin-order-group-item b{font-size:13px}.alin-order-group-item span{font-size:12px;color:#64748b;white-space:nowrap}
+ .alin-order-group-courier{margin:0 16px 16px;padding:14px;border:1px solid #b9d3ef;border-radius:14px;background:#f1f7ff}.alin-order-group-courier h3{margin:0 0 8px;font-size:15px;color:#173b67}.alin-order-group-courier-row{display:flex;gap:8px;align-items:end;flex-wrap:wrap}.alin-order-group-courier label{flex:1;min-width:220px;font-size:12px;color:#64748b}.alin-order-group-courier select{display:block;width:100%;margin-top:5px;padding:10px;border:1px solid #cbd5e1;border-radius:10px;background:white}.alin-order-group-courier button{border:0;border-radius:10px;padding:10px 14px;background:#173b67;color:white;font-weight:800;cursor:pointer}.alin-order-group-courier button:disabled{opacity:.55;cursor:not-allowed}
+ .alin-order-prep-backdrop{position:fixed;inset:0;z-index:10050;background:rgba(15,23,42,.55);display:flex;align-items:center;justify-content:center;padding:18px}.alin-order-prep-modal{width:min(1040px,96vw);max-height:92vh;overflow:auto;background:#fff;border-radius:22px}.alin-order-prep-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:18px 20px;border-bottom:1px solid #e7edf4}.alin-order-prep-close{border:0;background:#f1f5f9;border-radius:11px;width:40px;height:40px;font-size:22px;cursor:pointer}.alin-order-prep-table-wrap{padding:18px 20px;overflow:auto}.alin-order-prep-table{width:100%;border-collapse:collapse;min-width:720px}.alin-order-prep-table th,.alin-order-prep-table td{padding:10px;border-bottom:1px solid #edf1f5;text-align:right}.alin-order-prep-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:0 20px 18px}.alin-order-prep-summary span{background:#f8fafc;border-radius:12px;padding:10px;color:#667085;font-size:12px}.alin-order-prep-summary b{display:block;color:#172b4d}
+ @media(max-width:760px){.alin-order-group-head{align-items:flex-start;flex-direction:column}.alin-order-group-actions{width:100%;justify-content:space-between}.alin-order-group-item{align-items:flex-start}.alin-order-group-courier-row{display:block}.alin-order-group-courier button{width:100%;margin-top:8px}.alin-order-prep-summary{grid-template-columns:1fr 1fr}}
  `;document.head.appendChild(s)
 }
-function grouped(data){const m=new Map();data.forEach(o=>{const k=key(o);if(!m.has(k))m.set(k,[]);m.get(k).push(o)});return m}
-function kindLabel(o){const k=String(o?.kind||'').toLowerCase();if(k==='booklet')return 'ملزمة';if(k==='book')return 'كتاب';if(k==='stationery')return 'قرطاسية';if(k==='gift')return 'هدية';return 'منتج'}
-function detailText(o){const bits=[];if(o.product_variant_code)bits.push(`كود: ${o.product_variant_code}`);if(o.product_variant_name)bits.push(`التصميم: ${o.product_variant_name}`);if(String(o.purchase_type||'unit')==='pack')bits.push(`باكيت${num(o.pack_size)>=2?` (${num(o.pack_size)} قطع)`:''}`);if(o.subject)bits.push(String(o.subject));if(o.term||o.chapter)bits.push(String(o.term||o.chapter));return bits.join(' • ')}
+function isHomeDelivery(o){return ['home_delivery','delivery','courier'].includes(String(o?.fulfillment_type||o?.delivery_type||''))}
 function groupStatus(list){const st=[...new Set(list.map(statusOf))];return st.length===1?statusLabel(list[0]):'حالات متعددة'}
-function libraryName(id){const r=arr(window.db?.accounts?.libraries).find(x=>String(x.id)===String(id));return r?.name||r?.library_name||'—'}
-function courierName(id){const all=[...arr(window.db?.accounts?.couriers),...arr(window.db?.couriers)];const r=all.find(x=>String(x.id)===String(id));return r?.name||'غير معيّن'}
-function fulfillmentText(first){const home=['home_delivery','delivery','courier'].includes(String(first?.fulfillment_type||first?.delivery_type||''));return home?(first.delivery_area||'توصيل للمنزل'):libraryName(first.library_id||first.pickup_library_id)}
+function groupCourierId(list){return String(list.map(o=>o.courier_id||o.delegate_id).find(Boolean)||'')}
+function allCouriers(){
+ const core=window.AlinCourierCore;if(core?.allCouriers)return core.allCouriers();
+ const all=[...arr(window.db?.accounts?.couriers),...arr(window.db?.accounts?.delegates),...arr(window.db?.couriers),...arr(window.db?.delegates)];
+ const map=new Map();for(const c of all){const id=String(c?.account_id||c?.id||'');if(id)map.set(id,{...(map.get(id)||{}),...c,id})}return [...map.values()]
+}
+function matchingCouriers(area){
+ const core=window.AlinCourierCore;if(core?.matchingCouriers){const x=core.matchingCouriers(area);if(x?.length)return x}
+ const normalize=v=>window.alinNormalizeDeliveryArea?.(v)||String(v||'').trim();const target=normalize(area);const active=allCouriers().filter(c=>String(c?.status||'active')!=='inactive');
+ const matches=active.filter(c=>{let raw=c.areas||c.area_ids||c.area||[];if(typeof raw==='string'){try{const p=JSON.parse(raw);raw=Array.isArray(p)?p:raw.split(/[,،|]/)}catch(_){raw=raw.split(/[,،|]/)}}return arr(raw).some(a=>normalize(typeof a==='object'?(a.name||a.area||a.id):a)===target)});
+ return matches.length?matches:(target==='كركوك'?active:matches)
+}
+function materialsHtml(g){return `<section class="alin-order-group-items"><h4>مواد الطلب</h4>${g.rows.map((o,i)=>`<div class="alin-order-group-item"><b>${i+1}. ${esc(o.title||'مادة')}</b><span>× ${Math.max(1,num(o.qty||o.quantity))} • ${money(o.total||0)} د.ع</span></div>`).join('')}</section>`}
+function courierAssignmentHtml(g){
+ const first=g.rows[0];if(!isHomeDelivery(first))return'';
+ const core=window.AlinCourierCore,all=allCouriers(),options=matchingCouriers(first.delivery_area),current=groupCourierId(g.rows);
+ const currentCourier=all.find(c=>[c.id,c.account_id,c.courier_row_id].filter(Boolean).map(String).includes(current));if(currentCourier&&!options.some(c=>String(c.id)===String(currentCourier.id)))options.unshift(currentCourier);
+ const opts=options.length?options.map(c=>`<option value="${esc(c.id)}" ${current&&[c.id,c.account_id,c.courier_row_id].filter(Boolean).map(String).includes(current)?'selected':''}>${esc(c.name||c.username||'مندوب')} • ${esc(c.phone||'')}</option>`).join(''):'<option value="" disabled>لا يوجد مندوب مطابق للمنطقة</option>';
+ return `<section class="alin-order-group-courier"><h3>تعيين مندوب للطلب كامل</h3><div class="alin-order-group-courier-row"><label>المندوب<select class="alin-order-group-courier-select"><option value="">بدون مندوب</option>${opts}</select></label><button type="button" class="alin-order-group-assign-btn" data-group-key="${esc(g.key)}" ${!core?.assignOrder?'disabled':''}>${current?'حفظ المندوب':'تعيين المندوب'}</button></div><small>${core?.assignOrder?'يتم تطبيق المندوب على كل مواد هذا الطلب دفعة واحدة.':'حدّث الصفحة لتفعيل خدمة التعيين.'}</small></section>`
+}
 function prepModal(groupKey){
- const g=groupsByKey.get(String(groupKey));if(!g?.rows?.length)return;
- document.querySelector('.alin-order-prep-backdrop')?.remove();
- const list=g.rows,first=list[0],total=list.reduce((s,o)=>s+num(o.total),0),delivery=list.reduce((s,o)=>s+num(o.delivery_fee),0),discount=list.reduce((s,o)=>s+num(o.discount),0),qty=list.reduce((s,o)=>s+Math.max(1,num(o.qty||o.quantity)),0);
- const backdrop=document.createElement('div');backdrop.className='alin-order-prep-backdrop';
- backdrop.innerHTML=`<section class="alin-order-prep-modal" role="dialog" aria-modal="true" aria-label="قائمة تجهيز الطلب">
-   <header class="alin-order-prep-head"><div><h2>قائمة تجهيز الطلب</h2><p>${esc(first.student_name||'بدون اسم')} • ${esc(first.student_phone||'بدون هاتف')} • ${esc(first.order_number||first.id)}</p></div><button type="button" class="alin-order-prep-close" aria-label="إغلاق">×</button></header>
-   <section class="alin-order-prep-info">
-    <span>عدد المواد<b>${list.length}</b></span><span>إجمالي القطع/النسخ<b>${qty}</b></span><span>الحالة<b>${esc(groupStatus(list))}</b></span><span>الاستلام<b>${esc(fulfillmentText(first))}</b></span>
-   </section>
-   <div class="alin-order-prep-table-wrap"><table class="alin-order-prep-table"><thead><tr><th>#</th><th>المادة</th><th>النوع والتفاصيل</th><th>الكمية</th><th>سعر الوحدة</th><th>الخصم</th><th>الإجمالي</th><th>الحالة</th></tr></thead><tbody>${list.map((o,i)=>`<tr><td>${i+1}</td><td><b>${esc(o.title||'مادة')}</b><small>${esc(o.order_number||o.id||'')}</small></td><td><b>${esc(kindLabel(o))}</b>${detailText(o)?`<small>${esc(detailText(o))}</small>`:''}</td><td><b>× ${Math.max(1,num(o.qty||o.quantity))}</b></td><td>${money(o.unit_price||0)} د.ع</td><td>${money(o.discount||0)} د.ع</td><td><b>${money(o.total||0)} د.ع</b></td><td>${esc(statusLabel(o))}</td></tr>`).join('')}</tbody></table></div>
-   <section class="alin-order-prep-summary"><span>مجموع المواد<b>${money(total-delivery)} د.ع</b></span><span>أجرة التوصيل<b>${money(delivery)} د.ع</b></span><span>مجموع الخصم<b>${money(discount)} د.ع</b></span><span>الإجمالي الكلي<b>${money(total)} د.ع</b></span></section>
-   <section class="alin-order-prep-info"><span>المنطقة / المكتبة<b>${esc(fulfillmentText(first))}</b></span><span>المندوب<b>${esc(courierName(first.courier_id||first.delegate_id))}</b></span><span>أقرب نقطة دالة<b>${esc(first.delivery_landmark||'—')}</b></span><span>تاريخ الطلب<b>${first.created_at?esc(new Date(first.created_at).toLocaleString(window.AlinI18n?.locale?.()||'ar-IQ')):'—'}</b></span></section>
-   ${first.notes?`<div class="alin-order-prep-notes"><b>ملاحظات الطالب</b>${esc(first.notes)}</div>`:''}
-   <section class="alin-order-prep-actions"><details><summary>إجراءات وتفاصيل كل مادة</summary><div class="alin-order-group-manage"></div></details></section>
- </section>`;
- const manage=backdrop.querySelector('.alin-order-group-manage');g.cards.forEach(card=>manage.appendChild(card));
- const close=()=>{g.cards.forEach(card=>g.cardParking?.appendChild(card));backdrop.remove()};
- backdrop.querySelector('.alin-order-prep-close')?.addEventListener('click',close);
- backdrop.addEventListener('click',e=>{if(e.target===backdrop)close()});
- document.addEventListener('keydown',function onKey(e){if(e.key==='Escape'){document.removeEventListener('keydown',onKey);close()}},{once:true});
- document.body.appendChild(backdrop);
+ const g=groupsByKey.get(String(groupKey));if(!g?.rows?.length)return;document.querySelector('.alin-order-prep-backdrop')?.remove();
+ const list=g.rows,first=list[0],total=list.reduce((s,o)=>s+num(o.total),0),delivery=list.reduce((s,o)=>s+num(o.delivery_fee),0),discount=list.reduce((s,o)=>s+num(o.discount),0);
+ const el=document.createElement('div');el.className='alin-order-prep-backdrop';el.innerHTML=`<section class="alin-order-prep-modal"><header class="alin-order-prep-head"><div><h2>قائمة تجهيز الطلب</h2><p>${esc(first.student_name||'بدون اسم')} • ${esc(first.student_phone||'بدون هاتف')}</p></div><button class="alin-order-prep-close">×</button></header><div class="alin-order-prep-table-wrap"><table class="alin-order-prep-table"><thead><tr><th>#</th><th>المادة</th><th>الكمية</th><th>الإجمالي</th><th>الحالة</th></tr></thead><tbody>${list.map((o,i)=>`<tr><td>${i+1}</td><td>${esc(o.title||'مادة')}</td><td>× ${Math.max(1,num(o.qty||o.quantity))}</td><td>${money(o.total||0)} د.ع</td><td>${esc(statusLabel(o))}</td></tr>`).join('')}</tbody></table></div><section class="alin-order-prep-summary"><span>المواد<b>${money(total-delivery)} د.ع</b></span><span>التوصيل<b>${money(delivery)} د.ع</b></span><span>الخصم<b>${money(discount)} د.ع</b></span><span>الإجمالي<b>${money(total)} د.ع</b></span></section>${courierAssignmentHtml(g)}</section>`;
+ const close=()=>el.remove();el.querySelector('.alin-order-prep-close')?.addEventListener('click',close);el.addEventListener('click',e=>{if(e.target===el)close()});document.body.appendChild(el)
 }
 function enhance(){
- css();const host=document.querySelector('#adminContent .admin-orders-v126-list');if(!host||host.dataset.grouped==='1')return;
- const cards=[...host.children].filter(x=>x.classList?.contains('admin-order-v126'));if(!cards.length)return;
- groupsByKey.clear();const groups=new Map(),order=[];
- cards.forEach(card=>{const r=rowFor(card),k=r?key(r):`card:${order.length}`;if(!groups.has(k)){groups.set(k,{key:k,rows:[],cards:[]});order.push(k)};groups.get(k).cards.push(card);if(r)groups.get(k).rows.push(r)});
- host.replaceChildren();
- order.forEach(k=>{const g=groups.get(k);if(g.rows.length<2||g.rows.length!==g.cards.length){g.cards.forEach(c=>host.appendChild(c));return}
-  const first=g.rows[0],total=g.rows.reduce((s,o)=>s+num(o.total),0),qty=g.rows.reduce((s,o)=>s+Math.max(1,num(o.qty||o.quantity)),0),delivery=g.rows.reduce((s,o)=>s+num(o.delivery_fee),0);
-  const a=document.createElement('article');a.className='alin-order-group';
-  const parking=document.createElement('div');parking.hidden=true;parking.className='alin-order-card-parking';g.cards.forEach(c=>parking.appendChild(c));g.cardParking=parking;groupsByKey.set(k,g);
-  a.innerHTML=`<div class="alin-order-group-head"><div><h3>${esc(first.order_number||first.id)}</h3><p>${esc(first.student_name||'بدون اسم')} • ${esc(first.student_phone||'بدون هاتف')}</p><div class="alin-order-group-main"><span class="alin-order-pill">${g.rows.length} مواد</span><span class="alin-order-pill">${qty} قطعة/نسخة</span><span class="alin-order-pill">${esc(groupStatus(g.rows))}</span></div></div><div class="alin-order-group-actions"><div><small>الإجمالي</small><div class="alin-order-group-total">${money(total)} د.ع</div>${delivery?`<small>منها توصيل ${money(delivery)} د.ع</small>`:''}</div><button type="button" class="alin-order-list-btn" data-group-key="${esc(k)}">عرض القائمة</button></div></div>`;
-  a.appendChild(parking);host.appendChild(a)
+ css();const host=document.querySelector('#adminContent .admin-orders-v126-list');if(!host||host.dataset.grouped==='1')return;const cards=[...host.children].filter(x=>x.classList?.contains('admin-order-v126'));if(!cards.length)return;
+ groupsByKey.clear();const groups=new Map(),order=[];cards.forEach(card=>{const r=rowFor(card),k=r?key(r):`card:${order.length}`;if(!groups.has(k)){groups.set(k,{key:k,rows:[],cards:[]});order.push(k)};groups.get(k).cards.push(card);if(r)groups.get(k).rows.push(r)});host.replaceChildren();
+ order.forEach(k=>{const g=groups.get(k);groupsByKey.set(k,g);if(!g.rows.length||g.rows.length!==g.cards.length){g.cards.forEach(c=>host.appendChild(c));return}
+  if(g.rows.length===1){const card=g.cards[0];host.appendChild(card);if(isHomeDelivery(g.rows[0]))card.insertAdjacentHTML('beforeend',courierAssignmentHtml(g));return}
+  const first=g.rows[0],total=g.rows.reduce((s,o)=>s+num(o.total),0),qty=g.rows.reduce((s,o)=>s+Math.max(1,num(o.qty||o.quantity)),0),delivery=g.rows.reduce((s,o)=>s+num(o.delivery_fee),0),a=document.createElement('article');a.className='alin-order-group';
+  a.innerHTML=`<div class="alin-order-group-head"><div><h3>${esc(first.order_number||first.id)}</h3><p>${esc(first.student_name||'بدون اسم')} • ${esc(first.student_phone||'بدون هاتف')}</p><div class="alin-order-group-main"><span class="alin-order-pill">${g.rows.length} مواد</span><span class="alin-order-pill">${qty} قطعة/نسخة</span><span class="alin-order-pill">${esc(groupStatus(g.rows))}</span></div></div><div class="alin-order-group-actions"><div><small>الإجمالي</small><div class="alin-order-group-total">${money(total)} د.ع</div>${delivery?`<small>منها توصيل ${money(delivery)} د.ع</small>`:''}</div><button type="button" class="alin-order-list-btn" data-group-key="${esc(k)}">عرض القائمة</button></div></div>${materialsHtml(g)}${courierAssignmentHtml(g)}`;host.appendChild(a)
  });
  host.dataset.grouped='1';const count=document.querySelector('#adminContent .admin-orders-v126-head-actions span');if(count)count.textContent=String(order.length)
 }
 function render(...args){const r=old(...args);Promise.resolve(r).finally(()=>requestAnimationFrame(()=>setTimeout(enhance,0)));return r}
 window.renderOrdersAdmin=render;if(window.AlinAdminModules?.register)window.AlinAdminModules.register('orders',render);
-document.addEventListener('click',e=>{const b=e.target.closest?.('.alin-order-list-btn');if(b)prepModal(b.dataset.groupKey)});
+document.addEventListener('click',async e=>{
+ const listBtn=e.target.closest?.('.alin-order-list-btn');if(listBtn){prepModal(listBtn.dataset.groupKey);return}
+ const btn=e.target.closest?.('.alin-order-group-assign-btn');if(!btn)return;const g=groupsByKey.get(String(btn.dataset.groupKey));if(!g?.rows?.length)return;const select=btn.closest('.alin-order-group-courier')?.querySelector('.alin-order-group-courier-select'),courierId=String(select?.value||'').trim()||null,core=window.AlinCourierCore;if(!core?.assignOrder){window.toast?.('خدمة تعيين المندوب غير جاهزة');return}
+ btn.disabled=true;try{await core.assignOrder(String(g.rows[0].id),courierId,null);await Promise.resolve(window.renderOrdersAdmin?.());window.toast?.(courierId?'تم تعيين المندوب للطلب كامل':'تم إلغاء تعيين المندوب عن الطلب كامل')}catch(error){console.error(error);window.toast?.(core.friendlyOrderError?.(error)||error?.message||'تعذر تعيين المندوب')}finally{btn.disabled=false}
+});
 window.addEventListener('alin:data-refreshed',()=>setTimeout(enhance,0));window.addEventListener('alin:admin-tab',e=>{if(e.detail?.tab==='orders')setTimeout(enhance,0)});
 })();
 ;
@@ -3874,7 +3863,7 @@ window.deleteCoupon = deleteCoupon;
   async function assignOrder(orderId,courierId=null,libraryId=null){
     const courier=courierId?courierById(courierId):null;
     const canonicalCourier=courier?String(courier.account_id||courier.id||courierId):(courierId?String(courierId):null);
-    const result=await rpc('alin_admin_assign_order',{
+    const result=await rpc('alin_admin_assign_order_group',{
       p_order_id:String(orderId),
       p_courier_id:canonicalCourier,
       p_library_id:libraryId?String(libraryId):null
@@ -4161,6 +4150,23 @@ window.deleteCoupon = deleteCoupon;
   const pending=new Set();
 
   function deliveryOrders(){return allOrders().filter(o=>o.fulfillment_type==='home_delivery'||o.delivery_type==='courier')}
+  function checkoutKey(o){const group=String(o?.checkout_group_id||'').trim();if(group)return `group:${group}`;const request=String(o?.checkout_request_key||'').trim();if(request)return `request:${request}`;return `single:${String(o?.id||o?.order_number||'')}`}
+  function groupedDeliveryOrders(){
+    const map=new Map();
+    deliveryOrders().forEach(row=>{const key=checkoutKey(row);if(!map.has(key))map.set(key,[]);map.get(key).push(row)});
+    return [...map.entries()].map(([key,items])=>{
+      items.sort((a,b)=>String(a.created_at||'').localeCompare(String(b.created_at||'')));
+      const anchor=items.find(row=>Number(row.delivery_fee||0)>0||Number(row.courier_fee||0)>0)||items[0];
+      const statuses=new Set(items.map(row=>String(row.status||'')));
+      return {...anchor,_checkout_key:key,_items:items,_item_count:items.length,_qty_count:items.reduce((s,row)=>s+Math.max(1,Number(row.qty||row.quantity||1)||1),0),total:items.reduce((s,row)=>s+Number(row.total||0),0),delivery_fee:items.reduce((s,row)=>s+Number(row.delivery_fee||0),0),courier_fee:items.reduce((s,row)=>s+Number(row.courier_fee||row.courier_profit||row.delegate_profit||0),0),_mixed_status:statuses.size>1};
+    }).sort((a,b)=>String(b.created_at||b.updated_at||'').localeCompare(String(a.created_at||a.updated_at||'')));
+  }
+  function groupDone(o){return (o._items||[o]).every(done)}
+  function groupActive(o){return (o._items||[o]).some(active)}
+  function groupLocked(o){return (o._items||[o]).every(row=>done(row)||['cancelled','rejected'].includes(String(row.status||'')))}
+  function groupAssignedId(o){const ids=(o._items||[o]).map(row=>row.courier_id||row.delegate_id).filter(Boolean).map(String);return ids[0]||''}
+  function groupedCourierLoad(c){if(!c)return 0;const ids=new Set([c.id,c.account_id,c.courier_row_id].filter(Boolean).map(String));const keys=new Set();allOrders().filter(active).forEach(row=>{if([row.courier_id,row.delegate_id].filter(Boolean).map(String).some(id=>ids.has(id)))keys.add(checkoutKey(row))});return keys.size}
+  function materialsHtml(o){return `<div class="v164-group-materials"><h4>مواد الطلب (${Number(o._item_count||1)})</h4>${(o._items||[o]).map((row,i)=>`<div class="v164-group-material"><span><b>${i+1}. ${escv(row.title||'مادة')}</b>${variantLabel(row)?`<small>${escv(variantLabel(row))}</small>`:''}</span><span>× ${Math.max(1,Number(row.qty||row.quantity||1)||1)} • ${moneyv(row.total||0)} د.ع</span></div>`).join('')}</div>`}
   function variantLabel(o){return o?.product_variant_id?[o.product_variant_code,o.product_variant_name].filter(Boolean).join(' — '):''}
   function deliveryPricingControls(o,locked){
     const mode=String(o?.delivery_pricing_mode||'area');
@@ -4169,15 +4175,16 @@ window.deleteCoupon = deleteCoupon;
   }
   function setBusy(id,value){const key=String(id);if(value)pending.add(key);else pending.delete(key);document.querySelectorAll(`[data-order-action="${CSS.escape(key)}"]`).forEach(button=>button.disabled=value)}
   function renderDeliveryOrdersAdmin(){
-    const rows=deliveryOrders();
-    adminContent.innerHTML=`<section class="v164-admin-couriers"><header class="v164-admin-head"><div><small>توزيع الطلبات</small><h2>طلبات التوصيل</h2><p>اختيار المندوب حسب المنطقة مع تحديث الطلب من الخادم بمسار واحد.</p></div><button data-alin-click="renderCouriersAdmin">إدارة المندوبين</button></header><section class="v164-admin-metrics"><article><small>كل طلبات التوصيل</small><strong>${rows.length}</strong></article><article><small>بانتظار التعيين</small><strong>${rows.filter(o=>!o.courier_id&&!o.delegate_id).length}</strong></article><article><small>قيد التوصيل</small><strong>${rows.filter(o=>active(o)&&(o.courier_id||o.delegate_id)).length}</strong></article><article><small>مكتملة</small><strong>${rows.filter(done).length}</strong></article></section><div class="v164-delivery-admin-list">${rows.map(deliveryAdminCard).join('')||'<div class="empty">لا توجد طلبات توصيل.</div>'}</div></section>`;
+    const rows=groupedDeliveryOrders();
+    adminContent.innerHTML=`<section class="v164-admin-couriers"><header class="v164-admin-head"><div><small>توزيع الطلبات</small><h2>طلبات التوصيل</h2><p>اختيار المندوب حسب المنطقة مع تحديث الطلب من الخادم بمسار واحد.</p></div><button data-alin-click="renderCouriersAdmin">إدارة المندوبين</button></header><section class="v164-admin-metrics"><article><small>كل طلبات التوصيل</small><strong>${rows.length}</strong></article><article><small>بانتظار التعيين</small><strong>${rows.filter(o=>!groupAssignedId(o)).length}</strong></article><article><small>قيد التوصيل</small><strong>${rows.filter(o=>groupActive(o)&&groupAssignedId(o)).length}</strong></article><article><small>مكتملة</small><strong>${rows.filter(groupDone).length}</strong></article></section><div class="v164-delivery-admin-list">${rows.map(deliveryAdminCard).join('')||'<div class="empty">لا توجد طلبات توصيل.</div>'}</div></section>`;
   }
   function deliveryAdminCard(o){
     const area=window.alinNormalizeDeliveryArea(o.delivery_area)||'غير محددة';
     const matches=matchingCouriers(area);
-    const assigned=allCouriers().find(c=>String(c.id)===String(o.courier_id||o.delegate_id||''));
-    const map=mapLink(o),exactGps=hasExactGps(o),locked=done(o)||['cancelled','rejected'].includes(String(o.status||''));
-    return `<article class="v164-delivery-admin-card"><header><div><small>${escv(o.order_number||o.id)}</small><h3>${escv(o.title||'طلب توصيل')}</h3></div><span>${escv(area)}</span></header>${o.delivery_note?`<div class="v164-issue">ملاحظة المندوب: ${escv(o.delivery_note)}</div>`:''}<div class="v164-order-grid"><div><small>الطالب</small><b>${escv(o.student_name||'—')}</b></div><div><small>الهاتف</small><b>${escv(o.student_phone||'—')}</b></div><div class="wide"><small>أقرب نقطة دالة</small><b>${escv(o.delivery_landmark||'—')}</b></div>${variantLabel(o)?`<div class="wide v164-variant"><small>التصميم المطلوب</small><b>${escv(variantLabel(o))}</b></div>`:''}<div><small>المبلغ</small><b>${moneyv(o.total)} د.ع</b></div><div><small>الحالة</small><b>${escv(orderState(o.status))}</b></div></div>${map?`<button type="button" class="v164-map-btn" data-alin-click="alinCourierOpenMap" data-alin-click-arg0="${escv(o.id)}">${exactGps?'فتح موقع الطالب GPS':'فتح النقطة الدالة على الخريطة'}</button>`:''}${deliveryPricingControls(o,locked)}<div class="v164-match-list"><h4>المندوبون المطابقون للمنطقة (${matches.length})</h4>${matches.map(c=>`<label><input type="radio" name="v216assign_${escv(o.id)}" value="${escv(c.id)}" ${assigned&&String(assigned.id)===String(c.id)?'checked':''} ${locked?'disabled':''}><span><b>${escv(c.name)}</b><small>${statusLabel(statusOf(c))} • ${activeLoad(c)} طلب حالي • ${escv(c.phone||'')}</small></span></label>`).join('')||'<p class="warning-text">لا يوجد مندوب مرتبط بهذه المنطقة.</p>'}</div><footer><button data-order-action="${escv(o.id)}" ${locked||!matches.length?'disabled':''} data-alin-click="alinV164Assign" data-alin-click-arg0="${escv(o.id)}">${assigned?'حفظ المندوب':'تحويل للمندوب'}</button>${assigned&&!locked?`<button class="secondary" data-order-action="${escv(o.id)}" data-alin-click="alinV410Unassign" data-alin-click-arg0="${escv(o.id)}">إلغاء التعيين</button>`:''}${assigned?`<span>المندوب الحالي: <b>${escv(assigned.name)}</b></span>`:'<span>لم يتم تعيين مندوب</span>'}</footer></article>`;
+    const assignedId=groupAssignedId(o);
+    const assigned=allCouriers().find(c=>[c.id,c.account_id,c.courier_row_id].filter(Boolean).map(String).includes(String(assignedId)));
+    const map=mapLink(o),exactGps=hasExactGps(o),locked=groupLocked(o);
+    return `<article class="v164-delivery-admin-card"><header><div><small>${escv(o.order_number||o.id)}</small><h3>طلب توصيل واحد • ${Number(o._item_count||1)} مواد</h3><small>${Number(o._qty_count||1)} قطعة/نسخة</small></div><span>${escv(area)}</span></header>${o.delivery_note?`<div class="v164-issue">ملاحظة المندوب: ${escv(o.delivery_note)}</div>`:''}<div class="v164-order-grid"><div><small>الطالب</small><b>${escv(o.student_name||'—')}</b></div><div><small>الهاتف</small><b>${escv(o.student_phone||'—')}</b></div><div class="wide"><small>أقرب نقطة دالة</small><b>${escv(o.delivery_landmark||'—')}</b></div><div><small>الإجمالي الكلي</small><b>${moneyv(o.total)} د.ع</b></div><div><small>أجرة التوصيل</small><b>${moneyv(o.delivery_fee||0)} د.ع</b></div><div><small>أجرة المندوب</small><b>${moneyv(o.courier_fee||0)} د.ع</b></div><div><small>الحالة</small><b>${o._mixed_status?'حالات متعددة':escv(orderState(o.status))}</b></div></div>${materialsHtml(o)}${map?`<button type="button" class="v164-map-btn" data-alin-click="alinCourierOpenMap" data-alin-click-arg0="${escv(o.id)}">${exactGps?'فتح موقع الطالب GPS':'فتح النقطة الدالة على الخريطة'}</button>`:''}${deliveryPricingControls(o,locked)}<div class="v164-match-list"><h4>تعيين مندوب للطلب كامل (${matches.length} متاح)</h4>${matches.map(c=>`<label><input type="radio" name="v216assign_${escv(o.id)}" value="${escv(c.id)}" ${assigned&&String(assigned.id)===String(c.id)?'checked':''} ${locked?'disabled':''}><span><b>${escv(c.name)}</b><small>${statusLabel(statusOf(c))} • ${groupedCourierLoad(c)} طلب حالي • ${escv(c.phone||'')}</small></span></label>`).join('')||'<p class="warning-text">لا يوجد مندوب مرتبط بهذه المنطقة.</p>'}</div><footer><button data-order-action="${escv(o.id)}" ${locked||!matches.length?'disabled':''} data-alin-click="alinV164Assign" data-alin-click-arg0="${escv(o.id)}">${assigned?'حفظ المندوب للطلب كامل':'تحويل الطلب كامل للمندوب'}</button>${assigned&&!locked?`<button class="secondary" data-order-action="${escv(o.id)}" data-alin-click="alinV410Unassign" data-alin-click-arg0="${escv(o.id)}">إلغاء تعيين الطلب كامل</button>`:''}${assigned?`<span>المندوب الحالي: <b>${escv(assigned.name)}</b></span>`:'<span>لم يتم تعيين مندوب</span>'}</footer></article>`;
   }
   async function runAssignment(id,courierId){
     const key=String(id);if(pending.has(key)){notify('العملية قيد التنفيذ');return false}
@@ -4229,47 +4236,156 @@ window.deleteCoupon = deleteCoupon;
 
 /* modules/courier/dashboard.js */
 // === courier/dashboard.js ===
-/* ALIN v4.1.2 — courier-facing dashboard using the authoritative server workflow. */
+/* ALIN v4.2.1 — courier dashboard with checkout-level delivery grouping. */
 (function(){
   'use strict';
   const core=window.AlinCourierCore;if(!core)throw new Error('AlinCourierCore is required before courier/dashboard.js');
   const {$,$$,arr,escv,moneyv,now,notify,currentAccount,dbx,areasOf,statusOf,statusLabel,resolveCourier,allOrders,myOrders,done,active,today,financials,orderState,friendlyOrderError,mapLink,hasExactGps,phoneLink,waLink,fmtDate,transitionOrder,refreshCourierData,resetRefresh}=core;
   let renderSerial=0;
   const pendingOrders=new Set();
+
+  const number=v=>{const n=Number(v);return Number.isFinite(n)?n:0};
+  function groupKey(o){
+    const group=String(o?.checkout_group_id||'').trim();
+    if(group)return `group:${group}`;
+    const request=String(o?.checkout_request_key||'').trim();
+    if(request)return `request:${request}`;
+    return `single:${String(o?.id||'')}`;
+  }
+  function itemRows(o){return Array.isArray(o?._items)&&o._items.length?o._items:[o]}
+  function groupedOrders(rows){
+    const groups=new Map();
+    for(const row of arr(rows)){
+      const key=groupKey(row);
+      if(!groups.has(key))groups.set(key,[]);
+      groups.get(key).push(row);
+    }
+    const result=[];
+    for(const [key,items] of groups){
+      items.sort((a,b)=>String(a.created_at||'').localeCompare(String(b.created_at||'')));
+      const anchor=items.find(row=>number(row.delivery_fee)>0||number(row.courier_fee)>0||number(row.courier_profit)>0||number(row.delegate_profit)>0)||items[0];
+      const statuses=new Set(items.map(row=>String(row.status||'assigned')));
+      const combined={...anchor};
+      combined._group_key=key;
+      combined._items=items;
+      combined._item_count=items.length;
+      combined._qty_count=items.reduce((sum,row)=>sum+number(row.qty||1),0);
+      combined._group_total=items.reduce((sum,row)=>sum+number(row.total),0);
+      combined._delivery_fee=items.reduce((sum,row)=>sum+number(row.delivery_fee),0);
+      combined._courier_fee=items.reduce((sum,row)=>{
+        const value=row.courier_fee??row.courier_profit??row.delegate_profit??0;
+        return sum+number(value);
+      },0);
+      combined._mixed_status=statuses.size>1;
+      result.push(combined);
+    }
+    return result;
+  }
+  function isGrouped(o){return itemRows(o).length>1||String(o?.checkout_group_id||'').trim()||String(o?.checkout_request_key||'').trim()}
+  function groupDone(o){return itemRows(o).every(done)}
+  function groupActive(o){return itemRows(o).some(active)}
+  function groupToday(o){return itemRows(o).some(row=>done(row)&&today(row))}
+  function groupStatus(o){return String(o?.status||'assigned')}
+  function groupTotal(o){return o?._group_total!=null?number(o._group_total):number(o?.total)}
+  function groupCourierFee(o){
+    if(o?._courier_fee!=null)return number(o._courier_fee);
+    return number(o?.delegate_profit||o?.courier_profit||window.AlinFinance?.shares?.(o)?.delegate||0);
+  }
+  function groupDeliveryFee(o){return o?._delivery_fee!=null?number(o._delivery_fee):number(o?.delivery_fee)}
+
   function ensureTabs(){const nav=$('.courier-v161-tabs');if(!nav)return;const wanted=[['home','الرئيسية'],['current','طلبات التوصيل'],['completed','المكتملة'],['finance','الحسابات'],['receipts','الوصولات'],['notifications','الإشعارات'],['profile','حسابي']];nav.innerHTML=wanted.map(([key,label])=>key==='receipts'?`<button type="button" id="courierReceiptsTab" data-courier-tab="receipts" data-alin415-receipts-role="courier">${label}</button>`:`<button type="button" data-courier-tab="${key}" data-alin-click="renderCourierDashboard" data-alin-click-arg0="${key}">${label}${key==='current'?'<span id="courierCurrentBadge" hidden>0</span>':''}${key==='notifications'?'<span id="courierNotifyBadge" hidden>0</span>':''}</button>`).join('')}
   function notificationsFor(c){return window.AlinNotifications?.visible?.({role:'courier',id:String(c?.id||'')})||arr(dbx().notifications).filter(n=>String(n.courier_id||n.user_id||n.recipient_id||n.target_id||'')===String(c?.id)||['courier','delegate','all'].includes(String(n.target_role||n.role||n.audience||''))).sort((a,b)=>String(b.created_at||'').localeCompare(String(a.created_at||'')))}
-  function setHeader(c,tab){const name=$('#courierV161Name'),areas=$('#courierV161Areas');if(name)name.textContent=c?.name||currentAccount()?.name||'المندوب';if(areas)areas.textContent=areasOf(c).join('، ')||'غير محددة';$$('.courier-v161-tabs [data-courier-tab]').forEach(b=>b.classList.toggle('active',b.dataset.courierTab===tab));const cb=$('#courierCurrentBadge'),nb=$('#courierNotifyBadge'),activeCount=myOrders(c).filter(active).length,unread=window.AlinNotifications?.unreadCount?.({role:'courier',id:String(c?.id||'')})??notificationsFor(c).filter(n=>!(n.read_at||n.is_read)).length;if(cb){cb.textContent=activeCount;cb.hidden=!activeCount}if(nb){nb.textContent=unread;nb.hidden=!unread}}
-  function summary(c,rows){const f=financials(c);return `<section class="v174-metrics"><article><small>طلبات جديدة</small><strong>${rows.filter(o=>['assigned','new','pending_admin'].includes(String(o.status||''))).length}</strong></article><article><small>قيد التوصيل</small><strong>${rows.filter(o=>['accepted','picked_up','out_for_delivery','processing'].includes(String(o.status||''))).length}</strong></article><article><small>تم التسليم اليوم</small><strong>${rows.filter(o=>done(o)&&today(o)).length}</strong></article><article><small>كل المكتملة</small><strong>${rows.filter(done).length}</strong></article><article><small>أرباح التوصيل</small><strong>${moneyv(f.earnings)} د.ع</strong></article><article class="debt"><small>ذمتك للإدارة</small><strong>${moneyv(f.debt)} د.ع</strong></article></section>`}
-  function homeHtml(c,rows){const currentRows=rows.filter(active).slice(0,5),notes=notificationsFor(c).slice(0,4);return `${summary(c,rows)}<section class="v174-home-grid"><article class="v174-panel"><header><div><small>حالة العمل</small><h2>${statusLabel(statusOf(c))}</h2></div><span class="v174-status ${statusOf(c)}"></span></header><div class="v174-status-actions"><button data-alin-click="alinV174QuickStatus" data-alin-click-arg0="available">متاح</button><button data-alin-click="alinV174QuickStatus" data-alin-click-arg0="busy">مشغول</button><button data-alin-click="alinV174QuickStatus" data-alin-click-arg0="offline">خارج الخدمة</button></div><p>مناطق العمل: ${escv(areasOf(c).join('، ')||'غير محددة')}</p></article><article class="v174-panel"><header><div><small>طلبات تحتاج متابعة</small><h2>طلباتك الحالية</h2></div><button data-alin-click="renderCourierDashboard" data-alin-click-arg0="current">عرض الكل</button></header><div class="v174-mini-list">${currentRows.map(o=>`<button data-alin-click="renderCourierDashboard" data-alin-click-arg0="current"><b>${escv(o.order_number||o.id)}</b><span>${escv(window.alinNormalizeDeliveryArea(o.delivery_area)||'—')}</span><small>${escv(orderState(String(o.status||'')))}</small></button>`).join('')||'<p class="empty">لا توجد طلبات حالياً.</p>'}</div></article><article class="v174-panel wide"><header><div><small>آخر الإشعارات</small><h2>تنبيهات المندوب</h2></div><button data-alin-click="renderCourierDashboard" data-alin-click-arg0="notifications">عرض الإشعارات</button></header><div class="v174-mini-list">${notes.map(n=>`<div><b>${escv(n.title||'إشعار')}</b><span>${escv(n.message||n.body||'')}</span><small>${escv(fmtDate(n.created_at))}</small></div>`).join('')||'<p class="empty">لا توجد إشعارات جديدة.</p>'}</div></article></section>`}
-  function variantLabel(o){return o?.product_variant_id?[o.product_variant_code,o.product_variant_name].filter(Boolean).join(' — '):''}
-  function orderCard(o,actions=true){const st=String(o.status||'assigned'),phone=o.student_phone||'',map=mapLink(o),exactGps=hasExactGps(o),first=['assigned','new','pending_admin'].includes(st),accepted=st==='accepted',picked=st==='picked_up',moving=st==='out_for_delivery';return `<article class="v174-order" data-courier-order="${escv(o.id)}"><header><div><small>${escv(o.order_number||o.id)}</small><h3>${escv(o.title||'طلب توصيل')}</h3></div><span class="v174-order-state ${escv(st)}">${escv(orderState(st))}</span></header><div class="v174-order-data"><div><small>الطالب</small><b>${escv(o.student_name||'—')}</b></div><div><small>الهاتف</small><b>${escv(phone||'—')}</b></div><div><small>المنطقة</small><b>${escv(window.alinNormalizeDeliveryArea(o.delivery_area)||'—')}</b></div>${variantLabel(o)?`<div class="wide v174-variant"><small>التصميم المطلوب</small><b>${escv(variantLabel(o))}</b></div>`:''}<div><small>المبلغ المطلوب</small><b>${moneyv(o.total)} د.ع</b></div><div><small>ربح التوصيل</small><b>${moneyv(o.delegate_profit||o.courier_profit||window.AlinFinance?.shares?.(o)?.delegate||0)} د.ع</b></div><div class="wide"><small>أقرب نقطة دالة</small><b>${escv(o.delivery_landmark||'—')}</b></div></div><div class="v174-links">${phone?`<a href="${phoneLink(phone)}">اتصال</a><a href="${waLink(phone)}" target="_blank" rel="noopener">واتساب</a>`:''}${map?`<button type="button" class="map" data-alin-click="alinCourierOpenMap" data-alin-click-arg0="${escv(o.id)}">${exactGps?'فتح الموقع GPS':'فتح النقطة على الخريطة'}</button>`:''}</div>${actions?`<div class="v174-actions">${first?`<button data-alin-click="alinV164CourierStep" data-alin-click-arg0="${escv(o.id)}" data-alin-click-arg1="accepted">قبول الطلب</button><button class="reject" data-alin-click="alinV174Reject" data-alin-click-arg0="${escv(o.id)}">رفض الطلب</button>`:''}${accepted?`<button data-alin-click="alinV164CourierStep" data-alin-click-arg0="${escv(o.id)}" data-alin-click-arg1="picked_up">استلمت الطلب</button>`:''}${picked?`<button data-alin-click="alinV164CourierStep" data-alin-click-arg0="${escv(o.id)}" data-alin-click-arg1="out_for_delivery">بدء التوصيل</button>`:''}${moving?`<button class="success" data-alin-click="alinV164CourierComplete" data-alin-click-arg0="${escv(o.id)}">تم التسليم واستلام المبلغ</button>`:''}<button class="secondary" data-alin-click="alinV164ReportIssue" data-alin-click-arg0="${escv(o.id)}">إرسال ملاحظة للإدارة</button></div>`:`<footer>تم التسليم: ${escv(fmtDate(o.delivered_at||o.completed_at||o.updated_at))}</footer>`}</article>`}
-  function ordersHtml(c,rows,completed=false){const list=rows.filter(completed?done:active);return `${summary(c,rows)}<section class="v174-head"><div><small>${completed?'سجل الإنجاز':'طلبات التوصيل'}</small><h2>${completed?'الطلبات المكتملة':'طلباتك الحالية'}</h2></div><span>${list.length}</span></section><div class="v174-orders">${list.map(o=>orderCard(o,!completed)).join('')||`<div class="empty">${completed?'لا توجد طلبات مكتملة بعد.':'لا توجد طلبات مسندة إليك حالياً.'}</div>`}</div>`}
-  function financeHtml(c,rows){const f=financials(c),doneRows=rows.filter(done);return `${summary(c,rows)}<section class="v164-finance-grid"><article><small>المبالغ المستلمة</small><strong>${moneyv(f.collected)} د.ع</strong></article><article><small>أرباح التوصيل</small><strong>${moneyv(f.earnings)} د.ع</strong></article><article><small>المسدّد للإدارة</small><strong>${moneyv(f.paid)} د.ع</strong></article><article class="debt"><small>المبلغ بذمتك</small><strong>${moneyv(f.debt)} د.ع</strong></article></section><section class="v164-table-card"><h2>كشف الطلبات المالية</h2><div class="v164-finance-list">${doneRows.map(o=>`<div><span>${escv(o.order_number||o.id)}</span><span>${moneyv(o.total)} د.ع</span><span>ربح التوصيل ${moneyv(o.delegate_profit||o.courier_profit||window.AlinFinance?.shares?.(o)?.delegate||0)} د.ع</span><span>${escv(fmtDate(o.delivered_at||o.updated_at))}</span></div>`).join('')||'<p class="empty">لا توجد حركات مالية بعد.</p>'}</div></section>`}
+  function setHeader(c,tab){
+    const name=$('#courierV161Name'),areas=$('#courierV161Areas');
+    if(name)name.textContent=c?.name||currentAccount()?.name||'المندوب';
+    if(areas)areas.textContent=areasOf(c).join('، ')||'غير محددة';
+    $$('.courier-v161-tabs [data-courier-tab]').forEach(b=>b.classList.toggle('active',b.dataset.courierTab===tab));
+    const cb=$('#courierCurrentBadge'),nb=$('#courierNotifyBadge');
+    const activeCount=groupedOrders(myOrders(c)).filter(groupActive).length;
+    const unread=window.AlinNotifications?.unreadCount?.({role:'courier',id:String(c?.id||'')})??notificationsFor(c).filter(n=>!(n.read_at||n.is_read)).length;
+    if(cb){cb.textContent=activeCount;cb.hidden=!activeCount}
+    if(nb){nb.textContent=unread;nb.hidden=!unread}
+  }
+  function summary(c,rows){
+    const f=financials(c);
+    return `<section class="v174-metrics"><article><small>طلبات جديدة</small><strong>${rows.filter(o=>['assigned','new','pending_admin'].includes(groupStatus(o))).length}</strong></article><article><small>قيد التوصيل</small><strong>${rows.filter(o=>['accepted','picked_up','out_for_delivery','processing'].includes(groupStatus(o))).length}</strong></article><article><small>تم التسليم اليوم</small><strong>${rows.filter(groupToday).length}</strong></article><article><small>كل المكتملة</small><strong>${rows.filter(groupDone).length}</strong></article><article><small>أرباح التوصيل</small><strong>${moneyv(f.earnings)} د.ع</strong></article><article class="debt"><small>ذمتك للإدارة</small><strong>${moneyv(f.debt)} د.ع</strong></article></section>`
+  }
+  function homeHtml(c,rows){
+    const currentRows=rows.filter(groupActive).slice(0,5),notes=notificationsFor(c).slice(0,4);
+    return `${summary(c,rows)}<section class="v174-home-grid"><article class="v174-panel"><header><div><small>حالة العمل</small><h2>${statusLabel(statusOf(c))}</h2></div><span class="v174-status ${statusOf(c)}"></span></header><div class="v174-status-actions"><button data-alin-click="alinV174QuickStatus" data-alin-click-arg0="available">متاح</button><button data-alin-click="alinV174QuickStatus" data-alin-click-arg0="busy">مشغول</button><button data-alin-click="alinV174QuickStatus" data-alin-click-arg0="offline">خارج الخدمة</button></div><p>مناطق العمل: ${escv(areasOf(c).join('، ')||'غير محددة')}</p></article><article class="v174-panel"><header><div><small>طلبات تحتاج متابعة</small><h2>طلباتك الحالية</h2></div><button data-alin-click="renderCourierDashboard" data-alin-click-arg0="current">عرض الكل</button></header><div class="v174-mini-list">${currentRows.map(o=>`<button data-alin-click="renderCourierDashboard" data-alin-click-arg0="current"><b>${escv(o.order_number||o.id)}</b><span>${escv(window.alinNormalizeDeliveryArea(o.delivery_area)||'—')} • ${Number(o._item_count||1)} مادة</span><small>${escv(orderState(groupStatus(o)))}</small></button>`).join('')||'<p class="empty">لا توجد طلبات حالياً.</p>'}</div></article><article class="v174-panel wide"><header><div><small>آخر الإشعارات</small><h2>تنبيهات المندوب</h2></div><button data-alin-click="renderCourierDashboard" data-alin-click-arg0="notifications">عرض الإشعارات</button></header><div class="v174-mini-list">${notes.map(n=>`<div><b>${escv(n.title||'إشعار')}</b><span>${escv(n.message||n.body||'')}</span><small>${escv(fmtDate(n.created_at))}</small></div>`).join('')||'<p class="empty">لا توجد إشعارات جديدة.</p>'}</div></article></section>`
+  }
+  function variantLabel(o){return o?.product_variant_id?[o.product_variant_code,o.product_variant_name].filter(Boolean).join(' — '):[o?.product_variant_code,o?.product_variant_name].filter(Boolean).join(' — ')}
+  function itemLabel(row){return String(row?.title||row?.product_name||row?.booklet_title||row?.kind||'مادة')}
+  function itemsHtml(o){
+    const items=itemRows(o);
+    return `<div class="wide" style="grid-column:1/-1"><small>المواد (${items.length})</small><div style="display:grid;gap:6px;margin-top:7px">${items.map(row=>{const qty=Math.max(1,number(row.qty||1));const variant=variantLabel(row);const unit=number(row.unit_price);return `<div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;padding:8px 10px;border-radius:10px;background:rgba(0,0,0,.035)"><span><b>${escv(itemLabel(row))}</b>${variant?`<small style="display:block;margin-top:3px">${escv(variant)}</small>`:''}</span><span style="white-space:nowrap">× ${qty}${unit>0?` • ${moneyv(unit)} د.ع`:''}</span></div>`}).join('')}</div></div>`
+  }
+  function orderCard(o,actions=true){
+    const st=groupStatus(o),phone=o.student_phone||'',map=mapLink(o),exactGps=hasExactGps(o),first=['assigned','new','pending_admin'].includes(st),accepted=st==='accepted',picked=st==='picked_up',moving=st==='out_for_delivery';
+    const itemCount=Number(o._item_count||1),qtyCount=number(o._qty_count||o.qty||1),deliveryFee=groupDeliveryFee(o),courierFee=groupCourierFee(o);
+    return `<article class="v174-order" data-courier-order="${escv(o.id)}"><header><div><small>${escv(o.order_number||o.id)}</small><h3>طلب توصيل • ${itemCount} مادة • ${qtyCount} قطعة</h3>${o._mixed_status?'<small style="display:block;margin-top:4px">تتم معالجة حالة الطلب كاملة كمجموعة واحدة</small>':''}</div><span class="v174-order-state ${escv(st)}">${escv(orderState(st))}</span></header><div class="v174-order-data"><div><small>الطالب</small><b>${escv(o.student_name||'—')}</b></div><div><small>الهاتف</small><b>${escv(phone||'—')}</b></div><div><small>المنطقة</small><b>${escv(window.alinNormalizeDeliveryArea(o.delivery_area)||'—')}</b></div>${itemsHtml(o)}<div><small>المبلغ المطلوب</small><b>${moneyv(groupTotal(o))} د.ع</b></div>${deliveryFee>0?`<div><small>أجرة التوصيل على الطلب</small><b>${moneyv(deliveryFee)} د.ع</b></div>`:''}<div><small>ربح التوصيل</small><b>${moneyv(courierFee)} د.ع</b></div><div class="wide"><small>أقرب نقطة دالة</small><b>${escv(o.delivery_landmark||'—')}</b></div></div><div class="v174-links">${phone?`<a href="${phoneLink(phone)}">اتصال</a><a href="${waLink(phone)}" target="_blank" rel="noopener">واتساب</a>`:''}${map?`<button type="button" class="map" data-alin-click="alinCourierOpenMap" data-alin-click-arg0="${escv(o.id)}">${exactGps?'فتح الموقع GPS':'فتح النقطة على الخريطة'}</button>`:''}</div>${actions?`<div class="v174-actions">${first?`<button data-alin-click="alinV164CourierStep" data-alin-click-arg0="${escv(o.id)}" data-alin-click-arg1="accepted">قبول الطلب بالكامل</button><button class="reject" data-alin-click="alinV174Reject" data-alin-click-arg0="${escv(o.id)}">رفض الطلب بالكامل</button>`:''}${accepted?`<button data-alin-click="alinV164CourierStep" data-alin-click-arg0="${escv(o.id)}" data-alin-click-arg1="picked_up">استلمت الطلب بالكامل</button>`:''}${picked?`<button data-alin-click="alinV164CourierStep" data-alin-click-arg0="${escv(o.id)}" data-alin-click-arg1="out_for_delivery">بدء التوصيل</button>`:''}${moving?`<button class="success" data-alin-click="alinV164CourierComplete" data-alin-click-arg0="${escv(o.id)}">تم التسليم واستلام المبلغ</button>`:''}<button class="secondary" data-alin-click="alinV164ReportIssue" data-alin-click-arg0="${escv(o.id)}">إرسال ملاحظة للإدارة</button></div>`:`<footer>تم التسليم: ${escv(fmtDate(o.delivered_at||o.completed_at||o.updated_at))}</footer>`}</article>`
+  }
+  function ordersHtml(c,rows,completed=false){
+    const list=rows.filter(completed?groupDone:groupActive);
+    return `${summary(c,rows)}<section class="v174-head"><div><small>${completed?'سجل الإنجاز':'طلبات التوصيل'}</small><h2>${completed?'الطلبات المكتملة':'طلباتك الحالية'}</h2></div><span>${list.length}</span></section><div class="v174-orders">${list.map(o=>orderCard(o,!completed)).join('')||`<div class="empty">${completed?'لا توجد طلبات مكتملة بعد.':'لا توجد طلبات مسندة إليك حالياً.'}</div>`}</div>`
+  }
+  function financeHtml(c,rows){
+    const f=financials(c),doneRows=rows.filter(groupDone);
+    return `${summary(c,rows)}<section class="v164-finance-grid"><article><small>المبالغ المستلمة</small><strong>${moneyv(f.collected)} د.ع</strong></article><article><small>أرباح التوصيل</small><strong>${moneyv(f.earnings)} د.ع</strong></article><article><small>المسدّد للإدارة</small><strong>${moneyv(f.paid)} د.ع</strong></article><article class="debt"><small>المبلغ بذمتك</small><strong>${moneyv(f.debt)} د.ع</strong></article></section><section class="v164-table-card"><h2>كشف الطلبات المالية</h2><div class="v164-finance-list">${doneRows.map(o=>`<div><span>${escv(o.order_number||o.id)} • ${Number(o._item_count||1)} مادة</span><span>${moneyv(groupTotal(o))} د.ع</span><span>ربح التوصيل ${moneyv(groupCourierFee(o))} د.ع</span><span>${escv(fmtDate(o.delivered_at||o.updated_at))}</span></div>`).join('')||'<p class="empty">لا توجد حركات مالية بعد.</p>'}</div></section>`
+  }
   function notificationsHtml(c,rows){const notes=notificationsFor(c);return `${summary(c,rows)}<section class="v164-section-head"><div><h2>إشعارات المندوب</h2><p>الطلبات الجديدة ورسائل الإدارة والتسويات.</p></div><button data-alin-click="alinV164CourierReadAll">تحديد الكل كمقروء</button></section><div class="v164-notifications">${notes.map(n=>{const read=window.AlinNotifications?.isRead?.(n,{role:'courier',id:String(c?.id||'')})??Boolean(n.read_at||n.is_read);return `<article class="${read?'read':''}"><div><h3>${escv(n.title||'إشعار')}</h3><p>${escv(n.message||n.body||'')}</p><small>${escv(fmtDate(n.created_at))}</small></div>${read?'':`<button data-alin-click="alinV164CourierRead" data-alin-click-arg0="${escv(n.id)}">مقروء</button>`}</article>`}).join('')||'<div class="empty">لا توجد إشعارات.</div>'}</div>`}
   function profileHtml(c,rows){return `${summary(c,rows)}<section class="v164-profile"><div class="v164-profile-head"><div class="v161-avatar">${escv((c.name||'م').slice(0,1))}</div><div><h2>${escv(c.name||'مندوب')}</h2><p>${escv(c.phone||currentAccount()?.phone||'بدون هاتف')}</p></div><span class="v161-status ${statusOf(c)}">${statusLabel(statusOf(c))}</span></div><div class="v164-profile-fields"><label>حالة العمل<select id="v161MyAvailability"><option value="available" ${statusOf(c)==='available'?'selected':''}>متاح</option><option value="busy" ${statusOf(c)==='busy'?'selected':''}>مشغول</option><option value="offline" ${statusOf(c)==='offline'?'selected':''}>خارج الخدمة</option></select></label><div><small>مناطق العمل</small><div class="v161-area-chips">${areasOf(c).map(a=>`<span>${escv(a)}</span>`).join('')||'<span>غير محددة</span>'}</div></div></div><button data-alin-click="alinV161SaveMyStatus">حفظ الحالة</button></section>`}
   function unavailableHtml(){return `<section class="v174-panel"><h2>تعذر ربط صفحة المندوب بالحساب</h2><p>اضغط إعادة المحاولة. إذا استمرت الحالة افتح حساب المندوب من لوحة المدير واحفظه مرة واحدة.</p><button data-alin-click="alinRefreshCourierPage">إعادة تحميل بيانات المندوب</button></section>`}
-  async function renderCourierDashboard(tab='home',options={}){const serial=++renderSerial,box=$('#courierV161Content');if(!box)return false;ensureTabs();let c=resolveCourier();setHeader(c,tab);if(!c){box.innerHTML=unavailableHtml();return false}let rows=myOrders(c);const paint=()=>{if(serial!==renderSerial)return;setHeader(c,tab);if(tab==='home')box.innerHTML=homeHtml(c,rows);else if(tab==='current')box.innerHTML=ordersHtml(c,rows,false);else if(tab==='completed')box.innerHTML=ordersHtml(c,rows,true);else if(tab==='finance')box.innerHTML=financeHtml(c,rows);else if(tab==='notifications')box.innerHTML=notificationsHtml(c,rows);else box.innerHTML=profileHtml(c,rows)};paint();if(options.refresh!==false){c=await refreshCourierData(Boolean(options.force));if(serial!==renderSerial)return true;if(!c){box.innerHTML=unavailableHtml();return false}rows=myOrders(c);paint()}return true}
+  async function renderCourierDashboard(tab='home',options={}){
+    const serial=++renderSerial,box=$('#courierV161Content');if(!box)return false;
+    ensureTabs();let c=resolveCourier();setHeader(c,tab);if(!c){box.innerHTML=unavailableHtml();return false}
+    let rows=groupedOrders(myOrders(c));
+    const paint=()=>{if(serial!==renderSerial)return;setHeader(c,tab);if(tab==='home')box.innerHTML=homeHtml(c,rows);else if(tab==='current')box.innerHTML=ordersHtml(c,rows,false);else if(tab==='completed')box.innerHTML=ordersHtml(c,rows,true);else if(tab==='finance')box.innerHTML=financeHtml(c,rows);else if(tab==='notifications')box.innerHTML=notificationsHtml(c,rows);else box.innerHTML=profileHtml(c,rows)};
+    paint();
+    if(options.refresh!==false){c=await refreshCourierData(Boolean(options.force));if(serial!==renderSerial)return true;if(!c){box.innerHTML=unavailableHtml();return false}rows=groupedOrders(myOrders(c));paint()}
+    return true
+  }
+
+  function rawOrderById(id){return allOrders().find(row=>String(row.id)===String(id)||String(row.order_number)===String(id))||null}
+  function rawGroupForId(id){
+    const anchor=rawOrderById(id);if(!anchor)return[];
+    const key=groupKey(anchor);return allOrders().filter(row=>groupKey(row)===key);
+  }
   async function transitionCourierOrder(id,status,reason=''){
     const key=String(id);
     if(pendingOrders.has(key)){notify('العملية قيد التنفيذ');return false}
     pendingOrders.add(key);
     document.querySelectorAll(`[data-courier-order="${CSS.escape(key)}"] button`).forEach(button=>button.disabled=true);
     try{
-      await transitionOrder(key,status,reason);
+      const rows=rawGroupForId(key),grouped=rows.length>1||rows.some(isGrouped);
+      if(grouped){
+        const client=window.sb||window.AlinCloud?.client?.();if(!client?.rpc)throw new Error('خدمة تحديث الطلب غير متاحة');
+        const {data,error}=await client.rpc('alin_order_transition_group',{p_order_id:key,p_status:String(status),p_reason:String(reason||'').trim()||null});
+        if(error)throw error;if(!data?.ok)throw new Error(data?.error||'لم يؤكد الخادم تحديث الطلب بالكامل');
+      }else{
+        await transitionOrder(key,status,reason);
+      }
       await refreshCourierData(true);
       await renderCourierDashboard('current',{refresh:false});
-      notify(status==='completed'?'تم تسجيل التسليم والحسابات':'تم تحديث حالة الطلب');
+      notify(status==='completed'?'تم تسجيل تسليم الطلب بالكامل والحسابات':'تم تحديث الطلب بالكامل');
       return true;
-    }catch(error){console.error('[ALIN courier transition]',error);notify(friendlyOrderError(error));return false}
+    }catch(error){console.error('[ALIN courier group transition]',error);notify(friendlyOrderError(error));return false}
     finally{pendingOrders.delete(key)}
   }
   window.alinV164CourierStep=async function(id,status){return transitionCourierOrder(id,status)};
-  window.alinV164CourierComplete=async function(id){if(!confirm('تأكيد تسليم الطلب واستلام المبلغ من الطالب؟'))return false;return transitionCourierOrder(id,'completed')};
+  window.alinV164CourierComplete=async function(id){if(!confirm('تأكيد تسليم الطلب بالكامل واستلام المبلغ من الطالب؟'))return false;return transitionCourierOrder(id,'completed')};
   window.alinV164ReportIssue=async function(id){
     const note=(prompt('اكتب الملاحظة أو المشكلة لإرسالها إلى الإدارة')||'').trim();if(!note)return false;
-    try{const client=window.sb||window.AlinCloud?.client?.();if(!client?.rpc)throw new Error('خدمة إرسال الملاحظة غير متاحة');const {data,error}=await client.rpc('alin_courier_set_order_note',{p_order_id:String(id),p_note:note});if(error)throw error;if(!data?.ok)throw new Error(data?.error||'لم يؤكد الخادم حفظ الملاحظة');const row=allOrders().find(x=>String(x.id)===String(id));if(row&&data.order)Object.assign(row,data.order);await refreshCourierData(true);await renderCourierDashboard('current',{refresh:false});notify('تم إرسال الملاحظة للإدارة');return true}catch(error){console.error('[ALIN courier note]',error);notify(friendlyOrderError(error));return false}
+    try{
+      const client=window.sb||window.AlinCloud?.client?.();if(!client?.rpc)throw new Error('خدمة إرسال الملاحظة غير متاحة');
+      const rows=rawGroupForId(id),grouped=rows.length>1||rows.some(isGrouped);
+      const rpcName=grouped?'alin_courier_set_order_note_group':'alin_courier_set_order_note';
+      const {data,error}=await client.rpc(rpcName,{p_order_id:String(id),p_note:note});
+      if(error)throw error;if(!data?.ok)throw new Error(data?.error||'لم يؤكد الخادم حفظ الملاحظة');
+      await refreshCourierData(true);await renderCourierDashboard('current',{refresh:false});notify(grouped?'تم إرسال الملاحظة لكل الطلب':'تم إرسال الملاحظة للإدارة');return true;
+    }catch(error){console.error('[ALIN courier note]',error);notify(friendlyOrderError(error));return false}
   };
-  window.alinV174Reject=async function(id){const reason=(prompt('اكتب سبب رفض الطلب')||'').trim();if(!reason)return false;if(!confirm('تأكيد رفض الطلب؟'))return false;return transitionCourierOrder(id,'rejected',reason)};
+  window.alinV174Reject=async function(id){const reason=(prompt('اكتب سبب رفض الطلب بالكامل')||'').trim();if(!reason)return false;if(!confirm('تأكيد رفض الطلب بالكامل؟'))return false;return transitionCourierOrder(id,'rejected',reason)};
   window.alinV174QuickStatus=async function(value){const c=resolveCourier();if(!c)return false;try{const client=window.sb||window.AlinCloud?.client?.();if(!client?.rpc)throw new Error('خدمة تحديث حالة المندوب غير متاحة');const {data,error}=await client.rpc('alin_courier_set_availability',{p_value:String(value||'')});if(error)throw error;if(!data?.ok)throw new Error(data?.error||'لم يؤكد الخادم تحديث الحالة');if(data.courier)Object.assign(c,data.courier);else c.availability=value;await refreshCourierData(true);await renderCourierDashboard('home',{refresh:false});notify('تم تحديث حالة المندوب');return true}catch(error){alert(error.message||'تعذر تحديث الحالة');return false}};
   window.alinV161SaveMyStatus=async function(){return window.alinV174QuickStatus($('#v161MyAvailability')?.value||'available')};
   window.alinV161CourierStatus=window.alinV164CourierStep;
@@ -4277,9 +4393,8 @@ window.deleteCoupon = deleteCoupon;
   window.alinV164CourierReadAll=async function(){const c=resolveCourier();if(window.AlinNotifications?.markAll)await window.AlinNotifications.markAll({role:'courier',id:String(c?.id||'')});await renderCourierDashboard('notifications',{refresh:false})};
   window.alinRefreshCourierPage=async function(){resetRefresh();const box=$('#courierV161Content');if(box)box.innerHTML='<div class="empty">جاري تحميل بيانات المندوب والطلبات...</div>';await refreshCourierData(true);return renderCourierDashboard('home',{refresh:false})};
 
-
   window.renderCourierDashboard=renderCourierDashboard;
-  window.AlinCourierDashboard=Object.freeze({version:window.ALIN_CONFIG?.version||'4.2.0',resolveCourier,myOrders,refreshCourierData,render:renderCourierDashboard});
+  window.AlinCourierDashboard=Object.freeze({version:window.ALIN_CONFIG?.version||'4.2.1',resolveCourier,myOrders,groupedOrders,refreshCourierData,render:renderCourierDashboard});
 
   window.addEventListener('alin:page-open',event=>{if(event.detail?.page==='courier')renderCourierDashboard('home',{force:true})});
   window.addEventListener('alin:data-refreshed',()=>{if($('#courierPage:not(.hidden)'))renderCourierDashboard($('.courier-v161-tabs .active')?.dataset.courierTab||'home',{refresh:false})});
