@@ -27,7 +27,7 @@
     for(const [key,items] of groups){
       items.sort((a,b)=>String(a.created_at||'').localeCompare(String(b.created_at||'')));
       const anchor=items.find(row=>number(row.delivery_fee)>0||number(row.courier_fee)>0||number(row.courier_profit)>0||number(row.delegate_profit)>0)||items[0];
-      const statuses=new Set(items.map(row=>String(row.status||'assigned'));
+      const statuses=new Set(items.map(row=>String(row.status||'assigned')));
       const combined={...anchor};
       combined._group_key=key;
       combined._items=items;
