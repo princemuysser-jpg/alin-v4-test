@@ -53,44 +53,53 @@ jobs:
             orders:frozenRows
           });
           clearCheckoutAttempt();
-          // Emit exactly once, while the live cart still contains the submitted order.
-          // Consumers also receive an immutable server-backed order snapshot in detail.orders.
+          // One immutable success event. It is emitted before the live cart is cleared.
           document.dispatchEvent(new CustomEvent('alin:order-created',{detail:result}));
           cart=[];if(typeof cartSave==='function')cartSave();
 """
 
-          if old not in text:
-              if "const serverRows=Array.isArray(data)?data.filter" not in text:
-                  raise SystemExit("Checkout result insertion point not found")
-          else:
+          if old in text:
               text = text.replace(old, new, 1)
+          elif "const serverRows=Array.isArray(data)?data.filter(row=>row&&typeof row==='object'):[];" not in text:
+              raise SystemExit("Checkout result insertion point not found")
 
           duplicate = """        document.dispatchEvent(new CustomEvent('alin:order-created',{detail:{numbers,fulfillment:fulfillment.fulfillment_type||fulfillment.delivery_type||'',items:cartSnapshot}}));
 """
-          if duplicate in text:
-              text = text.replace(duplicate, "", 1)
+          text = text.replace(duplicate, "", 1)
 
           return_anchor = """        success.append(icon,h,note);if(pickup.textContent)success.append(pickup);success.append(codes,close);box.append(success);
-          }
-        }catch(e){throw e}
+      }
+    }catch(e){throw e}
 """
           return_replacement = """        success.append(icon,h,note);if(pickup.textContent)success.append(pickup);success.append(codes,close);box.append(success);
-          }
-          return result;
-        }catch(e){throw e}
+      }
+      return result;
+    }catch(e){throw e}
 """
+
           if return_anchor in text:
               text = text.replace(return_anchor, return_replacement, 1)
-          elif "return result;\n    }catch(e){throw e}" not in text and "return result;\n  }catch(e){throw e}" not in text:
+          elif "return result;\n    }catch(e){throw e}" not in text:
               raise SystemExit("Checkout return insertion point not found")
 
-          if text.count("new CustomEvent('alin:order-created'") != 1:
-              raise SystemExit(f"Expected exactly one order-created event, found {text.count(chr(110)+'ew CustomEvent(chr(39)+alin:order-created')} )")
+          marker = "new CustomEvent('alin:order-created'"
+          event_count = text.count(marker)
+          if event_count != 1:
+              raise SystemExit(f"Expected exactly one order-created event, found {event_count}")
 
-          event_pos = text.index("new CustomEvent('alin:order-created'")
+          event_pos = text.index(marker)
           clear_pos = text.index("cart=[];if(typeof cartSave==='function')cartSave();")
           if event_pos > clear_pos:
               raise SystemExit("order-created must be emitted before live cart is cleared")
+
+          required = (
+              "const frozenRows=Object.freeze(serverRows.map",
+              "document.dispatchEvent(new CustomEvent('alin:order-created',{detail:result}))",
+              "return result;",
+          )
+          for item in required:
+              if item not in text:
+                  raise SystemExit(f"Missing checkout repair marker: {item}")
 
           path.write_text(text, encoding="utf-8")
 
@@ -117,7 +126,7 @@ jobs:
           for name in ("store-desktop.html","store-mobile.html","store-tablet.html"):
               p=Path(name)
               text=p.read_text(encoding="utf-8")
-              text,count=re.subn(r'alin-config\\.js\\?v=[^\"]+',f'alin-config.js?v={token}',text,count=1)
+              text,count=re.subn(r'alin-config\.js\?v=[^\"]+',f'alin-config.js?v={token}',text,count=1)
               if count!=1:
                   raise SystemExit(f"Could not update config URL in {name}")
               p.write_text(text,encoding="utf-8")
