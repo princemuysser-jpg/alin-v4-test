@@ -33,7 +33,7 @@ function css(){
  .alin-order-prep-table-wrap{padding:0 20px 18px;overflow:auto}.alin-order-prep-table{width:100%;border-collapse:separate;border-spacing:0;min-width:760px}.alin-order-prep-table th{background:#eef3f8;text-align:right;padding:10px;font-size:12px;color:#475569}.alin-order-prep-table td{padding:11px 10px;border-bottom:1px solid #edf1f5;vertical-align:top}.alin-order-prep-table td b{display:block}.alin-order-prep-table td small{display:block;color:#667085;margin-top:3px}
  .alin-order-prep-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:0 20px 18px}.alin-order-prep-summary span{background:#f8fafc;border-radius:12px;padding:10px;color:#667085;font-size:12px}.alin-order-prep-summary b{display:block;margin-top:3px;color:#172b4d}
  .alin-order-prep-notes{margin:0 20px 18px;padding:13px 14px;background:#fff7ed;border-radius:12px;color:#7c2d12}.alin-order-prep-notes b{display:block;margin-bottom:5px}
- .alin-order-prep-actions{padding:0 20px 20px}.alin-order-prep-actions details{border:1px solid #e3e9f0;border-radius:14px}.alin-order-prep-actions summary{cursor:pointer;padding:12px 14px;font-weight:800}.alin-order-group-manage{padding:0 10px 10px}.alin-order-group-manage .admin-order-v126{margin-top:10px}
+ .alin-order-group-courier{margin:0 20px 18px;padding:14px;border:1px solid #d9e3ee;border-radius:14px;background:#f8fbff}.alin-order-group-courier h3{margin:0 0 8px;font-size:15px}.alin-order-group-courier-row{display:flex;gap:8px;align-items:end;flex-wrap:wrap}.alin-order-group-courier label{flex:1;min-width:220px;font-size:12px;color:#64748b}.alin-order-group-courier select{display:block;width:100%;margin-top:5px;padding:10px;border:1px solid #cbd5e1;border-radius:10px;background:white}.alin-order-group-courier button{border:0;border-radius:10px;padding:10px 14px;background:#173b67;color:white;font-weight:800;cursor:pointer}.alin-order-prep-actions{padding:0 20px 20px}.alin-order-prep-actions details{border:1px solid #e3e9f0;border-radius:14px}.alin-order-prep-actions summary{cursor:pointer;padding:12px 14px;font-weight:800}.alin-order-group-manage{padding:0 10px 10px}.alin-order-group-manage .admin-order-v126{margin-top:10px}
  @media(max-width:760px){.alin-order-group-head{align-items:flex-start;flex-direction:column}.alin-order-group-actions{width:100%;justify-content:space-between}.alin-order-prep-info,.alin-order-prep-summary{grid-template-columns:1fr 1fr}.alin-order-prep-backdrop{padding:6px}.alin-order-prep-modal{width:100%;max-height:96vh;border-radius:16px}}
  `;document.head.appendChild(s)
 }
@@ -44,6 +44,18 @@ function groupStatus(list){const st=[...new Set(list.map(statusOf))];return st.l
 function libraryName(id){const r=arr(window.db?.accounts?.libraries).find(x=>String(x.id)===String(id));return r?.name||r?.library_name||'—'}
 function courierName(id){const all=[...arr(window.db?.accounts?.couriers),...arr(window.db?.couriers)];const r=all.find(x=>String(x.id)===String(id));return r?.name||'غير معيّن'}
 function fulfillmentText(first){const home=['home_delivery','delivery','courier'].includes(String(first?.fulfillment_type||first?.delivery_type||''));return home?(first.delivery_area||'توصيل للمنزل'):libraryName(first.library_id||first.pickup_library_id)}
+function isHomeDelivery(first){return ['home_delivery','delivery','courier'].includes(String(first?.fulfillment_type||first?.delivery_type||''))}
+function groupCourierId(list){return String(list.map(o=>o.courier_id||o.delegate_id).find(Boolean)||'')}
+function courierAssignmentHtml(g){
+ const first=g.rows[0];if(!isHomeDelivery(first))return'';
+ const core=window.AlinCourierCore;if(!core)return '<section class="alin-order-group-courier">خدمة المندوب غير جاهزة.</section>';
+ const area=window.alinNormalizeDeliveryArea?.(first.delivery_area)||first.delivery_area||'';
+ let options=core.matchingCouriers?.(area)||core.activeCouriers?.()||[];
+ const current=groupCourierId(g.rows),all=core.allCouriers?.()||[];
+ const currentCourier=all.find(c=>[c.id,c.account_id,c.courier_row_id].filter(Boolean).map(String).includes(current));
+ if(currentCourier&&!options.some(c=>String(c.id)===String(currentCourier.id)))options=[currentCourier,...options];
+ return `<section class="alin-order-group-courier"><h3>تعيين مندوب للطلب كامل</h3><div class="alin-order-group-courier-row"><label>المندوب<select class="alin-order-group-courier-select"><option value="">بدون مندوب</option>${options.map(c=>`<option value="${esc(c.id)}" ${current&&String(c.id)===current?'selected':''}>${esc(c.name||c.username||'مندوب')} • ${esc(c.phone||'')}</option>`).join('')}</select></label><button type="button" class="alin-order-group-assign-btn" data-group-key="${esc(g.key)}">${current?'حفظ المندوب':'تعيين المندوب'}</button></div><small>التعيين يطبق على كل مواد هذا الطلب دفعة واحدة.</small></section>`
+}
 function prepModal(groupKey){
  const g=groupsByKey.get(String(groupKey));if(!g?.rows?.length)return;
  document.querySelector('.alin-order-prep-backdrop')?.remove();
@@ -56,6 +68,7 @@ function prepModal(groupKey){
    </section>
    <div class="alin-order-prep-table-wrap"><table class="alin-order-prep-table"><thead><tr><th>#</th><th>المادة</th><th>النوع والتفاصيل</th><th>الكمية</th><th>سعر الوحدة</th><th>الخصم</th><th>الإجمالي</th><th>الحالة</th></tr></thead><tbody>${list.map((o,i)=>`<tr><td>${i+1}</td><td><b>${esc(o.title||'مادة')}</b><small>${esc(o.order_number||o.id||'')}</small></td><td><b>${esc(kindLabel(o))}</b>${detailText(o)?`<small>${esc(detailText(o))}</small>`:''}</td><td><b>× ${Math.max(1,num(o.qty||o.quantity))}</b></td><td>${money(o.unit_price||0)} د.ع</td><td>${money(o.discount||0)} د.ع</td><td><b>${money(o.total||0)} د.ع</b></td><td>${esc(statusLabel(o))}</td></tr>`).join('')}</tbody></table></div>
    <section class="alin-order-prep-summary"><span>مجموع المواد<b>${money(total-delivery)} د.ع</b></span><span>أجرة التوصيل<b>${money(delivery)} د.ع</b></span><span>مجموع الخصم<b>${money(discount)} د.ع</b></span><span>الإجمالي الكلي<b>${money(total)} د.ع</b></span></section>
+   ${courierAssignmentHtml(g)}
    <section class="alin-order-prep-info"><span>المنطقة / المكتبة<b>${esc(fulfillmentText(first))}</b></span><span>المندوب<b>${esc(courierName(first.courier_id||first.delegate_id))}</b></span><span>أقرب نقطة دالة<b>${esc(first.delivery_landmark||'—')}</b></span><span>تاريخ الطلب<b>${first.created_at?esc(new Date(first.created_at).toLocaleString(window.AlinI18n?.locale?.()||'ar-IQ')):'—'}</b></span></section>
    ${first.notes?`<div class="alin-order-prep-notes"><b>ملاحظات الطالب</b>${esc(first.notes)}</div>`:''}
    <section class="alin-order-prep-actions"><details><summary>إجراءات وتفاصيل كل مادة</summary><div class="alin-order-group-manage"></div></details></section>
@@ -84,6 +97,21 @@ function enhance(){
 }
 function render(...args){const r=old(...args);Promise.resolve(r).finally(()=>requestAnimationFrame(()=>setTimeout(enhance,0)));return r}
 window.renderOrdersAdmin=render;if(window.AlinAdminModules?.register)window.AlinAdminModules.register('orders',render);
-document.addEventListener('click',e=>{const b=e.target.closest?.('.alin-order-list-btn');if(b)prepModal(b.dataset.groupKey)});
+document.addEventListener('click',async e=>{
+ const listBtn=e.target.closest?.('.alin-order-list-btn');if(listBtn){prepModal(listBtn.dataset.groupKey);return}
+ const assignBtn=e.target.closest?.('.alin-order-group-assign-btn');if(!assignBtn)return;
+ const g=groupsByKey.get(String(assignBtn.dataset.groupKey));if(!g?.rows?.length)return;
+ const select=assignBtn.closest('.alin-order-group-courier')?.querySelector('.alin-order-group-courier-select');
+ const courierId=String(select?.value||'').trim()||null,core=window.AlinCourierCore;
+ if(!core?.assignOrder){window.toast?.('خدمة تعيين المندوب غير جاهزة');return}
+ assignBtn.disabled=true;
+ try{
+   await core.assignOrder(String(g.rows[0].id),courierId,null);
+   document.querySelector('.alin-order-prep-backdrop')?.remove();
+   await Promise.resolve(window.renderOrdersAdmin?.());
+   window.toast?.(courierId?'تم تعيين المندوب للطلب كامل':'تم إلغاء تعيين المندوب عن الطلب كامل');
+ }catch(error){console.error('[ALIN grouped order courier assignment]',error);window.toast?.(core.friendlyOrderError?.(error)||error?.message||'تعذر تعيين المندوب')}
+ finally{assignBtn.disabled=false}
+});
 window.addEventListener('alin:data-refreshed',()=>setTimeout(enhance,0));window.addEventListener('alin:admin-tab',e=>{if(e.detail?.tab==='orders')setTimeout(enhance,0)});
 })();

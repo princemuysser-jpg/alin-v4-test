@@ -77,7 +77,34 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   num number(dynamic value) => num.tryParse('$value') ?? 0;
   String money(dynamic value) => '${number(value).round()} د.ع';
 
-  bool isClosed(Map<String, dynamic> o) => ['completed', 'delivered', 'cancelled', 'rejected'].contains('${o['status']}');
+  bool isClosed(Map<String, dynamic> o) {
+    final items = (o['_items'] as List?)?.cast<Map<String, dynamic>>() ?? [o];
+    return items.every((row) => ['completed', 'delivered', 'cancelled', 'rejected'].contains('${row['status']}'));
+  }
+
+  String checkoutKey(Map<String, dynamic> o) {
+    final group = '${o['checkout_group_id'] ?? ''}'.trim();
+    if (group.isNotEmpty) return 'group:$group';
+    final request = '${o['checkout_request_key'] ?? ''}'.trim();
+    if (request.isNotEmpty) return 'request:$request';
+    return 'single:${o['id'] ?? o['order_number']}';
+  }
+
+  List<Map<String, dynamic>> groupOrders(List<Map<String, dynamic>> source) {
+    final groups = <String, List<Map<String, dynamic>>>{};
+    for (final row in source) {
+      groups.putIfAbsent(checkoutKey(row), () => []).add(row);
+    }
+    final result = <Map<String, dynamic>>[];
+    for (final entry in groups.entries) {
+      final items = entry.value;
+      final anchor = items.firstWhere((row) => number(row['delivery_fee']) > 0 || number(row['courier_fee']) > 0, orElse: () => items.first);
+      final statuses = items.map((row) => '${row['status']}').toSet();
+      result.add({...anchor, '_checkout_key': entry.key, '_items': items, '_item_count': items.length, '_qty_count': items.fold<num>(0, (sum, row) => sum + (number(row['qty']) <= 0 ? 1 : number(row['qty']))), 'total': items.fold<num>(0, (sum, row) => sum + number(row['total'])), 'delivery_fee': items.fold<num>(0, (sum, row) => sum + number(row['delivery_fee'])), 'courier_fee': items.fold<num>(0, (sum, row) => sum + number(row['courier_fee'] ?? row['courier_profit'] ?? row['delegate_profit'])), '_mixed_status': statuses.length > 1});
+    }
+    result.sort((a, b) => '${b['created_at'] ?? b['updated_at'] ?? ''}'.compareTo('${a['created_at'] ?? a['updated_at'] ?? ''}'));
+    return result;
+  }
 
   bool isDeliveryOrder(Map<String, dynamic> order) {
     final fulfillment = '${order['fulfillment_type']}'.toLowerCase();
@@ -85,11 +112,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     return fulfillment == 'home_delivery' || fulfillment == 'courier' || fulfillment == 'delivery' || deliveryType == 'courier';
   }
 
+  List<Map<String, dynamic>> get groupedOrders => groupOrders(orders);
+
   List<Map<String, dynamic>> get visibleOrders {
-    if (orderFilter == 'all') return orders;
-    if (orderFilter == 'done') return orders.where((e) => ['completed', 'delivered'].contains('${e['status']}')).toList();
-    if (orderFilter == 'cancelled') return orders.where((e) => ['cancelled', 'rejected'].contains('${e['status']}')).toList();
-    return orders.where((e) => !isClosed(e)).toList();
+    final grouped = groupedOrders;
+    if (orderFilter == 'all') return grouped;
+    if (orderFilter == 'done') return grouped.where((e) => ((e['_items'] as List).cast<Map<String, dynamic>>()).every((row) => ['completed', 'delivered'].contains('${row['status']}'))).toList();
+    if (orderFilter == 'cancelled') return grouped.where((e) => ((e['_items'] as List).cast<Map<String, dynamic>>()).every((row) => ['cancelled', 'rejected'].contains('${row['status']}'))).toList();
+    return grouped.where((e) => !isClosed(e)).toList();
   }
 
   List<Map<String, dynamic>> get visibleAccounts {
@@ -160,7 +190,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       const SizedBox(height: 18),
       const Text('آخر الطلبات', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
       const SizedBox(height: 8),
-      ...orders.take(5).map(_orderCard),
+      ...groupedOrders.take(5).map(_orderCard),
     ]);
   }
 
@@ -220,16 +250,26 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           Row(children: [
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text('${o['order_number'] ?? o['id']}', style: const TextStyle(fontWeight: FontWeight.w900)),
-              Text('${o['title'] ?? 'طلب'}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+              Text(number(o['_item_count']) > 1 ? 'طلب واحد • ${number(o['_item_count']).round()} مواد' : '${o['title'] ?? 'طلب'}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
             ])),
             Chip(label: Text(_status('${o['status']}'))),
           ]),
           const Divider(),
+          if (number(o['_item_count']) > 1) ...[
+            const Text('مواد الطلب', style: TextStyle(fontWeight: FontWeight.w900, color: Color(0xFF143B68))),
+            const SizedBox(height: 6),
+            ...((o['_items'] as List).cast<Map<String, dynamic>>()).asMap().entries.map((entry) {
+              final item = entry.value;
+              final qty = number(item['qty']) <= 0 ? 1 : number(item['qty']);
+              return Padding(padding: const EdgeInsets.only(bottom: 5), child: Row(children: [Expanded(child: Text('${entry.key + 1}. ${item['title'] ?? 'مادة'}', style: const TextStyle(fontWeight: FontWeight.w700))), Text('× ${qty.round()} • ${money(item['total'])}', style: const TextStyle(fontWeight: FontWeight.w700))]));
+            }),
+            const Divider(),
+          ],
           _line('الطالب', '${o['student_name'] ?? '—'}'),
           _line('الهاتف', '${o['student_phone'] ?? '—'}'),
           _line('المنطقة', '${o['delivery_area'] ?? '—'}'),
           _line('الإجمالي', money(o['total'])),
-          if ('${o['courier_id'] ?? o['delegate_id'] ?? ''}'.isNotEmpty) _line('المندوب', '${o['courier_id'] ?? o['delegate_id']}'),
+          if ('${o['courier_id'] ?? o['delegate_id'] ?? ''}'.isNotEmpty) _line('المندوب', _courierName('${o['courier_id'] ?? o['delegate_id']}')),
           if ('${o['library_id'] ?? o['pickup_library_id'] ?? ''}'.isNotEmpty) _line('المكتبة', '${o['library_id'] ?? o['pickup_library_id']}'),
           const SizedBox(height: 9),
           Wrap(spacing: 8, runSpacing: 8, children: [
@@ -240,6 +280,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         ]),
       ),
     );
+  }
+
+  String _courierName(String id) {
+    for (final courier in couriers) {
+      if ('${courier['id']}' == id) return '${courier['name'] ?? id}';
+    }
+    return id;
   }
 
   Widget _accounts() {
@@ -355,7 +402,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => StatefulBuilder(builder: (context, setLocal) => AlertDialog(
-        title: const Text('تعيين مندوب'),
+        title: Text(number(order['_item_count']) > 1 ? 'تعيين مندوب للطلب كامل' : 'تعيين مندوب'),
         content: DropdownButtonFormField<String?>(
           initialValue: courierId,
           decoration: const InputDecoration(labelText: 'المندوب'),
@@ -372,7 +419,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     try {
       await widget.repository.adminAssignOrder('${order['id']}', courierId: courierId);
       await load();
-      _snack('تم تعيين المندوب');
+      _snack(number(order['_item_count']) > 1 ? 'تم تعيين المندوب لكل مواد الطلب' : 'تم تعيين المندوب');
     } catch (e) { _snack('$e'.replaceFirst('Exception: ', '')); }
   }
 

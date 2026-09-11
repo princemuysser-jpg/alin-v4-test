@@ -156,7 +156,7 @@ class BusinessRepository {
   Future<List<Map<String, dynamic>>> adminOrders() async {
     final raw = await client
         .from('orders')
-        .select('id,order_number,kind,item_id,title,student_name,student_phone,qty,unit_price,discount,total,status,assignment_status,payment_status,payment_method,fulfillment_type,delivery_type,library_id,pickup_library_id,courier_id,delegate_id,delivery_area,delivery_landmark,delivery_fee,courier_fee,notes,library_note,delivery_note,platform_profit,teacher_profit,library_profit,courier_profit,delegate_profit,book_supplier_profit,created_at,updated_at,completed_at,delivered_at,cancellation_reason')
+        .select('id,order_number,kind,item_id,title,student_name,student_phone,qty,unit_price,discount,total,status,assignment_status,payment_status,payment_method,fulfillment_type,delivery_type,library_id,pickup_library_id,courier_id,delegate_id,checkout_group_id,checkout_request_key,delivery_area,delivery_landmark,delivery_fee,courier_fee,notes,library_note,delivery_note,platform_profit,teacher_profit,library_profit,courier_profit,delegate_profit,book_supplier_profit,created_at,updated_at,completed_at,delivered_at,cancellation_reason')
         .order('created_at', ascending: false)
         .limit(600);
     return (raw as List).cast<Map<String, dynamic>>();
@@ -245,8 +245,16 @@ class BusinessRepository {
     return map;
   }
 
-  Future<Map<String, dynamic>> adminTransitionOrder(String orderId, String status, {String reason = ''}) {
-    return _orderTransition(orderId, status, reason: reason);
+  Future<Map<String, dynamic>> adminTransitionOrder(String orderId, String status, {String reason = ''}) async {
+    final raw = await client.rpc('alin_order_transition_group', params: {
+      'p_order_id': orderId,
+      'p_status': status,
+      'p_reason': reason.trim().isEmpty ? null : reason.trim(),
+    });
+    if (raw is! Map) throw Exception('تعذر تحديث الطلب');
+    final map = Map<String, dynamic>.from(raw);
+    if (map['ok'] != true) throw Exception('${map['error'] ?? 'تعذر تحديث الطلب'}');
+    return map;
   }
 
   Future<Map<String, dynamic>> adminRecordSettlement({required String role, required String partyId, required num amount, required String method, String note = ''}) async {
