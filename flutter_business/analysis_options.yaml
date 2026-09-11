@@ -1,0 +1,6 @@
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  errors:
+    unnecessary_string_interpolations: ignore
+    use_build_context_synchronously: ignore
