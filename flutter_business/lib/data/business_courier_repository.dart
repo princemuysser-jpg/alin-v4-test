@@ -1,5 +1,6 @@
 import 'business_repository.dart';
 
+// Build 7: courier delivery grouping is checkout-based, not item-based.
 extension BusinessCourierRepository on BusinessRepository {
   Future<Map<String, dynamic>> courierProfile() async {
     final raw = await client.rpc('alin_courier_profile');
