@@ -21,7 +21,7 @@ class CourierDashboardScreen extends StatefulWidget {
 }
 
 class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
-  List<Map<String, dynamic>> orders = [];
+  List<Map<String, dynamic>> orderRows = [];
   bool loading = true;
   String? error;
   String filter = 'active';
@@ -39,6 +39,49 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
     load();
   }
 
+  num number(dynamic value) => num.tryParse('$value') ?? 0;
+  String money(dynamic value) => '${number(value).round()} د.ع';
+
+  String _groupKey(Map<String, dynamic> row) {
+    final group = '${row['checkout_group_id'] ?? ''}'.trim();
+    if (group.isNotEmpty) return 'group:$group';
+    final request = '${row['checkout_request_key'] ?? ''}'.trim();
+    if (request.isNotEmpty) return 'request:$request';
+    return 'single:${row['id']}';
+  }
+
+  List<Map<String, dynamic>> get groupedOrders {
+    final groups = <String, List<Map<String, dynamic>>>{};
+    for (final row in orderRows) {
+      groups.putIfAbsent(_groupKey(row), () => <Map<String, dynamic>>[]).add(row);
+    }
+
+    final result = <Map<String, dynamic>>[];
+    for (final entry in groups.entries) {
+      final rows = entry.value;
+      rows.sort((a, b) => '${a['created_at'] ?? ''}'.compareTo('${b['created_at'] ?? ''}'));
+      final anchor = rows.firstWhere(
+        (row) => number(row['delivery_fee']) > 0 || number(row['courier_fee']) > 0,
+        orElse: () => rows.first,
+      );
+      final statuses = rows.map((e) => '${e['status'] ?? 'assigned'}').toSet();
+      final combined = Map<String, dynamic>.from(anchor);
+      combined['_group_key'] = entry.key;
+      combined['_items'] = rows;
+      combined['_item_count'] = rows.length;
+      combined['_qty_count'] = rows.fold<num>(0, (sum, row) => sum + number(row['qty'] ?? 1));
+      combined['_group_total'] = rows.fold<num>(0, (sum, row) => sum + number(row['total']));
+      combined['_delivery_fee'] = rows.fold<num>(0, (sum, row) => sum + number(row['delivery_fee']));
+      combined['_courier_fee'] = rows.fold<num>(0, (sum, row) {
+        final value = row['courier_fee'] ?? row['courier_profit'] ?? row['delegate_profit'];
+        return sum + number(value);
+      });
+      combined['_mixed_status'] = statuses.length > 1;
+      result.add(combined);
+    }
+    return result;
+  }
+
   Future<void> load() async {
     setState(() {
       loading = true;
@@ -46,7 +89,7 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
     });
     try {
       final values = await Future.wait([
-        widget.repository.courierOrders(widget.account.id),
+        widget.repository.courierGroupedOrderRows(widget.account.id),
         widget.repository.courierProfile(),
       ]);
       if (!mounted) return;
@@ -56,7 +99,7 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
           ? rawAreas.map((e) => '$e'.trim()).where((e) => e.isNotEmpty).toList()
           : <String>[];
       setState(() {
-        orders = (values[0] as List).cast<Map<String, dynamic>>();
+        orderRows = (values[0] as List).cast<Map<String, dynamic>>();
         availability = '${profile['availability'] ?? 'available'}';
         courierArea = '${profile['area'] ?? ''}'.trim();
         courierAreas = areas;
@@ -83,13 +126,14 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
   }
 
   List<Map<String, dynamic>> get visibleOrders {
+    final grouped = groupedOrders;
     Iterable<Map<String, dynamic>> rows;
     if (filter == 'completed') {
-      rows = orders.where(isDone);
+      rows = grouped.where(isDone);
     } else if (filter == 'all') {
-      rows = orders;
+      rows = grouped;
     } else {
-      rows = orders.where((o) => !isClosed(o));
+      rows = grouped.where((o) => !isClosed(o));
     }
     final list = rows.toList();
     list.sort((a, b) {
@@ -102,9 +146,6 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
     });
     return list;
   }
-
-  num number(dynamic value) => num.tryParse('$value') ?? 0;
-  String money(dynamic value) => '${number(value).round()} د.ع';
 
   String statusLabel(String status) => switch (status) {
         'new' => 'جديد',
@@ -133,18 +174,19 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
 
   Future<void> transition(Map<String, dynamic> order, String status, {String reason = ''}) async {
     final id = '${order['id']}';
-    if (busyOrders.contains(id)) return;
-    setState(() => busyOrders.add(id));
+    final key = '${order['_group_key'] ?? id}';
+    if (busyOrders.contains(key)) return;
+    setState(() => busyOrders.add(key));
     try {
-      await widget.repository.courierTransition(id, status, reason: reason);
+      await widget.repository.courierTransitionGroup(id, status, reason: reason);
       await load();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم تحديث الطلب')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم تحديث الطلب بالكامل')));
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e'.replaceFirst('Exception: ', ''))));
     } finally {
-      if (mounted) setState(() => busyOrders.remove(id));
+      if (mounted) setState(() => busyOrders.remove(key));
     }
   }
 
@@ -175,10 +217,10 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
     final note = await askText('ملاحظة للإدارة', hint: 'اكتب الملاحظة');
     if (note == null || note.length < 2) return;
     try {
-      await widget.repository.courierSetNote('${order['id']}', note);
+      await widget.repository.courierSetNoteGroup('${order['id']}', note);
       await load();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم إرسال الملاحظة')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم إرسال الملاحظة لكل الطلب')));
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e'.replaceFirst('Exception: ', ''))));
@@ -219,9 +261,10 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final active = orders.where((o) => !isClosed(o)).length;
-    final completed = orders.where(isDone).length;
-    final profit = orders.where(isDone).fold<num>(0, (sum, o) => sum + number(o['courier_fee'] ?? o['courier_profit'] ?? o['delegate_profit']));
+    final grouped = groupedOrders;
+    final active = grouped.where((o) => !isClosed(o)).length;
+    final completed = grouped.where(isDone).length;
+    final profit = grouped.where(isDone).fold<num>(0, (sum, o) => sum + number(o['_courier_fee']));
     return Scaffold(
       appBar: AppBar(
         title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -297,11 +340,15 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
   Widget orderCard(Map<String, dynamic> order) {
     final status = '${order['status'] ?? 'assigned'}';
     final id = '${order['id']}';
-    final busy = busyOrders.contains(id);
+    final key = '${order['_group_key'] ?? id}';
+    final busy = busyOrders.contains(key);
     final phone = '${order['student_phone'] ?? ''}';
-    final fee = order['courier_fee'] ?? order['courier_profit'] ?? order['delegate_profit'] ?? 0;
     final pickup = '${order['pickup_source_label'] ?? ''}'.trim();
     final preferred = areaPriority(order) == 0;
+    final items = (order['_items'] as List? ?? const <dynamic>[]).cast<Map<String, dynamic>>();
+    final itemCount = number(order['_item_count']).toInt();
+    final qtyCount = number(order['_qty_count']).toInt();
+    final mixedStatus = order['_mixed_status'] == true;
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
@@ -311,10 +358,11 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text('${order['order_number'] ?? id}', style: const TextStyle(fontWeight: FontWeight.w900)),
               const SizedBox(height: 3),
-              Text('${order['title'] ?? 'طلب توصيل'}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+              Text(itemCount > 1 ? 'طلب توصيل واحد • $itemCount مواد' : '${order['title'] ?? 'طلب توصيل'}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+              if (itemCount > 1) Text('إجمالي القطع/النسخ: $qtyCount', style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
             ])),
             if (preferred) const Padding(padding: EdgeInsets.only(left: 6), child: Chip(label: Text('ضمن منطقتك'))),
-            Chip(label: Text(statusLabel(status))),
+            Chip(label: Text(mixedStatus ? 'حالة غير موحدة' : statusLabel(status))),
           ]),
           const Divider(),
           _line(Icons.person_outline, 'الطالب', '${order['student_name'] ?? '—'}'),
@@ -322,8 +370,34 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
           _line(Icons.location_on_outlined, 'المنطقة', '${order['delivery_area'] ?? '—'}'),
           _line(Icons.flag_outlined, 'أقرب نقطة دالة', '${order['delivery_landmark'] ?? '—'}'),
           if (pickup.isNotEmpty) _line(Icons.inventory_2_outlined, 'الاستلام من', pickup),
-          _line(Icons.payments_outlined, 'المبلغ المطلوب', money(order['total'])),
-          _line(Icons.account_balance_wallet_outlined, 'أجرة المندوب', money(fee)),
+          if (items.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(color: Colors.grey.withValues(alpha: .07), borderRadius: BorderRadius.circular(14)),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const Text('مواد الطلب', style: TextStyle(fontWeight: FontWeight.w900)),
+                const SizedBox(height: 8),
+                ...items.asMap().entries.map((entry) {
+                  final item = entry.value;
+                  final qty = number(item['qty'] ?? 1).toInt();
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text('${entry.key + 1}. ', style: const TextStyle(fontWeight: FontWeight.w800)),
+                      Expanded(child: Text('${item['title'] ?? 'مادة'} × $qty', style: const TextStyle(fontWeight: FontWeight.w700))),
+                      Text(money(item['total']), style: const TextStyle(fontWeight: FontWeight.w800)),
+                    ]),
+                  );
+                }),
+              ]),
+            ),
+          ],
+          const SizedBox(height: 8),
+          _line(Icons.payments_outlined, 'المبلغ المطلوب', money(order['_group_total'])),
+          _line(Icons.local_shipping_outlined, 'توصيل الطالب', money(order['_delivery_fee'])),
+          _line(Icons.account_balance_wallet_outlined, 'أجرة المندوب', money(order['_courier_fee'])),
           if ('${order['delivery_note'] ?? ''}'.trim().isNotEmpty) ...[
             const SizedBox(height: 8),
             Container(width: double.infinity, padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: Colors.orange.withValues(alpha: .08), borderRadius: BorderRadius.circular(12)), child: Text('ملاحظتك: ${order['delivery_note']}')),
@@ -336,8 +410,12 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
             if (!isClosed(order)) OutlinedButton.icon(onPressed: () => sendNote(order), icon: const Icon(Icons.note_alt_outlined), label: const Text('ملاحظة')),
           ]),
           const SizedBox(height: 10),
-          if (busy) const LinearProgressIndicator(),
-          if (!busy) _actions(order, status),
+          if (mixedStatus)
+            const Text('هذا طلب قديم بحالات مواد مختلفة؛ وحّد حالاته من الإدارة قبل متابعة التوصيل.', style: TextStyle(color: Colors.red, fontWeight: FontWeight.w700))
+          else if (busy)
+            const LinearProgressIndicator()
+          else
+            _actions(order, status),
         ]),
       ),
     );
@@ -352,13 +430,13 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
       ]);
     }
     if (status == 'accepted') {
-      return SizedBox(width: double.infinity, child: FilledButton.icon(onPressed: () => transition(order, 'picked_up'), icon: const Icon(Icons.inventory_2), label: const Text('استلمت الطلب')));
+      return SizedBox(width: double.infinity, child: FilledButton.icon(onPressed: () => transition(order, 'picked_up'), icon: const Icon(Icons.inventory_2), label: const Text('استلمت الطلب بالكامل')));
     }
     if (status == 'picked_up') {
       return SizedBox(width: double.infinity, child: FilledButton.icon(onPressed: () => transition(order, 'out_for_delivery'), icon: const Icon(Icons.local_shipping), label: const Text('بدء التوصيل')));
     }
     if (['out_for_delivery', 'out_delivery'].contains(status)) {
-      return SizedBox(width: double.infinity, child: FilledButton.icon(onPressed: () => transition(order, 'completed'), icon: const Icon(Icons.done_all), label: const Text('تم التسليم واستلام المبلغ')));
+      return SizedBox(width: double.infinity, child: FilledButton.icon(onPressed: () => transition(order, 'completed'), icon: const Icon(Icons.done_all), label: const Text('تم تسليم الطلب بالكامل واستلام المبلغ')));
     }
     return const SizedBox.shrink();
   }
@@ -368,7 +446,7 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
         child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Icon(icon, size: 18, color: Colors.grey.shade600),
           const SizedBox(width: 8),
-          SizedBox(width: 90, child: Text(label, style: TextStyle(color: Colors.grey.shade600))),
+          SizedBox(width: 95, child: Text(label, style: TextStyle(color: Colors.grey.shade600))),
           Expanded(child: Text(value, style: const TextStyle(fontWeight: FontWeight.w700))),
         ]),
       );
