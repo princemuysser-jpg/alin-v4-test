@@ -1,4 +1,4 @@
-/* ALIN v4.1.5 — isolated receipts center (orders + settlements). */
+/* ALIN v4.2.2 — grouped checkout receipts center (orders + settlements). */
 (function(){
   'use strict';
   if(window.Alin415Receipts)return;
@@ -104,6 +104,23 @@
     return rows.filter(row=>settlementRole(row)===role&&same(settlementPartyId(row),id));
   }
 
+  function checkoutKey(row){
+    const group=String(row?.checkout_group_id||'').trim();if(group)return `group:${group}`;
+    const request=String(row?.checkout_request_key||'').trim();if(request)return `request:${request}`;
+    return `single:${String(row?.id||row?.order_id||row?.order_number||'')}`;
+  }
+  function groupedOrderReceipts(role){
+    const groups=new Map();
+    scopedOrders(role).forEach(row=>{const key=checkoutKey(row);if(!groups.has(key))groups.set(key,[]);groups.get(key).push(row)});
+    const result=[];
+    for(const [key,items] of groups){
+      items.sort((a,b)=>String(a.created_at||'').localeCompare(String(b.created_at||'')));
+      const anchor=items.find(row=>num(row.delivery_fee||row.shipping_fee)>0||num(row.courier_fee||row.courier_profit||row.delegate_profit)>0)||items[0];
+      result.push({...anchor,_receipt_group_key:key,_items:items,_item_count:items.length,_qty_count:items.reduce((s,row)=>s+Math.max(1,num(row.qty||row.quantity||1)),0),_group_total:items.reduce((s,row)=>s+num(row.total||row.total_amount||row.amount),0),_delivery_fee:items.reduce((s,row)=>s+num(row.delivery_fee||row.shipping_fee),0),_discount:items.reduce((s,row)=>s+num(row.discount||row.discount_amount),0),_courier_fee:items.reduce((s,row)=>s+num(row.courier_fee||row.courier_profit||row.delegate_profit),0)});
+    }
+    return result;
+  }
+  function itemRows(row){return Array.isArray(row?._items)&&row._items.length?row._items:[row]}
   function orderNumber(row){return String(row.order_number||row.tracking_code||row.order_id||row.id||'—')}
   function receiptNumber(row){
     if(row.receipt_number||row.voucher_number)return String(row.receipt_number||row.voucher_number);
@@ -111,11 +128,11 @@
     return `RC-${base}`;
   }
   function settlementNumber(row){return String(row.receipt_number||row.voucher_number||row.settlement_number||row.id||row.settlement_id||`ST-${settlementIdentity(row).split('|').slice(1,4).join('-')}`||'تسوية')}
-  function orderKey(row){return encodeURIComponent(String(row.id||row.order_id||row.order_number||row.tracking_code||''))}
+  function orderKey(row){return encodeURIComponent(String(row._receipt_group_key||checkoutKey(row)))}
   function settlementKey(row){return encodeURIComponent(settlementIdentity(row))}
   function findOrder(key,role){
     const value=decodeURIComponent(String(key||''));
-    return scopedOrders(role).find(row=>[row.id,row.order_id,row.order_number,row.tracking_code].some(item=>same(item,value)))||null;
+    return groupedOrderReceipts(role).find(row=>String(row._receipt_group_key||checkoutKey(row))===value)||null;
   }
   function findSettlement(key,role){
     const value=decodeURIComponent(String(key||''));
@@ -143,7 +160,7 @@
     }
     return row.library_name||row.pickup_library_name?'استلام من المكتبة':'استلام من المكتبة';
   }
-  function orderAmounts(row){
+  function rowAmounts(row){
     const quantity=Math.max(1,num(row.qty||row.quantity||1));
     const delivery=Math.max(0,num(row.delivery_fee||row.shipping_fee));
     const discount=Math.max(0,num(row.discount||row.discount_amount));
@@ -152,6 +169,10 @@
     const unit=Math.max(0,num(row.unit_price||row.price)||(subtotal/quantity));
     return {quantity,delivery,discount,total,subtotal,unit};
   }
+  function orderAmounts(row){
+    const items=itemRows(row),delivery=row._delivery_fee!=null?num(row._delivery_fee):items.reduce((s,item)=>s+rowAmounts(item).delivery,0),discount=row._discount!=null?num(row._discount):items.reduce((s,item)=>s+rowAmounts(item).discount,0),total=row._group_total!=null?num(row._group_total):items.reduce((s,item)=>s+rowAmounts(item).total,0),subtotal=items.reduce((s,item)=>s+rowAmounts(item).subtotal,0),quantity=items.reduce((s,item)=>s+rowAmounts(item).quantity,0);
+    return {quantity,delivery,discount,total,subtotal,unit:quantity?subtotal/quantity:0};
+  }
 
   function receiptStatus(row,type){
     if(type==='settlement')return cancelled(row)?'ملغي':'مثبت';
@@ -159,11 +180,11 @@
   }
 
   function orderRow(row,role){
-    const key=orderKey(row);
-    const search=[receiptNumber(row),orderNumber(row),title(row),studentName(row),money(orderAmounts(row).total)].join(' ').toLowerCase();
+    const key=orderKey(row),items=itemRows(row);
+    const search=[receiptNumber(row),orderNumber(row),...items.map(title),studentName(row),money(orderAmounts(row).total)].join(' ').toLowerCase();
     return `<article class="alin415r-row" data-alin415r-kind="order" data-alin415r-status="${esc(receiptStatus(row,'order'))}" data-alin415r-search="${esc(search)}">
       <div class="alin415r-code"><b dir="ltr">${esc(receiptNumber(row))}</b><small dir="ltr">${esc(orderNumber(row))}</small></div>
-      <span class="alin415r-type">وصل طلب</span>
+      <span class="alin415r-type">وصل طلب • ${items.length} مواد</span>
       <time>${esc(dateTime(row.completed_at||row.delivered_at||row.updated_at||row.created_at))}</time>
       <strong>${money(orderAmounts(row).total)} د.ع</strong>
       <span class="alin415r-status is-complete">مكتمل</span>
@@ -185,14 +206,16 @@
   }
 
   function orderReceipt(row){
-    const amount=orderAmounts(row),number=receiptNumber(row);
+    const items=itemRows(row),amount=orderAmounts(row),number=receiptNumber(row);
+    const itemLines=items.map((item,index)=>{const a=rowAmounts(item);return `<tr><td>${index+1}</td><td>${esc(title(item))}</td><td>${a.quantity}</td><td>${money(a.unit)} د.ع</td><td>${money(a.subtotal)} د.ع</td></tr>`}).join('');
+    const note=items.map(item=>item.notes||item.note||item.delivery_note||'').filter(Boolean).join(' • ')||'لا توجد ملاحظات';
     return `<article class="alin415r-paper" dir="rtl" data-alin415r-printable>
-      <header class="alin415r-paper-head"><div class="alin415r-paper-brand"><span>آ</span><div><h2>منصة آلين</h2><p>ملازم • قرطاسية • هدايا</p></div></div><div class="alin415r-paper-title"><small>وصل طلب</small><b dir="ltr">${esc(number)}</b></div></header>
-      <div class="alin415r-paper-meta"><div><small>رقم الطلب</small><b dir="ltr">${esc(orderNumber(row))}</b></div><div><small>التاريخ</small><b>${esc(dateTime(row.completed_at||row.delivered_at||row.updated_at||row.created_at))}</b></div><div><small>الحالة</small><b>مكتمل</b></div></div>
+      <header class="alin415r-paper-head"><div class="alin415r-paper-brand"><span>آ</span><div><h2>منصة آلين</h2><p>ملازم • قرطاسية • هدايا</p></div></div><div class="alin415r-paper-title"><small>وصل طلب كامل</small><b dir="ltr">${esc(number)}</b></div></header>
+      <div class="alin415r-paper-meta"><div><small>رقم الطلب</small><b dir="ltr">${esc(orderNumber(row))}</b></div><div><small>التاريخ</small><b>${esc(dateTime(row.completed_at||row.delivered_at||row.updated_at||row.created_at))}</b></div><div><small>عدد المواد</small><b>${items.length} مواد • ${amount.quantity} قطعة/نسخة</b></div></div>
       <section class="alin415r-paper-section"><h3>بيانات الطالب</h3><div class="alin415r-student"><div><small>اسم الطالب</small><b>${esc(studentName(row))}</b></div><div><small>رقم الهاتف</small><b dir="ltr">${esc(studentPhone(row))}</b></div><div><small>طريقة الاستلام</small><b>${esc(fulfillment(row))}</b></div></div></section>
-      <section class="alin415r-paper-section"><h3>تفاصيل الطلب</h3><table><thead><tr><th>#</th><th>الصنف</th><th>الكمية</th><th>سعر الوحدة</th><th>الإجمالي</th></tr></thead><tbody><tr><td>1</td><td>${esc(title(row))}</td><td>${amount.quantity}</td><td>${money(amount.unit)} د.ع</td><td>${money(amount.subtotal)} د.ع</td></tr>${amount.delivery?`<tr><td>2</td><td>أجرة التوصيل</td><td>1</td><td>${money(amount.delivery)} د.ع</td><td>${money(amount.delivery)} د.ع</td></tr>`:''}</tbody></table>
-      <div class="alin415r-totals"><div><span>المجموع الفرعي</span><b>${money(amount.subtotal)} د.ع</b></div><div><span>الخصم</span><b>${money(amount.discount)} د.ع</b></div><div class="final"><span>الإجمالي</span><strong>${money(amount.total)} د.ع</strong></div></div></section>
-      <section class="alin415r-paper-note"><small>ملاحظات</small><p>${esc(row.notes||row.note||row.delivery_note||'لا توجد ملاحظات')}</p></section>
+      <section class="alin415r-paper-section"><h3>مواد الطلب</h3><table><thead><tr><th>#</th><th>الصنف</th><th>الكمية</th><th>سعر الوحدة</th><th>الإجمالي</th></tr></thead><tbody>${itemLines}</tbody></table>
+      <div class="alin415r-totals"><div><span>مجموع المواد</span><b>${money(amount.subtotal)} د.ع</b></div>${amount.delivery?`<div><span>أجرة التوصيل</span><b>${money(amount.delivery)} د.ع</b></div>`:''}${amount.discount?`<div><span>الخصم</span><b>${money(amount.discount)} د.ع</b></div>`:''}<div class="final"><span>الإجمالي الكلي</span><strong>${money(amount.total)} د.ع</strong></div></div></section>
+      <section class="alin415r-paper-note"><small>ملاحظات</small><p>${esc(note)}</p></section>
       <footer><b>منصة آلين</b><small>شكراً لاستخدام منصة آلين</small></footer>
     </article>`;
   }
@@ -210,7 +233,7 @@
   }
 
   function centerHtml(role){
-    const orders=[...scopedOrders(role)].sort((a,b)=>String(b.completed_at||b.updated_at||b.created_at||'').localeCompare(String(a.completed_at||a.updated_at||a.created_at||'')));
+    const orders=groupedOrderReceipts(role).sort((a,b)=>String(b.completed_at||b.updated_at||b.created_at||'').localeCompare(String(a.completed_at||a.updated_at||a.created_at||'')));
     const settlements=[...scopedSettlements(role)].sort((a,b)=>String(b.created_at||'').localeCompare(String(a.created_at||'')));
     const all=[...orders.map(row=>orderRow(row,role)),...settlements.map(row=>settlementRow(row,role))].join('');
     const orderTotal=orders.reduce((sum,row)=>sum+orderAmounts(row).total,0);
@@ -357,7 +380,7 @@
     });
   }
 
-  const api=Object.freeze({renderCenter,openCenter,previewOrder,previewSettlement,closePreview,printOrder,printSettlement,orders:scopedOrders,settlements:scopedSettlements});
+  const api=Object.freeze({renderCenter,openCenter,previewOrder,previewSettlement,closePreview,printOrder,printSettlement,orders:groupedOrderReceipts,settlements:scopedSettlements});
   window.Alin415Receipts=api;
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
 })();

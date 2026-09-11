@@ -3,6 +3,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../data/business_courier_repository.dart';
 import '../data/business_repository.dart';
 import '../models/business_account.dart';
+import '../widgets/grouped_order_receipt_card.dart';
 
 class CourierDashboardScreen extends StatefulWidget {
   final BusinessRepository repository;
@@ -318,6 +319,7 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
                 ButtonSegment(value: 'active', label: Text('الحالية'), icon: Icon(Icons.local_shipping_rounded)),
                 ButtonSegment(value: 'completed', label: Text('المكتملة'), icon: Icon(Icons.check_circle_outline)),
                 ButtonSegment(value: 'all', label: Text('الكل'), icon: Icon(Icons.list_alt_rounded)),
+                ButtonSegment(value: 'receipts', label: Text('الوصولات'), icon: Icon(Icons.receipt_long_rounded)),
               ],
               selected: {filter},
               onSelectionChanged: (value) => setState(() => filter = value.first),
@@ -327,7 +329,14 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
               const Padding(padding: EdgeInsets.all(36), child: Center(child: CircularProgressIndicator()))
             else if (error != null)
               Card(child: Padding(padding: const EdgeInsets.all(16), child: Column(children: [Text(error!), const SizedBox(height: 8), OutlinedButton(onPressed: load, child: const Text('إعادة المحاولة'))])))
-            else if (visibleOrders.isEmpty)
+            else if (filter == 'receipts') ...[
+              const Text('وصولات الطلبات المكتملة', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+              const SizedBox(height: 10),
+              if (grouped.where(isDone).isEmpty)
+                const Card(child: Padding(padding: EdgeInsets.all(24), child: Center(child: Text('لا توجد وصولات مكتملة بعد'))))
+              else
+                ...grouped.where(isDone).map((order) => GroupedOrderReceiptCard(order: order, courierName: widget.account.name, courierView: true)),
+            ] else if (visibleOrders.isEmpty)
               const Card(child: Padding(padding: EdgeInsets.all(24), child: Center(child: Text('لا توجد طلبات حالياً'))))
             else
               ...visibleOrders.map(orderCard),

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../data/business_finance_repository.dart';
 import '../data/business_repository.dart';
 import '../models/business_account.dart';
+import '../widgets/grouped_order_receipt_card.dart';
 import 'admin_finance_v2_screen.dart';
 
 class AdminDesktopDashboardScreen extends StatefulWidget {
@@ -83,11 +84,19 @@ class _AdminDesktopDashboardScreenState extends State<AdminDesktopDashboardScree
     return f == 'home_delivery' || f == 'courier' || f == 'delivery' || d == 'courier';
   }
 
+  List<Map<String, dynamic>> get groupedOrders => groupOrdersForReceipts(orders);
+
+  bool _groupClosed(Map<String, dynamic> order) {
+    final items = (order['_items'] as List).cast<Map<String, dynamic>>();
+    return items.every((row) => const ['completed', 'delivered', 'cancelled', 'rejected'].contains('${row['status']}'));
+  }
+
   List<Map<String, dynamic>> get visibleOrders {
-    if (orderFilter == 'all') return orders;
-    if (orderFilter == 'done') return orders.where((e) => const ['completed', 'delivered'].contains('${e['status']}')).toList();
-    if (orderFilter == 'cancelled') return orders.where((e) => const ['cancelled', 'rejected'].contains('${e['status']}')).toList();
-    return orders.where((e) => !_closed(e)).toList();
+    final grouped = groupedOrders;
+    if (orderFilter == 'all') return grouped;
+    if (orderFilter == 'done') return grouped.where(receiptGroupCompleted).toList();
+    if (orderFilter == 'cancelled') return grouped.where((e) => ((e['_items'] as List).cast<Map<String, dynamic>>()).every((row) => const ['cancelled', 'rejected'].contains('${row['status']}'))).toList();
+    return grouped.where((e) => !_groupClosed(e)).toList();
   }
 
   List<Map<String, dynamic>> get visibleAccounts {
@@ -130,6 +139,7 @@ class _AdminDesktopDashboardScreenState extends State<AdminDesktopDashboardScree
       (Icons.groups_rounded, 'الحسابات'),
       (Icons.account_balance_wallet_rounded, 'المالية'),
       (Icons.inventory_2_rounded, 'المحتوى'),
+      (Icons.receipt_long_rounded, 'الوصولات'),
     ];
     return Container(
       width: 245,
@@ -209,7 +219,7 @@ class _AdminDesktopDashboardScreenState extends State<AdminDesktopDashboardScree
     );
   }
 
-  String _titleForSection() => const ['الرئيسية', 'إدارة الطلبات', 'إدارة الحسابات', 'المالية والتسويات', 'المحتوى'][section];
+  String _titleForSection() => const ['الرئيسية', 'إدارة الطلبات', 'إدارة الحسابات', 'المالية والتسويات', 'المحتوى', 'الوصولات'][section];
 
   Widget _sectionBody() {
     switch (section) {
@@ -221,6 +231,8 @@ class _AdminDesktopDashboardScreenState extends State<AdminDesktopDashboardScree
         return _financePage();
       case 4:
         return _catalogPage();
+      case 5:
+        return _receiptsPage();
       default:
         return _homePage();
     }
@@ -281,7 +293,7 @@ class _AdminDesktopDashboardScreenState extends State<AdminDesktopDashboardScree
       const SizedBox(height: 22),
       _sectionHeader('آخر الطلبات', action: TextButton(onPressed: () => setState(() => section = 1), child: const Text('عرض الكل'))),
       const SizedBox(height: 10),
-      _ordersTable(orders.take(8).toList()),
+      _ordersTable(groupedOrders.take(8).toList()),
     ]);
   }
 
@@ -360,6 +372,28 @@ class _AdminDesktopDashboardScreenState extends State<AdminDesktopDashboardScree
         ),
       ),
     );
+  }
+
+  Widget _receiptsPage() {
+    final completed = groupedOrders.where(receiptGroupCompleted).toList();
+    return _page([
+      _sectionHeader('الوصولات (${completed.length})'),
+      const SizedBox(height: 6),
+      const Text('وصل واحد لكل طلب مكتمل مع جميع المواد والتوصيل والإجمالي.'),
+      const SizedBox(height: 14),
+      if (completed.isEmpty)
+        _empty('لا توجد وصولات مكتملة')
+      else
+        ...completed.map((order) => GroupedOrderReceiptCard(order: order, courierName: _courierName('${order['courier_id'] ?? order['delegate_id'] ?? ''}'))),
+    ]);
+  }
+
+  String _courierName(String id) {
+    if (id.trim().isEmpty) return '';
+    for (final courier in couriers) {
+      if ('${courier['id']}' == id) return '${courier['name'] ?? id}';
+    }
+    return id;
   }
 
   Widget _accountsPage() => _page([

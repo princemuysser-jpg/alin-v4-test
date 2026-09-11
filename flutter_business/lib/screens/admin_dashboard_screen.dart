@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../data/business_repository.dart';
 import '../models/business_account.dart';
+import '../widgets/grouped_order_receipt_card.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   final BusinessRepository repository;
@@ -129,7 +130,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final pages = [_home(), _orders(), _accounts(), _finance(), _catalog()];
+    final pages = [_home(), _orders(), _accounts(), _finance(), _catalog(), _receipts()];
     return Scaffold(
       appBar: AppBar(
         title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -158,6 +159,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           NavigationDestination(icon: Icon(Icons.groups_rounded), label: 'الحسابات'),
           NavigationDestination(icon: Icon(Icons.account_balance_wallet_rounded), label: 'المالية'),
           NavigationDestination(icon: Icon(Icons.inventory_2_rounded), label: 'المحتوى'),
+          NavigationDestination(icon: Icon(Icons.receipt_long_rounded), label: 'الوصولات'),
         ],
       ),
     );
@@ -280,6 +282,23 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         ]),
       ),
     );
+  }
+
+  Widget _receipts() {
+    final completed = groupedOrders.where((order) {
+      final items = (order['_items'] as List).cast<Map<String, dynamic>>();
+      return items.every((row) => const {'completed', 'delivered', 'done'}.contains('${row['status']}'));
+    }).toList();
+    return _scroll([
+      const Text('الوصولات', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
+      const SizedBox(height: 4),
+      const Text('وصل واحد لكل طلب كامل ويعرض جميع المواد.'),
+      const SizedBox(height: 12),
+      if (completed.isEmpty)
+        const Card(child: Padding(padding: EdgeInsets.all(22), child: Center(child: Text('لا توجد وصولات مكتملة'))))
+      else
+        ...completed.map((order) => GroupedOrderReceiptCard(order: order, courierName: _courierName('${order['courier_id'] ?? order['delegate_id'] ?? ''}'))),
+    ]);
   }
 
   String _courierName(String id) {

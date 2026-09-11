@@ -1843,87 +1843,6 @@ window.AlinTeacherModules.unpublishTeacherBooklet=unpublishTeacherBooklet;
 })();
 ;
 
-/* modules/admin/orders-grouped.js */
-// Group checkout rows into one admin order card and expose courier assignment directly.
-(function(){
-'use strict';
-const old=window.renderOrdersAdmin;if(typeof old!=='function')return;
-const arr=v=>Array.isArray(v)?v:[];
-const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const num=v=>Number(v||0)||0;
-const money=v=>typeof window.money==='function'?window.money(v):Math.round(num(v)).toLocaleString(window.AlinI18n?.locale?.()||'ar-IQ');
-const rows=()=>arr(window.db?.orders);
-const key=o=>String(o?.checkout_group_id||o?.checkout_request_key||`single:${o?.id||o?.order_number}`);
-const codeOf=card=>String(card.querySelector('.admin-order-v126-title > span')?.textContent||'').trim();
-const rowFor=card=>{const c=codeOf(card);return rows().find(o=>String(o.order_number||o.id)===c)||null};
-const groupsByKey=new Map();
-const statusLabels={pending:'قيد الانتظار',new:'جديد',pending_admin:'بانتظار الإدارة',payment_pending:'بانتظار الدفع',paid:'مدفوع',assigned:'محول للمندوب',accepted:'مقبول من المندوب',picked_up:'استلمه المندوب',out_for_delivery:'قيد التوصيل',out_delivery:'قيد التوصيل',processing:'قيد التجهيز',printing:'قيد الطباعة',ready:'جاهز',completed:'مكتمل',delivered:'تم التسليم',cancelled:'ملغي',rejected:'مرفوض',receipt_rejected:'وصل مرفوض'};
-const statusOf=o=>String(o?.status||o?.payment_status||'new');
-const statusLabel=o=>statusLabels[statusOf(o)]||statusOf(o);
-function css(){
- if(document.getElementById('alinGroupedOrdersCss'))return;
- const s=document.createElement('style');s.id='alinGroupedOrdersCss';s.textContent=`
- .alin-order-group{border:1px solid #dce5ef;border-radius:18px;background:#fff;margin-bottom:14px;overflow:hidden;box-shadow:0 6px 18px rgba(17,40,70,.05)}
- .alin-order-group-head{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:16px}
- .alin-order-group-head h3{margin:0 0 4px;font-size:17px}.alin-order-group-head p{margin:0;color:#667085;font-size:13px}
- .alin-order-group-main{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.alin-order-pill{display:inline-flex;align-items:center;border-radius:999px;background:#f1f5f9;color:#334155;padding:6px 10px;font-size:12px;font-weight:700}
- .alin-order-group-total{font-weight:800;color:#172b4d;white-space:nowrap}.alin-order-group-actions{display:flex;align-items:center;gap:8px}
- .alin-order-list-btn{border:0;border-radius:12px;padding:10px 15px;background:#173b67;color:#fff;font-weight:800;cursor:pointer}
- .alin-order-group-items{margin:0 16px 12px;padding:12px 14px;border:1px solid #e6edf5;border-radius:14px;background:#fbfdff}.alin-order-group-items h4{margin:0 0 8px;font-size:14px;color:#173b67}.alin-order-group-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px dashed #e2e8f0}.alin-order-group-item:last-child{border-bottom:0}.alin-order-group-item b{font-size:13px}.alin-order-group-item span{font-size:12px;color:#64748b;white-space:nowrap}
- .alin-order-group-courier{margin:0 16px 16px;padding:14px;border:1px solid #b9d3ef;border-radius:14px;background:#f1f7ff}.alin-order-group-courier h3{margin:0 0 8px;font-size:15px;color:#173b67}.alin-order-group-courier-row{display:flex;gap:8px;align-items:end;flex-wrap:wrap}.alin-order-group-courier label{flex:1;min-width:220px;font-size:12px;color:#64748b}.alin-order-group-courier select{display:block;width:100%;margin-top:5px;padding:10px;border:1px solid #cbd5e1;border-radius:10px;background:white}.alin-order-group-courier button{border:0;border-radius:10px;padding:10px 14px;background:#173b67;color:white;font-weight:800;cursor:pointer}.alin-order-group-courier button:disabled{opacity:.55;cursor:not-allowed}
- .alin-order-prep-backdrop{position:fixed;inset:0;z-index:10050;background:rgba(15,23,42,.55);display:flex;align-items:center;justify-content:center;padding:18px}.alin-order-prep-modal{width:min(1040px,96vw);max-height:92vh;overflow:auto;background:#fff;border-radius:22px}.alin-order-prep-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:18px 20px;border-bottom:1px solid #e7edf4}.alin-order-prep-close{border:0;background:#f1f5f9;border-radius:11px;width:40px;height:40px;font-size:22px;cursor:pointer}.alin-order-prep-table-wrap{padding:18px 20px;overflow:auto}.alin-order-prep-table{width:100%;border-collapse:collapse;min-width:720px}.alin-order-prep-table th,.alin-order-prep-table td{padding:10px;border-bottom:1px solid #edf1f5;text-align:right}.alin-order-prep-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:0 20px 18px}.alin-order-prep-summary span{background:#f8fafc;border-radius:12px;padding:10px;color:#667085;font-size:12px}.alin-order-prep-summary b{display:block;color:#172b4d}
- @media(max-width:760px){.alin-order-group-head{align-items:flex-start;flex-direction:column}.alin-order-group-actions{width:100%;justify-content:space-between}.alin-order-group-item{align-items:flex-start}.alin-order-group-courier-row{display:block}.alin-order-group-courier button{width:100%;margin-top:8px}.alin-order-prep-summary{grid-template-columns:1fr 1fr}}
- `;document.head.appendChild(s)
-}
-function isHomeDelivery(o){return ['home_delivery','delivery','courier'].includes(String(o?.fulfillment_type||o?.delivery_type||''))}
-function groupStatus(list){const st=[...new Set(list.map(statusOf))];return st.length===1?statusLabel(list[0]):'حالات متعددة'}
-function groupCourierId(list){return String(list.map(o=>o.courier_id||o.delegate_id).find(Boolean)||'')}
-function allCouriers(){
- const core=window.AlinCourierCore;if(core?.allCouriers)return core.allCouriers();
- const all=[...arr(window.db?.accounts?.couriers),...arr(window.db?.accounts?.delegates),...arr(window.db?.couriers),...arr(window.db?.delegates)];
- const map=new Map();for(const c of all){const id=String(c?.account_id||c?.id||'');if(id)map.set(id,{...(map.get(id)||{}),...c,id})}return [...map.values()]
-}
-function matchingCouriers(area){
- const core=window.AlinCourierCore;if(core?.matchingCouriers){const x=core.matchingCouriers(area);if(x?.length)return x}
- const normalize=v=>window.alinNormalizeDeliveryArea?.(v)||String(v||'').trim();const target=normalize(area);const active=allCouriers().filter(c=>String(c?.status||'active')!=='inactive');
- const matches=active.filter(c=>{let raw=c.areas||c.area_ids||c.area||[];if(typeof raw==='string'){try{const p=JSON.parse(raw);raw=Array.isArray(p)?p:raw.split(/[,،|]/)}catch(_){raw=raw.split(/[,،|]/)}}return arr(raw).some(a=>normalize(typeof a==='object'?(a.name||a.area||a.id):a)===target)});
- return matches.length?matches:(target==='كركوك'?active:matches)
-}
-function materialsHtml(g){return `<section class="alin-order-group-items"><h4>مواد الطلب</h4>${g.rows.map((o,i)=>`<div class="alin-order-group-item"><b>${i+1}. ${esc(o.title||'مادة')}</b><span>× ${Math.max(1,num(o.qty||o.quantity))} • ${money(o.total||0)} د.ع</span></div>`).join('')}</section>`}
-function courierAssignmentHtml(g){
- const first=g.rows[0];if(!isHomeDelivery(first))return'';
- const core=window.AlinCourierCore,all=allCouriers(),options=matchingCouriers(first.delivery_area),current=groupCourierId(g.rows);
- const currentCourier=all.find(c=>[c.id,c.account_id,c.courier_row_id].filter(Boolean).map(String).includes(current));if(currentCourier&&!options.some(c=>String(c.id)===String(currentCourier.id)))options.unshift(currentCourier);
- const opts=options.length?options.map(c=>`<option value="${esc(c.id)}" ${current&&[c.id,c.account_id,c.courier_row_id].filter(Boolean).map(String).includes(current)?'selected':''}>${esc(c.name||c.username||'مندوب')} • ${esc(c.phone||'')}</option>`).join(''):'<option value="" disabled>لا يوجد مندوب مطابق للمنطقة</option>';
- return `<section class="alin-order-group-courier"><h3>تعيين مندوب للطلب كامل</h3><div class="alin-order-group-courier-row"><label>المندوب<select class="alin-order-group-courier-select"><option value="">بدون مندوب</option>${opts}</select></label><button type="button" class="alin-order-group-assign-btn" data-group-key="${esc(g.key)}" ${!core?.assignOrder?'disabled':''}>${current?'حفظ المندوب':'تعيين المندوب'}</button></div><small>${core?.assignOrder?'يتم تطبيق المندوب على كل مواد هذا الطلب دفعة واحدة.':'حدّث الصفحة لتفعيل خدمة التعيين.'}</small></section>`
-}
-function prepModal(groupKey){
- const g=groupsByKey.get(String(groupKey));if(!g?.rows?.length)return;document.querySelector('.alin-order-prep-backdrop')?.remove();
- const list=g.rows,first=list[0],total=list.reduce((s,o)=>s+num(o.total),0),delivery=list.reduce((s,o)=>s+num(o.delivery_fee),0),discount=list.reduce((s,o)=>s+num(o.discount),0);
- const el=document.createElement('div');el.className='alin-order-prep-backdrop';el.innerHTML=`<section class="alin-order-prep-modal"><header class="alin-order-prep-head"><div><h2>قائمة تجهيز الطلب</h2><p>${esc(first.student_name||'بدون اسم')} • ${esc(first.student_phone||'بدون هاتف')}</p></div><button class="alin-order-prep-close">×</button></header><div class="alin-order-prep-table-wrap"><table class="alin-order-prep-table"><thead><tr><th>#</th><th>المادة</th><th>الكمية</th><th>الإجمالي</th><th>الحالة</th></tr></thead><tbody>${list.map((o,i)=>`<tr><td>${i+1}</td><td>${esc(o.title||'مادة')}</td><td>× ${Math.max(1,num(o.qty||o.quantity))}</td><td>${money(o.total||0)} د.ع</td><td>${esc(statusLabel(o))}</td></tr>`).join('')}</tbody></table></div><section class="alin-order-prep-summary"><span>المواد<b>${money(total-delivery)} د.ع</b></span><span>التوصيل<b>${money(delivery)} د.ع</b></span><span>الخصم<b>${money(discount)} د.ع</b></span><span>الإجمالي<b>${money(total)} د.ع</b></span></section>${courierAssignmentHtml(g)}</section>`;
- const close=()=>el.remove();el.querySelector('.alin-order-prep-close')?.addEventListener('click',close);el.addEventListener('click',e=>{if(e.target===el)close()});document.body.appendChild(el)
-}
-function enhance(){
- css();const host=document.querySelector('#adminContent .admin-orders-v126-list');if(!host||host.dataset.grouped==='1')return;const cards=[...host.children].filter(x=>x.classList?.contains('admin-order-v126'));if(!cards.length)return;
- groupsByKey.clear();const groups=new Map(),order=[];cards.forEach(card=>{const r=rowFor(card),k=r?key(r):`card:${order.length}`;if(!groups.has(k)){groups.set(k,{key:k,rows:[],cards:[]});order.push(k)};groups.get(k).cards.push(card);if(r)groups.get(k).rows.push(r)});host.replaceChildren();
- order.forEach(k=>{const g=groups.get(k);groupsByKey.set(k,g);if(!g.rows.length||g.rows.length!==g.cards.length){g.cards.forEach(c=>host.appendChild(c));return}
-  if(g.rows.length===1){const card=g.cards[0];host.appendChild(card);if(isHomeDelivery(g.rows[0]))card.insertAdjacentHTML('beforeend',courierAssignmentHtml(g));return}
-  const first=g.rows[0],total=g.rows.reduce((s,o)=>s+num(o.total),0),qty=g.rows.reduce((s,o)=>s+Math.max(1,num(o.qty||o.quantity)),0),delivery=g.rows.reduce((s,o)=>s+num(o.delivery_fee),0),a=document.createElement('article');a.className='alin-order-group';
-  a.innerHTML=`<div class="alin-order-group-head"><div><h3>${esc(first.order_number||first.id)}</h3><p>${esc(first.student_name||'بدون اسم')} • ${esc(first.student_phone||'بدون هاتف')}</p><div class="alin-order-group-main"><span class="alin-order-pill">${g.rows.length} مواد</span><span class="alin-order-pill">${qty} قطعة/نسخة</span><span class="alin-order-pill">${esc(groupStatus(g.rows))}</span></div></div><div class="alin-order-group-actions"><div><small>الإجمالي</small><div class="alin-order-group-total">${money(total)} د.ع</div>${delivery?`<small>منها توصيل ${money(delivery)} د.ع</small>`:''}</div><button type="button" class="alin-order-list-btn" data-group-key="${esc(k)}">عرض القائمة</button></div></div>${materialsHtml(g)}${courierAssignmentHtml(g)}`;host.appendChild(a)
- });
- host.dataset.grouped='1';const count=document.querySelector('#adminContent .admin-orders-v126-head-actions span');if(count)count.textContent=String(order.length)
-}
-function render(...args){const r=old(...args);Promise.resolve(r).finally(()=>requestAnimationFrame(()=>setTimeout(enhance,0)));return r}
-window.renderOrdersAdmin=render;if(window.AlinAdminModules?.register)window.AlinAdminModules.register('orders',render);
-document.addEventListener('click',async e=>{
- const listBtn=e.target.closest?.('.alin-order-list-btn');if(listBtn){prepModal(listBtn.dataset.groupKey);return}
- const btn=e.target.closest?.('.alin-order-group-assign-btn');if(!btn)return;const g=groupsByKey.get(String(btn.dataset.groupKey));if(!g?.rows?.length)return;const select=btn.closest('.alin-order-group-courier')?.querySelector('.alin-order-group-courier-select'),courierId=String(select?.value||'').trim()||null,core=window.AlinCourierCore;if(!core?.assignOrder){window.toast?.('خدمة تعيين المندوب غير جاهزة');return}
- btn.disabled=true;try{await core.assignOrder(String(g.rows[0].id),courierId,null);await Promise.resolve(window.renderOrdersAdmin?.());window.toast?.(courierId?'تم تعيين المندوب للطلب كامل':'تم إلغاء تعيين المندوب عن الطلب كامل')}catch(error){console.error(error);window.toast?.(core.friendlyOrderError?.(error)||error?.message||'تعذر تعيين المندوب')}finally{btn.disabled=false}
-});
-window.addEventListener('alin:data-refreshed',()=>setTimeout(enhance,0));window.addEventListener('alin:admin-tab',e=>{if(e.detail?.tab==='orders')setTimeout(enhance,0)});
-})();
-;
-
 /* modules/admin/booklets.js */
 // ALIN Admin Booklets — single implementation (v2.2.6)
 (function(){
@@ -2811,6 +2730,155 @@ window.addEventListener('alin:data-refreshed',()=>setTimeout(enhance,0));window.
 })();
 ;
 
+/* modules/admin/books.js */
+// === admin/books.js ===
+// ALIN — Independent Books Administration.
+(function(){
+  'use strict';
+  const esc=v=>typeof window.esc==='function'?window.esc(v):String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const money=v=>typeof window.money==='function'?window.money(v):Number(v||0).toLocaleString(window.AlinI18n?.locale?.()||'ar-IQ');
+  const books=()=>Array.isArray(window.db?.products)?window.db.products.filter(p=>String(p.type||'').toLowerCase()==='book'):[];
+  const libraries=()=>Array.isArray(window.db?.accounts?.libraries)?window.db.accounts.libraries.filter(a=>String(a.status||'active')==='active'&&!a.deleted_at):[];
+  const root=()=>window.adminContent||document.getElementById('adminContent');
+  let balances=[];
+
+  const imageUrl=item=>{const p=item?.image_path||item?.image_url||'';try{return p&&typeof window.mediaUrl==='function'?window.mediaUrl(p):p}catch(_){return p}};
+  const supplierLabel=item=>{
+    const type=String(item?.supplier_type||'platform');
+    if(type==='library')return `مكتبة ${item.supplier_name||libraries().find(x=>String(x.id)===String(item.supplier_account_id))?.name||'غير محددة'}`;
+    if(type==='printer')return `مطبعة ${item.supplier_name||'غير محددة'}`;
+    return 'منصة آلين';
+  };
+  const statusLabel=s=>String(s||'published')==='published'?'منشور':'مخفي';
+
+  async function uploadImage(file){
+    if(!file?.name)return '';
+    const uploader=window.uploadFileV52||window.uploadFile;
+    if(typeof uploader!=='function')throw new Error('خدمة رفع الصور غير متاحة');
+    return uploader('products',file,{type:'image'});
+  }
+
+  function ensureTab(){
+    const nav=document.querySelector('#adminPage .admin-tabs');
+    if(!nav||nav.querySelector('[data-admin-tab="books"]'))return;
+    const btn=document.createElement('button');
+    btn.type='button';btn.dataset.adminTab='books';btn.textContent='الكتب';
+    btn.addEventListener('click',()=>window.adminTab?.('books'));
+    const products=nav.querySelector('[data-admin-tab="products"]');
+    if(products?.nextSibling)nav.insertBefore(btn,products.nextSibling);else nav.appendChild(btn);
+  }
+
+  function libraryOptions(selected=''){
+    return `<option value="">اختر المكتبة</option>`+libraries().map(x=>`<option value="${esc(x.id)}" ${String(x.id)===String(selected)?'selected':''}>${esc(x.name||x.username||x.id)}</option>`).join('');
+  }
+
+  function editorHtml(item={}){
+    const editing=Boolean(item.id),supplier=String(item.supplier_type||'platform'),platform=Number(item.platform_share_percent??100),supplierPct=Number(item.supplier_share_percent??0);
+    return `<form id="alinBookForm" class="form-grid admin-product-editor" data-id="${esc(item.id||'')}">
+      <input name="name" value="${esc(item.name||item.title||'')}" placeholder="اسم الكتاب" required>
+      <input name="price" type="number" min="0" step="1" value="${Number(item.unit_price??item.sale_price??item.price??0)}" placeholder="سعر البيع" required>
+      <input name="stock" type="number" min="0" step="1" value="${Number(item.stock||0)}" placeholder="المخزون" required>
+      <input name="lowStockLimit" type="number" min="0" step="1" value="${Number(item.low_stock_limit||5)}" placeholder="حد تنبيه المخزون">
+      <label><span>حصة المنصة %</span><input id="alinBookPlatformShare" name="platformShare" type="number" min="0" max="100" step="1" value="${platform}" required></label>
+      <label><span>حصة المورد %</span><input id="alinBookSupplierShare" name="supplierShare" type="number" min="0" max="100" step="1" value="${supplierPct}" required></label>
+      <label><span>نوع مصدر الكتاب</span><select id="alinBookSupplierType" name="supplierType"><option value="platform" ${supplier==='platform'?'selected':''}>مخزون منصة آلين</option><option value="library" ${supplier==='library'?'selected':''}>مكتبة</option><option value="printer" ${supplier==='printer'?'selected':''}>مطبعة</option></select></label>
+      <label id="alinBookLibraryField"><span>المكتبة الموردة</span><select name="supplierAccountId">${libraryOptions(item.supplier_account_id||'')}</select></label>
+      <label id="alinBookPrinterField"><span>اسم المطبعة</span><input name="supplierName" value="${esc(supplier==='printer'?item.supplier_name||'':'')}" placeholder="اسم المطبعة"></label>
+      <textarea name="description" rows="3" class="span-2" placeholder="وصف الكتاب">${esc(item.description||item.details||'')}</textarea>
+      <label class="span-2"><span>صورة الكتاب</span><input name="image" type="file" accept="image/*"></label>
+      ${imageUrl(item)?`<div class="span-2"><img src="${esc(imageUrl(item))}" alt="" style="max-width:120px;border-radius:14px"></div>`:''}
+      <div class="span-2 notice"><b>التوصيل:</b> أجرة المندوب مستقلة عن نسب الكتاب. الاستلام المباشر من المورد غير مفعّل في هذه المرحلة.</div>
+      <div class="row-actions span-2"><button type="submit">${editing?'حفظ التعديل':'إضافة الكتاب'}</button><button type="button" class="secondary" data-alin-click="alinCloseBookEditor">إلغاء</button></div>
+    </form>`;
+  }
+
+  function ensureModal(){
+    let modal=document.getElementById('alinBookModal');
+    if(modal)return modal;
+    modal=document.createElement('div');modal.id='alinBookModal';modal.className='modal hidden';
+    modal.innerHTML='<div class="modal-card"><button class="x" type="button" data-alin-click="alinCloseBookEditor">×</button><div id="alinBookModalBody"></div></div>';
+    document.body.appendChild(modal);return modal;
+  }
+
+  function syncSupplierFields(){
+    const type=document.getElementById('alinBookSupplierType')?.value||'platform';
+    const lib=document.getElementById('alinBookLibraryField'),printer=document.getElementById('alinBookPrinterField');
+    if(lib)lib.hidden=type!=='library';if(printer)printer.hidden=type!=='printer';
+    const p=document.getElementById('alinBookPlatformShare'),s=document.getElementById('alinBookSupplierShare');
+    if(type==='platform'){if(p)p.value='100';if(s)s.value='0';if(p)p.readOnly=true;if(s)s.readOnly=true}else{if(p)p.readOnly=false;if(s)s.readOnly=false}
+  }
+
+  function openEditor(id=''){
+    const item=id?books().find(x=>String(x.id)===String(id)):{};if(id&&!item)return;
+    const modal=ensureModal();modal.querySelector('#alinBookModalBody').innerHTML=`<h2>${id?'تعديل الكتاب':'إضافة كتاب'}</h2>${editorHtml(item||{})}`;
+    modal.hidden=false;modal.classList.remove('hidden');syncSupplierFields();
+    document.getElementById('alinBookSupplierType')?.addEventListener('change',syncSupplierFields);
+    document.getElementById('alinBookForm')?.addEventListener('submit',saveBook);
+  }
+
+  function closeEditor(){const m=document.getElementById('alinBookModal');if(m){m.hidden=true;m.classList.add('hidden')}}
+
+  async function saveBook(event){
+    event?.preventDefault();const form=document.getElementById('alinBookForm');if(!form)return;
+    const d=new FormData(form),id=String(form.dataset.id||''),existing=id?books().find(x=>String(x.id)===id):null;
+    const name=String(d.get('name')||'').trim(),price=Number(d.get('price')||0),stock=Number(d.get('stock')||0),low=Number(d.get('lowStockLimit')||5);
+    const supplierType=String(d.get('supplierType')||'platform'),platformShare=Number(d.get('platformShare')||0),supplierShare=Number(d.get('supplierShare')||0);
+    const supplierAccountId=supplierType==='library'?String(d.get('supplierAccountId')||'').trim():'';
+    const library=libraries().find(x=>String(x.id)===supplierAccountId);
+    const supplierName=supplierType==='library'?(library?.name||''):supplierType==='printer'?String(d.get('supplierName')||'').trim():'منصة آلين';
+    if(!name)return alert('اكتب اسم الكتاب');
+    if(!Number.isFinite(price)||price<0)return alert('سعر الكتاب غير صحيح');
+    if(!Number.isFinite(stock)||stock<0)return alert('المخزون غير صحيح');
+    if(platformShare<0||platformShare>100||supplierShare<0||supplierShare>100||platformShare+supplierShare!==100)return alert('مجموع حصة المنصة والمورد يجب أن يساوي 100%');
+    if(supplierType==='library'&&!library)return alert('اختر المكتبة الموردة');
+    if(supplierType==='printer'&&!supplierName)return alert('اكتب اسم المطبعة');
+    try{
+      let imagePath=existing?.image_path||'';const file=form.querySelector('input[name="image"]')?.files?.[0];if(file?.name)imagePath=await uploadImage(file);
+      const payload={name,title:name,type:'book',category:'كتب',category_id:'CAT-BOOKS',unit_price:price,price,sale_price:null,stock,low_stock_limit:Math.max(0,low||0),description:String(d.get('description')||'').trim(),details:String(d.get('description')||'').trim(),image_path:imagePath||null,images:imagePath?[imagePath]:[],platform_share_percent:platformShare,supplier_share_percent:supplierShare,supplier_type:supplierType,supplier_account_id:supplierAccountId||null,supplier_name:supplierName||null,supplier_pickup_enabled:false,status:existing?.status||'published',updated_at:new Date().toISOString()};
+      if(existing)await window.update('products',payload,{id});
+      else await window.insert('products',{id:typeof window.uid==='function'?window.uid('BK'):`BK-${Date.now()}`,...payload,created_at:new Date().toISOString()});
+      if(typeof window.audit==='function')await window.audit('book',`${existing?'تعديل':'إضافة'} كتاب ${name}`);
+      closeEditor();if(typeof window.load==='function')await window.load();render();window.renderStore?.();window.toast?.(existing?'تم تعديل الكتاب':'تمت إضافة الكتاب');
+    }catch(error){console.error('[ALIN books save]',error);alert(error?.message||'تعذر حفظ الكتاب')}
+  }
+
+  async function setStatus(id,status){
+    try{await window.update('products',{status,updated_at:new Date().toISOString()},{id});if(typeof window.load==='function')await window.load();render();window.renderStore?.()}catch(e){alert(e?.message||'تعذر تغيير حالة الكتاب')}
+  }
+
+  function bookCard(item){
+    const img=imageUrl(item),stock=Number(item.stock||0),p=Number(item.platform_share_percent??100),s=Number(item.supplier_share_percent??0);
+    return `<article class="admin-product-v129-card"><div class="admin-product-v129-image">${img?`<img src="${esc(img)}" alt="${esc(item.name||'كتاب')}">`:'<span>📚</span>'}</div><div class="admin-product-v129-body"><div class="admin-product-v129-title"><div><small>كتاب • ${esc(supplierLabel(item))}</small><h3>${esc(item.name||item.title||'كتاب')}</h3></div><strong>${money(item.unit_price??item.price)} د.ع</strong></div><p>${esc(item.description||'')}</p><div class="admin-product-v129-meta"><span>المخزون: ${money(stock)}</span><span>المنصة ${p}%</span><span>المورد ${s}%</span><span>${statusLabel(item.status)}</span></div><div class="admin-product-v129-actions"><button class="secondary" data-alin-click="alinOpenBookEditor" data-alin-click-arg0="${esc(item.id)}">تعديل</button><button data-alin-click="alinSetBookStatus" data-alin-click-arg0="${esc(item.id)}" data-alin-click-arg1="${String(item.status||'published')==='published'?'hidden':'published'}">${String(item.status||'published')==='published'?'إخفاء':'نشر'}</button></div></div></article>`;
+  }
+
+  async function loadBalances(){
+    try{const client=window.sb||window.AlinCloud?.client?.();if(!client?.rpc)return[];const {data,error}=await client.rpc('alin_admin_book_supplier_balances');if(error)throw error;balances=Array.isArray(data)?data:[];return balances}catch(e){console.warn('[ALIN book supplier balances]',e);balances=[];return[]}
+  }
+
+  async function settleSupplier(key){
+    if(!key||!confirm('تثبيت تسوية هذا المورد؟ لن يؤثر ذلك على تسويات الملازم أو المندوبين.'))return;
+    try{const client=window.sb||window.AlinCloud?.client?.();if(!client?.rpc)throw new Error('خدمة التسويات غير متاحة');const {data,error}=await client.rpc('alin_admin_settle_book_supplier',{p_supplier_key:key,p_note:null});if(error)throw error;window.toast?.(`تمت تسوية ${money(data?.amount||0)} د.ع`);await loadBalances();render()}catch(e){alert(e?.message||'تعذر تثبيت تسوية المورد')}
+  }
+
+  function supplierBalancesHtml(){
+    if(!balances.length)return '<div class="empty">لا توجد مبالغ مستحقة لموردي الكتب حالياً.</div>';
+    return `<div class="v164-finance-list">${balances.map(x=>`<div><span><b>${esc(x.supplier_name||'مورد كتب')}</b><small>${x.supplier_type==='library'?'مكتبة':'مطبعة'}</small></span><span>المستحق ${money(x.pending_amount)} د.ع</span><span>${Number(x.orders_count||0)} طلب</span><span>${Number(x.pending_amount||0)>0?`<button data-alin-click="alinSettleBookSupplier" data-alin-click-arg0="${esc(x.supplier_key)}">تسديد المورد</button>`:'مسدد'}</span></div>`).join('')}</div>`;
+  }
+
+  function render(){
+    ensureTab();const host=root();if(!host)return;
+    const rows=books(),published=rows.filter(x=>String(x.status||'published')==='published').length,stock=rows.reduce((s,x)=>s+Number(x.stock||0),0);
+    host.innerHTML=`<section class="admin-products-v129"><header class="admin-products-v129-head"><div><h2>إدارة الكتب</h2><p>نظام كتب مستقل ماليًا عن الملازم، ويستخدم نفس الطلب والتوصيل والمخزون.</p></div><button data-alin-click="alinOpenBookEditor">+ إضافة كتاب</button></header><section class="admin-products-v129-stats"><article><small>الكتب</small><strong>${rows.length}</strong></article><article><small>المنشورة</small><strong>${published}</strong></article><article><small>إجمالي المخزون</small><strong>${money(stock)}</strong></article><article><small>طريقة التسليم</small><strong>مندوب</strong></article></section><section class="admin-product-v129-grid">${rows.map(bookCard).join('')||'<div class="empty">لا توجد كتب مضافة بعد.</div>'}</section><section class="v164-table-card"><header><div><h2>حسابات موردي الكتب</h2><p>مستقلة عن حسابات المدرسين والمكتبات الخاصة بالملازم.</p></div><button class="secondary" data-alin-click="alinRefreshBookSupplierBalances">تحديث</button></header>${supplierBalancesHtml()}</section></section>`;
+    host.dataset.adminModule='books';loadBalances().then(()=>{if(window.activeAdminTab==='books'&&root()?.dataset.adminModule==='books'){const box=root()?.querySelector('.v164-table-card');if(box){const old=box.querySelector('.v164-finance-list,.empty');old?.remove();box.insertAdjacentHTML('beforeend',supplierBalancesHtml())}}});
+  }
+
+  window.alinOpenBookEditor=openEditor;window.alinCloseBookEditor=closeEditor;window.alinSyncBookSupplierFields=syncSupplierFields;window.alinSetBookStatus=setStatus;window.alinSettleBookSupplier=settleSupplier;window.alinRefreshBookSupplierBalances=async()=>{await loadBalances();render()};window.renderBooksAdmin=render;
+  ensureTab();
+  if(window.AlinAdminModules?.register)window.AlinAdminModules.register('books',render);
+  window.addEventListener('alin:data-refreshed',ensureTab);
+})();
+;
+
 /* modules/admin/accounts-advanced.js */
 // === admin/accounts-advanced.js ===
 /* ===== admin/js/admin-accounts-v133.js ===== */
@@ -3045,6 +3113,334 @@ window.addEventListener('alin:data-refreshed',()=>setTimeout(enhance,0));window.
   window.AlinAdminFinance=Object.freeze({render:renderFinanceAdmin,exportLedger});
   window.AlinAdminModules?.register?.('finance',renderFinanceAdmin);
 })();
+;
+
+/* modules/admin/finance-settlement-ui.js */
+// === admin/finance-settlement-ui.js ===
+/* ALIN — safe settlement UI over the existing authoritative finance service. */
+(function(){
+  'use strict';
+  if(window.__ALIN_FINANCE_SETTLEMENT_UI__)return;
+  window.__ALIN_FINANCE_SETTLEMENT_UI__=true;
+
+  const state={role:'',id:'',busy:false,observer:null,scheduled:false};
+  const num=value=>Number.isFinite(Number(value))?Number(value):0;
+  const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+  const money=value=>typeof window.money==='function'?window.money(value):Math.round(num(value)).toLocaleString(window.AlinI18n?.locale?.()||'ar-IQ');
+  const finance=()=>window.AlinFinance;
+  const normalizedRole=role=>String(role||'').toLowerCase().replace('courier','delegate');
+  const roleLabel=role=>({admin:'المنصة',teacher:'المدرس',library:'المكتبة',delegate:'المندوب'})[normalizedRole(role)]||'الحساب';
+
+  function summary(role,id){
+    role=normalizedRole(role);
+    const api=finance();if(!api)return {remaining:0};
+    if(role==='library'){
+      const s=api.librarySummary?.(id)||{};
+      return {...s,remaining:Math.max(0,num(s.remaining??s.debtRemaining))};
+    }
+    if(role==='delegate'){
+      const s=api.delegateSummary?.(id)||{};
+      return {...s,remaining:Math.max(0,num(s.debt??s.remaining))};
+    }
+    const s=api.balance?.(role,id)||{};
+    return {...s,remaining:Math.max(0,num(s.remaining))};
+  }
+
+  function partyName(role,id){return finance()?.partyName?.(normalizedRole(role),id)||roleLabel(role)}
+
+  function ensureStyle(){
+    if(document.getElementById('alinFinanceSettlementCss'))return;
+    const link=document.createElement('link');
+    link.id='alinFinanceSettlementCss';link.rel='stylesheet';
+    const version=window.ALIN_CONFIG?.assetVersion||window.ALIN_CONFIG?.version||'4.2.0';
+    link.href=`./styles/alin-finance-settlement-ui.css?v=${encodeURIComponent(version)}`;
+    document.head.appendChild(link);
+  }
+
+  function ensureModal(){
+    let layer=document.getElementById('alinFinanceSettlementLayer');
+    if(layer)return layer;
+    layer=document.createElement('div');
+    layer.id='alinFinanceSettlementLayer';
+    layer.hidden=true;
+    layer.innerHTML=`<section class="alin-finance-settlement-card" role="dialog" aria-modal="true" aria-labelledby="alinFinanceSettlementTitle">
+      <button type="button" class="alin-finance-settlement-close" data-alin-click="AlinFinanceSettlementUI.close" aria-label="إغلاق">×</button>
+      <header><small>تسوية مالية</small><h2 id="alinFinanceSettlementTitle">تسوية الحساب</h2><p id="alinFinanceSettlementSubtitle"></p></header>
+      <section class="alin-finance-settlement-summary">
+        <div><small>الحساب</small><b id="alinFinanceSettlementName">—</b></div>
+        <div><small>نوع الحساب</small><b id="alinFinanceSettlementRole">—</b></div>
+        <div class="balance"><small>الرصيد الحالي</small><b id="alinFinanceSettlementBalance">0 د.ع</b></div>
+      </section>
+      <div class="alin-finance-settlement-form">
+        <label><span>مبلغ التسوية</span><input id="alinFinanceSettlementAmount" inputmode="numeric" autocomplete="off" placeholder="0"></label>
+        <div class="alin-finance-settlement-shortcuts"><button type="button" data-alin-click="AlinFinanceSettlementUI.useFullBalance">تسوية كامل الرصيد</button></div>
+        <label><span>طريقة الدفع / الاستلام</span><select id="alinFinanceSettlementMethod"><option value="نقدي">نقدي</option><option value="تحويل">تحويل</option><option value="زين كاش">زين كاش</option><option value="آسيا حوالة">آسيا حوالة</option><option value="أخرى">أخرى</option></select></label>
+        <label><span>ملاحظة <small>اختياري</small></span><textarea id="alinFinanceSettlementNote" rows="3" placeholder="مثال: تسوية كاملة حتى تاريخ اليوم"></textarea></label>
+        <div id="alinFinanceSettlementMessage" class="alin-finance-settlement-message" aria-live="polite"></div>
+        <footer><button type="button" class="secondary" data-alin-click="AlinFinanceSettlementUI.close">إلغاء</button><button type="button" id="alinFinanceSettlementConfirm" data-alin-click="AlinFinanceSettlementUI.confirm">تأكيد التسوية</button></footer>
+      </div>
+    </section>`;
+    layer.addEventListener('click',event=>{if(event.target===layer)close()});
+    document.body.appendChild(layer);
+    return layer;
+  }
+
+  function setMessage(message,type=''){
+    const box=document.getElementById('alinFinanceSettlementMessage');if(!box)return;
+    box.textContent=message||'';box.dataset.type=type||'';box.hidden=!message;
+  }
+
+  function open(role,id){
+    role=normalizedRole(role);id=String(id||role);
+    if(!['admin','teacher','library','delegate'].includes(role))return false;
+    const currentRole=String(window.current?.role||'').toLowerCase();
+    if(!['admin','accountant'].includes(currentRole)){alert('هذا الإجراء متاح للإدارة فقط');return false}
+    const s=summary(role,id);
+    if(s.remaining<=0){alert(role==='library'?'حساب المكتبة مصفّى ولا توجد ذمة متبقية':role==='delegate'?'ذمة المندوب مصفّاة':'لا يوجد رصيد متبقٍ');return false}
+    state.role=role;state.id=id;state.busy=false;
+    ensureStyle();const layer=ensureModal();
+    const name=partyName(role,id);
+    document.getElementById('alinFinanceSettlementTitle').textContent='تسوية الحساب';
+    document.getElementById('alinFinanceSettlementSubtitle').textContent='تُسجل العملية كسند مستقل بدون حذف أي حركة أو طلب سابق.';
+    document.getElementById('alinFinanceSettlementName').textContent=name;
+    document.getElementById('alinFinanceSettlementRole').textContent=roleLabel(role);
+    document.getElementById('alinFinanceSettlementBalance').textContent=`${money(s.remaining)} د.ع`;
+    const amount=document.getElementById('alinFinanceSettlementAmount');if(amount){amount.value=String(Math.round(s.remaining));amount.max=String(Math.round(s.remaining));}
+    const method=document.getElementById('alinFinanceSettlementMethod');if(method)method.value='نقدي';
+    const note=document.getElementById('alinFinanceSettlementNote');if(note)note.value='';
+    const confirm=document.getElementById('alinFinanceSettlementConfirm');if(confirm){confirm.disabled=false;confirm.textContent='تأكيد التسوية'}
+    setMessage('');layer.hidden=false;document.body.classList.add('alin-finance-settlement-open');
+    setTimeout(()=>amount?.focus(),30);return true;
+  }
+
+  function close(){
+    if(state.busy)return false;
+    const layer=document.getElementById('alinFinanceSettlementLayer');if(layer)layer.hidden=true;
+    document.body.classList.remove('alin-finance-settlement-open');setMessage('');return true;
+  }
+
+  function useFullBalance(){
+    const s=summary(state.role,state.id),input=document.getElementById('alinFinanceSettlementAmount');
+    if(input)input.value=String(Math.round(s.remaining));
+  }
+
+  async function confirm(){
+    if(state.busy)return false;
+    const role=state.role,id=state.id,api=finance();if(!api?.recordSettlement)return false;
+    const latest=summary(role,id),remaining=Math.max(0,num(latest.remaining));
+    if(remaining<=0){setMessage('الحساب أصبح مصفّى ولا توجد ذمة متبقية.','success');setTimeout(()=>{state.busy=false;close()},700);return false}
+    const input=document.getElementById('alinFinanceSettlementAmount');
+    const amount=num(String(input?.value||'').replace(/[ ,،]/g,''));
+    if(amount<=0){setMessage('اكتب مبلغ تسوية أكبر من صفر.','error');input?.focus();return false}
+    if(amount>remaining){setMessage(`المبلغ أكبر من الرصيد الحالي (${money(remaining)} د.ع).`,'error');input?.focus();return false}
+    const method=document.getElementById('alinFinanceSettlementMethod')?.value||'نقدي';
+    const customNote=document.getElementById('alinFinanceSettlementNote')?.value?.trim()||'';
+    const defaultNote=role==='library'?'تسوية ذمة مكتبة من لوحة الإدارة':role==='delegate'?'تسوية ذمة مندوب من لوحة الإدارة':role==='admin'?'استلام ربح المنصة':'تسديد أرباح المدرس';
+    const note=customNote?`${defaultNote} — ${customNote}`:defaultNote;
+    const button=document.getElementById('alinFinanceSettlementConfirm');
+    state.busy=true;if(button){button.disabled=true;button.textContent='جارٍ تثبيت التسوية...'}setMessage('جارٍ تسجيل السند والتحقق من الرصيد...','working');
+    try{
+      const result=await api.recordSettlement(role,id,amount,method,note);
+      if(typeof window.load==='function')await window.load({force:true,reason:'finance-settlement-ui'});
+      setMessage(`تم تسجيل تسوية بقيمة ${money(amount)} د.ع بنجاح.`,'success');
+      if(typeof window.audit==='function')await window.audit('finance',`تسوية ${roleLabel(role)} ${partyName(role,id)} بمبلغ ${Math.round(amount)} د.ع`);
+      if(typeof window.renderFinanceAdmin==='function')window.renderFinanceAdmin();
+      if(typeof window.toast==='function')window.toast('تم تسجيل سند التسوية');
+      setTimeout(()=>{state.busy=false;close()},650);
+      return result;
+    }catch(error){
+      console.error('[ALIN finance settlement UI]',error);
+      state.busy=false;if(button){button.disabled=false;button.textContent='تأكيد التسوية'}
+      setMessage(error?.message||'تعذر تسجيل التسوية. لم يتم تغيير الرصيد.','error');return false;
+    }
+  }
+
+  function patchButtons(root=document){
+    root.querySelectorAll('[data-alin-click="AlinFinance.payBalance"]').forEach(button=>{
+      const role=button.dataset.alinClickArg0||'';const id=button.dataset.alinClickArg1||'';
+      button.dataset.alinClick='AlinFinanceSettlementUI.open';button.dataset.alinClickArg0=normalizedRole(role);button.dataset.alinClickArg1=id;
+    });
+    root.querySelectorAll('[data-alin-click="AlinFinance.settleLibrary"]').forEach(button=>{
+      const id=button.dataset.alinClickArg0||'';button.dataset.alinClick='AlinFinanceSettlementUI.open';button.dataset.alinClickArg0='library';button.dataset.alinClickArg1=id;
+    });
+    root.querySelectorAll('[data-alin-click="AlinFinance.settleDelegate"]').forEach(button=>{
+      const id=button.dataset.alinClickArg0||'';button.dataset.alinClick='AlinFinanceSettlementUI.open';button.dataset.alinClickArg0='delegate';button.dataset.alinClickArg1=id;
+    });
+  }
+
+  function schedule(){if(state.scheduled)return;state.scheduled=true;requestAnimationFrame(()=>{state.scheduled=false;patchButtons(document)})}
+  function start(){ensureStyle();ensureModal();patchButtons(document);state.observer=new MutationObserver(schedule);state.observer.observe(document.body,{childList:true,subtree:true})}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+  ['alin:role-runtime-ready','alin:data-refreshed','alin:page-open'].forEach(type=>window.addEventListener(type,schedule));
+
+  window.AlinFinanceSettlementUI=Object.freeze({open,close,confirm,useFullBalance,patchButtons});
+})();
+
+;
+;
+
+/* modules/admin/finance-settlement-ui.js */
+// === admin/finance-settlement-ui.js ===
+/* ALIN — safe settlement UI over the existing authoritative finance service. */
+(function(){
+  'use strict';
+  if(window.__ALIN_FINANCE_SETTLEMENT_UI__)return;
+  window.__ALIN_FINANCE_SETTLEMENT_UI__=true;
+
+  const state={role:'',id:'',busy:false,observer:null,scheduled:false};
+  const num=value=>Number.isFinite(Number(value))?Number(value):0;
+  const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+  const money=value=>typeof window.money==='function'?window.money(value):Math.round(num(value)).toLocaleString(window.AlinI18n?.locale?.()||'ar-IQ');
+  const finance=()=>window.AlinFinance;
+  const normalizedRole=role=>String(role||'').toLowerCase().replace('courier','delegate');
+  const roleLabel=role=>({admin:'المنصة',teacher:'المدرس',library:'المكتبة',delegate:'المندوب'})[normalizedRole(role)]||'الحساب';
+
+  function summary(role,id){
+    role=normalizedRole(role);
+    const api=finance();if(!api)return {remaining:0};
+    if(role==='library'){
+      const s=api.librarySummary?.(id)||{};
+      return {...s,remaining:Math.max(0,num(s.remaining??s.debtRemaining))};
+    }
+    if(role==='delegate'){
+      const s=api.delegateSummary?.(id)||{};
+      return {...s,remaining:Math.max(0,num(s.debt??s.remaining))};
+    }
+    const s=api.balance?.(role,id)||{};
+    return {...s,remaining:Math.max(0,num(s.remaining))};
+  }
+
+  function partyName(role,id){return finance()?.partyName?.(normalizedRole(role),id)||roleLabel(role)}
+
+  function ensureStyle(){
+    if(document.getElementById('alinFinanceSettlementCss'))return;
+    const link=document.createElement('link');
+    link.id='alinFinanceSettlementCss';link.rel='stylesheet';
+    const version=window.ALIN_CONFIG?.assetVersion||window.ALIN_CONFIG?.version||'4.2.0';
+    link.href=`./styles/alin-finance-settlement-ui.css?v=${encodeURIComponent(version)}`;
+    document.head.appendChild(link);
+  }
+
+  function ensureModal(){
+    let layer=document.getElementById('alinFinanceSettlementLayer');
+    if(layer)return layer;
+    layer=document.createElement('div');
+    layer.id='alinFinanceSettlementLayer';
+    layer.hidden=true;
+    layer.innerHTML=`<section class="alin-finance-settlement-card" role="dialog" aria-modal="true" aria-labelledby="alinFinanceSettlementTitle">
+      <button type="button" class="alin-finance-settlement-close" data-alin-click="AlinFinanceSettlementUI.close" aria-label="إغلاق">×</button>
+      <header><small>تسوية مالية</small><h2 id="alinFinanceSettlementTitle">تسوية الحساب</h2><p id="alinFinanceSettlementSubtitle"></p></header>
+      <section class="alin-finance-settlement-summary">
+        <div><small>الحساب</small><b id="alinFinanceSettlementName">—</b></div>
+        <div><small>نوع الحساب</small><b id="alinFinanceSettlementRole">—</b></div>
+        <div class="balance"><small>الرصيد الحالي</small><b id="alinFinanceSettlementBalance">0 د.ع</b></div>
+      </section>
+      <div class="alin-finance-settlement-form">
+        <label><span>مبلغ التسوية</span><input id="alinFinanceSettlementAmount" inputmode="numeric" autocomplete="off" placeholder="0"></label>
+        <div class="alin-finance-settlement-shortcuts"><button type="button" data-alin-click="AlinFinanceSettlementUI.useFullBalance">تسوية كامل الرصيد</button></div>
+        <label><span>طريقة الدفع / الاستلام</span><select id="alinFinanceSettlementMethod"><option value="نقدي">نقدي</option><option value="تحويل">تحويل</option><option value="زين كاش">زين كاش</option><option value="آسيا حوالة">آسيا حوالة</option><option value="أخرى">أخرى</option></select></label>
+        <label><span>ملاحظة <small>اختياري</small></span><textarea id="alinFinanceSettlementNote" rows="3" placeholder="مثال: تسوية كاملة حتى تاريخ اليوم"></textarea></label>
+        <div id="alinFinanceSettlementMessage" class="alin-finance-settlement-message" aria-live="polite"></div>
+        <footer><button type="button" class="secondary" data-alin-click="AlinFinanceSettlementUI.close">إلغاء</button><button type="button" id="alinFinanceSettlementConfirm" data-alin-click="AlinFinanceSettlementUI.confirm">تأكيد التسوية</button></footer>
+      </div>
+    </section>`;
+    layer.addEventListener('click',event=>{if(event.target===layer)close()});
+    document.body.appendChild(layer);
+    return layer;
+  }
+
+  function setMessage(message,type=''){
+    const box=document.getElementById('alinFinanceSettlementMessage');if(!box)return;
+    box.textContent=message||'';box.dataset.type=type||'';box.hidden=!message;
+  }
+
+  function open(role,id){
+    role=normalizedRole(role);id=String(id||role);
+    if(!['admin','teacher','library','delegate'].includes(role))return false;
+    const currentRole=String(window.current?.role||'').toLowerCase();
+    if(!['admin','accountant'].includes(currentRole)){alert('هذا الإجراء متاح للإدارة فقط');return false}
+    const s=summary(role,id);
+    if(s.remaining<=0){alert(role==='library'?'حساب المكتبة مصفّى ولا توجد ذمة متبقية':role==='delegate'?'ذمة المندوب مصفّاة':'لا يوجد رصيد متبقٍ');return false}
+    state.role=role;state.id=id;state.busy=false;
+    ensureStyle();const layer=ensureModal();
+    const name=partyName(role,id);
+    document.getElementById('alinFinanceSettlementTitle').textContent='تسوية الحساب';
+    document.getElementById('alinFinanceSettlementSubtitle').textContent='تُسجل العملية كسند مستقل بدون حذف أي حركة أو طلب سابق.';
+    document.getElementById('alinFinanceSettlementName').textContent=name;
+    document.getElementById('alinFinanceSettlementRole').textContent=roleLabel(role);
+    document.getElementById('alinFinanceSettlementBalance').textContent=`${money(s.remaining)} د.ع`;
+    const amount=document.getElementById('alinFinanceSettlementAmount');if(amount){amount.value=String(Math.round(s.remaining));amount.max=String(Math.round(s.remaining));}
+    const method=document.getElementById('alinFinanceSettlementMethod');if(method)method.value='نقدي';
+    const note=document.getElementById('alinFinanceSettlementNote');if(note)note.value='';
+    const confirm=document.getElementById('alinFinanceSettlementConfirm');if(confirm){confirm.disabled=false;confirm.textContent='تأكيد التسوية'}
+    setMessage('');layer.hidden=false;document.body.classList.add('alin-finance-settlement-open');
+    setTimeout(()=>amount?.focus(),30);return true;
+  }
+
+  function close(){
+    if(state.busy)return false;
+    const layer=document.getElementById('alinFinanceSettlementLayer');if(layer)layer.hidden=true;
+    document.body.classList.remove('alin-finance-settlement-open');setMessage('');return true;
+  }
+
+  function useFullBalance(){
+    const s=summary(state.role,state.id),input=document.getElementById('alinFinanceSettlementAmount');
+    if(input)input.value=String(Math.round(s.remaining));
+  }
+
+  async function confirm(){
+    if(state.busy)return false;
+    const role=state.role,id=state.id,api=finance();if(!api?.recordSettlement)return false;
+    const latest=summary(role,id),remaining=Math.max(0,num(latest.remaining));
+    if(remaining<=0){setMessage('الحساب أصبح مصفّى ولا توجد ذمة متبقية.','success');setTimeout(()=>{state.busy=false;close()},700);return false}
+    const input=document.getElementById('alinFinanceSettlementAmount');
+    const amount=num(String(input?.value||'').replace(/[ ,،]/g,''));
+    if(amount<=0){setMessage('اكتب مبلغ تسوية أكبر من صفر.','error');input?.focus();return false}
+    if(amount>remaining){setMessage(`المبلغ أكبر من الرصيد الحالي (${money(remaining)} د.ع).`,'error');input?.focus();return false}
+    const method=document.getElementById('alinFinanceSettlementMethod')?.value||'نقدي';
+    const customNote=document.getElementById('alinFinanceSettlementNote')?.value?.trim()||'';
+    const defaultNote=role==='library'?'تسوية ذمة مكتبة من لوحة الإدارة':role==='delegate'?'تسوية ذمة مندوب من لوحة الإدارة':role==='admin'?'استلام ربح المنصة':'تسديد أرباح المدرس';
+    const note=customNote?`${defaultNote} — ${customNote}`:defaultNote;
+    const button=document.getElementById('alinFinanceSettlementConfirm');
+    state.busy=true;if(button){button.disabled=true;button.textContent='جارٍ تثبيت التسوية...'}setMessage('جارٍ تسجيل السند والتحقق من الرصيد...','working');
+    try{
+      const result=await api.recordSettlement(role,id,amount,method,note);
+      if(typeof window.load==='function')await window.load({force:true,reason:'finance-settlement-ui'});
+      setMessage(`تم تسجيل تسوية بقيمة ${money(amount)} د.ع بنجاح.`,'success');
+      if(typeof window.audit==='function')await window.audit('finance',`تسوية ${roleLabel(role)} ${partyName(role,id)} بمبلغ ${Math.round(amount)} د.ع`);
+      if(typeof window.renderFinanceAdmin==='function')window.renderFinanceAdmin();
+      if(typeof window.toast==='function')window.toast('تم تسجيل سند التسوية');
+      setTimeout(()=>{state.busy=false;close()},650);
+      return result;
+    }catch(error){
+      console.error('[ALIN finance settlement UI]',error);
+      state.busy=false;if(button){button.disabled=false;button.textContent='تأكيد التسوية'}
+      setMessage(error?.message||'تعذر تسجيل التسوية. لم يتم تغيير الرصيد.','error');return false;
+    }
+  }
+
+  function patchButtons(root=document){
+    root.querySelectorAll('[data-alin-click="AlinFinance.payBalance"]').forEach(button=>{
+      const role=button.dataset.alinClickArg0||'';const id=button.dataset.alinClickArg1||'';
+      button.dataset.alinClick='AlinFinanceSettlementUI.open';button.dataset.alinClickArg0=normalizedRole(role);button.dataset.alinClickArg1=id;
+    });
+    root.querySelectorAll('[data-alin-click="AlinFinance.settleLibrary"]').forEach(button=>{
+      const id=button.dataset.alinClickArg0||'';button.dataset.alinClick='AlinFinanceSettlementUI.open';button.dataset.alinClickArg0='library';button.dataset.alinClickArg1=id;
+    });
+    root.querySelectorAll('[data-alin-click="AlinFinance.settleDelegate"]').forEach(button=>{
+      const id=button.dataset.alinClickArg0||'';button.dataset.alinClick='AlinFinanceSettlementUI.open';button.dataset.alinClickArg0='delegate';button.dataset.alinClickArg1=id;
+    });
+  }
+
+  function schedule(){if(state.scheduled)return;state.scheduled=true;requestAnimationFrame(()=>{state.scheduled=false;patchButtons(document)})}
+  function start(){ensureStyle();ensureModal();patchButtons(document);state.observer=new MutationObserver(schedule);state.observer.observe(document.body,{childList:true,subtree:true})}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+  ['alin:role-runtime-ready','alin:data-refreshed','alin:page-open'].forEach(type=>window.addEventListener(type,schedule));
+
+  window.AlinFinanceSettlementUI=Object.freeze({open,close,confirm,useFullBalance,patchButtons});
+})();
+
+;
 ;
 
 /* modules/admin/coupons.js */
@@ -4406,6 +4802,48 @@ window.deleteCoupon = deleteCoupon;
 ;
 ;
 
+/* modules/courier/book-pickup-source.js */
+// === courier/book-pickup-source.js ===
+// Shows the physical pickup source for book deliveries without changing the
+// existing courier state machine or finance calculations.
+(function(){
+  'use strict';
+  const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const orders=()=>Array.isArray(window.db?.orders)?window.db.orders:[];
+  const byId=id=>orders().find(o=>String(o.id)===String(id));
+
+  function decorate(){
+    document.querySelectorAll('.v174-order[data-courier-order]').forEach(card=>{
+      if(card.querySelector('.alin-book-pickup-source'))return;
+      const order=byId(card.dataset.courierOrder);
+      if(!order||String(order.kind||'').toLowerCase()!=='book')return;
+      const label=String(order.pickup_source_label||'منصة آلين').trim()||'منصة آلين';
+      const data=card.querySelector('.v174-order-data');if(!data)return;
+      const node=document.createElement('div');node.className='wide alin-book-pickup-source';
+      node.innerHTML=`<small>استلم الطلب من</small><b>${esc(label)}</b>`;
+      data.insertBefore(node,data.firstChild);
+    });
+  }
+
+  function wrapDashboard(){
+    const original=window.renderCourierDashboard;
+    if(typeof original!=='function'||original.__alinBookPickupWrapped)return;
+    const wrapped=async function(...args){
+      const result=await original.apply(this,args);
+      decorate();
+      return result;
+    };
+    Object.defineProperty(wrapped,'__alinBookPickupWrapped',{value:true});
+    window.renderCourierDashboard=wrapped;
+  }
+
+  wrapDashboard();
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',decorate,{once:true});else decorate();
+  window.addEventListener('alin:data-refreshed',()=>setTimeout(decorate,0));
+  window.addEventListener('alin:page-open',event=>{if(event.detail?.page==='courier')setTimeout(decorate,0)});
+})();
+;
+
 /* modules/courier/finance.js */
 // === courier/finance.js ===
 /* ===== courier/js/settlements.js ===== */
@@ -4429,6 +4867,188 @@ async function recordCourierSettlementForOrder(orderId){
 window.AlinCourierModules['renderCourierSettlementsAdmin']=typeof renderCourierSettlementsAdmin==='function'?renderCourierSettlementsAdmin:window['renderCourierSettlementsAdmin'];window['renderCourierSettlementsAdmin']=window.AlinCourierModules['renderCourierSettlementsAdmin'];
 window.AlinCourierModules['recordCourierSettlementForOrder']=typeof recordCourierSettlementForOrder==='function'?recordCourierSettlementForOrder:window['recordCourierSettlementForOrder'];window['recordCourierSettlementForOrder']=window.AlinCourierModules['recordCourierSettlementForOrder'];
 
+
+;
+;
+
+/* modules/admin/courier-hub.js */
+// === admin/courier-hub.js ===
+/* ALIN — one courier administration hub inside the admin panel. */
+(function(){
+  'use strict';
+  if(window.__ALIN_COURIER_ADMIN_HUB__)return;
+  window.__ALIN_COURIER_ADMIN_HUB__=true;
+
+  const VALID=new Set(['couriers','areas','orders','settlements']);
+  const LEGACY_TO_SECTION={courierAreas:'areas',deliveryOrders:'orders',courierSettlements:'settlements'};
+  const state={section:'couriers',scheduled:false,observer:null};
+  const original={
+    couriers:typeof window.renderCouriersAdmin==='function'?window.renderCouriersAdmin:null,
+    areas:typeof window.renderCourierAreasAdmin==='function'?window.renderCourierAreasAdmin:null,
+    orders:typeof window.renderDeliveryOrdersAdmin==='function'?window.renderDeliveryOrdersAdmin:null,
+    settlements:typeof window.renderCourierSettlementsAdmin==='function'?window.renderCourierSettlementsAdmin:null
+  };
+
+  function root(){return document.getElementById('adminContent')}
+  function adminPage(){return document.getElementById('adminPage')}
+  function isAdminVisible(){const page=adminPage();return Boolean(page&&!page.classList.contains('hidden'))}
+
+  function ensureStyle(){
+    if(document.getElementById('alinCourierAdminHubCss'))return;
+    const link=document.createElement('link');
+    link.id='alinCourierAdminHubCss';
+    link.rel='stylesheet';
+    const version=window.ALIN_CONFIG?.assetVersion||window.ALIN_CONFIG?.version||'4.2.0';
+    link.href=`./styles/alin-admin-courier-hub.css?v=${encodeURIComponent(version)}`;
+    document.head.appendChild(link);
+  }
+
+  function removeLegacyMainTabs(){
+    ['courierAreas','deliveryOrders','courierSettlements'].forEach(tab=>{
+      document.querySelectorAll(`#adminPage .admin-tabs [data-admin-tab="${tab}"]`).forEach(button=>button.remove());
+    });
+  }
+
+  function markCourierMainTab(){
+    const page=adminPage();
+    if(page)page.dataset.activeAdminTab='couriers';
+    window.activeAdminTab='couriers';
+    document.querySelectorAll('#adminPage .admin-tabs [data-admin-tab]').forEach(button=>{
+      button.classList.toggle('active-admin-tab',button.dataset.adminTab==='couriers');
+    });
+    const host=root();
+    if(host)host.dataset.adminModule='couriers';
+  }
+
+  function navMarkup(section){
+    const items=[
+      ['couriers','المندوبون'],
+      ['areas','إدارة المناطق'],
+      ['orders','طلبات التوصيل'],
+      ['settlements','تسويات المندوبين']
+    ];
+    return `<section class="alin-courier-admin-hub" data-courier-hub-section="${section}">
+      <div class="alin-courier-admin-hub-title"><div><small>قسم موحد</small><strong>إدارة المندوبين</strong></div><span>منصة آلين</span></div>
+      <nav aria-label="أقسام إدارة المندوبين">${items.map(([key,label])=>`<button type="button" class="${key===section?'active':''}" data-alin-click="alinCourierHubOpen" data-alin-click-arg0="${key}">${label}</button>`).join('')}</nav>
+    </section>`;
+  }
+
+  function removeCourierCreateButton(){
+    const host=root();if(!host)return;
+    host.querySelectorAll('.v164-admin-head button[data-alin-click="alinV161CourierForm"]:not([data-alin-click-arg0])').forEach(button=>button.remove());
+  }
+
+  function decorateHub(section=state.section){
+    if(!VALID.has(section))section='couriers';
+    const host=root();if(!host)return;
+    state.section=section;
+    removeLegacyMainTabs();
+    removeCourierCreateButton();
+    const current=host.querySelector(':scope > .alin-courier-admin-hub');
+    if(!current){host.insertAdjacentHTML('afterbegin',navMarkup(section));}
+    else if(current.dataset.courierHubSection!==section){current.outerHTML=navMarkup(section);}
+    markCourierMainTab();
+  }
+
+  function invoke(section){
+    section=VALID.has(section)?section:'couriers';
+    state.section=section;
+    const renderer=original[section];
+    if(typeof renderer!=='function'){
+      const host=root();
+      if(host)host.innerHTML='<section class="notice"><b>القسم غير جاهز</b><div>تعذر تحميل قسم إدارة المندوبين. حدّث الصفحة مرة واحدة.</div></section>';
+      decorateHub(section);
+      return false;
+    }
+    try{
+      const result=renderer();
+      Promise.resolve(result).finally(()=>decorateHub(section));
+      decorateHub(section);
+      return result;
+    }catch(error){
+      console.error('[ALIN courier admin hub]',error);
+      decorateHub(section);
+      return false;
+    }
+  }
+
+  function decorateAccounts(){
+    const host=root();
+    if(!host||window.activeAdminTab!=='accounts')return;
+    const head=host.querySelector('.v131-accounts-head');
+    if(!head||document.getElementById('alinAccountsAddCourierButton'))return;
+    const general=head.querySelector('.v131-add-account');
+    const button=document.createElement('button');
+    button.id='alinAccountsAddCourierButton';
+    button.type='button';
+    button.className='v131-add-account alin-add-courier-account';
+    button.dataset.alinClick='alinOpenCourierFromAccounts';
+    button.textContent='+ إضافة مندوب';
+    if(general)general.insertAdjacentElement('beforebegin',button);else head.appendChild(button);
+  }
+
+  function openCourierFromAccounts(){
+    const open=()=>{
+      const role=document.getElementById('aRole');
+      if(!role)return false;
+      role.value='courier';
+      window.v131ToggleAccountForm?.(true);
+      window.v131SyncAccountRole?.();
+      document.getElementById('v131AccountForm')?.scrollIntoView?.({behavior:'smooth',block:'start'});
+      return true;
+    };
+    if(window.activeAdminTab!=='accounts'){
+      window.adminTab?.('accounts');
+      setTimeout(open,80);
+      setTimeout(open,260);
+      return true;
+    }
+    return open();
+  }
+
+  function schedule(){
+    if(state.scheduled)return;
+    state.scheduled=true;
+    requestAnimationFrame(()=>{
+      state.scheduled=false;
+      ensureStyle();
+      removeLegacyMainTabs();
+      if(!isAdminVisible())return;
+      if(window.activeAdminTab==='accounts'){decorateAccounts();return;}
+      if(window.activeAdminTab==='couriers')decorateHub(state.section);
+    });
+  }
+
+  window.alinCourierHubOpen=invoke;
+  window.alinOpenCourierFromAccounts=openCourierFromAccounts;
+  window.AlinCourierAdminHub=Object.freeze({open:invoke,decorate:decorateHub,section:()=>state.section});
+
+  ensureStyle();
+  removeLegacyMainTabs();
+
+  // Keep old deep links/routes working, but render them inside the one courier hub.
+  window.AlinAdminModules?.register?.('couriers',()=>invoke('couriers'));
+  window.AlinAdminModules?.register?.('courierAreas',()=>invoke('areas'));
+  window.AlinAdminModules?.register?.('deliveryOrders',()=>invoke('orders'));
+  window.AlinAdminModules?.register?.('courierSettlements',()=>invoke('settlements'));
+
+  window.addEventListener('alin:admin-tab',event=>{
+    const tab=String(event.detail?.tab||'');
+    if(tab==='accounts'){schedule();return;}
+    if(tab==='couriers')state.section='couriers';
+    else if(LEGACY_TO_SECTION[tab])state.section=LEGACY_TO_SECTION[tab];
+    schedule();
+  });
+  window.addEventListener('alin:page-open',schedule);
+  window.addEventListener('alin:data-refreshed',schedule);
+
+  const host=root();
+  if(host){
+    state.observer=new MutationObserver(schedule);
+    state.observer.observe(host,{childList:true,subtree:true});
+  }
+  schedule();
+})();
 
 ;
 ;
@@ -5206,6 +5826,230 @@ window.AlinCourierModules['recordCourierSettlementForOrder']=typeof recordCourie
 })();
 ;
 
+/* modules/core/order-attention.js */
+// === core/order-attention.js ===
+/* ALIN v4.2 Stable — unified new-order attention for admin, library and courier. */
+(function(){
+  'use strict';
+  if(window.__ALIN_ORDER_ATTENTION__)return;
+  window.__ALIN_ORDER_ATTENTION__=true;
+
+  const VERSION='4.2.0';
+  const POLL_MS=6000;
+  const READ_PREFIX='alin_order_attention_read_v1';
+  let pollBusy=false;
+  let lastSignature='';
+  let uiQueued=false;
+
+  const text=value=>String(value??'').trim();
+  const arr=value=>Array.isArray(value)?value:[];
+  const role=()=>{
+    const value=text(window.current?.role).toLowerCase();
+    return ['admin','library','courier'].includes(value)?value:'';
+  };
+  const orderId=order=>text(order?.id||order?.order_id||order?.order_number||order?.tracking_code);
+  const status=order=>text(order?.status||'new').toLowerCase();
+
+  function loadStyle(){
+    if(document.getElementById('alinOrderAttentionCss'))return;
+    const link=document.createElement('link');
+    link.id='alinOrderAttentionCss';
+    link.rel='stylesheet';
+    link.href=`./styles/alin-order-attention.css?v=${encodeURIComponent(window.ALIN_CONFIG?.assetVersion||VERSION)}`;
+    document.head.appendChild(link);
+  }
+  loadStyle();
+
+  function accountIds(currentRole=role()){
+    const current=window.current||{};
+    const ids=new Set([
+      current.id,current.account_id,current.library_id,current.courier_id,current.delegate_id,
+      current.auth_user_id,current.user_id,current.username
+    ].filter(Boolean).map(text));
+    const sources=currentRole==='library'?
+      [...arr(window.db?.accounts?.libraries),...arr(window.db?.libraries)]:
+      currentRole==='courier'?
+      [...arr(window.db?.accounts?.couriers),...arr(window.db?.couriers),...arr(window.couriers)]:[];
+    for(const item of sources){
+      const related=[item?.id,item?.account_id,item?.library_id,item?.library_row_id,item?.courier_id,item?.courier_row_id,item?.user_id,item?.auth_user_id,item?.username].filter(Boolean).map(text);
+      if(related.some(id=>ids.has(id)))related.forEach(id=>ids.add(id));
+    }
+    return ids;
+  }
+
+  function relevant(order,currentRole=role()){
+    if(!order||!currentRole)return false;
+    if(currentRole==='admin')return true;
+    const ids=accountIds(currentRole);
+    if(currentRole==='library')return [order.library_id,order.pickup_library_id,order.assigned_library_id].filter(Boolean).map(text).some(id=>ids.has(id));
+    return [order.courier_id,order.delegate_id,order.courier_account_id,order.assigned_courier_id].filter(Boolean).map(text).some(id=>ids.has(id));
+  }
+
+  function needsAttention(order,currentRole=role()){
+    if(!relevant(order,currentRole))return false;
+    const s=status(order);
+    if(currentRole==='admin')return ['new','pending','pending_admin','payment_pending'].includes(s);
+    if(currentRole==='library')return ['new','pending','pending_admin','accepted'].includes(s);
+    return ['assigned','new','pending_admin'].includes(s);
+  }
+
+  function accountKey(currentRole=role()){
+    const current=window.current||{};
+    if(currentRole==='library')return text(current.id||current.library_id||current.account_id||current.username||'session');
+    if(currentRole==='courier')return text(current.id||current.courier_id||current.delegate_id||current.account_id||current.username||'session');
+    return text(current.id||current.account_id||current.username||'session');
+  }
+  function storageKey(currentRole=role()){return `${READ_PREFIX}:${currentRole}:${accountKey(currentRole)}`}
+  function readSet(currentRole=role()){
+    try{return new Set(JSON.parse(localStorage.getItem(storageKey(currentRole))||'[]').map(text).filter(Boolean))}catch(_){return new Set()}
+  }
+  function writeSet(set,currentRole=role()){
+    try{localStorage.setItem(storageKey(currentRole),JSON.stringify([...set].slice(-1000)))}catch(_){ }
+  }
+  function markRead(id,currentRole=role()){
+    const key=text(id);if(!key||!currentRole)return false;
+    const seen=readSet(currentRole);seen.add(key);writeSet(seen,currentRole);refreshUI();return true;
+  }
+  function isUnread(order,currentRole=role()){
+    if(!needsAttention(order,currentRole))return false;
+    return !readSet(currentRole).has(orderId(order));
+  }
+  function unreadOrders(currentRole=role()){
+    return arr(window.db?.orders).filter(order=>isUnread(order,currentRole));
+  }
+  function unreadCount(currentRole=role()){return unreadOrders(currentRole).length}
+
+  function ensureBadge(button,className='alin-order-attention-badge'){
+    if(!button)return null;
+    let badge=button.querySelector(`.${className}`);
+    if(!badge){badge=document.createElement('span');badge.className=className;badge.hidden=true;button.appendChild(badge)}
+    return badge;
+  }
+  function paintBadge(badge,count){if(!badge)return;badge.textContent=count>99?'99+':String(count);badge.hidden=count===0}
+
+  function cardId(card){
+    if(!card)return '';
+    if(card.dataset?.courierOrder)return text(card.dataset.courierOrder);
+    const button=card.querySelector('[data-alin-click-arg0]');
+    return text(button?.dataset?.alinClickArg0||'');
+  }
+  function decorateCard(card,currentRole){
+    const id=cardId(card);if(!id)return;
+    const order=arr(window.db?.orders).find(row=>orderId(row)===id);
+    const unread=Boolean(order&&isUnread(order,currentRole));
+    card.classList.toggle('alin-order-attention-unread',unread);
+    let badge=card.querySelector('.alin-order-attention-new');
+    if(unread&&!badge){
+      badge=document.createElement('span');badge.className='alin-order-attention-new';badge.textContent='جديد';
+      const target=card.querySelector('.admin-order-v126-title,.library-v116-status,.v174-order-state')||card.firstElementChild;
+      target?.appendChild(badge);
+    }else if(!unread&&badge)badge.remove();
+  }
+
+  function refreshUI(){
+    if(uiQueued)return;uiQueued=true;
+    requestAnimationFrame(()=>{
+      uiQueued=false;
+      const currentRole=role();if(!currentRole)return;
+      const count=unreadCount(currentRole);
+      if(currentRole==='admin'){
+        document.querySelectorAll('#adminPage [data-admin-tab="orders"]').forEach(button=>paintBadge(ensureBadge(button),count));
+        document.querySelectorAll('#adminContent .admin-order-v126').forEach(card=>decorateCard(card,currentRole));
+      }else if(currentRole==='library'){
+        paintBadge(document.getElementById('libraryV116OrdersBadge'),count);
+        document.querySelectorAll('#libraryPage .library-v116-order').forEach(card=>decorateCard(card,currentRole));
+      }else if(currentRole==='courier'){
+        paintBadge(document.getElementById('courierCurrentBadge'),count);
+        document.querySelectorAll('#courierPage .v174-order').forEach(card=>decorateCard(card,currentRole));
+      }
+    });
+  }
+
+  function refreshRoleView(){
+    const currentRole=role();
+    if(currentRole==='library'&&typeof window.AlinLibraryV116?.render==='function')window.AlinLibraryV116.render();
+    setTimeout(refreshUI,0);
+  }
+
+  function orderSignature(rows){
+    return arr(rows).map(row=>[
+      orderId(row),text(row?.updated_at||row?.created_at),status(row),
+      text(row?.library_id||row?.pickup_library_id||row?.assigned_library_id),
+      text(row?.courier_id||row?.delegate_id||row?.assigned_courier_id)
+    ].join(':')).sort().join('|');
+  }
+
+  async function pollOrders(force=false){
+    const currentRole=role();
+    if(!currentRole||pollBusy||!navigator.onLine)return false;
+    if(!force&&document.visibilityState&&document.visibilityState!=='visible')return false;
+    if(typeof window.query!=='function')return false;
+    pollBusy=true;
+    try{
+      const rows=await window.query('orders',{orderBy:'created_at',ascending:false,limit:1000});
+      const next=arr(rows);
+      const signature=orderSignature(next);
+      if(signature!==lastSignature){
+        lastSignature=signature;
+        if(!window.db||typeof window.db!=='object')window.db={};
+        window.db.orders=next;
+        window.dispatchEvent(new CustomEvent('alin:data-refreshed',{detail:{reason:'staff-order-attention',tables:['orders'],at:new Date().toISOString()}}));
+      }else refreshUI();
+      return true;
+    }catch(error){
+      console.warn('[ALIN order attention] poll',error);
+      return false;
+    }finally{pollBusy=false}
+  }
+
+  function openRelevantPage(currentRole=role()){
+    if(currentRole==='admin')window.adminTab?.('orders');
+    else if(currentRole==='library')document.querySelector('#libraryPage [data-library-tab="orders"]')?.click();
+    else if(currentRole==='courier')window.renderCourierDashboard?.('current',{force:true});
+  }
+
+  function onCardInteraction(event){
+    const currentRole=role();if(!currentRole)return;
+    const selector=currentRole==='admin'?'.admin-order-v126':currentRole==='library'?'.library-v116-order':'.v174-order';
+    const card=event.target?.closest?.(selector);if(!card)return;
+    const id=cardId(card);if(id)markRead(id,currentRole);
+  }
+
+  function onNewOrder(event){
+    const detail=event?.detail||{};
+    if(detail.role&&detail.role!==role())return;
+    refreshUI();
+    setTimeout(()=>pollOrders(true),120);
+  }
+
+  function boot(){
+    const currentRole=role();if(!currentRole)return;
+    lastSignature=orderSignature(window.db?.orders||[]);
+    refreshRoleView();
+    setTimeout(()=>pollOrders(true),700);
+  }
+
+  document.addEventListener('click',onCardInteraction,true);
+  document.addEventListener('click',event=>{
+    if(event.target?.closest?.('[data-library-tab],[data-courier-tab]'))setTimeout(refreshUI,0);
+  });
+  window.addEventListener('alin:new-order-bell',onNewOrder);
+  window.addEventListener('alin:data-refreshed',refreshRoleView);
+  window.addEventListener('alin:realtime-change',event=>{if(text(event?.detail?.table).toLowerCase()==='orders')setTimeout(()=>pollOrders(true),120)});
+  window.addEventListener('alin:admin-tab',()=>refreshUI());
+  window.addEventListener('alin:page-open',()=>refreshUI());
+  window.addEventListener('focus',()=>pollOrders(true),{passive:true});
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')pollOrders(true)});
+  window.addEventListener('alin:auth-login',()=>setTimeout(boot,200));
+  window.addEventListener('alin:auth-restored',()=>setTimeout(boot,200));
+  window.addEventListener('alin:logout',()=>{lastSignature='';pollBusy=false});
+  setInterval(()=>pollOrders(false),POLL_MS);
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(boot,600),{once:true});else setTimeout(boot,600);
+
+  window.AlinOrderAttention=Object.freeze({version:VERSION,count:unreadCount,unread:unreadOrders,isUnread,markRead,refresh:pollOrders,paint:refreshUI,open:openRelevantPage});
+})();
+;
+
 /* modules/teacher/admin-word-download.js */
 (function(){
   'use strict';
@@ -5288,7 +6132,7 @@ window.AlinCourierModules['recordCourierSettlementForOrder']=typeof recordCourie
 ;
 
 /* modules/core/receipts-center.js */
-/* ALIN v4.1.5 — isolated receipts center (orders + settlements). */
+/* ALIN v4.2.2 — grouped checkout receipts center (orders + settlements). */
 (function(){
   'use strict';
   if(window.Alin415Receipts)return;
@@ -5394,6 +6238,23 @@ window.AlinCourierModules['recordCourierSettlementForOrder']=typeof recordCourie
     return rows.filter(row=>settlementRole(row)===role&&same(settlementPartyId(row),id));
   }
 
+  function checkoutKey(row){
+    const group=String(row?.checkout_group_id||'').trim();if(group)return `group:${group}`;
+    const request=String(row?.checkout_request_key||'').trim();if(request)return `request:${request}`;
+    return `single:${String(row?.id||row?.order_id||row?.order_number||'')}`;
+  }
+  function groupedOrderReceipts(role){
+    const groups=new Map();
+    scopedOrders(role).forEach(row=>{const key=checkoutKey(row);if(!groups.has(key))groups.set(key,[]);groups.get(key).push(row)});
+    const result=[];
+    for(const [key,items] of groups){
+      items.sort((a,b)=>String(a.created_at||'').localeCompare(String(b.created_at||'')));
+      const anchor=items.find(row=>num(row.delivery_fee||row.shipping_fee)>0||num(row.courier_fee||row.courier_profit||row.delegate_profit)>0)||items[0];
+      result.push({...anchor,_receipt_group_key:key,_items:items,_item_count:items.length,_qty_count:items.reduce((s,row)=>s+Math.max(1,num(row.qty||row.quantity||1)),0),_group_total:items.reduce((s,row)=>s+num(row.total||row.total_amount||row.amount),0),_delivery_fee:items.reduce((s,row)=>s+num(row.delivery_fee||row.shipping_fee),0),_discount:items.reduce((s,row)=>s+num(row.discount||row.discount_amount),0),_courier_fee:items.reduce((s,row)=>s+num(row.courier_fee||row.courier_profit||row.delegate_profit),0)});
+    }
+    return result;
+  }
+  function itemRows(row){return Array.isArray(row?._items)&&row._items.length?row._items:[row]}
   function orderNumber(row){return String(row.order_number||row.tracking_code||row.order_id||row.id||'—')}
   function receiptNumber(row){
     if(row.receipt_number||row.voucher_number)return String(row.receipt_number||row.voucher_number);
@@ -5401,11 +6262,11 @@ window.AlinCourierModules['recordCourierSettlementForOrder']=typeof recordCourie
     return `RC-${base}`;
   }
   function settlementNumber(row){return String(row.receipt_number||row.voucher_number||row.settlement_number||row.id||row.settlement_id||`ST-${settlementIdentity(row).split('|').slice(1,4).join('-')}`||'تسوية')}
-  function orderKey(row){return encodeURIComponent(String(row.id||row.order_id||row.order_number||row.tracking_code||''))}
+  function orderKey(row){return encodeURIComponent(String(row._receipt_group_key||checkoutKey(row)))}
   function settlementKey(row){return encodeURIComponent(settlementIdentity(row))}
   function findOrder(key,role){
     const value=decodeURIComponent(String(key||''));
-    return scopedOrders(role).find(row=>[row.id,row.order_id,row.order_number,row.tracking_code].some(item=>same(item,value)))||null;
+    return groupedOrderReceipts(role).find(row=>String(row._receipt_group_key||checkoutKey(row))===value)||null;
   }
   function findSettlement(key,role){
     const value=decodeURIComponent(String(key||''));
@@ -5433,7 +6294,7 @@ window.AlinCourierModules['recordCourierSettlementForOrder']=typeof recordCourie
     }
     return row.library_name||row.pickup_library_name?'استلام من المكتبة':'استلام من المكتبة';
   }
-  function orderAmounts(row){
+  function rowAmounts(row){
     const quantity=Math.max(1,num(row.qty||row.quantity||1));
     const delivery=Math.max(0,num(row.delivery_fee||row.shipping_fee));
     const discount=Math.max(0,num(row.discount||row.discount_amount));
@@ -5442,6 +6303,10 @@ window.AlinCourierModules['recordCourierSettlementForOrder']=typeof recordCourie
     const unit=Math.max(0,num(row.unit_price||row.price)||(subtotal/quantity));
     return {quantity,delivery,discount,total,subtotal,unit};
   }
+  function orderAmounts(row){
+    const items=itemRows(row),delivery=row._delivery_fee!=null?num(row._delivery_fee):items.reduce((s,item)=>s+rowAmounts(item).delivery,0),discount=row._discount!=null?num(row._discount):items.reduce((s,item)=>s+rowAmounts(item).discount,0),total=row._group_total!=null?num(row._group_total):items.reduce((s,item)=>s+rowAmounts(item).total,0),subtotal=items.reduce((s,item)=>s+rowAmounts(item).subtotal,0),quantity=items.reduce((s,item)=>s+rowAmounts(item).quantity,0);
+    return {quantity,delivery,discount,total,subtotal,unit:quantity?subtotal/quantity:0};
+  }
 
   function receiptStatus(row,type){
     if(type==='settlement')return cancelled(row)?'ملغي':'مثبت';
@@ -5449,11 +6314,11 @@ window.AlinCourierModules['recordCourierSettlementForOrder']=typeof recordCourie
   }
 
   function orderRow(row,role){
-    const key=orderKey(row);
-    const search=[receiptNumber(row),orderNumber(row),title(row),studentName(row),money(orderAmounts(row).total)].join(' ').toLowerCase();
+    const key=orderKey(row),items=itemRows(row);
+    const search=[receiptNumber(row),orderNumber(row),...items.map(title),studentName(row),money(orderAmounts(row).total)].join(' ').toLowerCase();
     return `<article class="alin415r-row" data-alin415r-kind="order" data-alin415r-status="${esc(receiptStatus(row,'order'))}" data-alin415r-search="${esc(search)}">
       <div class="alin415r-code"><b dir="ltr">${esc(receiptNumber(row))}</b><small dir="ltr">${esc(orderNumber(row))}</small></div>
-      <span class="alin415r-type">وصل طلب</span>
+      <span class="alin415r-type">وصل طلب • ${items.length} مواد</span>
       <time>${esc(dateTime(row.completed_at||row.delivered_at||row.updated_at||row.created_at))}</time>
       <strong>${money(orderAmounts(row).total)} د.ع</strong>
       <span class="alin415r-status is-complete">مكتمل</span>
@@ -5475,14 +6340,16 @@ window.AlinCourierModules['recordCourierSettlementForOrder']=typeof recordCourie
   }
 
   function orderReceipt(row){
-    const amount=orderAmounts(row),number=receiptNumber(row);
+    const items=itemRows(row),amount=orderAmounts(row),number=receiptNumber(row);
+    const itemLines=items.map((item,index)=>{const a=rowAmounts(item);return `<tr><td>${index+1}</td><td>${esc(title(item))}</td><td>${a.quantity}</td><td>${money(a.unit)} د.ع</td><td>${money(a.subtotal)} د.ع</td></tr>`}).join('');
+    const note=items.map(item=>item.notes||item.note||item.delivery_note||'').filter(Boolean).join(' • ')||'لا توجد ملاحظات';
     return `<article class="alin415r-paper" dir="rtl" data-alin415r-printable>
-      <header class="alin415r-paper-head"><div class="alin415r-paper-brand"><span>آ</span><div><h2>منصة آلين</h2><p>ملازم • قرطاسية • هدايا</p></div></div><div class="alin415r-paper-title"><small>وصل طلب</small><b dir="ltr">${esc(number)}</b></div></header>
-      <div class="alin415r-paper-meta"><div><small>رقم الطلب</small><b dir="ltr">${esc(orderNumber(row))}</b></div><div><small>التاريخ</small><b>${esc(dateTime(row.completed_at||row.delivered_at||row.updated_at||row.created_at))}</b></div><div><small>الحالة</small><b>مكتمل</b></div></div>
+      <header class="alin415r-paper-head"><div class="alin415r-paper-brand"><span>آ</span><div><h2>منصة آلين</h2><p>ملازم • قرطاسية • هدايا</p></div></div><div class="alin415r-paper-title"><small>وصل طلب كامل</small><b dir="ltr">${esc(number)}</b></div></header>
+      <div class="alin415r-paper-meta"><div><small>رقم الطلب</small><b dir="ltr">${esc(orderNumber(row))}</b></div><div><small>التاريخ</small><b>${esc(dateTime(row.completed_at||row.delivered_at||row.updated_at||row.created_at))}</b></div><div><small>عدد المواد</small><b>${items.length} مواد • ${amount.quantity} قطعة/نسخة</b></div></div>
       <section class="alin415r-paper-section"><h3>بيانات الطالب</h3><div class="alin415r-student"><div><small>اسم الطالب</small><b>${esc(studentName(row))}</b></div><div><small>رقم الهاتف</small><b dir="ltr">${esc(studentPhone(row))}</b></div><div><small>طريقة الاستلام</small><b>${esc(fulfillment(row))}</b></div></div></section>
-      <section class="alin415r-paper-section"><h3>تفاصيل الطلب</h3><table><thead><tr><th>#</th><th>الصنف</th><th>الكمية</th><th>سعر الوحدة</th><th>الإجمالي</th></tr></thead><tbody><tr><td>1</td><td>${esc(title(row))}</td><td>${amount.quantity}</td><td>${money(amount.unit)} د.ع</td><td>${money(amount.subtotal)} د.ع</td></tr>${amount.delivery?`<tr><td>2</td><td>أجرة التوصيل</td><td>1</td><td>${money(amount.delivery)} د.ع</td><td>${money(amount.delivery)} د.ع</td></tr>`:''}</tbody></table>
-      <div class="alin415r-totals"><div><span>المجموع الفرعي</span><b>${money(amount.subtotal)} د.ع</b></div><div><span>الخصم</span><b>${money(amount.discount)} د.ع</b></div><div class="final"><span>الإجمالي</span><strong>${money(amount.total)} د.ع</strong></div></div></section>
-      <section class="alin415r-paper-note"><small>ملاحظات</small><p>${esc(row.notes||row.note||row.delivery_note||'لا توجد ملاحظات')}</p></section>
+      <section class="alin415r-paper-section"><h3>مواد الطلب</h3><table><thead><tr><th>#</th><th>الصنف</th><th>الكمية</th><th>سعر الوحدة</th><th>الإجمالي</th></tr></thead><tbody>${itemLines}</tbody></table>
+      <div class="alin415r-totals"><div><span>مجموع المواد</span><b>${money(amount.subtotal)} د.ع</b></div>${amount.delivery?`<div><span>أجرة التوصيل</span><b>${money(amount.delivery)} د.ع</b></div>`:''}${amount.discount?`<div><span>الخصم</span><b>${money(amount.discount)} د.ع</b></div>`:''}<div class="final"><span>الإجمالي الكلي</span><strong>${money(amount.total)} د.ع</strong></div></div></section>
+      <section class="alin415r-paper-note"><small>ملاحظات</small><p>${esc(note)}</p></section>
       <footer><b>منصة آلين</b><small>شكراً لاستخدام منصة آلين</small></footer>
     </article>`;
   }
@@ -5500,7 +6367,7 @@ window.AlinCourierModules['recordCourierSettlementForOrder']=typeof recordCourie
   }
 
   function centerHtml(role){
-    const orders=[...scopedOrders(role)].sort((a,b)=>String(b.completed_at||b.updated_at||b.created_at||'').localeCompare(String(a.completed_at||a.updated_at||a.created_at||'')));
+    const orders=groupedOrderReceipts(role).sort((a,b)=>String(b.completed_at||b.updated_at||b.created_at||'').localeCompare(String(a.completed_at||a.updated_at||a.created_at||'')));
     const settlements=[...scopedSettlements(role)].sort((a,b)=>String(b.created_at||'').localeCompare(String(a.created_at||'')));
     const all=[...orders.map(row=>orderRow(row,role)),...settlements.map(row=>settlementRow(row,role))].join('');
     const orderTotal=orders.reduce((sum,row)=>sum+orderAmounts(row).total,0);
@@ -5647,7 +6514,7 @@ window.AlinCourierModules['recordCourierSettlementForOrder']=typeof recordCourie
     });
   }
 
-  const api=Object.freeze({renderCenter,openCenter,previewOrder,previewSettlement,closePreview,printOrder,printSettlement,orders:scopedOrders,settlements:scopedSettlements});
+  const api=Object.freeze({renderCenter,openCenter,previewOrder,previewSettlement,closePreview,printOrder,printSettlement,orders:groupedOrderReceipts,settlements:scopedSettlements});
   window.Alin415Receipts=api;
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
 })();
