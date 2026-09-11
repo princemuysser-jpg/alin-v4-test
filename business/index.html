@@ -26,7 +26,7 @@
       box-shadow: 0 12px 32px rgba(20,59,104,.18);
     }
     #loading .title { font-size: 24px; font-weight: 800; }
-    #loading .sub { font-size: 13px; opacity: .7; }
+    #loading .sub { font-size: 13px; opacity: .7; text-align: center; padding: 0 24px; }
   </style>
 </head>
 <body>
@@ -36,10 +36,66 @@
     <div class="sub">جاري تشغيل النظام...</div>
   </div>
   <script>
-    window.addEventListener('flutter-first-frame', function () {
-      var loading = document.getElementById('loading');
-      if (loading) loading.remove();
-    });
+    (function () {
+      var startedAt = Date.now();
+      var stopped = false;
+      var observer;
+      var timer;
+
+      function loadingNode() {
+        return document.getElementById('loading');
+      }
+
+      function flutterMounted() {
+        return !!document.querySelector('flutter-view, flt-glass-pane, flt-scene-host, [flt-renderer]');
+      }
+
+      function hideLoading() {
+        if (stopped) return;
+        stopped = true;
+        if (observer) observer.disconnect();
+        if (timer) clearInterval(timer);
+        var loading = loadingNode();
+        if (loading) loading.remove();
+      }
+
+      function showStartupError() {
+        if (stopped || flutterMounted()) {
+          if (flutterMounted()) hideLoading();
+          return;
+        }
+        var sub = document.querySelector('#loading .sub');
+        if (sub) sub.textContent = 'تعذر إكمال تشغيل النظام. حدّث الصفحة وحاول مرة ثانية.';
+      }
+
+      window.addEventListener('flutter-first-frame', hideLoading, { once: true });
+
+      observer = new MutationObserver(function () {
+        if (flutterMounted()) hideLoading();
+      });
+      observer.observe(document.documentElement, { childList: true, subtree: true });
+
+      timer = setInterval(function () {
+        if (flutterMounted()) {
+          hideLoading();
+          return;
+        }
+        if (Date.now() - startedAt > 20000) {
+          clearInterval(timer);
+          timer = null;
+          showStartupError();
+        }
+      }, 250);
+
+      window.addEventListener('error', function (event) {
+        if (!stopped && event && event.filename && /flutter_bootstrap|main\.dart|canvaskit/i.test(event.filename)) {
+          showStartupError();
+        }
+      });
+      window.addEventListener('unhandledrejection', function () {
+        if (!stopped && Date.now() - startedAt > 3000) showStartupError();
+      });
+    })();
   </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
