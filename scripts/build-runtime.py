@@ -26,7 +26,7 @@ ROLE_APP=[
 'core/lazy-libs.js','core/finance-runtime.js','modules/admin/accounts.js',
 'modules/teacher/booklets.js','modules/teacher/finance.js','modules/teacher/dashboard.js','modules/teacher/publishing.js',
 'modules/teacher/notifications.js','modules/teacher/profile.js','modules/library/dashboard.js','modules/library/orders.js',
-'modules/library/finance.js','modules/library/printing.js','modules/admin/dashboard.js','modules/admin/orders.js',
+'modules/library/finance.js','modules/library/printing.js','modules/admin/dashboard.js','modules/admin/orders.js','modules/admin/orders-grouped.js',
 'modules/admin/booklets.js','modules/admin/products.js','modules/admin/books.js','modules/admin/accounts-advanced.js','modules/admin/finance.js','modules/admin/finance-settlement-ui.js','modules/admin/finance-settlement-ui.js',
 'modules/admin/coupons.js','modules/admin/retention.js','modules/admin/reports.js','modules/admin/settings.js','modules/admin/notifications.js',
 'modules/admin/couriers.js','modules/courier/core.js','modules/courier/admin.js','modules/courier/areas.js',
