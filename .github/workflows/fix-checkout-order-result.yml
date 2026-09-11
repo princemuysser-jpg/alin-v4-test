@@ -1,0 +1,160 @@
+name: Fix checkout order result and stale cart total
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/fix-checkout-order-result.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: alin-checkout-order-result-fix
+  cancel-in-progress: false
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Apply checkout result fix
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path("modules/core/checkout-service.js")
+          text = path.read_text(encoding="utf-8")
+
+          old = """      const numbers=Array.isArray(data)?data.map(x=>String(x.order_number||'')).filter(Boolean):[];
+          if(!numbers.length)throw new Error('لم يرجع الخادم رقم تتبع للطلب');
+          clearCheckoutAttempt();
+          document.dispatchEvent(new CustomEvent('alin:order-created',{detail:{orderNumbers:numbers,studentId:signedStudent?.id||null}}));
+          cart=[];if(typeof cartSave==='function')cartSave();
+"""
+
+          new = """      const serverRows=Array.isArray(data)?data.filter(row=>row&&typeof row==='object'):[];
+          const numbers=serverRows.map(x=>String(x.order_number||'')).filter(Boolean);
+          if(!numbers.length)throw new Error('لم يرجع الخادم رقم تتبع للطلب');
+          const frozenItems=Object.freeze(cartSnapshot.map(item=>Object.freeze({...item})));
+          const frozenRows=Object.freeze(serverRows.map(row=>Object.freeze({...row})));
+          const result=Object.freeze({
+            orderNumbers:Object.freeze([...numbers]),
+            numbers:Object.freeze([...numbers]),
+            studentId:signedStudent?.id||null,
+            fulfillment:fulfillment.fulfillment_type||fulfillment.delivery_type||'',
+            items:frozenItems,
+            orders:frozenRows
+          });
+          clearCheckoutAttempt();
+          // Emit exactly once, while the live cart still contains the submitted order.
+          // Consumers also receive an immutable server-backed order snapshot in detail.orders.
+          document.dispatchEvent(new CustomEvent('alin:order-created',{detail:result}));
+          cart=[];if(typeof cartSave==='function')cartSave();
+"""
+
+          if old not in text:
+              if "const serverRows=Array.isArray(data)?data.filter" not in text:
+                  raise SystemExit("Checkout result insertion point not found")
+          else:
+              text = text.replace(old, new, 1)
+
+          duplicate = """        document.dispatchEvent(new CustomEvent('alin:order-created',{detail:{numbers,fulfillment:fulfillment.fulfillment_type||fulfillment.delivery_type||'',items:cartSnapshot}}));
+"""
+          if duplicate in text:
+              text = text.replace(duplicate, "", 1)
+
+          return_anchor = """        success.append(icon,h,note);if(pickup.textContent)success.append(pickup);success.append(codes,close);box.append(success);
+          }
+        }catch(e){throw e}
+"""
+          return_replacement = """        success.append(icon,h,note);if(pickup.textContent)success.append(pickup);success.append(codes,close);box.append(success);
+          }
+          return result;
+        }catch(e){throw e}
+"""
+          if return_anchor in text:
+              text = text.replace(return_anchor, return_replacement, 1)
+          elif "return result;\n    }catch(e){throw e}" not in text and "return result;\n  }catch(e){throw e}" not in text:
+              raise SystemExit("Checkout return insertion point not found")
+
+          if text.count("new CustomEvent('alin:order-created'") != 1:
+              raise SystemExit(f"Expected exactly one order-created event, found {text.count(chr(110)+'ew CustomEvent(chr(39)+alin:order-created')} )")
+
+          event_pos = text.index("new CustomEvent('alin:order-created'")
+          clear_pos = text.index("cart=[];if(typeof cartSave==='function')cartSave();")
+          if event_pos > clear_pos:
+              raise SystemExit("order-created must be emitted before live cart is cleared")
+
+          path.write_text(text, encoding="utf-8")
+
+      - name: Rebuild public runtimes
+        run: python3 scripts/build-runtime.py
+
+      - name: Bust storefront cache
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+          from datetime import datetime, timezone
+
+          stamp=datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+          token=f"4.2.0-checkout-order-result-{stamp}"
+
+          config_path=Path("alin-config.js")
+          config=config_path.read_text(encoding="utf-8")
+          config,count=re.subn(r"assetVersion:'[^']+'",f"assetVersion:'{token}'",config,count=1)
+          if count!=1:
+              raise SystemExit("Could not update assetVersion")
+          config_path.write_text(config,encoding="utf-8")
+
+          for name in ("store-desktop.html","store-mobile.html","store-tablet.html"):
+              p=Path(name)
+              text=p.read_text(encoding="utf-8")
+              text,count=re.subn(r'alin-config\\.js\\?v=[^\"]+',f'alin-config.js?v={token}',text,count=1)
+              if count!=1:
+                  raise SystemExit(f"Could not update config URL in {name}")
+              p.write_text(text,encoding="utf-8")
+
+          print("assetVersion:",token)
+
+      - name: Validate checkout and generated runtimes
+        run: |
+          node --check modules/core/checkout-service.js
+          node --check alin-app-desktop.v4.2.0.js
+          node --check alin-app-mobile.v4.2.0.js
+          node --check alin-app-tablet.v4.2.0.js
+          node --check alin-config.js
+          test "$(grep -F -c "new CustomEvent('alin:order-created'" modules/core/checkout-service.js)" -eq 1
+          test "$(grep -F -c "new CustomEvent('alin:order-created'" alin-app-desktop.v4.2.0.js)" -eq 1
+          test "$(grep -F -c "new CustomEvent('alin:order-created'" alin-app-mobile.v4.2.0.js)" -eq 1
+          test "$(grep -F -c "new CustomEvent('alin:order-created'" alin-app-tablet.v4.2.0.js)" -eq 1
+          grep -F "const frozenRows=Object.freeze(serverRows.map" modules/core/checkout-service.js
+          grep -F "document.dispatchEvent(new CustomEvent('alin:order-created',{detail:result}))" modules/core/checkout-service.js
+          grep -F "return result;" modules/core/checkout-service.js
+
+      - name: Commit fix to main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            modules/core/checkout-service.js \
+            alin-app-desktop.v4.2.0.js \
+            alin-app-mobile.v4.2.0.js \
+            alin-app-tablet.v4.2.0.js \
+            alin-config.js \
+            store-desktop.html \
+            store-mobile.html \
+            store-tablet.html
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "fix: keep checkout result independent from cleared cart"
+          git push origin HEAD:main
