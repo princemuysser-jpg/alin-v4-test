@@ -3,7 +3,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../data/business_courier_repository.dart';
 import '../data/business_repository.dart';
 import '../models/business_account.dart';
-import '../widgets/grouped_order_receipt_card.dart';
+import '../widgets/business_brand.dart';
+import '../widgets/grouped_order_receipt_list.dart';
 
 class CourierDashboardScreen extends StatefulWidget {
   final BusinessRepository repository;
@@ -268,9 +269,13 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
     final profit = grouped.where(isDone).fold<num>(0, (sum, o) => sum + number(o['_courier_fee']));
     return Scaffold(
       appBar: AppBar(
-        title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('لوحة المندوب', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
-          Text(widget.account.name, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w400)),
+        title: Row(children: [
+          const AlinBrandMark(size: 36, light: true),
+          const SizedBox(width: 10),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text('آلين للمندوب', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18)),
+            Text(widget.account.name, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w400)),
+          ])),
         ]),
         actions: [
           IconButton(onPressed: load, icon: const Icon(Icons.refresh_rounded)),
@@ -283,46 +288,79 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
       body: RefreshIndicator(
         onRefresh: load,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.symmetric(
+            horizontal: MediaQuery.sizeOf(context).width > 1180
+                ? (MediaQuery.sizeOf(context).width - 1120) / 2
+                : 16,
+            vertical: 16,
+          ),
           children: [
             Container(
-              padding: const EdgeInsets.all(18),
+              clipBehavior: Clip.antiAlias,
               decoration: BoxDecoration(
-                gradient: const LinearGradient(colors: [Color(0xFF143B68), Color(0xFF255B91)]),
-                borderRadius: BorderRadius.circular(22),
+                gradient: BusinessBrand.heroGradient,
+                borderRadius: BorderRadius.circular(26),
+                boxShadow: [BoxShadow(color: BusinessBrand.navy.withValues(alpha: .16), blurRadius: 24, offset: const Offset(0, 10))],
               ),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('مرحباً ${widget.account.name}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 20)),
-                if (courierArea.isNotEmpty || courierAreas.isNotEmpty) ...[
-                  const SizedBox(height: 5),
-                  Text('مناطقك: ${[courierArea, ...courierAreas].where((e) => e.isNotEmpty).toSet().join('، ')}', style: const TextStyle(color: Colors.white70)),
-                ],
-                const SizedBox(height: 10),
-                Wrap(spacing: 8, runSpacing: 8, children: [
-                  ChoiceChip(label: const Text('متاح'), selected: availability == 'available', onSelected: (_) => setAvailability('available')),
-                  ChoiceChip(label: const Text('مشغول'), selected: availability == 'busy', onSelected: (_) => setAvailability('busy')),
-                  ChoiceChip(label: const Text('خارج الخدمة'), selected: availability == 'offline', onSelected: (_) => setAvailability('offline')),
-                ]),
+              child: Stack(children: [
+                Positioned(left: -26, top: -34, child: Container(width: 120, height: 120, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withValues(alpha: .06)))),
+                Positioned(right: -18, bottom: -45, child: Container(width: 145, height: 145, decoration: BoxDecoration(shape: BoxShape.circle, color: BusinessBrand.teal.withValues(alpha: .18)))),
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Container(
+                      width: 54,
+                      height: 54,
+                      decoration: BoxDecoration(color: Colors.white.withValues(alpha: .14), borderRadius: BorderRadius.circular(17)),
+                      child: const Icon(Icons.delivery_dining_rounded, color: Colors.white, size: 31),
+                    ),
+                    const SizedBox(width: 13),
+                    Expanded(
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text('مرحباً ${widget.account.name}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 21)),
+                        const SizedBox(height: 3),
+                        const Text('طلباتك وتوصيلاتك ووصولاتك بمكان واحد', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                        if (courierArea.isNotEmpty || courierAreas.isNotEmpty) ...[
+                          const SizedBox(height: 6),
+                          Text('مناطقك: ${[courierArea, ...courierAreas].where((e) => e.isNotEmpty).toSet().join('، ')}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12)),
+                        ],
+                        const SizedBox(height: 11),
+                        Wrap(spacing: 8, runSpacing: 8, children: [
+                          ChoiceChip(label: const Text('متاح'), selected: availability == 'available', onSelected: (_) => setAvailability('available')),
+                          ChoiceChip(label: const Text('مشغول'), selected: availability == 'busy', onSelected: (_) => setAvailability('busy')),
+                          ChoiceChip(label: const Text('خارج الخدمة'), selected: availability == 'offline', onSelected: (_) => setAvailability('offline')),
+                        ]),
+                      ]),
+                    ),
+                  ]),
+                ),
               ]),
             ),
             const SizedBox(height: 12),
-            Row(children: [
-              Expanded(child: _Metric(label: 'قيد التنفيذ', value: '$active', icon: Icons.delivery_dining_rounded)),
-              const SizedBox(width: 8),
-              Expanded(child: _Metric(label: 'مكتملة', value: '$completed', icon: Icons.check_circle_rounded)),
-              const SizedBox(width: 8),
-              Expanded(child: _Metric(label: 'أجور التوصيل', value: money(profit), icon: Icons.payments_rounded)),
-            ]),
+            LayoutBuilder(builder: (context, constraints) {
+              final columns = constraints.maxWidth >= 900 ? 4 : 2;
+              final gap = 10.0;
+              final width = (constraints.maxWidth - (gap * (columns - 1))) / columns;
+              return Wrap(spacing: gap, runSpacing: gap, children: [
+                SizedBox(width: width, child: _Metric(label: 'قيد التنفيذ', value: '$active', icon: Icons.delivery_dining_rounded, accent: BusinessBrand.orange)),
+                SizedBox(width: width, child: _Metric(label: 'مكتملة', value: '$completed', icon: Icons.task_alt_rounded, accent: BusinessBrand.teal)),
+                SizedBox(width: width, child: _Metric(label: 'كل الطلبات', value: '${grouped.length}', icon: Icons.inventory_2_rounded, accent: BusinessBrand.navy2)),
+                SizedBox(width: width, child: _Metric(label: 'أجور التوصيل', value: money(profit), icon: Icons.account_balance_wallet_rounded, accent: BusinessBrand.navy)),
+              ]);
+            }),
             const SizedBox(height: 14),
-            SegmentedButton<String>(
-              segments: const [
-                ButtonSegment(value: 'active', label: Text('الحالية'), icon: Icon(Icons.local_shipping_rounded)),
-                ButtonSegment(value: 'completed', label: Text('المكتملة'), icon: Icon(Icons.check_circle_outline)),
-                ButtonSegment(value: 'all', label: Text('الكل'), icon: Icon(Icons.list_alt_rounded)),
-                ButtonSegment(value: 'receipts', label: Text('الوصولات'), icon: Icon(Icons.receipt_long_rounded)),
-              ],
-              selected: {filter},
-              onSelectionChanged: (value) => setState(() => filter = value.first),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: SegmentedButton<String>(
+                segments: const [
+                  ButtonSegment(value: 'active', label: Text('الحالية'), icon: Icon(Icons.local_shipping_rounded)),
+                  ButtonSegment(value: 'completed', label: Text('المكتملة'), icon: Icon(Icons.check_circle_outline)),
+                  ButtonSegment(value: 'all', label: Text('الكل'), icon: Icon(Icons.list_alt_rounded)),
+                  ButtonSegment(value: 'receipts', label: Text('الوصولات'), icon: Icon(Icons.receipt_long_rounded)),
+                ],
+                selected: {filter},
+                onSelectionChanged: (value) => setState(() => filter = value.first),
+              ),
             ),
             const SizedBox(height: 14),
             if (loading)
@@ -330,12 +368,12 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
             else if (error != null)
               Card(child: Padding(padding: const EdgeInsets.all(16), child: Column(children: [Text(error!), const SizedBox(height: 8), OutlinedButton(onPressed: load, child: const Text('إعادة المحاولة'))])))
             else if (filter == 'receipts') ...[
-              const Text('وصولات الطلبات المكتملة', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+              const Row(children: [Icon(Icons.receipt_long_rounded, color: BusinessBrand.navy), SizedBox(width: 8), Text('وصولات الطلبات المكتملة', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: BusinessBrand.navy))]),
               const SizedBox(height: 10),
               if (grouped.where(isDone).isEmpty)
                 const Card(child: Padding(padding: EdgeInsets.all(24), child: Center(child: Text('لا توجد وصولات مكتملة بعد'))))
               else
-                ...grouped.where(isDone).map((order) => GroupedOrderReceiptCard(order: order, courierName: widget.account.name, courierView: true)),
+                ...grouped.where(isDone).map((order) => GroupedOrderReceiptListTile(order: order, courierName: widget.account.name, courierView: true)),
             ] else if (visibleOrders.isEmpty)
               const Card(child: Padding(padding: EdgeInsets.all(24), child: Center(child: Text('لا توجد طلبات حالياً'))))
             else
@@ -465,19 +503,40 @@ class _Metric extends StatelessWidget {
   final String label;
   final String value;
   final IconData icon;
-  const _Metric({required this.label, required this.value, required this.icon});
+  final Color accent;
+  const _Metric({required this.label, required this.value, required this.icon, required this.accent});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Icon(icon, color: const Color(0xFF143B68)),
-        const SizedBox(height: 8),
-        Text(value, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 17)),
-        Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.grey.shade600, fontSize: 11)),
-      ]),
+      constraints: const BoxConstraints(minHeight: 116),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: BusinessBrand.border),
+        boxShadow: [BoxShadow(color: BusinessBrand.navy.withValues(alpha: .05), blurRadius: 18, offset: const Offset(0, 7))],
+      ),
+      child: Stack(
+        clipBehavior: Clip.antiAlias,
+        children: [
+          Positioned(left: -20, top: -25, child: Container(width: 74, height: 74, decoration: BoxDecoration(shape: BoxShape.circle, color: accent.withValues(alpha: .08)))),
+          Padding(
+            padding: const EdgeInsets.all(13),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Container(
+                width: 39,
+                height: 39,
+                decoration: BoxDecoration(color: accent.withValues(alpha: .12), borderRadius: BorderRadius.circular(12)),
+                child: Icon(icon, color: accent, size: 23),
+              ),
+              const SizedBox(height: 9),
+              Text(value, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 17, color: BusinessBrand.ink)),
+              const SizedBox(height: 2),
+              Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: BusinessBrand.muted, fontSize: 11, fontWeight: FontWeight.w700)),
+            ]),
+          ),
+        ],
+      ),
     );
   }
 }

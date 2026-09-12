@@ -20,6 +20,7 @@ import 'screens/library_dashboard_screen.dart';
 import 'screens/printer_dashboard_screen.dart';
 import 'screens/teacher_dashboard_screen.dart';
 import 'widgets/admin_quick_actions_button.dart';
+import 'widgets/business_brand.dart';
 import 'widgets/business_notification_bell.dart';
 
 final GlobalKey<NavigatorState> businessNavigatorKey = GlobalKey<NavigatorState>();
@@ -71,7 +72,6 @@ class AlinBusinessApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const navy = Color(0xFF143B68);
     return MaterialApp(
       navigatorKey: businessNavigatorKey,
       debugShowCheckedModeBanner: false,
@@ -83,22 +83,7 @@ class AlinBusinessApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: navy),
-        scaffoldBackgroundColor: const Color(0xFFF5F8FC),
-        appBarTheme: const AppBarTheme(backgroundColor: navy, foregroundColor: Colors.white, elevation: 0),
-        inputDecorationTheme: InputDecorationTheme(
-          filled: true,
-          fillColor: Colors.white,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-        ),
-        cardTheme: CardThemeData(
-          elevation: 0,
-          color: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        ),
-      ),
+      theme: BusinessBrand.theme(),
       home: const BusinessGate(),
     );
   }
@@ -262,7 +247,7 @@ class _BusinessGateState extends State<BusinessGate> {
           bottom: 88,
           child: Material(
             elevation: 8,
-            color: const Color(0xFF143B68),
+            color: BusinessBrand.navy,
             shape: const CircleBorder(),
             child: IconTheme(
               data: const IconThemeData(color: Colors.white),
@@ -367,14 +352,9 @@ class _LoginScreenState extends State<LoginScreen> {
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 430),
               child: Column(children: [
-                Container(
-                  width: 94,
-                  height: 94,
-                  decoration: BoxDecoration(color: const Color(0xFF143B68), borderRadius: BorderRadius.circular(28)),
-                  child: const Icon(Icons.business_center_rounded, color: Colors.white, size: 50),
-                ),
+                const AlinBrandMark(size: 94),
                 const SizedBox(height: 22),
-                Text(BusinessConfig.appName, style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w900, color: Color(0xFF143B68))),
+                Text(BusinessConfig.appName, style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w900, color: BusinessBrand.navy)),
                 const SizedBox(height: 6),
                 Text(BusinessConfig.appSubtitle, style: TextStyle(color: Colors.grey.shade600)),
                 const SizedBox(height: 32),

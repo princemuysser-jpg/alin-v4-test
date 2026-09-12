@@ -19,6 +19,7 @@ dependencies:
   shared_preferences: ^2.5.3
   pdfx: ^2.11.0
   printing: ^5.14.3
+  pdf: ^3.11.3
   file_picker: ^10.3.3
 
 dev_dependencies:
