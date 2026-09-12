@@ -44,3 +44,5 @@ jobs:
             git commit -m 'feat: courier receipts print and refreshed business identity'
             git push
           fi
+
+# Trigger: courier receipts + visual identity refresh build.
