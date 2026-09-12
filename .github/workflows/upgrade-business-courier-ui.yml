@@ -6,6 +6,7 @@ on:
     paths:
       - 'scripts/upgrade_business_courier_ui.py'
       - '.github/workflows/upgrade-business-courier-ui.yml'
+      - '.github/courier-ui-trigger.txt'
 
 permissions:
   contents: write
