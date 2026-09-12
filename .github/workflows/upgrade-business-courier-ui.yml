@@ -18,7 +18,9 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Apply courier UI refresh
-        run: python3 scripts/upgrade_business_courier_ui.py
+        run: |
+          python3 scripts/upgrade_business_courier_ui.py
+          sed -i "/import '..\/widgets\/grouped_order_receipt_card.dart';/d" flutter_business/lib/screens/courier_dashboard_screen.dart
 
       - name: Set up Flutter 3.44.9
         uses: subosito/flutter-action@v2
@@ -44,5 +46,3 @@ jobs:
             git commit -m 'feat: courier receipts print and refreshed business identity'
             git push
           fi
-
-# Trigger: courier receipts + visual identity refresh build.
