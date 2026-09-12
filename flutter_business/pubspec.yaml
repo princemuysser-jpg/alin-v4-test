@@ -1,8 +1,8 @@
 name: alin_business
 description: تطبيق آلين للأعمال للإدارة والمدرس والمكتبة والمطبعة والمندوب
 publish_to: 'none'
-version: 1.0.1+9
-# Build 9: grouped courier orders and one receipt per checkout for admin/courier.
+version: 1.0.2+10
+# Build 10: courier receipt list/print + refreshed ALIN visual identity for mobile and web.
 environment:
   sdk: '>=3.10.0 <4.0.0'
 
