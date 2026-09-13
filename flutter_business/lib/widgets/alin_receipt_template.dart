@@ -16,15 +16,16 @@ String _receiptDate(dynamic value) {
 }
 
 String _roleLabel(String role) => switch (role.toLowerCase()) {
-      'teacher' => 'مدرس',
-      'library' => 'مكتبة',
-      'courier' || 'delegate' => 'مندوب',
-      'printer' => 'مطبعة',
-      'admin' => 'إدارة',
-      _ => role.trim().isEmpty ? 'جهة مالية' : role,
-    };
+  'teacher' => 'مدرس',
+  'library' => 'مكتبة',
+  'courier' || 'delegate' => 'مندوب',
+  'printer' => 'مطبعة',
+  'admin' => 'إدارة',
+  _ => role.trim().isEmpty ? 'جهة مالية' : role,
+};
 
-String _paymentMethodLabel(dynamic value) => switch ('${value ?? ''}'.toLowerCase()) {
+String _paymentMethodLabel(dynamic value) =>
+    switch ('${value ?? ''}'.toLowerCase()) {
       'cash' => 'نقدي',
       'transfer' || 'bank_transfer' => 'تحويل',
       'zaincash' => 'زين كاش',
@@ -34,13 +35,13 @@ String _paymentMethodLabel(dynamic value) => switch ('${value ?? ''}'.toLowerCas
     };
 
 String _statusLabel(dynamic value) => switch ('${value ?? ''}'.toLowerCase()) {
-      'paid' || 'received' || 'settled' || 'completed' || 'delivered' => 'مكتمل',
-      'pending' => 'قيد الانتظار',
-      'reversed' => 'معكوس',
-      'cancelled' || 'canceled' => 'ملغي',
-      final value when value.trim().isEmpty => 'مكتمل',
-      final value => value,
-    };
+  'paid' || 'received' || 'settled' || 'completed' || 'delivered' => 'مكتمل',
+  'pending' => 'قيد الانتظار',
+  'reversed' => 'معكوس',
+  'cancelled' || 'canceled' => 'ملغي',
+  final value when value.trim().isEmpty => 'مكتمل',
+  final value => value,
+};
 
 class AlinReceiptMetric {
   final String label;
@@ -119,11 +120,16 @@ class AlinReceiptTemplate extends StatelessWidget {
     bool courierView = false,
     String viewerRole = '',
   }) {
-    final rawItems = (order['_items'] as List?)?.cast<Map<String, dynamic>>() ?? <Map<String, dynamic>>[order];
+    final rawItems =
+        (order['_items'] as List?)?.cast<Map<String, dynamic>>() ??
+        <Map<String, dynamic>>[order];
 
-    num rowDelivery(Map<String, dynamic> row) => _receiptNum(row['delivery_fee'] ?? row['shipping_fee']);
-    num rowDiscount(Map<String, dynamic> row) => _receiptNum(row['discount'] ?? row['discount_amount']);
-    num rowTotal(Map<String, dynamic> row) => _receiptNum(row['total'] ?? row['total_amount'] ?? row['amount']);
+    num rowDelivery(Map<String, dynamic> row) =>
+        _receiptNum(row['delivery_fee'] ?? row['shipping_fee']);
+    num rowDiscount(Map<String, dynamic> row) =>
+        _receiptNum(row['discount'] ?? row['discount_amount']);
+    num rowTotal(Map<String, dynamic> row) =>
+        _receiptNum(row['total'] ?? row['total_amount'] ?? row['amount']);
     num rowQty(Map<String, dynamic> row) {
       final value = _receiptNum(row['qty'] ?? row['quantity']);
       return value <= 0 ? 1 : value;
@@ -132,7 +138,10 @@ class AlinReceiptTemplate extends StatelessWidget {
     num rowSubtotal(Map<String, dynamic> row) {
       final explicit = _receiptNum(row['subtotal'] ?? row['items_total']);
       if (explicit > 0) return explicit;
-      return (rowTotal(row) + rowDiscount(row) - rowDelivery(row)).clamp(0, double.infinity);
+      return (rowTotal(row) + rowDiscount(row) - rowDelivery(row)).clamp(
+        0,
+        double.infinity,
+      );
     }
 
     num rowUnit(Map<String, dynamic> row) {
@@ -143,7 +152,8 @@ class AlinReceiptTemplate extends StatelessWidget {
     final items = rawItems
         .map(
           (row) => AlinReceiptItem(
-            title: '${row['title'] ?? row['product_name'] ?? row['item_name'] ?? 'مادة'}',
+            title:
+                '${row['title'] ?? row['product_name'] ?? row['item_name'] ?? 'مادة'}',
             quantity: rowQty(row),
             unitPrice: rowUnit(row),
             total: rowSubtotal(row),
@@ -151,7 +161,10 @@ class AlinReceiptTemplate extends StatelessWidget {
         )
         .toList();
 
-    final subtotal = rawItems.fold<num>(0, (sum, row) => sum + rowSubtotal(row));
+    final subtotal = rawItems.fold<num>(
+      0,
+      (sum, row) => sum + rowSubtotal(row),
+    );
     final delivery = _receiptNum(order['_delivery_fee']) > 0
         ? _receiptNum(order['_delivery_fee'])
         : rawItems.fold<num>(0, (sum, row) => sum + rowDelivery(row));
@@ -165,22 +178,41 @@ class AlinReceiptTemplate extends StatelessWidget {
         ? _receiptNum(order['_courier_fee'])
         : rawItems.fold<num>(
             0,
-            (sum, row) => sum + _receiptNum(row['courier_fee'] ?? row['courier_profit'] ?? row['delegate_profit']),
+            (sum, row) =>
+                sum +
+                _receiptNum(
+                  row['courier_fee'] ??
+                      row['courier_profit'] ??
+                      row['delegate_profit'],
+                ),
           );
 
     final orderNumber = '${order['order_number'] ?? order['id'] ?? '—'}';
-    final explicitReceipt = '${order['receipt_number'] ?? order['voucher_number'] ?? ''}'.trim();
-    final cleanOrder = orderNumber.replaceFirst(RegExp(r'^AL-', caseSensitive: false), '');
-    final receiptNumber = explicitReceipt.isNotEmpty ? explicitReceipt : 'RC-$cleanOrder';
-    final quantityCount = rawItems.fold<num>(0, (sum, row) => sum + rowQty(row)).round();
-    final deliveryMethod = '${order['delivery_method'] ?? order['fulfillment_method'] ?? ''}'.toLowerCase();
-    final deliveryText = deliveryMethod.contains('courier') || deliveryMethod.contains('delegate')
+    final explicitReceipt =
+        '${order['receipt_number'] ?? order['voucher_number'] ?? ''}'.trim();
+    final cleanOrder = orderNumber.replaceFirst(
+      RegExp(r'^AL-', caseSensitive: false),
+      '',
+    );
+    final receiptNumber = explicitReceipt.isNotEmpty
+        ? explicitReceipt
+        : 'RC-$cleanOrder';
+    final quantityCount = rawItems
+        .fold<num>(0, (sum, row) => sum + rowQty(row))
+        .round();
+    final deliveryMethod =
+        '${order['delivery_method'] ?? order['fulfillment_method'] ?? ''}'
+            .toLowerCase();
+    final deliveryText =
+        deliveryMethod.contains('courier') ||
+            deliveryMethod.contains('delegate')
         ? 'توصيل بواسطة المندوب'
-        : deliveryMethod.contains('library') || deliveryMethod.contains('pickup')
-            ? 'استلام من المكتبة'
-            : (courierName ?? '').trim().isNotEmpty
-                ? 'توصيل بواسطة المندوب'
-                : '—';
+        : deliveryMethod.contains('library') ||
+              deliveryMethod.contains('pickup')
+        ? 'استلام من المكتبة'
+        : (courierName ?? '').trim().isNotEmpty
+        ? 'توصيل بواسطة المندوب'
+        : '—';
 
     final fields = <AlinReceiptField>[
       AlinReceiptField('اسم الطالب', '${order['student_name'] ?? '—'}'),
@@ -190,30 +222,56 @@ class AlinReceiptTemplate extends StatelessWidget {
         AlinReceiptField('المنطقة', '${order['delivery_area']}'),
       if ('${order['delivery_landmark'] ?? ''}'.trim().isNotEmpty)
         AlinReceiptField('نقطة دالة', '${order['delivery_landmark']}'),
-      if ((courierName ?? '').trim().isNotEmpty) AlinReceiptField('المندوب', courierName!.trim()),
+      if ((courierName ?? '').trim().isNotEmpty)
+        AlinReceiptField('المندوب', courierName!.trim()),
     ];
 
     final totals = <AlinReceiptTotal>[
       AlinReceiptTotal('مجموع المواد', subtotal),
-      if (delivery > 0) AlinReceiptTotal(courierView ? 'توصيل الطالب' : 'أجرة التوصيل', delivery),
+      if (delivery > 0)
+        AlinReceiptTotal(
+          courierView ? 'توصيل الطالب' : 'أجرة التوصيل',
+          delivery,
+        ),
       if (discount > 0) AlinReceiptTotal('الخصم', -discount),
-      if (courierView && courierFee > 0) AlinReceiptTotal('أجرة التوصيل', courierFee),
+      if (courierView && courierFee > 0)
+        AlinReceiptTotal('أجرة التوصيل', courierFee),
       AlinReceiptTotal('الإجمالي الكلي', total, strong: true, highlight: true),
     ];
 
     final role = viewerRole.toLowerCase();
     if (role == 'teacher') {
-      final teacherProfit = rawItems.fold<num>(0, (sum, row) => sum + _receiptNum(row['teacher_profit']));
-      if (teacherProfit > 0) totals.insert(totals.length - 1, AlinReceiptTotal('ربح المدرس', teacherProfit));
+      final teacherProfit = rawItems.fold<num>(
+        0,
+        (sum, row) => sum + _receiptNum(row['teacher_profit']),
+      );
+      if (teacherProfit > 0)
+        totals.insert(
+          totals.length - 1,
+          AlinReceiptTotal('ربح المدرس', teacherProfit),
+        );
     }
     if (role == 'library') {
-      final libraryProfit = rawItems.fold<num>(0, (sum, row) => sum + _receiptNum(row['library_profit']));
-      if (libraryProfit > 0) totals.insert(totals.length - 1, AlinReceiptTotal('ربح المكتبة', libraryProfit));
+      final libraryProfit = rawItems.fold<num>(
+        0,
+        (sum, row) => sum + _receiptNum(row['library_profit']),
+      );
+      if (libraryProfit > 0)
+        totals.insert(
+          totals.length - 1,
+          AlinReceiptTotal('ربح المكتبة', libraryProfit),
+        );
     }
 
-    final notes = [order['notes'], order['student_note'], order['library_note'], order['courier_note']]
-        .map((value) => '${value ?? ''}'.trim())
-        .firstWhere((value) => value.isNotEmpty, orElse: () => '');
+    final notes =
+        [
+              order['notes'],
+              order['student_note'],
+              order['library_note'],
+              order['courier_note'],
+            ]
+            .map((value) => '${value ?? ''}'.trim())
+            .firstWhere((value) => value.isNotEmpty, orElse: () => '');
 
     return AlinReceiptTemplate(
       key: key,
@@ -223,9 +281,17 @@ class AlinReceiptTemplate extends StatelessWidget {
         AlinReceiptMetric('رقم الطلب', orderNumber),
         AlinReceiptMetric(
           'التاريخ',
-          _receiptDate(order['completed_at'] ?? order['delivered_at'] ?? order['updated_at'] ?? order['created_at']),
+          _receiptDate(
+            order['completed_at'] ??
+                order['delivered_at'] ??
+                order['updated_at'] ??
+                order['created_at'],
+          ),
         ),
-        AlinReceiptMetric('عدد المواد', '${items.length} مواد • $quantityCount قطعة/نسخة'),
+        AlinReceiptMetric(
+          'عدد المواد',
+          '${items.length} مواد • $quantityCount قطعة/نسخة',
+        ),
       ],
       infoTitle: 'بيانات الطالب',
       infoFields: fields,
@@ -241,11 +307,15 @@ class AlinReceiptTemplate extends StatelessWidget {
     String? partyName,
     String? partyRole,
   }) {
-    final role = (partyRole ?? '${settlement['party_role'] ?? settlement['role'] ?? ''}').trim();
-    final name = (partyName ??
-            '${settlement['party_name'] ?? settlement['name'] ?? settlement['teacher_name'] ?? settlement['library_name'] ?? settlement['courier_name'] ?? ''}')
-        .trim();
-    final receipt = '${settlement['receipt_number'] ?? settlement['voucher_number'] ?? settlement['id'] ?? '—'}';
+    final role =
+        (partyRole ?? '${settlement['party_role'] ?? settlement['role'] ?? ''}')
+            .trim();
+    final name =
+        (partyName ??
+                '${settlement['party_name'] ?? settlement['name'] ?? settlement['teacher_name'] ?? settlement['library_name'] ?? settlement['courier_name'] ?? ''}')
+            .trim();
+    final receipt =
+        '${settlement['receipt_number'] ?? settlement['voucher_number'] ?? settlement['id'] ?? '—'}';
     final amount = _receiptNum(settlement['amount'] ?? settlement['total']);
     final note = '${settlement['note'] ?? settlement['notes'] ?? ''}'.trim();
 
@@ -255,14 +325,22 @@ class AlinReceiptTemplate extends StatelessWidget {
       documentLabel: 'وصل تسوية مالية',
       metrics: [
         AlinReceiptMetric('رقم الوصل', receipt),
-        AlinReceiptMetric('التاريخ', _receiptDate(settlement['created_at'] ?? settlement['updated_at'])),
+        AlinReceiptMetric(
+          'التاريخ',
+          _receiptDate(settlement['created_at'] ?? settlement['updated_at']),
+        ),
         const AlinReceiptMetric('النوع', 'تسوية مالية'),
       ],
       infoTitle: 'بيانات التسوية',
       infoFields: [
         AlinReceiptField('الجهة', name.isEmpty ? '—' : name),
         AlinReceiptField('الصفة', _roleLabel(role)),
-        AlinReceiptField('طريقة الدفع', _paymentMethodLabel(settlement['payment_method'] ?? settlement['method'])),
+        AlinReceiptField(
+          'طريقة الدفع',
+          _paymentMethodLabel(
+            settlement['payment_method'] ?? settlement['method'],
+          ),
+        ),
         AlinReceiptField('الحالة', _statusLabel(settlement['status'])),
       ],
       totals: [
@@ -306,10 +384,20 @@ class AlinReceiptTemplate extends StatelessWidget {
                     children: [
                       const Text(
                         'منصة آلين',
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: BusinessBrand.navy),
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w900,
+                          color: BusinessBrand.navy,
+                        ),
                       ),
                       const SizedBox(height: 2),
-                      Text(brandSubtitle, style: const TextStyle(fontSize: 11.5, color: BusinessBrand.muted)),
+                      Text(
+                        brandSubtitle,
+                        style: const TextStyle(
+                          fontSize: 11.5,
+                          color: BusinessBrand.muted,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -317,7 +405,13 @@ class AlinReceiptTemplate extends StatelessWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text(documentLabel, style: const TextStyle(fontSize: 12, color: BusinessBrand.muted)),
+                    Text(
+                      documentLabel,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: BusinessBrand.muted,
+                      ),
+                    ),
                     const SizedBox(height: 4),
                     ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 220),
@@ -326,7 +420,11 @@ class AlinReceiptTemplate extends StatelessWidget {
                         textAlign: TextAlign.left,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: BusinessBrand.navy),
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w900,
+                          color: BusinessBrand.navy,
+                        ),
                       ),
                     ),
                   ],
@@ -334,7 +432,10 @@ class AlinReceiptTemplate extends StatelessWidget {
               ],
             ),
           ),
-          Container(height: 1, color: BusinessBrand.orange.withValues(alpha: .85)),
+          Container(
+            height: 1,
+            color: BusinessBrand.orange.withValues(alpha: .85),
+          ),
           Padding(
             padding: const EdgeInsets.fromLTRB(14, 12, 14, 0),
             child: _metricGrid(),
@@ -343,7 +444,14 @@ class AlinReceiptTemplate extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(14, 16, 14, 0),
             child: Align(
               alignment: Alignment.centerRight,
-              child: Text(infoTitle, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: BusinessBrand.ink)),
+              child: Text(
+                infoTitle,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w900,
+                  fontSize: 14,
+                  color: BusinessBrand.ink,
+                ),
+              ),
             ),
           ),
           Padding(
@@ -355,7 +463,14 @@ class AlinReceiptTemplate extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(14, 18, 14, 8),
               child: Align(
                 alignment: Alignment.centerRight,
-                child: Text(itemsTitle, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: BusinessBrand.ink)),
+                child: Text(
+                  itemsTitle,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 14,
+                    color: BusinessBrand.ink,
+                  ),
+                ),
               ),
             ),
             Padding(
@@ -380,11 +495,17 @@ class AlinReceiptTemplate extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('ملاحظات', style: TextStyle(fontSize: 11, color: BusinessBrand.muted)),
+                  const Text(
+                    'ملاحظات',
+                    style: TextStyle(fontSize: 11, color: BusinessBrand.muted),
+                  ),
                   const SizedBox(height: 5),
                   Text(
                     notes.trim().isEmpty ? 'لا توجد ملاحظات' : notes,
-                    style: const TextStyle(fontSize: 12, color: BusinessBrand.ink),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: BusinessBrand.ink,
+                    ),
                   ),
                 ],
               ),
@@ -395,13 +516,24 @@ class AlinReceiptTemplate extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
             child: Row(
               children: [
-                const Text('منصة آلين', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 13)),
+                const Text(
+                  'منصة آلين',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 13,
+                  ),
+                ),
                 const Spacer(),
                 Flexible(
                   child: Text(
                     footerText,
                     textAlign: TextAlign.left,
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 11),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 11,
+                    ),
                   ),
                 ),
               ],
@@ -415,9 +547,13 @@ class AlinReceiptTemplate extends StatelessWidget {
   Widget _metricGrid() {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final columns = constraints.maxWidth >= 560 ? math.min(3, metrics.length) : 1;
+        final columns = constraints.maxWidth >= 560
+            ? math.min(3, metrics.length)
+            : 1;
         final gap = 8.0;
-        final width = columns == 1 ? constraints.maxWidth : (constraints.maxWidth - gap * (columns - 1)) / columns;
+        final width = columns == 1
+            ? constraints.maxWidth
+            : (constraints.maxWidth - gap * (columns - 1)) / columns;
         return Wrap(
           spacing: gap,
           runSpacing: gap,
@@ -436,13 +572,23 @@ class AlinReceiptTemplate extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(metric.label, style: const TextStyle(fontSize: 10.5, color: BusinessBrand.muted)),
+                        Text(
+                          metric.label,
+                          style: const TextStyle(
+                            fontSize: 10.5,
+                            color: BusinessBrand.muted,
+                          ),
+                        ),
                         const SizedBox(height: 8),
                         Text(
                           metric.value,
                           maxLines: 3,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w900, color: BusinessBrand.ink),
+                          style: const TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w900,
+                            color: BusinessBrand.ink,
+                          ),
                         ),
                       ],
                     ),
@@ -458,7 +604,11 @@ class AlinReceiptTemplate extends StatelessWidget {
   Widget _infoGrid() {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final columns = constraints.maxWidth >= 620 ? 3 : constraints.maxWidth >= 420 ? 2 : 1;
+        final columns = constraints.maxWidth >= 620
+            ? 3
+            : constraints.maxWidth >= 420
+            ? 2
+            : 1;
         final gap = 8.0;
         final width = (constraints.maxWidth - gap * (columns - 1)) / columns;
         return Wrap(
@@ -470,7 +620,10 @@ class AlinReceiptTemplate extends StatelessWidget {
                   width: width,
                   child: Container(
                     constraints: const BoxConstraints(minHeight: 58),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
                     decoration: BoxDecoration(
                       border: Border.all(color: BusinessBrand.border),
                       borderRadius: BorderRadius.circular(9),
@@ -479,13 +632,23 @@ class AlinReceiptTemplate extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(field.label, style: const TextStyle(fontSize: 10.5, color: BusinessBrand.muted)),
+                        Text(
+                          field.label,
+                          style: const TextStyle(
+                            fontSize: 10.5,
+                            color: BusinessBrand.muted,
+                          ),
+                        ),
                         const SizedBox(height: 5),
                         Text(
                           field.value,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800, color: BusinessBrand.ink),
+                          style: const TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w800,
+                            color: BusinessBrand.ink,
+                          ),
                         ),
                       ],
                     ),
@@ -505,7 +668,9 @@ class AlinReceiptTemplate extends StatelessWidget {
         return ClipRRect(
           borderRadius: BorderRadius.circular(12),
           child: Container(
-            decoration: BoxDecoration(border: Border.all(color: BusinessBrand.border)),
+            decoration: BoxDecoration(
+              border: Border.all(color: BusinessBrand.border),
+            ),
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: SizedBox(
@@ -514,34 +679,125 @@ class AlinReceiptTemplate extends StatelessWidget {
                   children: [
                     Container(
                       color: const Color(0xFFEFF5FA),
-                      padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 8),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 9,
+                        horizontal: 8,
+                      ),
                       child: const Row(
                         children: [
-                          SizedBox(width: 34, child: Text('#', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11))),
-                          Expanded(flex: 5, child: Text('الصنف', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11))),
-                          Expanded(flex: 2, child: Text('الكمية', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11))),
-                          Expanded(flex: 3, child: Text('سعر الوحدة', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11))),
-                          Expanded(flex: 3, child: Text('الإجمالي', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11))),
+                          SizedBox(
+                            width: 34,
+                            child: Text(
+                              '#',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w900,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            flex: 5,
+                            child: Text(
+                              'الصنف',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w900,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            flex: 2,
+                            child: Text(
+                              'الكمية',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w900,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            flex: 3,
+                            child: Text(
+                              'سعر الوحدة',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w900,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            flex: 3,
+                            child: Text(
+                              'الإجمالي',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w900,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                     ),
                     ...items.asMap().entries.map((entry) {
                       final item = entry.value;
                       return Container(
-                        padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 8),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 9,
+                          horizontal: 8,
+                        ),
                         decoration: const BoxDecoration(
-                          border: Border(top: BorderSide(color: BusinessBrand.border)),
+                          border: Border(
+                            top: BorderSide(color: BusinessBrand.border),
+                          ),
                         ),
                         child: Row(
                           children: [
-                            SizedBox(width: 34, child: Text('${entry.key + 1}', style: const TextStyle(fontSize: 11))),
+                            SizedBox(
+                              width: 34,
+                              child: Text(
+                                '${entry.key + 1}',
+                                style: const TextStyle(fontSize: 11),
+                              ),
+                            ),
                             Expanded(
                               flex: 5,
-                              child: Text(item.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11.5)),
+                              child: Text(
+                                item.title,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(fontSize: 11.5),
+                              ),
                             ),
-                            Expanded(flex: 2, child: Text('${item.quantity.round()}', textAlign: TextAlign.center, style: const TextStyle(fontSize: 11))),
-                            Expanded(flex: 3, child: Text(_receiptMoney(item.unitPrice), textAlign: TextAlign.center, style: const TextStyle(fontSize: 11))),
-                            Expanded(flex: 3, child: Text(_receiptMoney(item.total), textAlign: TextAlign.center, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800))),
+                            Expanded(
+                              flex: 2,
+                              child: Text(
+                                '${item.quantity.round()}',
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(fontSize: 11),
+                              ),
+                            ),
+                            Expanded(
+                              flex: 3,
+                              child: Text(
+                                _receiptMoney(item.unitPrice),
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(fontSize: 11),
+                              ),
+                            ),
+                            Expanded(
+                              flex: 3,
+                              child: Text(
+                                _receiptMoney(item.total),
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ),
                           ],
                         ),
                       );
@@ -571,7 +827,9 @@ class AlinReceiptTemplate extends StatelessWidget {
             color: row.highlight ? const Color(0xFFFFF5DE) : Colors.white,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
             decoration: BoxDecoration(
-              border: entry.key == 0 ? null : const Border(top: BorderSide(color: BusinessBrand.border)),
+              border: entry.key == 0
+                  ? null
+                  : const Border(top: BorderSide(color: BusinessBrand.border)),
             ),
             child: Row(
               children: [
@@ -580,7 +838,9 @@ class AlinReceiptTemplate extends StatelessWidget {
                     row.label,
                     style: TextStyle(
                       fontSize: row.strong ? 13 : 11.5,
-                      fontWeight: row.strong ? FontWeight.w900 : FontWeight.w600,
+                      fontWeight: row.strong
+                          ? FontWeight.w900
+                          : FontWeight.w600,
                       color: BusinessBrand.ink,
                     ),
                   ),
@@ -641,7 +901,10 @@ Future<void> _showReceiptDialog(BuildContext context, Widget receipt) async {
   await showDialog<void>(
     context: context,
     builder: (dialogContext) => Dialog(
-      insetPadding: EdgeInsets.symmetric(horizontal: width < 700 ? 10 : 28, vertical: 18),
+      insetPadding: EdgeInsets.symmetric(
+        horizontal: width < 700 ? 10 : 28,
+        vertical: 18,
+      ),
       backgroundColor: Colors.transparent,
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 760, maxHeight: 900),

@@ -6,6 +6,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
 import 'business_brand.dart';
+import 'alin_receipt_template.dart';
 import 'grouped_order_receipt_card.dart';
 
 class GroupedOrderReceiptListTile extends StatefulWidget {
@@ -21,21 +22,27 @@ class GroupedOrderReceiptListTile extends StatefulWidget {
   });
 
   @override
-  State<GroupedOrderReceiptListTile> createState() => _GroupedOrderReceiptListTileState();
+  State<GroupedOrderReceiptListTile> createState() =>
+      _GroupedOrderReceiptListTileState();
 }
 
-class _GroupedOrderReceiptListTileState extends State<GroupedOrderReceiptListTile> {
+class _GroupedOrderReceiptListTileState
+    extends State<GroupedOrderReceiptListTile> {
   bool printing = false;
 
   num _n(dynamic value) => receiptNumberValue(value);
   String _money(dynamic value) => '${_n(value).round()} د.ع';
 
   List<Map<String, dynamic>> get _items =>
-      (widget.order['_items'] as List?)?.cast<Map<String, dynamic>>() ?? <Map<String, dynamic>>[widget.order];
+      (widget.order['_items'] as List?)?.cast<Map<String, dynamic>>() ??
+      <Map<String, dynamic>>[widget.order];
 
-  num _rowDelivery(Map<String, dynamic> row) => _n(row['delivery_fee'] ?? row['shipping_fee']);
-  num _rowDiscount(Map<String, dynamic> row) => _n(row['discount'] ?? row['discount_amount']);
-  num _rowTotal(Map<String, dynamic> row) => _n(row['total'] ?? row['total_amount'] ?? row['amount']);
+  num _rowDelivery(Map<String, dynamic> row) =>
+      _n(row['delivery_fee'] ?? row['shipping_fee']);
+  num _rowDiscount(Map<String, dynamic> row) =>
+      _n(row['discount'] ?? row['discount_amount']);
+  num _rowTotal(Map<String, dynamic> row) =>
+      _n(row['total'] ?? row['total_amount'] ?? row['amount']);
   num _rowQty(Map<String, dynamic> row) {
     final value = _n(row['qty'] ?? row['quantity']);
     return value <= 0 ? 1 : value;
@@ -44,7 +51,10 @@ class _GroupedOrderReceiptListTileState extends State<GroupedOrderReceiptListTil
   num _rowSubtotal(Map<String, dynamic> row) {
     final explicit = _n(row['subtotal'] ?? row['items_total']);
     if (explicit > 0) return explicit;
-    return (_rowTotal(row) + _rowDiscount(row) - _rowDelivery(row)).clamp(0, double.infinity);
+    return (_rowTotal(row) + _rowDiscount(row) - _rowDelivery(row)).clamp(
+      0,
+      double.infinity,
+    );
   }
 
   num _rowUnit(Map<String, dynamic> row) {
@@ -53,7 +63,8 @@ class _GroupedOrderReceiptListTileState extends State<GroupedOrderReceiptListTil
   }
 
   String _dateText() {
-    final raw = '${widget.order['completed_at'] ?? widget.order['delivered_at'] ?? widget.order['updated_at'] ?? widget.order['created_at'] ?? ''}';
+    final raw =
+        '${widget.order['completed_at'] ?? widget.order['delivered_at'] ?? widget.order['updated_at'] ?? widget.order['created_at'] ?? ''}';
     final parsed = DateTime.tryParse(raw)?.toLocal();
     if (parsed == null) return '—';
     String two(int value) => value.toString().padLeft(2, '0');
@@ -73,8 +84,13 @@ class _GroupedOrderReceiptListTileState extends State<GroupedOrderReceiptListTil
       builder: (dialogContext) {
         final width = MediaQuery.sizeOf(dialogContext).width;
         return Dialog(
-          insetPadding: EdgeInsets.symmetric(horizontal: width < 600 ? 12 : 28, vertical: 22),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          insetPadding: EdgeInsets.symmetric(
+            horizontal: width < 600 ? 12 : 28,
+            vertical: 22,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 760, maxHeight: 760),
             child: Column(
@@ -89,12 +105,28 @@ class _GroupedOrderReceiptListTileState extends State<GroupedOrderReceiptListTil
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('وصل منصة آلين', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 17, color: BusinessBrand.navy)),
-                            Text('تفاصيل الطلب الكامل', style: TextStyle(color: BusinessBrand.muted, fontSize: 12)),
+                            Text(
+                              'وصل منصة آلين',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w900,
+                                fontSize: 17,
+                                color: BusinessBrand.navy,
+                              ),
+                            ),
+                            Text(
+                              'تفاصيل الطلب الكامل',
+                              style: TextStyle(
+                                color: BusinessBrand.muted,
+                                fontSize: 12,
+                              ),
+                            ),
                           ],
                         ),
                       ),
-                      IconButton(onPressed: () => Navigator.pop(dialogContext), icon: const Icon(Icons.close_rounded)),
+                      IconButton(
+                        onPressed: () => Navigator.pop(dialogContext),
+                        icon: const Icon(Icons.close_rounded),
+                      ),
                     ],
                   ),
                 ),
@@ -102,10 +134,11 @@ class _GroupedOrderReceiptListTileState extends State<GroupedOrderReceiptListTil
                 Expanded(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.all(14),
-                    child: GroupedOrderReceiptCard(
+                    child: AlinReceiptTemplate.order(
                       order: widget.order,
                       courierName: widget.courierName,
                       courierView: widget.courierView,
+                      viewerRole: widget.courierView ? 'courier' : '',
                     ),
                   ),
                 ),
@@ -132,13 +165,15 @@ class _GroupedOrderReceiptListTileState extends State<GroupedOrderReceiptListTil
     if (printing) return;
     setState(() => printing = true);
     try {
-      await Printing.layoutPdf(
-        onLayout: (format) => _buildPdf(format),
-      );
+      await Printing.layoutPdf(onLayout: (format) => _buildPdf(format));
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('تعذر طباعة الوصل: ${'$e'.replaceFirst('Exception: ', '')}')),
+        SnackBar(
+          content: Text(
+            'تعذر طباعة الوصل: ${'$e'.replaceFirst('Exception: ', '')}',
+          ),
+        ),
       );
     } finally {
       if (mounted) setState(() => printing = false);
@@ -161,24 +196,59 @@ class _GroupedOrderReceiptListTileState extends State<GroupedOrderReceiptListTil
     final subtotal = items.fold<num>(0, (sum, row) => sum + _rowSubtotal(row));
     final courierFee = _n(widget.order['_courier_fee']) > 0
         ? _n(widget.order['_courier_fee'])
-        : items.fold<num>(0, (sum, row) => sum + _n(row['courier_fee'] ?? row['courier_profit'] ?? row['delegate_profit']));
+        : items.fold<num>(
+            0,
+            (sum, row) =>
+                sum +
+                _n(
+                  row['courier_fee'] ??
+                      row['courier_profit'] ??
+                      row['delegate_profit'],
+                ),
+          );
 
     pw.Widget info(String label, String value) => pw.Padding(
-          padding: const pw.EdgeInsets.symmetric(vertical: 2),
-          child: pw.Row(
-            children: [
-              pw.SizedBox(width: 90, child: pw.Text(label, style: pw.TextStyle(font: bold, fontSize: 10))),
-              pw.Expanded(child: pw.Text(value, style: pw.TextStyle(font: regular, fontSize: 10))),
-            ],
+      padding: const pw.EdgeInsets.symmetric(vertical: 2),
+      child: pw.Row(
+        children: [
+          pw.SizedBox(
+            width: 90,
+            child: pw.Text(
+              label,
+              style: pw.TextStyle(font: bold, fontSize: 10),
+            ),
           ),
-        );
+          pw.Expanded(
+            child: pw.Text(
+              value,
+              style: pw.TextStyle(font: regular, fontSize: 10),
+            ),
+          ),
+        ],
+      ),
+    );
 
-    pw.Widget totalRow(String label, num value, {bool strong = false}) => pw.Padding(
+    pw.Widget totalRow(String label, num value, {bool strong = false}) =>
+        pw.Padding(
           padding: const pw.EdgeInsets.symmetric(vertical: 3),
           child: pw.Row(
             children: [
-              pw.Expanded(child: pw.Text(label, style: pw.TextStyle(font: strong ? bold : regular, fontSize: strong ? 12 : 10))),
-              pw.Text(_money(value), style: pw.TextStyle(font: strong ? bold : regular, fontSize: strong ? 13 : 10)),
+              pw.Expanded(
+                child: pw.Text(
+                  label,
+                  style: pw.TextStyle(
+                    font: strong ? bold : regular,
+                    fontSize: strong ? 12 : 10,
+                  ),
+                ),
+              ),
+              pw.Text(
+                _money(value),
+                style: pw.TextStyle(
+                  font: strong ? bold : regular,
+                  fontSize: strong ? 13 : 10,
+                ),
+              ),
             ],
           ),
         );
@@ -209,57 +279,130 @@ class _GroupedOrderReceiptListTileState extends State<GroupedOrderReceiptListTil
                           color: PdfColors.white,
                           borderRadius: pw.BorderRadius.circular(9),
                         ),
-                        child: pw.Text('A', style: pw.TextStyle(font: bold, fontSize: 22, color: PdfColor.fromHex('#143B68'))),
+                        child: pw.Text(
+                          'A',
+                          style: pw.TextStyle(
+                            font: bold,
+                            fontSize: 22,
+                            color: PdfColor.fromHex('#143B68'),
+                          ),
+                        ),
                       ),
                       pw.SizedBox(width: 10),
                       pw.Expanded(
                         child: pw.Column(
                           crossAxisAlignment: pw.CrossAxisAlignment.start,
                           children: [
-                            pw.Text('منصة آلين للأعمال', style: pw.TextStyle(font: bold, fontSize: 17, color: PdfColors.white)),
-                            pw.Text('وصل توصيل الطلب', style: pw.TextStyle(font: regular, fontSize: 10, color: PdfColors.white)),
+                            pw.Text(
+                              'منصة آلين للأعمال',
+                              style: pw.TextStyle(
+                                font: bold,
+                                fontSize: 17,
+                                color: PdfColors.white,
+                              ),
+                            ),
+                            pw.Text(
+                              'وصل توصيل الطلب',
+                              style: pw.TextStyle(
+                                font: regular,
+                                fontSize: 10,
+                                color: PdfColors.white,
+                              ),
+                            ),
                           ],
                         ),
                       ),
-                      pw.Text(_dateText(), style: pw.TextStyle(font: regular, fontSize: 9, color: PdfColors.white)),
+                      pw.Text(
+                        _dateText(),
+                        style: pw.TextStyle(
+                          font: regular,
+                          fontSize: 9,
+                          color: PdfColors.white,
+                        ),
+                      ),
                     ],
                   ),
                 ),
                 pw.SizedBox(height: 14),
-                pw.Text('رقم الطلب: ${widget.order['order_number'] ?? widget.order['id'] ?? '—'}', style: pw.TextStyle(font: bold, fontSize: 12)),
+                pw.Text(
+                  'رقم الطلب: ${widget.order['order_number'] ?? widget.order['id'] ?? '—'}',
+                  style: pw.TextStyle(font: bold, fontSize: 12),
+                ),
                 pw.SizedBox(height: 6),
                 info('الطالب', '${widget.order['student_name'] ?? '—'}'),
                 info('الهاتف', '${widget.order['student_phone'] ?? '—'}'),
-                if ('${widget.order['delivery_area'] ?? ''}'.trim().isNotEmpty) info('المنطقة', '${widget.order['delivery_area']}'),
-                if ('${widget.order['delivery_landmark'] ?? ''}'.trim().isNotEmpty) info('نقطة دالة', '${widget.order['delivery_landmark']}'),
-                if ((widget.courierName ?? '').trim().isNotEmpty) info('المندوب', widget.courierName!.trim()),
+                if ('${widget.order['delivery_area'] ?? ''}'.trim().isNotEmpty)
+                  info('المنطقة', '${widget.order['delivery_area']}'),
+                if ('${widget.order['delivery_landmark'] ?? ''}'
+                    .trim()
+                    .isNotEmpty)
+                  info('نقطة دالة', '${widget.order['delivery_landmark']}'),
+                if ((widget.courierName ?? '').trim().isNotEmpty)
+                  info('المندوب', widget.courierName!.trim()),
                 pw.SizedBox(height: 12),
                 pw.Container(
-                  padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  padding: const pw.EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 8,
+                  ),
                   color: PdfColor.fromHex('#F0F6FC'),
-                  child: pw.Text('مواد الطلب • ${items.length}', style: pw.TextStyle(font: bold, fontSize: 12, color: PdfColor.fromHex('#143B68'))),
+                  child: pw.Text(
+                    'مواد الطلب • ${items.length}',
+                    style: pw.TextStyle(
+                      font: bold,
+                      fontSize: 12,
+                      color: PdfColor.fromHex('#143B68'),
+                    ),
+                  ),
                 ),
                 ...items.asMap().entries.map((entry) {
                   final row = entry.value;
                   return pw.Container(
-                    padding: const pw.EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+                    padding: const pw.EdgeInsets.symmetric(
+                      vertical: 8,
+                      horizontal: 6,
+                    ),
                     decoration: const pw.BoxDecoration(
-                      border: pw.Border(bottom: pw.BorderSide(color: PdfColors.grey300, width: .5)),
+                      border: pw.Border(
+                        bottom: pw.BorderSide(
+                          color: PdfColors.grey300,
+                          width: .5,
+                        ),
+                      ),
                     ),
                     child: pw.Row(
                       crossAxisAlignment: pw.CrossAxisAlignment.start,
                       children: [
-                        pw.SizedBox(width: 24, child: pw.Text('${entry.key + 1}.', style: pw.TextStyle(font: bold, fontSize: 10))),
+                        pw.SizedBox(
+                          width: 24,
+                          child: pw.Text(
+                            '${entry.key + 1}.',
+                            style: pw.TextStyle(font: bold, fontSize: 10),
+                          ),
+                        ),
                         pw.Expanded(
                           child: pw.Column(
                             crossAxisAlignment: pw.CrossAxisAlignment.start,
                             children: [
-                              pw.Text('${row['title'] ?? row['product_name'] ?? row['item_name'] ?? 'مادة'}', style: pw.TextStyle(font: bold, fontSize: 10)),
-                              pw.Text('${_rowQty(row).round()} × ${_money(_rowUnit(row))}', style: pw.TextStyle(font: regular, fontSize: 9, color: PdfColors.grey700)),
+                              pw.Text(
+                                '${row['title'] ?? row['product_name'] ?? row['item_name'] ?? 'مادة'}',
+                                style: pw.TextStyle(font: bold, fontSize: 10),
+                              ),
+                              pw.Text(
+                                '${_rowQty(row).round()} × ${_money(_rowUnit(row))}',
+                                style: pw.TextStyle(
+                                  font: regular,
+                                  fontSize: 9,
+                                  color: PdfColors.grey700,
+                                ),
+                              ),
                             ],
                           ),
                         ),
-                        pw.Text(_money(_rowSubtotal(row)), style: pw.TextStyle(font: bold, fontSize: 10)),
+                        pw.Text(
+                          _money(_rowSubtotal(row)),
+                          style: pw.TextStyle(font: bold, fontSize: 10),
+                        ),
                       ],
                     ),
                   );
@@ -273,7 +416,14 @@ class _GroupedOrderReceiptListTileState extends State<GroupedOrderReceiptListTil
                 totalRow('الإجمالي الكلي', _total, strong: true),
                 pw.SizedBox(height: 18),
                 pw.Center(
-                  child: pw.Text('شكراً لاستخدام منصة آلين', style: pw.TextStyle(font: bold, fontSize: 10, color: PdfColor.fromHex('#143B68'))),
+                  child: pw.Text(
+                    'شكراً لاستخدام منصة آلين',
+                    style: pw.TextStyle(
+                      font: bold,
+                      fontSize: 10,
+                      color: PdfColor.fromHex('#143B68'),
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -285,9 +435,13 @@ class _GroupedOrderReceiptListTileState extends State<GroupedOrderReceiptListTil
   }
 
   String _receiptNumber() {
-    final explicit = '${widget.order['receipt_number'] ?? widget.order['voucher_number'] ?? ''}'.trim();
+    final explicit =
+        '${widget.order['receipt_number'] ?? widget.order['voucher_number'] ?? ''}'
+            .trim();
     if (explicit.isNotEmpty) return explicit;
-    final orderNumber = '${widget.order['order_number'] ?? widget.order['id'] ?? ''}'.replaceFirst(RegExp(r'^AL-', caseSensitive: false), '');
+    final orderNumber =
+        '${widget.order['order_number'] ?? widget.order['id'] ?? ''}'
+            .replaceFirst(RegExp(r'^AL-', caseSensitive: false), '');
     return 'RC-$orderNumber';
   }
 
@@ -307,22 +461,77 @@ class _GroupedOrderReceiptListTileState extends State<GroupedOrderReceiptListTil
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(_receiptNumber(), maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: BusinessBrand.navy)),
+                    Text(
+                      _receiptNumber(),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 14,
+                        color: BusinessBrand.navy,
+                      ),
+                    ),
                     const SizedBox(height: 3),
-                    Text('${widget.order['order_number'] ?? widget.order['id'] ?? '—'}', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: BusinessBrand.muted, fontSize: 12)),
+                    Text(
+                      '${widget.order['order_number'] ?? widget.order['id'] ?? '—'}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: BusinessBrand.muted,
+                        fontSize: 12,
+                      ),
+                    ),
                   ],
                 ),
               ),
               SizedBox(
                 width: 150,
-                child: Text('وصل طلب • ${items.length} مواد', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: BusinessBrand.ink)),
+                child: Text(
+                  'وصل طلب • ${items.length} مواد',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 13,
+                    color: BusinessBrand.ink,
+                  ),
+                ),
               ),
-              Expanded(child: Text(_dateText(), style: const TextStyle(color: BusinessBrand.muted, fontSize: 12))),
-              SizedBox(width: 118, child: Text(_money(_total), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: BusinessBrand.navy))),
+              Expanded(
+                child: Text(
+                  _dateText(),
+                  style: const TextStyle(
+                    color: BusinessBrand.muted,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+              SizedBox(
+                width: 118,
+                child: Text(
+                  _money(_total),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 14,
+                    color: BusinessBrand.navy,
+                  ),
+                ),
+              ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                decoration: BoxDecoration(color: BusinessBrand.softTeal, borderRadius: BorderRadius.circular(99)),
-                child: const Text('مكتمل', style: TextStyle(color: BusinessBrand.teal, fontWeight: FontWeight.w900, fontSize: 12)),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 7,
+                ),
+                decoration: BoxDecoration(
+                  color: BusinessBrand.softTeal,
+                  borderRadius: BorderRadius.circular(99),
+                ),
+                child: const Text(
+                  'مكتمل',
+                  style: TextStyle(
+                    color: BusinessBrand.teal,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 12,
+                  ),
+                ),
               ),
               const SizedBox(width: 12),
               SizedBox(
@@ -341,7 +550,14 @@ class _GroupedOrderReceiptListTileState extends State<GroupedOrderReceiptListTil
                       child: FilledButton.icon(
                         onPressed: printing ? null : _printReceipt,
                         icon: printing
-                            ? const SizedBox(width: 17, height: 17, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                            ? const SizedBox(
+                                width: 17,
+                                height: 17,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
                             : const Icon(Icons.print_rounded, size: 18),
                         label: Text(printing ? 'جاري...' : 'طباعة / PDF'),
                       ),
@@ -373,19 +589,52 @@ class _GroupedOrderReceiptListTileState extends State<GroupedOrderReceiptListTil
                   Container(
                     width: 50,
                     height: 50,
-                    decoration: BoxDecoration(color: BusinessBrand.softTeal, borderRadius: BorderRadius.circular(15)),
-                    child: const Icon(Icons.receipt_long_rounded, color: BusinessBrand.teal, size: 28),
+                    decoration: BoxDecoration(
+                      color: BusinessBrand.softTeal,
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: const Icon(
+                      Icons.receipt_long_rounded,
+                      color: BusinessBrand.teal,
+                      size: 28,
+                    ),
                   ),
                   const SizedBox(width: 11),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(_receiptNumber(), maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: BusinessBrand.navy)),
+                        Text(
+                          _receiptNumber(),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w900,
+                            fontSize: 16,
+                            color: BusinessBrand.navy,
+                          ),
+                        ),
                         const SizedBox(height: 3),
-                        Text('${widget.order['order_number'] ?? widget.order['id'] ?? '—'} • ${items.length} مواد', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700, color: BusinessBrand.ink, fontSize: 13)),
+                        Text(
+                          '${widget.order['order_number'] ?? widget.order['id'] ?? '—'} • ${items.length} مواد',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: BusinessBrand.ink,
+                            fontSize: 13,
+                          ),
+                        ),
                         const SizedBox(height: 3),
-                        Text('${widget.order['student_name'] ?? 'طالب'} • ${_dateText()}', maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: BusinessBrand.muted, fontSize: 12)),
+                        Text(
+                          '${widget.order['student_name'] ?? 'طالب'} • ${_dateText()}',
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: BusinessBrand.muted,
+                            fontSize: 12,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -393,9 +642,23 @@ class _GroupedOrderReceiptListTileState extends State<GroupedOrderReceiptListTil
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Text(_money(_total), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: BusinessBrand.navy)),
+                      Text(
+                        _money(_total),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 15,
+                          color: BusinessBrand.navy,
+                        ),
+                      ),
                       if (widget.courierView)
-                        Text('أجرة التوصيل ${_money(widget.order['_courier_fee'])}', style: const TextStyle(color: BusinessBrand.teal, fontSize: 11, fontWeight: FontWeight.w900)),
+                        Text(
+                          'أجرة التوصيل ${_money(widget.order['_courier_fee'])}',
+                          style: const TextStyle(
+                            color: BusinessBrand.teal,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
                     ],
                   ),
                 ],
@@ -403,13 +666,26 @@ class _GroupedOrderReceiptListTileState extends State<GroupedOrderReceiptListTil
               const SizedBox(height: 12),
               Row(
                 children: [
-                  Expanded(child: OutlinedButton.icon(onPressed: _showReceipt, icon: const Icon(Icons.visibility_outlined, size: 19), label: const Text('معاينة'))),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: _showReceipt,
+                      icon: const Icon(Icons.visibility_outlined, size: 19),
+                      label: const Text('معاينة'),
+                    ),
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: FilledButton.icon(
                       onPressed: printing ? null : _printReceipt,
                       icon: printing
-                          ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
                           : const Icon(Icons.print_rounded, size: 19),
                       label: Text(printing ? 'جاري...' : 'طباعة / PDF'),
                     ),
@@ -426,7 +702,8 @@ class _GroupedOrderReceiptListTileState extends State<GroupedOrderReceiptListTil
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
-      builder: (context, constraints) => constraints.maxWidth >= 980 ? _desktopRow() : _mobileCard(),
+      builder: (context, constraints) =>
+          constraints.maxWidth >= 980 ? _desktopRow() : _mobileCard(),
     );
   }
 }

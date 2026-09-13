@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../data/business_repository.dart';
 import '../data/library_print_repository.dart';
 import '../models/business_account.dart';
+import '../widgets/alin_receipt_template.dart';
 import 'library_booklet_preview_screen.dart';
 
 class LibraryDashboardScreen extends StatefulWidget {
@@ -31,7 +32,12 @@ class _LibraryDashboardScreenState extends State<LibraryDashboardScreen> {
   final Set<String> busyOrders = {};
 
   static const doneStatuses = {'completed', 'delivered'};
-  static const closedStatuses = {'completed', 'delivered', 'cancelled', 'rejected'};
+  static const closedStatuses = {
+    'completed',
+    'delivered',
+    'cancelled',
+    'rejected',
+  };
 
   @override
   void initState() {
@@ -67,25 +73,30 @@ class _LibraryDashboardScreenState extends State<LibraryDashboardScreen> {
     }
   }
 
-  bool isDone(Map<String, dynamic> o) => doneStatuses.contains('${o['status']}');
-  bool isClosed(Map<String, dynamic> o) => closedStatuses.contains('${o['status']}');
+  bool isDone(Map<String, dynamic> o) =>
+      doneStatuses.contains('${o['status']}');
+  bool isClosed(Map<String, dynamic> o) =>
+      closedStatuses.contains('${o['status']}');
 
   List<Map<String, dynamic>> get visibleOrders {
-    if (filter == 'ready') return orders.where((o) => '${o['status']}' == 'ready').toList();
+    if (filter == 'ready')
+      return orders.where((o) => '${o['status']}' == 'ready').toList();
     if (filter == 'completed') return orders.where(isDone).toList();
     if (filter == 'all') return orders;
-    return orders.where((o) => !isClosed(o) && '${o['status']}' != 'ready').toList();
+    return orders
+        .where((o) => !isClosed(o) && '${o['status']}' != 'ready')
+        .toList();
   }
 
   String statusLabel(String status) => switch (status) {
-        'new' || 'pending' || 'pending_admin' || 'accepted' => 'جديد',
-        'processing' || 'printing' => 'قيد التجهيز',
-        'ready' => 'جاهز',
-        'completed' || 'delivered' => 'مسلّم',
-        'cancelled' => 'ملغي',
-        'rejected' => 'مرفوض',
-        _ => status,
-      };
+    'new' || 'pending' || 'pending_admin' || 'accepted' => 'جديد',
+    'processing' || 'printing' => 'قيد التجهيز',
+    'ready' => 'جاهز',
+    'completed' || 'delivered' => 'مسلّم',
+    'cancelled' => 'ملغي',
+    'rejected' => 'مرفوض',
+    _ => status,
+  };
 
   Future<void> setOpen(bool value) async {
     try {
@@ -103,7 +114,11 @@ class _LibraryDashboardScreenState extends State<LibraryDashboardScreen> {
     }
   }
 
-  Future<void> transition(Map<String, dynamic> order, String status, {String reason = ''}) async {
+  Future<void> transition(
+    Map<String, dynamic> order,
+    String status, {
+    String reason = '',
+  }) async {
     final id = '${order['id']}';
     if (busyOrders.contains(id)) return;
     setState(() => busyOrders.add(id));
@@ -111,7 +126,9 @@ class _LibraryDashboardScreenState extends State<LibraryDashboardScreen> {
       await widget.repository.libraryTransition(id, status, reason: reason);
       await load();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم تحديث الطلب')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('تم تحديث الطلب')));
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -134,8 +151,14 @@ class _LibraryDashboardScreenState extends State<LibraryDashboardScreen> {
           decoration: const InputDecoration(hintText: 'اكتب سبب الإلغاء'),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('رجوع')),
-          FilledButton(onPressed: () => Navigator.pop(context, controller.text.trim()), child: const Text('تأكيد')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('رجوع'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, controller.text.trim()),
+            child: const Text('تأكيد'),
+          ),
         ],
       ),
     );
@@ -150,7 +173,9 @@ class _LibraryDashboardScreenState extends State<LibraryDashboardScreen> {
   }
 
   Future<void> saveLibraryNote(Map<String, dynamic> order) async {
-    final controller = TextEditingController(text: '${order['library_note'] ?? ''}');
+    final controller = TextEditingController(
+      text: '${order['library_note'] ?? ''}',
+    );
     final result = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
@@ -159,11 +184,19 @@ class _LibraryDashboardScreenState extends State<LibraryDashboardScreen> {
           controller: controller,
           maxLines: 4,
           maxLength: 1000,
-          decoration: const InputDecoration(hintText: 'اكتب ملاحظة خاصة بهذا الطلب'),
+          decoration: const InputDecoration(
+            hintText: 'اكتب ملاحظة خاصة بهذا الطلب',
+          ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
-          FilledButton(onPressed: () => Navigator.pop(context, controller.text.trim()), child: const Text('حفظ')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('إلغاء'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, controller.text.trim()),
+            child: const Text('حفظ'),
+          ),
         ],
       ),
     );
@@ -177,10 +210,14 @@ class _LibraryDashboardScreenState extends State<LibraryDashboardScreen> {
       await widget.repository.librarySetOrderNote(id, result);
       await load();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم حفظ ملاحظة المكتبة')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('تم حفظ ملاحظة المكتبة')));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e'.replaceFirst('Exception: ', ''))));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('$e'.replaceFirst('Exception: ', ''))),
+      );
     } finally {
       if (mounted) setState(() => busyOrders.remove(id));
     }
@@ -190,13 +227,18 @@ class _LibraryDashboardScreenState extends State<LibraryDashboardScreen> {
     final status = '${order['status']}';
     if (!['processing', 'printing', 'ready'].contains(status)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('ابدأ تجهيز الطلب أولاً حتى تتاح المعاينة والطباعة')),
+        const SnackBar(
+          content: Text('ابدأ تجهيز الطلب أولاً حتى تتاح المعاينة والطباعة'),
+        ),
       );
       return;
     }
     await Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => LibraryBookletPreviewScreen(repository: widget.repository, order: order),
+        builder: (_) => LibraryBookletPreviewScreen(
+          repository: widget.repository,
+          order: order,
+        ),
       ),
     );
     await load();
@@ -204,26 +246,60 @@ class _LibraryDashboardScreenState extends State<LibraryDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isOpen = profile['is_open'] != false && '${profile['open_status'] ?? 'open'}' != 'closed';
-    final preparing = orders.where((o) => ['new', 'pending', 'pending_admin', 'accepted', 'processing', 'printing'].contains('${o['status']}')).length;
+    final isOpen =
+        profile['is_open'] != false &&
+        '${profile['open_status'] ?? 'open'}' != 'closed';
+    final preparing = orders
+        .where(
+          (o) => [
+            'new',
+            'pending',
+            'pending_admin',
+            'accepted',
+            'processing',
+            'printing',
+          ].contains('${o['status']}'),
+        )
+        .length;
     final ready = orders.where((o) => '${o['status']}' == 'ready').length;
     final completed = orders.where(isDone).length;
-    final profit = orders.where(isDone).fold<num>(0, (sum, o) => sum + number(o['library_profit']));
-    final settled = settlements.where((s) => ['received', 'paid', 'settled'].contains('${s['status']}'.toLowerCase())).fold<num>(0, (sum, s) => sum + number(s['amount']));
+    final profit = orders
+        .where(isDone)
+        .fold<num>(0, (sum, o) => sum + number(o['library_profit']));
+    final settled = settlements
+        .where(
+          (s) => [
+            'received',
+            'paid',
+            'settled',
+          ].contains('${s['status']}'.toLowerCase()),
+        )
+        .fold<num>(0, (sum, s) => sum + number(s['amount']));
 
     return Scaffold(
       appBar: AppBar(
-        title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('لوحة المكتبة', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
-          Text(widget.account.name, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w400)),
-        ]),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'لوحة المكتبة',
+              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
+            ),
+            Text(
+              widget.account.name,
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w400),
+            ),
+          ],
+        ),
         actions: [
           IconButton(onPressed: load, icon: const Icon(Icons.refresh_rounded)),
           PopupMenuButton<String>(
             onSelected: (value) {
               if (value == 'logout') widget.onLogout();
             },
-            itemBuilder: (_) => const [PopupMenuItem(value: 'logout', child: Text('تسجيل الخروج'))],
+            itemBuilder: (_) => const [
+              PopupMenuItem(value: 'logout', child: Text('تسجيل الخروج')),
+            ],
           ),
         ],
       ),
@@ -235,35 +311,96 @@ class _LibraryDashboardScreenState extends State<LibraryDashboardScreen> {
             Container(
               padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(colors: [Color(0xFF143B68), Color(0xFF255B91)]),
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF143B68), Color(0xFF255B91)],
+                ),
                 borderRadius: BorderRadius.circular(22),
               ),
-              child: Row(children: [
-                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('مرحباً ${widget.account.name}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 20)),
-                  const SizedBox(height: 6),
-                  Text('${profile['area'] ?? widget.account.area}${('${profile['landmark'] ?? widget.account.landmark}').trim().isEmpty ? '' : ' — ${profile['landmark'] ?? widget.account.landmark}'}', style: const TextStyle(color: Colors.white70)),
-                ])),
-                Column(children: [
-                  Text(isOpen ? 'مفتوح' : 'مغلق', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900)),
-                  Switch(value: isOpen, onChanged: setOpen),
-                ]),
-              ]),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'مرحباً ${widget.account.name}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 20,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          '${profile['area'] ?? widget.account.area}${('${profile['landmark'] ?? widget.account.landmark}').trim().isEmpty ? '' : ' — ${profile['landmark'] ?? widget.account.landmark}'}',
+                          style: const TextStyle(color: Colors.white70),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Column(
+                    children: [
+                      Text(
+                        isOpen ? 'مفتوح' : 'مغلق',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      Switch(value: isOpen, onChanged: setOpen),
+                    ],
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 12),
-            Row(children: [
-              Expanded(child: _Metric(label: 'للتجهيز', value: '$preparing', icon: Icons.print_rounded)),
-              const SizedBox(width: 8),
-              Expanded(child: _Metric(label: 'جاهز', value: '$ready', icon: Icons.inventory_2_rounded)),
-              const SizedBox(width: 8),
-              Expanded(child: _Metric(label: 'مسلّم', value: '$completed', icon: Icons.check_circle_rounded)),
-            ]),
+            Row(
+              children: [
+                Expanded(
+                  child: _Metric(
+                    label: 'للتجهيز',
+                    value: '$preparing',
+                    icon: Icons.print_rounded,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _Metric(
+                    label: 'جاهز',
+                    value: '$ready',
+                    icon: Icons.inventory_2_rounded,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _Metric(
+                    label: 'مسلّم',
+                    value: '$completed',
+                    icon: Icons.check_circle_rounded,
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 8),
-            Row(children: [
-              Expanded(child: _Metric(label: 'أرباح المكتبة', value: money(profit), icon: Icons.payments_rounded)),
-              const SizedBox(width: 8),
-              Expanded(child: _Metric(label: 'تسويات مسجلة', value: money(settled), icon: Icons.account_balance_wallet_rounded)),
-            ]),
+            Row(
+              children: [
+                Expanded(
+                  child: _Metric(
+                    label: 'أرباح المكتبة',
+                    value: money(profit),
+                    icon: Icons.payments_rounded,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _Metric(
+                    label: 'تسويات مسجلة',
+                    value: money(settled),
+                    icon: Icons.account_balance_wallet_rounded,
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 14),
             SegmentedButton<String>(
               segments: const [
@@ -273,31 +410,79 @@ class _LibraryDashboardScreenState extends State<LibraryDashboardScreen> {
                 ButtonSegment(value: 'all', label: Text('الكل')),
               ],
               selected: {filter},
-              onSelectionChanged: (value) => setState(() => filter = value.first),
+              onSelectionChanged: (value) =>
+                  setState(() => filter = value.first),
             ),
             const SizedBox(height: 14),
             if (loading)
-              const Padding(padding: EdgeInsets.all(36), child: Center(child: CircularProgressIndicator()))
+              const Padding(
+                padding: EdgeInsets.all(36),
+                child: Center(child: CircularProgressIndicator()),
+              )
             else if (error != null)
-              Card(child: Padding(padding: const EdgeInsets.all(16), child: Column(children: [Text(error!), const SizedBox(height: 8), OutlinedButton(onPressed: load, child: const Text('إعادة المحاولة'))])))
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      Text(error!),
+                      const SizedBox(height: 8),
+                      OutlinedButton(
+                        onPressed: load,
+                        child: const Text('إعادة المحاولة'),
+                      ),
+                    ],
+                  ),
+                ),
+              )
             else if (visibleOrders.isEmpty)
-              const Card(child: Padding(padding: EdgeInsets.all(24), child: Center(child: Text('لا توجد طلبات في هذا القسم'))))
+              const Card(
+                child: Padding(
+                  padding: EdgeInsets.all(24),
+                  child: Center(child: Text('لا توجد طلبات في هذا القسم')),
+                ),
+              )
             else
               ...visibleOrders.map(orderCard),
             const SizedBox(height: 18),
-            const Text('آخر التسويات', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+            const Text(
+              'آخر التسويات',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+            ),
             const SizedBox(height: 8),
             if (settlements.isEmpty)
-              const Card(child: Padding(padding: EdgeInsets.all(18), child: Text('لا توجد تسويات مسجلة بعد.')))
+              const Card(
+                child: Padding(
+                  padding: EdgeInsets.all(18),
+                  child: Text('لا توجد تسويات مسجلة بعد.'),
+                ),
+              )
             else
-              ...settlements.take(5).map((s) => Card(
-                    child: ListTile(
-                      leading: const CircleAvatar(child: Icon(Icons.receipt_long_rounded)),
-                      title: Text('${s['receipt_number'] ?? s['id']}'),
-                      subtitle: Text('${s['payment_method'] ?? '—'} • ${s['status'] ?? '—'}'),
-                      trailing: Text(money(s['amount']), style: const TextStyle(fontWeight: FontWeight.w900)),
+              ...settlements
+                  .take(5)
+                  .map(
+                    (s) => Card(
+                      child: ListTile(
+                        leading: const CircleAvatar(
+                          child: Icon(Icons.receipt_long_rounded),
+                        ),
+                        title: Text('${s['receipt_number'] ?? s['id']}'),
+                        subtitle: Text(
+                          '${s['payment_method'] ?? '—'} • ${s['status'] ?? '—'}',
+                        ),
+                        trailing: Text(
+                          money(s['amount']),
+                          style: const TextStyle(fontWeight: FontWeight.w900),
+                        ),
+                        onTap: () => showAlinSettlementReceipt(
+                          context,
+                          s,
+                          partyName: widget.account.name,
+                          partyRole: 'library',
+                        ),
+                      ),
                     ),
-                  )),
+                  ),
           ],
         ),
       ),
@@ -309,90 +494,191 @@ class _LibraryDashboardScreenState extends State<LibraryDashboardScreen> {
     final id = '${order['id']}';
     final busy = busyOrders.contains(id);
     final booklet = '${order['kind']}' == 'booklet';
-    final previewAllowed = booklet && ['processing', 'printing', 'ready'].contains(status);
+    final previewAllowed =
+        booklet && ['processing', 'printing', 'ready'].contains(status);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
         padding: const EdgeInsets.all(14),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('${order['order_number'] ?? id}', style: const TextStyle(fontWeight: FontWeight.w900)),
-              const SizedBox(height: 3),
-              Text('${order['title'] ?? 'طلب طباعة'}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
-            ])),
-            Chip(label: Text(statusLabel(status))),
-          ]),
-          const Divider(),
-          _line(Icons.person_outline, 'الطالب', '${order['student_name'] ?? '—'}'),
-          _line(Icons.phone_outlined, 'الهاتف', '${order['student_phone'] ?? '—'}'),
-          _line(Icons.inventory_2_outlined, 'العدد', '${order['qty'] ?? 1}'),
-          _line(Icons.payments_outlined, 'الإجمالي', money(order['total'])),
-          _line(Icons.account_balance_wallet_outlined, 'ربح المكتبة', money(order['library_profit'])),
-          if ('${order['notes'] ?? ''}'.trim().isNotEmpty) _line(Icons.note_alt_outlined, 'ملاحظة الطالب', '${order['notes']}'),
-          if ('${order['library_note'] ?? ''}'.trim().isNotEmpty) _line(Icons.sticky_note_2_outlined, 'ملاحظة المكتبة', '${order['library_note']}'),
-          const SizedBox(height: 10),
-          if (!isClosed(order))
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               children: [
-                OutlinedButton.icon(
-                  onPressed: busy ? null : () => saveLibraryNote(order),
-                  icon: const Icon(Icons.sticky_note_2_outlined),
-                  label: const Text('ملاحظة المكتبة'),
-                ),
-                if (booklet)
-                  FilledButton.tonalIcon(
-                    onPressed: busy || !previewAllowed ? null : () => openBookletPreview(order),
-                    icon: const Icon(Icons.picture_as_pdf_rounded),
-                    label: Text(previewAllowed ? 'معاينة / طباعة' : 'ابدأ التجهيز أولاً'),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${order['order_number'] ?? id}',
+                        style: const TextStyle(fontWeight: FontWeight.w900),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        '${order['title'] ?? 'طلب طباعة'}',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
                   ),
+                ),
+                Chip(label: Text(statusLabel(status))),
               ],
             ),
-          const SizedBox(height: 10),
-          if (busy) const LinearProgressIndicator(),
-          if (!busy) _actions(order, status),
-        ]),
+            const Divider(),
+            _line(
+              Icons.person_outline,
+              'الطالب',
+              '${order['student_name'] ?? '—'}',
+            ),
+            _line(
+              Icons.phone_outlined,
+              'الهاتف',
+              '${order['student_phone'] ?? '—'}',
+            ),
+            _line(Icons.inventory_2_outlined, 'العدد', '${order['qty'] ?? 1}'),
+            _line(Icons.payments_outlined, 'الإجمالي', money(order['total'])),
+            _line(
+              Icons.account_balance_wallet_outlined,
+              'ربح المكتبة',
+              money(order['library_profit']),
+            ),
+            if ('${order['notes'] ?? ''}'.trim().isNotEmpty)
+              _line(
+                Icons.note_alt_outlined,
+                'ملاحظة الطالب',
+                '${order['notes']}',
+              ),
+            if ('${order['library_note'] ?? ''}'.trim().isNotEmpty)
+              _line(
+                Icons.sticky_note_2_outlined,
+                'ملاحظة المكتبة',
+                '${order['library_note']}',
+              ),
+            const SizedBox(height: 10),
+            if (!isClosed(order))
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: busy ? null : () => saveLibraryNote(order),
+                    icon: const Icon(Icons.sticky_note_2_outlined),
+                    label: const Text('ملاحظة المكتبة'),
+                  ),
+                  if (booklet)
+                    FilledButton.tonalIcon(
+                      onPressed: busy || !previewAllowed
+                          ? null
+                          : () => openBookletPreview(order),
+                      icon: const Icon(Icons.picture_as_pdf_rounded),
+                      label: Text(
+                        previewAllowed
+                            ? 'معاينة / طباعة'
+                            : 'ابدأ التجهيز أولاً',
+                      ),
+                    ),
+                ],
+              ),
+            const SizedBox(height: 10),
+            if (busy) const LinearProgressIndicator(),
+            if (!busy) _actions(order, status),
+          ],
+        ),
       ),
     );
   }
 
   Widget _actions(Map<String, dynamic> order, String status) {
     if (['new', 'pending', 'pending_admin', 'accepted'].contains(status)) {
-      return Row(children: [
-        Expanded(child: FilledButton.icon(onPressed: () => transition(order, 'processing'), icon: const Icon(Icons.print_rounded), label: const Text('بدء التجهيز'))),
-        const SizedBox(width: 8),
-        Expanded(child: OutlinedButton.icon(onPressed: () => cancel(order), icon: const Icon(Icons.close), label: const Text('إلغاء'))),
-      ]);
+      return Row(
+        children: [
+          Expanded(
+            child: FilledButton.icon(
+              onPressed: () => transition(order, 'processing'),
+              icon: const Icon(Icons.print_rounded),
+              label: const Text('بدء التجهيز'),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: () => cancel(order),
+              icon: const Icon(Icons.close),
+              label: const Text('إلغاء'),
+            ),
+          ),
+        ],
+      );
     }
     if (['processing', 'printing'].contains(status)) {
-      return Row(children: [
-        Expanded(child: FilledButton.icon(onPressed: () => transition(order, 'ready'), icon: const Icon(Icons.inventory_2_rounded), label: const Text('جاهز'))),
-        const SizedBox(width: 8),
-        Expanded(child: OutlinedButton.icon(onPressed: () => cancel(order), icon: const Icon(Icons.close), label: const Text('إلغاء'))),
-      ]);
+      return Row(
+        children: [
+          Expanded(
+            child: FilledButton.icon(
+              onPressed: () => transition(order, 'ready'),
+              icon: const Icon(Icons.inventory_2_rounded),
+              label: const Text('جاهز'),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: () => cancel(order),
+              icon: const Icon(Icons.close),
+              label: const Text('إلغاء'),
+            ),
+          ),
+        ],
+      );
     }
     if (status == 'ready') {
-      return Row(children: [
-        Expanded(child: FilledButton.icon(onPressed: () => transition(order, 'completed'), icon: const Icon(Icons.check_circle_rounded), label: const Text('تم التسليم'))),
-        const SizedBox(width: 8),
-        Expanded(child: OutlinedButton.icon(onPressed: () => cancel(order), icon: const Icon(Icons.close), label: const Text('إلغاء'))),
-      ]);
+      return Row(
+        children: [
+          Expanded(
+            child: FilledButton.icon(
+              onPressed: () => transition(order, 'completed'),
+              icon: const Icon(Icons.check_circle_rounded),
+              label: const Text('تم التسليم'),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: () => cancel(order),
+              icon: const Icon(Icons.close),
+              label: const Text('إلغاء'),
+            ),
+          ),
+        ],
+      );
     }
     return const SizedBox.shrink();
   }
 
   Widget _line(IconData icon, String label, String value) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Icon(icon, size: 19, color: const Color(0xFF49647E)),
-          const SizedBox(width: 8),
-          SizedBox(width: 105, child: Text(label, style: const TextStyle(color: Color(0xFF667085)))),
-          Expanded(child: Text(value, style: const TextStyle(fontWeight: FontWeight.w700))),
-        ]),
-      );
+    padding: const EdgeInsets.symmetric(vertical: 4),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 19, color: const Color(0xFF49647E)),
+        const SizedBox(width: 8),
+        SizedBox(
+          width: 105,
+          child: Text(label, style: const TextStyle(color: Color(0xFF667085))),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: const TextStyle(fontWeight: FontWeight.w700),
+          ),
+        ),
+      ],
+    ),
+  );
 }
 
 class _Metric extends StatelessWidget {
@@ -405,13 +691,25 @@ class _Metric extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Icon(icon, color: const Color(0xFF143B68)),
-        const SizedBox(height: 8),
-        Text(value, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 17)),
-        Text(label, style: const TextStyle(fontSize: 12, color: Color(0xFF667085))),
-      ]),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: const Color(0xFF143B68)),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 17),
+          ),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 12, color: Color(0xFF667085)),
+          ),
+        ],
+      ),
     );
   }
 }
