@@ -1,8 +1,8 @@
 name: alin_business
 description: تطبيق آلين للأعمال للإدارة والمدرس والمكتبة والمطبعة والمندوب
 publish_to: 'none'
-version: 1.0.3+11
-# Build 11: courier receipts mirror old web layout + clearer courier dashboard typography.
+version: 1.0.4+12
+# Build 12: publish courier receipts web-style layout and clearer courier dashboard.
 environment:
   sdk: '>=3.10.0 <4.0.0'
 
