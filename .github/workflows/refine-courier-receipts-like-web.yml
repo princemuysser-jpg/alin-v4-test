@@ -1,0 +1,52 @@
+name: Refine Courier Receipts Like Old Web
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'scripts/refine_courier_receipts_like_web.py'
+      - '.github/workflows/refine-courier-receipts-like-web.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  refine:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply receipt and courier UI refinement
+        run: python3 scripts/refine_courier_receipts_like_web.py
+
+      - name: Set up Flutter 3.44.9
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.9'
+          channel: stable
+          cache: true
+
+      - name: Verify Flutter Business
+        working-directory: flutter_business
+        run: |
+          flutter pub get
+          flutter analyze lib
+
+      - name: Commit refined UI
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add flutter_business/lib/screens/courier_dashboard_screen.dart \
+                  flutter_business/lib/widgets/grouped_order_receipt_card.dart \
+                  flutter_business/lib/widgets/grouped_order_receipt_list.dart \
+                  flutter_business/pubspec.yaml
+          if git diff --cached --quiet; then
+            echo 'No changes to commit'
+            exit 0
+          fi
+          git commit -m 'feat: match courier receipts to old web layout'
+          git push origin HEAD:main
