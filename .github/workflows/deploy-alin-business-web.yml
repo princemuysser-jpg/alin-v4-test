@@ -40,10 +40,33 @@ jobs:
           flutter build web --release --no-pub --base-href=/business/ --pwa-strategy=none --no-web-resources-cdn
           python3 - <<'PY'
           from pathlib import Path
-          p = Path('build/web/index.html')
-          s = p.read_text()
-          s = s.replace('<base href="/business/">', '<base href="./">')
-          p.write_text(s)
+
+          pubspec = Path('pubspec.yaml').read_text(encoding='utf-8')
+          version_line = next(line for line in pubspec.splitlines() if line.startswith('version:'))
+          version = version_line.split(':', 1)[1].strip().replace('+', '-')
+
+          index_path = Path('build/web/index.html')
+          index = index_path.read_text(encoding='utf-8')
+          index = index.replace('<base href="/business/">', '<base href="./">')
+          index = index.replace(
+              '<script src="flutter_bootstrap.js" async></script>',
+              f'<script src="flutter_bootstrap.js?v={version}" async></script>',
+          )
+          index = index.replace(
+              '<meta charset="UTF-8">',
+              f'<meta charset="UTF-8">\n  <meta name="alin-business-build" content="{version}">',
+          )
+          index_path.write_text(index, encoding='utf-8')
+
+          bootstrap_path = Path('build/web/flutter_bootstrap.js')
+          bootstrap = bootstrap_path.read_text(encoding='utf-8')
+          bootstrap = bootstrap.replace(
+              '"mainJsPath":"main.dart.js"',
+              f'"mainJsPath":"main.dart.js?v={version}"',
+          )
+          bootstrap_path.write_text(bootstrap, encoding='utf-8')
+
+          print(f'ALIN Business web cache token: {version}')
           PY
 
       - name: Publish build into /business
@@ -70,6 +93,9 @@ jobs:
           test -s business/main.dart.js
           test -s business/canvaskit/canvaskit.js
           grep -q '<base href="./">' business/index.html
+          grep -q 'flutter_bootstrap.js?v=' business/index.html
+          grep -q 'alin-business-build' business/index.html
+          grep -q 'main.dart.js?v=' business/flutter_bootstrap.js
 
       - name: Commit deployed web build
         run: |
@@ -81,5 +107,5 @@ jobs:
             echo 'Business web build is already current.'
             exit 0
           fi
-          git commit -m 'deploy: ALIN Business Flutter Web [skip ci]'
+          git commit -m 'deploy: ALIN Business Flutter Web'
           git push origin HEAD:main
