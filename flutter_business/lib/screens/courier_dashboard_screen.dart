@@ -27,6 +27,7 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
   bool loading = true;
   String? error;
   String filter = 'active';
+  String receiptSearch = '';
   String availability = 'available';
   String courierArea = '';
   List<String> courierAreas = [];
@@ -273,8 +274,8 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
           const AlinBrandMark(size: 36, light: true),
           const SizedBox(width: 10),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('آلين للمندوب', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18)),
-            Text(widget.account.name, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w400)),
+            const Text('آلين للمندوب', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20)),
+            Text(widget.account.name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
           ])),
         ]),
         actions: [
@@ -317,12 +318,12 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
                     const SizedBox(width: 13),
                     Expanded(
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text('مرحباً ${widget.account.name}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 21)),
+                        Text('مرحباً ${widget.account.name}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 25)),
                         const SizedBox(height: 3),
-                        const Text('طلباتك وتوصيلاتك ووصولاتك بمكان واحد', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                        const Text('طلباتك وتوصيلاتك ووصولاتك بمكان واحد', style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w600)),
                         if (courierArea.isNotEmpty || courierAreas.isNotEmpty) ...[
                           const SizedBox(height: 6),
-                          Text('مناطقك: ${[courierArea, ...courierAreas].where((e) => e.isNotEmpty).toSet().join('، ')}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12)),
+                          Text('مناطقك: ${[courierArea, ...courierAreas].where((e) => e.isNotEmpty).toSet().join('، ')}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13)),
                         ],
                         const SizedBox(height: 11),
                         Wrap(spacing: 8, runSpacing: 8, children: [
@@ -367,20 +368,122 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
               const Padding(padding: EdgeInsets.all(36), child: Center(child: CircularProgressIndicator()))
             else if (error != null)
               Card(child: Padding(padding: const EdgeInsets.all(16), child: Column(children: [Text(error!), const SizedBox(height: 8), OutlinedButton(onPressed: load, child: const Text('إعادة المحاولة'))])))
-            else if (filter == 'receipts') ...[
-              const Row(children: [Icon(Icons.receipt_long_rounded, color: BusinessBrand.navy), SizedBox(width: 8), Text('وصولات الطلبات المكتملة', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: BusinessBrand.navy))]),
-              const SizedBox(height: 10),
-              if (grouped.where(isDone).isEmpty)
-                const Card(child: Padding(padding: EdgeInsets.all(24), child: Center(child: Text('لا توجد وصولات مكتملة بعد'))))
-              else
-                ...grouped.where(isDone).map((order) => GroupedOrderReceiptListTile(order: order, courierName: widget.account.name, courierView: true)),
-            ] else if (visibleOrders.isEmpty)
+            else if (filter == 'receipts')
+              _receiptCenter(grouped)
+            else if (visibleOrders.isEmpty)
               const Card(child: Padding(padding: EdgeInsets.all(24), child: Center(child: Text('لا توجد طلبات حالياً'))))
             else
               ...visibleOrders.map(orderCard),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _receiptCenter(List<Map<String, dynamic>> grouped) {
+    final completed = grouped.where(isDone).toList();
+    final query = receiptSearch.trim().toLowerCase();
+    final visible = completed.where((order) {
+      if (query.isEmpty) return true;
+      final items = (order['_items'] as List? ?? const <dynamic>[]).cast<Map<String, dynamic>>();
+      final haystack = [
+        order['order_number'],
+        order['id'],
+        order['student_name'],
+        order['student_phone'],
+        ...items.map((item) => item['title'] ?? item['product_name'] ?? item['item_name']),
+      ].map((value) => '${value ?? ''}'.toLowerCase()).join(' ');
+      return haystack.contains(query);
+    }).toList();
+    final totalAmounts = completed.fold<num>(0, (sum, order) => sum + number(order['_group_total']));
+    final totalDelivery = completed.fold<num>(0, (sum, order) => sum + number(order['_courier_fee']));
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final desktop = constraints.maxWidth >= 980;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(color: BusinessBrand.border),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 52,
+                    height: 52,
+                    decoration: BoxDecoration(color: BusinessBrand.softBlue, borderRadius: BorderRadius.circular(16)),
+                    child: const Icon(Icons.receipt_long_rounded, color: BusinessBrand.navy, size: 29),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('الوصولات', style: TextStyle(fontSize: 23, fontWeight: FontWeight.w900, color: BusinessBrand.navy)),
+                        SizedBox(height: 3),
+                        Text('وصولات الطلبات المكتملة بصورة مرتبة مثل صفحة الويب القديمة.', style: TextStyle(fontSize: 13, color: BusinessBrand.muted, fontWeight: FontWeight.w600)),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
+                    decoration: BoxDecoration(color: BusinessBrand.navy, borderRadius: BorderRadius.circular(99)),
+                    child: Text('${completed.length}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 16)),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                SizedBox(width: desktop ? (constraints.maxWidth - 30) / 4 : (constraints.maxWidth - 10) / 2, child: _Metric(label: 'جميع الوصولات', value: '${completed.length}', icon: Icons.receipt_long_rounded, accent: BusinessBrand.navy)),
+                SizedBox(width: desktop ? (constraints.maxWidth - 30) / 4 : (constraints.maxWidth - 10) / 2, child: _Metric(label: 'الطلبات المكتملة', value: '${completed.length}', icon: Icons.task_alt_rounded, accent: BusinessBrand.teal)),
+                SizedBox(width: desktop ? (constraints.maxWidth - 30) / 4 : (constraints.maxWidth - 10) / 2, child: _Metric(label: 'إجمالي مبالغ الطلبات', value: money(totalAmounts), icon: Icons.payments_rounded, accent: BusinessBrand.orange)),
+                SizedBox(width: desktop ? (constraints.maxWidth - 30) / 4 : (constraints.maxWidth - 10) / 2, child: _Metric(label: 'أجرة التوصيل', value: money(totalDelivery), icon: Icons.account_balance_wallet_rounded, accent: BusinessBrand.navy2)),
+              ],
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              onChanged: (value) => setState(() => receiptSearch = value),
+              decoration: const InputDecoration(
+                prefixIcon: Icon(Icons.search_rounded),
+                labelText: 'بحث في الوصولات',
+                hintText: 'رقم الوصول أو الطلب أو اسم الطالب أو المادة',
+              ),
+            ),
+            const SizedBox(height: 12),
+            if (desktop)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                decoration: BoxDecoration(color: BusinessBrand.softBlue, borderRadius: BorderRadius.circular(14)),
+                child: const Row(
+                  children: [
+                    SizedBox(width: 178, child: Text('رقم الوصول / الطلب', style: TextStyle(fontWeight: FontWeight.w900, color: BusinessBrand.navy))),
+                    SizedBox(width: 150, child: Text('النوع', style: TextStyle(fontWeight: FontWeight.w900, color: BusinessBrand.navy))),
+                    Expanded(child: Text('التاريخ', style: TextStyle(fontWeight: FontWeight.w900, color: BusinessBrand.navy))),
+                    SizedBox(width: 118, child: Text('المبلغ', style: TextStyle(fontWeight: FontWeight.w900, color: BusinessBrand.navy))),
+                    SizedBox(width: 76, child: Text('الحالة', style: TextStyle(fontWeight: FontWeight.w900, color: BusinessBrand.navy))),
+                    SizedBox(width: 262, child: Text('الإجراءات', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.w900, color: BusinessBrand.navy))),
+                  ],
+                ),
+              ),
+            if (desktop) const SizedBox(height: 8),
+            if (completed.isEmpty)
+              const Card(child: Padding(padding: EdgeInsets.all(28), child: Center(child: Text('لا توجد وصولات مكتملة بعد', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)))))
+            else if (visible.isEmpty)
+              const Card(child: Padding(padding: EdgeInsets.all(28), child: Center(child: Text('لا توجد نتائج مطابقة للبحث', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)))))
+            else
+              ...visible.map((order) => GroupedOrderReceiptListTile(order: order, courierName: widget.account.name, courierView: true)),
+          ],
+        );
+      },
     );
   }
 
@@ -403,9 +506,9 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('${order['order_number'] ?? id}', style: const TextStyle(fontWeight: FontWeight.w900)),
+              Text('${order['order_number'] ?? id}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: BusinessBrand.navy)),
               const SizedBox(height: 3),
-              Text(itemCount > 1 ? 'طلب توصيل واحد • $itemCount مواد' : '${order['title'] ?? 'طلب توصيل'}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+              Text(itemCount > 1 ? 'طلب توصيل واحد • $itemCount مواد' : '${order['title'] ?? 'طلب توصيل'}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
               if (itemCount > 1) Text('إجمالي القطع/النسخ: $qtyCount', style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
             ])),
             if (preferred) const Padding(padding: EdgeInsets.only(left: 6), child: Chip(label: Text('ضمن منطقتك'))),
@@ -444,7 +547,7 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
           const SizedBox(height: 8),
           _line(Icons.payments_outlined, 'المبلغ المطلوب', money(order['_group_total'])),
           _line(Icons.local_shipping_outlined, 'توصيل الطالب', money(order['_delivery_fee'])),
-          _line(Icons.account_balance_wallet_outlined, 'أجرة المندوب', money(order['_courier_fee'])),
+          _line(Icons.account_balance_wallet_outlined, 'أجرة التوصيل', money(order['_courier_fee'])),
           if ('${order['delivery_note'] ?? ''}'.trim().isNotEmpty) ...[
             const SizedBox(height: 8),
             Container(width: double.infinity, padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: Colors.orange.withValues(alpha: .08), borderRadius: BorderRadius.circular(12)), child: Text('ملاحظتك: ${order['delivery_note']}')),
@@ -493,8 +596,8 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
         child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Icon(icon, size: 18, color: Colors.grey.shade600),
           const SizedBox(width: 8),
-          SizedBox(width: 95, child: Text(label, style: TextStyle(color: Colors.grey.shade600))),
-          Expanded(child: Text(value, style: const TextStyle(fontWeight: FontWeight.w700))),
+          SizedBox(width: 105, child: Text(label, style: TextStyle(color: Colors.grey.shade600, fontSize: 13, fontWeight: FontWeight.w700))),
+          Expanded(child: Text(value, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15))),
         ]),
       );
 }
@@ -509,7 +612,7 @@ class _Metric extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      constraints: const BoxConstraints(minHeight: 116),
+      constraints: const BoxConstraints(minHeight: 128),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -524,15 +627,15 @@ class _Metric extends StatelessWidget {
             padding: const EdgeInsets.all(13),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Container(
-                width: 39,
-                height: 39,
+                width: 44,
+                height: 44,
                 decoration: BoxDecoration(color: accent.withValues(alpha: .12), borderRadius: BorderRadius.circular(12)),
-                child: Icon(icon, color: accent, size: 23),
+                child: Icon(icon, color: accent, size: 26),
               ),
               const SizedBox(height: 9),
-              Text(value, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 17, color: BusinessBrand.ink)),
+              Text(value, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 22, color: BusinessBrand.ink)),
               const SizedBox(height: 2),
-              Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: BusinessBrand.muted, fontSize: 11, fontWeight: FontWeight.w700)),
+              Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: BusinessBrand.muted, fontSize: 13, fontWeight: FontWeight.w800)),
             ]),
           ),
         ],

@@ -149,7 +149,7 @@ class GroupedOrderReceiptCard extends StatelessWidget {
           _total('مجموع المواد', _money(subtotal)),
           if (delivery > 0) _total('أجرة التوصيل', _money(delivery)),
           if (discount > 0) _total('الخصم', _money(discount)),
-          if (courierView) _total('أجرة المندوب', _money(courierFee)),
+          if (courierView) _total('أجرة التوصيل', _money(courierFee)),
           const Divider(),
           Row(children: [
             const Expanded(child: Text('الإجمالي الكلي', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16))),

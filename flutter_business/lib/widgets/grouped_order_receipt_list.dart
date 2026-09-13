@@ -268,7 +268,7 @@ class _GroupedOrderReceiptListTileState extends State<GroupedOrderReceiptListTil
                 totalRow('مجموع المواد', subtotal),
                 if (delivery > 0) totalRow('أجرة التوصيل على الطالب', delivery),
                 if (discount > 0) totalRow('الخصم', discount),
-                if (widget.courierView) totalRow('أجرة المندوب', courierFee),
+                if (widget.courierView) totalRow('أجرة التوصيل', courierFee),
                 pw.Divider(),
                 totalRow('الإجمالي الكلي', _total, strong: true),
                 pw.SizedBox(height: 18),
@@ -284,8 +284,79 @@ class _GroupedOrderReceiptListTileState extends State<GroupedOrderReceiptListTil
     return doc.save();
   }
 
-  @override
-  Widget build(BuildContext context) {
+  String _receiptNumber() {
+    final explicit = '${widget.order['receipt_number'] ?? widget.order['voucher_number'] ?? ''}'.trim();
+    if (explicit.isNotEmpty) return explicit;
+    final orderNumber = '${widget.order['order_number'] ?? widget.order['id'] ?? ''}'.replaceFirst(RegExp(r'^AL-', caseSensitive: false), '');
+    return 'RC-$orderNumber';
+  }
+
+  Widget _desktopRow() {
+    final items = _items;
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: _showReceipt,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 178,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(_receiptNumber(), maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: BusinessBrand.navy)),
+                    const SizedBox(height: 3),
+                    Text('${widget.order['order_number'] ?? widget.order['id'] ?? '—'}', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: BusinessBrand.muted, fontSize: 12)),
+                  ],
+                ),
+              ),
+              SizedBox(
+                width: 150,
+                child: Text('وصل طلب • ${items.length} مواد', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: BusinessBrand.ink)),
+              ),
+              Expanded(child: Text(_dateText(), style: const TextStyle(color: BusinessBrand.muted, fontSize: 12))),
+              SizedBox(width: 118, child: Text(_money(_total), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: BusinessBrand.navy))),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                decoration: BoxDecoration(color: BusinessBrand.softTeal, borderRadius: BorderRadius.circular(99)),
+                child: const Text('مكتمل', style: TextStyle(color: BusinessBrand.teal, fontWeight: FontWeight.w900, fontSize: 12)),
+              ),
+              const SizedBox(width: 12),
+              SizedBox(
+                width: 250,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: _showReceipt,
+                        icon: const Icon(Icons.visibility_outlined, size: 18),
+                        label: const Text('معاينة'),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: FilledButton.icon(
+                        onPressed: printing ? null : _printReceipt,
+                        icon: printing
+                            ? const SizedBox(width: 17, height: 17, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                            : const Icon(Icons.print_rounded, size: 18),
+                        label: Text(printing ? 'جاري...' : 'طباعة / PDF'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _mobileCard() {
     final items = _items;
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
@@ -293,41 +364,28 @@ class _GroupedOrderReceiptListTileState extends State<GroupedOrderReceiptListTil
         borderRadius: BorderRadius.circular(20),
         onTap: _showReceipt,
         child: Padding(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(15),
           child: Column(
             children: [
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: BusinessBrand.softTeal,
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    child: const Icon(Icons.receipt_long_rounded, color: BusinessBrand.teal, size: 27),
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(color: BusinessBrand.softTeal, borderRadius: BorderRadius.circular(15)),
+                    child: const Icon(Icons.receipt_long_rounded, color: BusinessBrand.teal, size: 28),
                   ),
                   const SizedBox(width: 11),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          '${widget.order['order_number'] ?? widget.order['id'] ?? 'وصل طلب'}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontWeight: FontWeight.w900, color: BusinessBrand.ink),
-                        ),
+                        Text(_receiptNumber(), maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: BusinessBrand.navy)),
                         const SizedBox(height: 3),
-                        Text(
-                          '${items.length} مواد • ${widget.order['student_name'] ?? 'طالب'}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(color: BusinessBrand.muted, fontSize: 12),
-                        ),
+                        Text('${widget.order['order_number'] ?? widget.order['id'] ?? '—'} • ${items.length} مواد', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700, color: BusinessBrand.ink, fontSize: 13)),
                         const SizedBox(height: 3),
-                        Text(_dateText(), style: const TextStyle(color: BusinessBrand.muted, fontSize: 11)),
+                        Text('${widget.order['student_name'] ?? 'طالب'} • ${_dateText()}', maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: BusinessBrand.muted, fontSize: 12)),
                       ],
                     ),
                   ),
@@ -335,9 +393,9 @@ class _GroupedOrderReceiptListTileState extends State<GroupedOrderReceiptListTil
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Text(_money(_total), style: const TextStyle(fontWeight: FontWeight.w900, color: BusinessBrand.navy)),
+                      Text(_money(_total), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: BusinessBrand.navy)),
                       if (widget.courierView)
-                        Text('أجرتك ${_money(widget.order['_courier_fee'])}', style: const TextStyle(color: BusinessBrand.teal, fontSize: 11, fontWeight: FontWeight.w800)),
+                        Text('أجرة التوصيل ${_money(widget.order['_courier_fee'])}', style: const TextStyle(color: BusinessBrand.teal, fontSize: 11, fontWeight: FontWeight.w900)),
                     ],
                   ),
                 ],
@@ -345,13 +403,7 @@ class _GroupedOrderReceiptListTileState extends State<GroupedOrderReceiptListTil
               const SizedBox(height: 12),
               Row(
                 children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: _showReceipt,
-                      icon: const Icon(Icons.visibility_outlined, size: 19),
-                      label: const Text('عرض الوصل'),
-                    ),
-                  ),
+                  Expanded(child: OutlinedButton.icon(onPressed: _showReceipt, icon: const Icon(Icons.visibility_outlined, size: 19), label: const Text('معاينة'))),
                   const SizedBox(width: 8),
                   Expanded(
                     child: FilledButton.icon(
@@ -359,7 +411,7 @@ class _GroupedOrderReceiptListTileState extends State<GroupedOrderReceiptListTil
                       icon: printing
                           ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                           : const Icon(Icons.print_rounded, size: 19),
-                      label: Text(printing ? 'جاري...' : 'طباعة'),
+                      label: Text(printing ? 'جاري...' : 'طباعة / PDF'),
                     ),
                   ),
                 ],
@@ -368,6 +420,13 @@ class _GroupedOrderReceiptListTileState extends State<GroupedOrderReceiptListTil
           ),
         ),
       ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) => constraints.maxWidth >= 980 ? _desktopRow() : _mobileCard(),
     );
   }
 }
