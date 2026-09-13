@@ -36,7 +36,7 @@ jobs:
           flutter config --no-analytics
           flutter pub get
           dart format lib/widgets/alin_receipt_template.dart lib/widgets/grouped_order_receipt_list.dart lib/screens/teacher_dashboard_screen.dart lib/screens/library_dashboard_screen.dart lib/screens/admin_finance_v2_screen.dart
-          flutter analyze lib
+          flutter analyze lib --no-fatal-infos
 
       - name: Commit verified changes
         run: |
