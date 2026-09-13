@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'scripts/apply_unified_receipt_template.py'
+      - 'scripts/fix_courier_relogin_layout.py'
       - 'flutter_business/lib/widgets/alin_receipt_template.dart'
       - '.github/workflows/apply-unified-receipt-template.yml'
   workflow_dispatch:
@@ -23,7 +24,9 @@ jobs:
           fetch-depth: 0
 
       - name: Apply unified receipt integration
-        run: python3 scripts/apply_unified_receipt_template.py
+        run: |
+          python3 scripts/apply_unified_receipt_template.py
+          python3 scripts/fix_courier_relogin_layout.py
 
       - name: Install Flutter 3.44.9
         run: |
@@ -35,7 +38,7 @@ jobs:
         run: |
           flutter config --no-analytics
           flutter pub get
-          dart format lib/widgets/alin_receipt_template.dart lib/widgets/grouped_order_receipt_list.dart lib/screens/teacher_dashboard_screen.dart lib/screens/library_dashboard_screen.dart lib/screens/admin_finance_v2_screen.dart
+          dart format lib/widgets/alin_receipt_template.dart lib/widgets/grouped_order_receipt_list.dart lib/screens/courier_dashboard_screen.dart lib/screens/teacher_dashboard_screen.dart lib/screens/library_dashboard_screen.dart lib/screens/admin_finance_v2_screen.dart
           flutter analyze lib --no-fatal-infos
 
       - name: Commit verified changes
@@ -47,5 +50,5 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add flutter_business
-          git commit -m 'feat: use unified ALIN receipt design across business roles'
+          git commit -m 'feat: publish unified receipts and stable courier relogin layout'
           git push origin main
