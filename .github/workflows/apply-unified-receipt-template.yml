@@ -1,0 +1,51 @@
+name: Apply Unified ALIN Receipt Template
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/apply_unified_receipt_template.py'
+      - 'flutter_business/lib/widgets/alin_receipt_template.dart'
+      - '.github/workflows/apply-unified-receipt-template.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply-and-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply unified receipt integration
+        run: python3 scripts/apply_unified_receipt_template.py
+
+      - name: Install Flutter 3.44.9
+        run: |
+          git clone --depth 1 --branch 3.44.9 https://github.com/flutter/flutter.git "$HOME/flutter"
+          echo "$HOME/flutter/bin" >> "$GITHUB_PATH"
+
+      - name: Verify Flutter business app
+        working-directory: flutter_business
+        run: |
+          flutter config --no-analytics
+          flutter pub get
+          dart format lib/widgets/alin_receipt_template.dart lib/widgets/grouped_order_receipt_list.dart lib/screens/teacher_dashboard_screen.dart lib/screens/library_dashboard_screen.dart lib/screens/admin_finance_v2_screen.dart
+          flutter analyze lib
+
+      - name: Commit verified changes
+        run: |
+          if git diff --quiet; then
+            echo 'No changes to commit.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add flutter_business
+          git commit -m 'feat: use unified ALIN receipt design across business roles'
+          git push origin main
