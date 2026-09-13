@@ -3,6 +3,7 @@ description: تطبيق آلين للأعمال للإدارة والمدرس و
 publish_to: 'none'
 version: 1.0.5+13
 # Build 13: unified official ALIN receipt design for orders and settlements.
+# Web rebuild: publish the verified courier relogin layout and unified receipt UI.
 environment:
   sdk: '>=3.10.0 <4.0.0'
 
