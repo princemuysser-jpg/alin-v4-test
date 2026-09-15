@@ -1,10 +1,10 @@
 name: Apply Business Branding Parity
 
-# Trigger after workflow creation so the branding patch runs on main.
 on:
   push:
     paths:
       - 'scripts/apply_business_branding_parity.py'
+      - 'scripts/fix_business_branding_runtime_const.py'
       - '.github/workflows/apply-business-branding-parity.yml'
   workflow_dispatch:
 
@@ -28,7 +28,9 @@ jobs:
           cache: true
 
       - name: Apply branding parity patch
-        run: python scripts/apply_business_branding_parity.py
+        run: |
+          python scripts/apply_business_branding_parity.py
+          python scripts/fix_business_branding_runtime_const.py
 
       - name: Format and verify Flutter
         working-directory: flutter_business
