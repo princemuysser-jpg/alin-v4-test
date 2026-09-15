@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import '../data/business_repository.dart';
 import '../models/business_account.dart';
 import '../widgets/business_brand.dart';
+import 'admin_backup_screen.dart';
 import 'admin_coupons_screen.dart';
 import 'admin_delivery_pricing_screen.dart';
 import 'admin_finance_v2_screen.dart';
 import 'admin_growth_controls_screen.dart';
 import 'admin_reports_screen.dart';
+import 'admin_settings_screen.dart';
 import 'business_notifications_screen.dart';
 import 'business_party_finance_screen.dart';
 import 'teacher_publishing_screen.dart';
@@ -167,6 +169,19 @@ class BusinessRoleToolsScreen extends StatelessWidget {
           icon: Icons.analytics_rounded,
           onTap: () => open(AdminReportsScreen(repository: repository)),
         ),
+        _RoleTool(
+          title: 'إعدادات المنصة',
+          subtitle: 'الطلبات والتوصيل والتواصل وحول المنصة',
+          icon: Icons.settings_rounded,
+          onTap: () => open(AdminSettingsScreen(repository: repository)),
+        ),
+        if (account.role == 'admin')
+          _RoleTool(
+            title: 'النسخ الاحتياطي',
+            subtitle: 'نسخة آمنة للكتالوج والإعدادات واستعادتها',
+            icon: Icons.backup_rounded,
+            onTap: () => open(AdminBackupScreen(repository: repository)),
+          ),
         ...common,
       ];
     }
