@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../data/business_repository.dart';
 import '../models/business_account.dart';
+import '../widgets/alin_receipt_template.dart';
 
 class PrinterDashboardScreen extends StatefulWidget {
   final BusinessRepository repository;
@@ -264,6 +265,12 @@ class _PrinterDashboardScreenState extends State<PrinterDashboardScreen> {
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
         subtitle: Text('${_date(row['created_at'])}${'${row['payment_method'] ?? ''}'.isNotEmpty ? ' — ${row['payment_method']}' : ''}'),
         trailing: Text(money(row['amount']), style: const TextStyle(fontWeight: FontWeight.w900, color: Colors.green)),
+        onTap: () => showAlinSettlementReceipt(
+          context,
+          row,
+          partyName: widget.account.name,
+          partyRole: 'printer',
+        ),
       ),
     );
   }
