@@ -1,0 +1,53 @@
+name: Apply Business Role Tools Hub
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/apply_business_role_tools_hub.py'
+      - 'flutter_business/lib/screens/business_role_tools_screen.dart'
+      - 'flutter_business/lib/screens/admin_coupons_screen.dart'
+      - 'flutter_business/lib/screens/admin_reports_screen.dart'
+      - '.github/workflows/apply-business-role-tools-hub.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply-and-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply role tools integration
+        run: python3 scripts/apply_business_role_tools_hub.py
+
+      - name: Install Flutter 3.44.9
+        run: |
+          git clone --depth 1 --branch 3.44.9 https://github.com/flutter/flutter.git "$HOME/flutter"
+          echo "$HOME/flutter/bin" >> "$GITHUB_PATH"
+
+      - name: Verify Flutter business app
+        working-directory: flutter_business
+        run: |
+          flutter config --no-analytics
+          flutter pub get
+          dart format lib/main.dart lib/screens/business_role_tools_screen.dart lib/screens/admin_coupons_screen.dart lib/screens/admin_reports_screen.dart
+          flutter analyze lib --no-fatal-infos
+
+      - name: Commit verified changes
+        run: |
+          if git diff --quiet; then
+            echo 'No changes to commit.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add flutter_business
+          git commit -m 'feat: add responsive role tools hub and admin parity tools'
+          git push origin main
