@@ -1,5 +1,6 @@
 name: Apply Courier Old Web Parity
 
+# Trigger after workflow creation so the parity patch runs on main.
 on:
   push:
     paths:
