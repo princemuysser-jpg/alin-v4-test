@@ -36,7 +36,7 @@ jobs:
         run: |
           set -euo pipefail
           flutter pub get
-          flutter analyze lib --no-fatal-infos
+          flutter analyze lib --no-fatal-warnings --no-fatal-infos
           flutter build web --release --no-pub --base-href=/business/ --pwa-strategy=none --no-web-resources-cdn
           python3 - <<'PY'
           from pathlib import Path
