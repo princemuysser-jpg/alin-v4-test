@@ -1,5 +1,6 @@
 name: Apply Business Branding Parity
 
+# Trigger after workflow creation so the branding patch runs on main.
 on:
   push:
     paths:
