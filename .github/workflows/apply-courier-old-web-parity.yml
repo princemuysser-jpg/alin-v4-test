@@ -1,0 +1,49 @@
+name: Apply Courier Old Web Parity
+
+on:
+  push:
+    paths:
+      - 'scripts/refine_courier_dashboard_old_web_parity.py'
+      - '.github/workflows/apply-courier-old-web-parity.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up Flutter 3.44.9
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.9'
+          channel: stable
+          cache: true
+
+      - name: Apply courier parity patch
+        run: python scripts/refine_courier_dashboard_old_web_parity.py
+
+      - name: Format and verify Flutter
+        working-directory: flutter_business
+        run: |
+          dart format lib/screens/courier_dashboard_screen.dart lib/screens/courier_profile_screen.dart lib/screens/business_role_tools_screen.dart
+          flutter pub get
+          flutter analyze lib --no-fatal-infos
+
+      - name: Commit courier parity
+        run: |
+          if git diff --quiet; then
+            echo 'No courier parity changes to commit.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add flutter_business/lib/screens/courier_dashboard_screen.dart flutter_business/lib/screens/courier_profile_screen.dart flutter_business/lib/screens/business_role_tools_screen.dart
+          git commit -m 'feat: match courier Flutter dashboard to old web parity'
+          git push origin HEAD:main
