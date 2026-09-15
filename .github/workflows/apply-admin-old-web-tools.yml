@@ -1,0 +1,49 @@
+name: Apply Admin Old Web Tools
+
+on:
+  push:
+    paths:
+      - 'scripts/link_admin_old_web_tools.py'
+      - '.github/workflows/apply-admin-old-web-tools.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up Flutter 3.44.9
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.9'
+          channel: stable
+          cache: true
+
+      - name: Link admin old-web tools
+        run: python scripts/link_admin_old_web_tools.py
+
+      - name: Format and verify Flutter
+        working-directory: flutter_business
+        run: |
+          dart format lib/screens/admin_teacher_courses_screen.dart lib/screens/admin_books_screen.dart lib/screens/admin_courier_hub_screen.dart lib/screens/business_role_tools_screen.dart
+          flutter pub get
+          flutter analyze lib --no-fatal-infos
+
+      - name: Commit linked admin tools
+        run: |
+          if git diff --quiet; then
+            echo 'No admin parity changes to commit.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add flutter_business/lib/screens/admin_teacher_courses_screen.dart flutter_business/lib/screens/admin_books_screen.dart flutter_business/lib/screens/admin_courier_hub_screen.dart flutter_business/lib/screens/business_role_tools_screen.dart
+          git commit -m 'feat: expose admin old-web parity tools in Flutter'
+          git push origin HEAD:main
