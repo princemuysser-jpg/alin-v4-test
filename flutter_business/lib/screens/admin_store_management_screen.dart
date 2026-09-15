@@ -132,7 +132,9 @@ class _AdminStoreManagementScreenState
     };
     final path =
         '$folder/${DateTime.now().millisecondsSinceEpoch}-${Random().nextInt(99999)}.$ext';
-    await client.storage.from(_bucket).uploadBinary(
+    await client.storage
+        .from(_bucket)
+        .uploadBinary(
           path,
           Uint8List.fromList(bytes),
           fileOptions: FileOptions(contentType: mime, upsert: false),
@@ -166,31 +168,27 @@ class _AdminStoreManagementScreenState
         body: loading
             ? const Center(child: CircularProgressIndicator())
             : error != null
-                ? _errorView()
-                : TabBarView(
-                    children: [
-                      _productsTab(),
-                      _categoriesTab(),
-                      _bannersTab(),
-                    ],
-                  ),
+            ? _errorView()
+            : TabBarView(
+                children: [_productsTab(), _categoriesTab(), _bannersTab()],
+              ),
       ),
     );
   }
 
   Widget _errorView() => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(error!, textAlign: TextAlign.center),
-              const SizedBox(height: 12),
-              FilledButton(onPressed: load, child: const Text('إعادة المحاولة')),
-            ],
-          ),
-        ),
-      );
+    child: Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(error!, textAlign: TextAlign.center),
+          const SizedBox(height: 12),
+          FilledButton(onPressed: load, child: const Text('إعادة المحاولة')),
+        ],
+      ),
+    ),
+  );
 
   List<Map<String, dynamic>> get _visibleProducts {
     final q = productSearch.trim().toLowerCase();
@@ -244,8 +242,7 @@ class _AdminStoreManagementScreenState
                       ),
                       DropdownMenuItem(value: 'gift', child: Text('هدايا')),
                     ],
-                    onChanged: (v) =>
-                        setState(() => productType = v ?? 'all'),
+                    onChanged: (v) => setState(() => productType = v ?? 'all'),
                   );
                   if (c.maxWidth >= 720) {
                     return Row(
@@ -317,8 +314,10 @@ class _AdminStoreManagementScreenState
                           ),
                         ),
                       ),
-                      _statusChip(status == 'published' ? 'منشور' : 'مخفي',
-                          active: status == 'published'),
+                      _statusChip(
+                        status == 'published' ? 'منشور' : 'مخفي',
+                        active: status == 'published',
+                      ),
                     ],
                   ),
                   const SizedBox(height: 5),
@@ -331,7 +330,9 @@ class _AdminStoreManagementScreenState
                     spacing: 12,
                     runSpacing: 4,
                     children: [
-                      Text('السعر: ${_money(row['sale_price'] ?? row['price'])}'),
+                      Text(
+                        'السعر: ${_money(row['sale_price'] ?? row['price'])}',
+                      ),
                       Text('المخزون: ${_n(row['stock']).round()}'),
                       if (_n(row['stock']) <= _n(row['low_stock_limit']))
                         const Text(
@@ -373,16 +374,19 @@ class _AdminStoreManagementScreenState
   Future<void> _productDialog({Map<String, dynamic>? existing}) async {
     final name = TextEditingController(text: '${existing?['name'] ?? ''}');
     final price = TextEditingController(text: '${existing?['price'] ?? ''}');
-    final salePrice =
-        TextEditingController(text: '${existing?['sale_price'] ?? ''}');
+    final salePrice = TextEditingController(
+      text: '${existing?['sale_price'] ?? ''}',
+    );
     final stock = TextEditingController(text: '${existing?['stock'] ?? 0}');
     final lowStock = TextEditingController(
       text: '${existing?['low_stock_limit'] ?? 5}',
     );
-    final description =
-        TextEditingController(text: '${existing?['description'] ?? ''}');
-    final details =
-        TextEditingController(text: '${existing?['details'] ?? ''}');
+    final description = TextEditingController(
+      text: '${existing?['description'] ?? ''}',
+    );
+    final details = TextEditingController(
+      text: '${existing?['details'] ?? ''}',
+    );
 
     String type = '${existing?['type'] ?? 'stationery'}';
     if (!['stationery', 'gift'].contains(type)) type = 'stationery';
@@ -391,10 +395,11 @@ class _AdminStoreManagementScreenState
         : '${existing?['category_id']}';
     String? subcategoryId =
         '${existing?['subcategory_id'] ?? ''}'.trim().isEmpty
-            ? null
-            : '${existing?['subcategory_id']}';
+        ? null
+        : '${existing?['subcategory_id']}';
     String status = '${existing?['status'] ?? 'published'}';
-    if (!['published', 'hidden', 'draft'].contains(status)) status = 'published';
+    if (!['published', 'hidden', 'draft'].contains(status))
+      status = 'published';
     String imagePath = '${existing?['image_path'] ?? ''}';
     bool uploading = false;
 
@@ -404,8 +409,9 @@ class _AdminStoreManagementScreenState
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setLocal) {
           final typeCategories = categories
-              .where((c) =>
-                  '${c['type']}' == type && '${c['status']}' == 'active')
+              .where(
+                (c) => '${c['type']}' == type && '${c['status']}' == 'active',
+              )
               .toList();
           if (categoryId != null &&
               !typeCategories.any((c) => '${c['id']}' == categoryId)) {
@@ -413,10 +419,12 @@ class _AdminStoreManagementScreenState
             subcategoryId = null;
           }
           final subs = subcategories
-              .where((s) =>
-                  categoryId != null &&
-                  '${s['parent_category_id']}' == categoryId &&
-                  '${s['status']}' == 'active')
+              .where(
+                (s) =>
+                    categoryId != null &&
+                    '${s['parent_category_id']}' == categoryId &&
+                    '${s['status']}' == 'active',
+              )
               .toList();
           if (subcategoryId != null &&
               !subs.any((s) => '${s['id']}' == subcategoryId)) {
@@ -432,7 +440,9 @@ class _AdminStoreManagementScreenState
                   children: [
                     TextField(
                       controller: name,
-                      decoration: const InputDecoration(labelText: 'اسم المنتج *'),
+                      decoration: const InputDecoration(
+                        labelText: 'اسم المنتج *',
+                      ),
                     ),
                     const SizedBox(height: 10),
                     DropdownButtonFormField<String>(
@@ -478,7 +488,9 @@ class _AdminStoreManagementScreenState
                     const SizedBox(height: 10),
                     DropdownButtonFormField<String?>(
                       initialValue: subcategoryId,
-                      decoration: const InputDecoration(labelText: 'الشعبة الفرعية'),
+                      decoration: const InputDecoration(
+                        labelText: 'الشعبة الفرعية',
+                      ),
                       items: [
                         const DropdownMenuItem<String?>(
                           value: null,
@@ -500,7 +512,9 @@ class _AdminStoreManagementScreenState
                           child: TextField(
                             controller: price,
                             keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(labelText: 'السعر *'),
+                            decoration: const InputDecoration(
+                              labelText: 'السعر *',
+                            ),
                           ),
                         ),
                         const SizedBox(width: 10),
@@ -522,7 +536,9 @@ class _AdminStoreManagementScreenState
                           child: TextField(
                             controller: stock,
                             keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(labelText: 'المخزون'),
+                            decoration: const InputDecoration(
+                              labelText: 'المخزون',
+                            ),
                           ),
                         ),
                         const SizedBox(width: 10),
@@ -583,13 +599,17 @@ class _AdminStoreManagementScreenState
                               : () async {
                                   setLocal(() => uploading = true);
                                   try {
-                                    final path = await _pickAndUpload('products');
+                                    final path = await _pickAndUpload(
+                                      'products',
+                                    );
                                     if (path != null) {
                                       setLocal(() => imagePath = path);
                                     }
                                   } catch (e) {
                                     if (mounted) {
-                                      _snack('$e'.replaceFirst('Exception: ', ''));
+                                      _snack(
+                                        '$e'.replaceFirst('Exception: ', ''),
+                                      );
                                     }
                                   } finally {
                                     setLocal(() => uploading = false);
@@ -599,7 +619,9 @@ class _AdminStoreManagementScreenState
                               ? const SizedBox(
                                   width: 16,
                                   height: 16,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
                                 )
                               : const Icon(Icons.image_rounded),
                           label: Text(uploading ? 'جاري الرفع' : 'رفع صورة'),
@@ -619,17 +641,18 @@ class _AdminStoreManagementScreenState
                 onPressed: uploading
                     ? null
                     : () {
-                        if (name.text.trim().isEmpty ||
-                            _n(price.text) <= 0) {
+                        if (name.text.trim().isEmpty || _n(price.text) <= 0) {
                           _snack('اكتب اسم المنتج وسعراً صحيحاً');
                           return;
                         }
                         final category = categoryId == null
                             ? null
-                            : categories.cast<Map<String, dynamic>?>().firstWhere(
-                                  (c) => '${c?['id']}' == categoryId,
-                                  orElse: () => null,
-                                );
+                            : categories
+                                  .cast<Map<String, dynamic>?>()
+                                  .firstWhere(
+                                    (c) => '${c?['id']}' == categoryId,
+                                    orElse: () => null,
+                                  );
                         Navigator.pop(dialogContext, {
                           'name': name.text.trim(),
                           'title': name.text.trim(),
@@ -646,9 +669,13 @@ class _AdminStoreManagementScreenState
                           'description': description.text.trim(),
                           'details': details.text.trim(),
                           'image_path': imagePath.isEmpty ? null : imagePath,
-                          'images': imagePath.isEmpty ? <String>[] : [imagePath],
+                          'images': imagePath.isEmpty
+                              ? <String>[]
+                              : [imagePath],
                           'status': status,
-                          'updated_at': DateTime.now().toUtc().toIso8601String(),
+                          'updated_at': DateTime.now()
+                              .toUtc()
+                              .toIso8601String(),
                         });
                       },
                 child: const Text('حفظ'),
@@ -676,7 +703,10 @@ class _AdminStoreManagementScreenState
           'created_at': DateTime.now().toUtc().toIso8601String(),
         });
       } else {
-        await client.from('products').update(result).eq('id', '${existing['id']}');
+        await client
+            .from('products')
+            .update(result)
+            .eq('id', '${existing['id']}');
       }
       await load();
       _snack(existing == null ? 'تمت إضافة المنتج' : 'تم تحديث المنتج');
@@ -688,10 +718,13 @@ class _AdminStoreManagementScreenState
   Future<void> _toggleProduct(Map<String, dynamic> row) async {
     final published = '${row['status']}' == 'published';
     try {
-      await client.from('products').update({
-        'status': published ? 'hidden' : 'published',
-        'updated_at': DateTime.now().toUtc().toIso8601String(),
-      }).eq('id', '${row['id']}');
+      await client
+          .from('products')
+          .update({
+            'status': published ? 'hidden' : 'published',
+            'updated_at': DateTime.now().toUtc().toIso8601String(),
+          })
+          .eq('id', '${row['id']}');
       await load();
     } catch (e) {
       _snack('$e'.replaceFirst('Exception: ', ''));
@@ -699,14 +732,20 @@ class _AdminStoreManagementScreenState
   }
 
   Future<void> _deleteProduct(Map<String, dynamic> row) async {
-    final ok = await _confirm('حذف المنتج', 'هل تريد حذف هذا المنتج من المتجر؟');
+    final ok = await _confirm(
+      'حذف المنتج',
+      'هل تريد حذف هذا المنتج من المتجر؟',
+    );
     if (!ok) return;
     try {
-      await client.from('products').update({
-        'deleted_at': DateTime.now().toUtc().toIso8601String(),
-        'status': 'archived',
-        'updated_at': DateTime.now().toUtc().toIso8601String(),
-      }).eq('id', '${row['id']}');
+      await client
+          .from('products')
+          .update({
+            'deleted_at': DateTime.now().toUtc().toIso8601String(),
+            'status': 'archived',
+            'updated_at': DateTime.now().toUtc().toIso8601String(),
+          })
+          .eq('id', '${row['id']}');
       await load();
       _snack('تم حذف المنتج');
     } catch (e) {
@@ -821,8 +860,9 @@ class _AdminStoreManagementScreenState
 
   Future<void> _categoryDialog({Map<String, dynamic>? existing}) async {
     final name = TextEditingController(text: '${existing?['name'] ?? ''}');
-    final order =
-        TextEditingController(text: '${existing?['sort_order'] ?? 10}');
+    final order = TextEditingController(
+      text: '${existing?['sort_order'] ?? 10}',
+    );
     String type = '${existing?['type'] ?? 'stationery'}';
     if (!['booklet', 'stationery', 'gift'].contains(type)) type = 'stationery';
     String status = '${existing?['status'] ?? 'active'}';
@@ -929,10 +969,13 @@ class _AdminStoreManagementScreenState
   Future<void> _toggleCategory(Map<String, dynamic> row) async {
     final active = '${row['status']}' == 'active';
     try {
-      await client.from('categories').update({
-        'status': active ? 'inactive' : 'active',
-        'updated_at': DateTime.now().toUtc().toIso8601String(),
-      }).eq('id', '${row['id']}');
+      await client
+          .from('categories')
+          .update({
+            'status': active ? 'inactive' : 'active',
+            'updated_at': DateTime.now().toUtc().toIso8601String(),
+          })
+          .eq('id', '${row['id']}');
       await load();
     } catch (e) {
       _snack('$e'.replaceFirst('Exception: ', ''));
@@ -944,8 +987,9 @@ class _AdminStoreManagementScreenState
     Map<String, dynamic>? existing,
   }) async {
     final name = TextEditingController(text: '${existing?['name'] ?? ''}');
-    final order =
-        TextEditingController(text: '${existing?['sort_order'] ?? 10}');
+    final order = TextEditingController(
+      text: '${existing?['sort_order'] ?? 10}',
+    );
     String status = '${existing?['status'] ?? 'active'}';
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
@@ -1031,7 +1075,10 @@ class _AdminStoreManagementScreenState
     final ok = await _confirm('حذف الشعبة', 'هل تريد حذف هذه الشعبة؟');
     if (!ok) return;
     try {
-      await client.from('product_subcategories').delete().eq('id', '${row['id']}');
+      await client
+          .from('product_subcategories')
+          .delete()
+          .eq('id', '${row['id']}');
       await load();
       _snack('تم حذف الشعبة');
     } catch (e) {
@@ -1161,15 +1208,20 @@ class _AdminStoreManagementScreenState
 
   Future<void> _bannerDialog({Map<String, dynamic>? existing}) async {
     final title = TextEditingController(text: '${existing?['title'] ?? ''}');
-    final subtitle =
-        TextEditingController(text: '${existing?['subtitle'] ?? ''}');
+    final subtitle = TextEditingController(
+      text: '${existing?['subtitle'] ?? ''}',
+    );
     final link = TextEditingController(text: '${existing?['link_url'] ?? ''}');
-    final button =
-        TextEditingController(text: '${existing?['button_text'] ?? ''}');
-    final order =
-        TextEditingController(text: '${existing?['sort_order'] ?? 0}');
+    final button = TextEditingController(
+      text: '${existing?['button_text'] ?? ''}',
+    );
+    final order = TextEditingController(
+      text: '${existing?['sort_order'] ?? 0}',
+    );
     String placement = '${existing?['placement'] ?? 'store'}';
-    bool active = existing?['active'] == null ? true : existing?['active'] == true;
+    bool active = existing?['active'] == null
+        ? true
+        : existing?['active'] == true;
     String status = '${existing?['status'] ?? 'active'}';
     String imagePath =
         '${existing?['image_path'] ?? existing?['image_url'] ?? ''}';
@@ -1189,7 +1241,9 @@ class _AdminStoreManagementScreenState
                 children: [
                   TextField(
                     controller: title,
-                    decoration: const InputDecoration(labelText: 'عنوان الإعلان *'),
+                    decoration: const InputDecoration(
+                      labelText: 'عنوان الإعلان *',
+                    ),
                   ),
                   const SizedBox(height: 10),
                   TextField(
@@ -1226,7 +1280,9 @@ class _AdminStoreManagementScreenState
                       Expanded(
                         child: DropdownButtonFormField<String>(
                           initialValue: placement,
-                          decoration: const InputDecoration(labelText: 'المكان'),
+                          decoration: const InputDecoration(
+                            labelText: 'المكان',
+                          ),
                           items: const [
                             DropdownMenuItem(
                               value: 'store',
@@ -1243,7 +1299,9 @@ class _AdminStoreManagementScreenState
                         child: TextField(
                           controller: order,
                           keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(labelText: 'الترتيب'),
+                          decoration: const InputDecoration(
+                            labelText: 'الترتيب',
+                          ),
                         ),
                       ),
                     ],
@@ -1280,7 +1338,9 @@ class _AdminStoreManagementScreenState
                                   }
                                 } catch (e) {
                                   if (mounted) {
-                                    _snack('$e'.replaceFirst('Exception: ', ''));
+                                    _snack(
+                                      '$e'.replaceFirst('Exception: ', ''),
+                                    );
                                   }
                                 } finally {
                                   setLocal(() => uploading = false);
@@ -1290,7 +1350,9 @@ class _AdminStoreManagementScreenState
                             ? const SizedBox(
                                 width: 16,
                                 height: 16,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
                               )
                             : const Icon(Icons.image_rounded),
                         label: Text(uploading ? 'جاري الرفع' : 'رفع صورة'),
@@ -1319,7 +1381,9 @@ class _AdminStoreManagementScreenState
                         'subtitle': subtitle.text.trim(),
                         'image_path': imagePath,
                         'image_url': null,
-                        'link_url': link.text.trim().isEmpty ? null : link.text.trim(),
+                        'link_url': link.text.trim().isEmpty
+                            ? null
+                            : link.text.trim(),
                         'button_text': button.text.trim().isEmpty
                             ? null
                             : button.text.trim(),
@@ -1365,11 +1429,14 @@ class _AdminStoreManagementScreenState
   Future<void> _toggleBanner(Map<String, dynamic> row) async {
     final active = row['active'] == true && '${row['status']}' == 'active';
     try {
-      await client.from('banners').update({
-        'active': !active,
-        'status': active ? 'inactive' : 'active',
-        'updated_at': DateTime.now().toUtc().toIso8601String(),
-      }).eq('id', '${row['id']}');
+      await client
+          .from('banners')
+          .update({
+            'active': !active,
+            'status': active ? 'inactive' : 'active',
+            'updated_at': DateTime.now().toUtc().toIso8601String(),
+          })
+          .eq('id', '${row['id']}');
       await load();
     } catch (e) {
       _snack('$e'.replaceFirst('Exception: ', ''));
@@ -1377,7 +1444,10 @@ class _AdminStoreManagementScreenState
   }
 
   Future<void> _deleteBanner(Map<String, dynamic> row) async {
-    final ok = await _confirm('حذف الإعلان', 'هل تريد حذف هذا الإعلان نهائياً؟');
+    final ok = await _confirm(
+      'حذف الإعلان',
+      'هل تريد حذف هذا الإعلان نهائياً؟',
+    );
     if (!ok) return;
     try {
       await client.from('banners').delete().eq('id', '${row['id']}');
@@ -1444,7 +1514,11 @@ class _AdminStoreManagementScreenState
           );
           if (c.maxWidth >= 720) {
             return Row(
-              children: [Expanded(child: info), const SizedBox(width: 16), button],
+              children: [
+                Expanded(child: info),
+                const SizedBox(width: 16),
+                button,
+              ],
             );
           }
           return Column(
@@ -1457,27 +1531,27 @@ class _AdminStoreManagementScreenState
   }
 
   Widget _statusChip(String label, {required bool active}) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-        decoration: BoxDecoration(
-          color: active ? BusinessBrand.softTeal : Colors.grey.shade200,
-          borderRadius: BorderRadius.circular(99),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: active ? Colors.teal.shade800 : Colors.grey.shade700,
-            fontSize: 11,
-            fontWeight: FontWeight.w900,
-          ),
-        ),
-      );
+    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+    decoration: BoxDecoration(
+      color: active ? BusinessBrand.softTeal : Colors.grey.shade200,
+      borderRadius: BorderRadius.circular(99),
+    ),
+    child: Text(
+      label,
+      style: TextStyle(
+        color: active ? Colors.teal.shade800 : Colors.grey.shade700,
+        fontSize: 11,
+        fontWeight: FontWeight.w900,
+      ),
+    ),
+  );
 
   Widget _empty(String text) => Card(
-        child: Padding(
-          padding: const EdgeInsets.all(26),
-          child: Center(child: Text(text)),
-        ),
-      );
+    child: Padding(
+      padding: const EdgeInsets.all(26),
+      child: Center(child: Text(text)),
+    ),
+  );
 
   Future<bool> _confirm(String title, String text) async {
     return await showDialog<bool>(
@@ -1506,9 +1580,9 @@ class _AdminStoreManagementScreenState
   }
 
   String _typeLabel(dynamic value) => switch ('$value') {
-        'booklet' => 'ملازم',
-        'gift' => 'هدايا',
-        'stationery' => 'قرطاسية',
-        _ => '$value',
-      };
+    'booklet' => 'ملازم',
+    'gift' => 'هدايا',
+    'stationery' => 'قرطاسية',
+    _ => '$value',
+  };
 }

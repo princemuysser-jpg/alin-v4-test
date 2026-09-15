@@ -12,6 +12,7 @@ import '../screens/admin_finance_v2_screen.dart';
 import '../screens/admin_growth_controls_screen.dart';
 import '../screens/admin_reports_screen.dart';
 import '../screens/admin_settings_screen.dart';
+import '../screens/admin_store_management_screen.dart';
 import '../screens/admin_teacher_courses_screen.dart';
 import '../screens/business_notifications_screen.dart';
 import '../screens/business_party_finance_screen.dart';
@@ -120,6 +121,36 @@ class BusinessRoleNavigationDrawer extends StatelessWidget {
       const SizedBox(height: 8),
       _section('المحتوى والمتجر'),
       _adminSectionTile(context, 4, Icons.inventory_2_rounded, 'المحتوى'),
+      _routeTile(
+        context,
+        icon: Icons.inventory_2_outlined,
+        title: 'المنتجات',
+        subtitle: 'إضافة وتعديل الأسعار والمخزون',
+        page: AdminStoreManagementScreen(
+          repository: repository,
+          initialTab: StoreManagementTab.products,
+        ),
+      ),
+      _routeTile(
+        context,
+        icon: Icons.category_rounded,
+        title: 'الأقسام',
+        subtitle: 'أقسام المتجر والشعب الفرعية',
+        page: AdminStoreManagementScreen(
+          repository: repository,
+          initialTab: StoreManagementTab.categories,
+        ),
+      ),
+      _routeTile(
+        context,
+        icon: Icons.campaign_rounded,
+        title: 'الإعلانات',
+        subtitle: 'بنرات المتجر والعروض المرئية',
+        page: AdminStoreManagementScreen(
+          repository: repository,
+          initialTab: StoreManagementTab.banners,
+        ),
+      ),
       _routeTile(
         context,
         icon: Icons.menu_book_rounded,
@@ -477,6 +508,33 @@ class AdminDesktopNavigationSidebar extends StatelessWidget {
                   _sectionItem(Icons.groups_rounded, 'الحسابات', 2),
                   _group('المحتوى'),
                   _sectionItem(Icons.inventory_2_rounded, 'المحتوى', 4),
+                  _routeItem(
+                    context,
+                    Icons.inventory_2_outlined,
+                    'المنتجات',
+                    AdminStoreManagementScreen(
+                      repository: repository,
+                      initialTab: StoreManagementTab.products,
+                    ),
+                  ),
+                  _routeItem(
+                    context,
+                    Icons.category_rounded,
+                    'الأقسام',
+                    AdminStoreManagementScreen(
+                      repository: repository,
+                      initialTab: StoreManagementTab.categories,
+                    ),
+                  ),
+                  _routeItem(
+                    context,
+                    Icons.campaign_rounded,
+                    'الإعلانات',
+                    AdminStoreManagementScreen(
+                      repository: repository,
+                      initialTab: StoreManagementTab.banners,
+                    ),
+                  ),
                   _routeItem(
                     context,
                     Icons.menu_book_rounded,
