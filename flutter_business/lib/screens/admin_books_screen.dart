@@ -1,4 +1,6 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../data/business_repository.dart';
 import '../widgets/business_brand.dart';
@@ -13,12 +15,14 @@ class AdminBooksScreen extends StatefulWidget {
 }
 
 class _AdminBooksScreenState extends State<AdminBooksScreen> {
+  static const _bucket = 'alin-files';
+
   bool loading = true;
   bool settling = false;
   String? error;
   String search = '';
   List<Map<String, dynamic>> books = [];
-  List<Map<String, dynamic>> libraries = [];
+  List<Map<String, dynamic>> printers = [];
   List<Map<String, dynamic>> balances = [];
 
   @override
@@ -44,6 +48,7 @@ class _AdminBooksScreenState extends State<AdminBooksScreen> {
             .order('created_at', ascending: false),
         widget.repository.adminAccounts(),
       ]);
+
       List<Map<String, dynamic>> supplierBalances = [];
       try {
         final raw = await widget.repository.client.rpc(
@@ -56,21 +61,22 @@ class _AdminBooksScreenState extends State<AdminBooksScreen> {
               .toList();
         }
       } catch (_) {
-        // Book management remains available if the optional supplier balance RPC is unavailable.
+        // Book management remains usable if the optional balances RPC is absent.
       }
+
       if (!mounted) return;
       setState(() {
         books = (values[0] as List)
             .whereType<Map>()
             .map((e) => Map<String, dynamic>.from(e))
             .toList();
-        libraries = (values[1] as List)
+        printers = (values[1] as List)
             .whereType<Map>()
             .map((e) => Map<String, dynamic>.from(e))
             .where(
               (e) =>
-                  '${e['role']}' == 'library' &&
-                  '${e['status']}' == 'active' &&
+                  '${e['role']}'.toLowerCase() == 'printer' &&
+                  '${e['status'] ?? 'active'}' == 'active' &&
                   e['deleted_at'] == null,
             )
             .toList();
@@ -97,11 +103,40 @@ class _AdminBooksScreenState extends State<AdminBooksScreen> {
 
   String supplierLabel(Map<String, dynamic> row) {
     final type = '${row['supplier_type'] ?? 'platform'}';
-    if (type == 'library')
-      return 'مكتبة ${row['supplier_name'] ?? 'غير محددة'}';
-    if (type == 'printer')
+    if (type == 'printer') {
       return 'مطبعة ${row['supplier_name'] ?? 'غير محددة'}';
+    }
     return 'منصة آلين';
+  }
+
+  Future<String?> _pickAndUploadBookImage() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: const ['png', 'jpg', 'jpeg', 'webp'],
+      withData: true,
+      allowMultiple: false,
+    );
+    if (result == null || result.files.isEmpty) return null;
+    final file = result.files.single;
+    final bytes = file.bytes;
+    if (bytes == null || bytes.isEmpty) throw Exception('تعذر قراءة الصورة');
+    if (bytes.length > 5 * 1024 * 1024) {
+      throw Exception('حجم صورة الكتاب يجب أن يكون أقل من 5MB');
+    }
+    final extension = (file.extension ?? 'png').toLowerCase();
+    final mime = switch (extension) {
+      'jpg' || 'jpeg' => 'image/jpeg',
+      'webp' => 'image/webp',
+      _ => 'image/png',
+    };
+    final path =
+        'products/books/${DateTime.now().millisecondsSinceEpoch}.$extension';
+    await widget.repository.client.storage.from(_bucket).uploadBinary(
+          path,
+          bytes,
+          fileOptions: FileOptions(contentType: mime, upsert: false),
+        );
+    return widget.repository.client.storage.from(_bucket).getPublicUrl(path);
   }
 
   Future<void> editBook([Map<String, dynamic>? existing]) async {
@@ -121,20 +156,20 @@ class _AdminBooksScreenState extends State<AdminBooksScreen> {
     final supplierShare = TextEditingController(
       text: '${existing?['supplier_share_percent'] ?? 0}',
     );
-    final supplierName = TextEditingController(
-      text: '${existing?['supplier_name'] ?? ''}',
-    );
     final description = TextEditingController(
       text: '${existing?['description'] ?? existing?['details'] ?? ''}',
     );
-    final imagePath = TextEditingController(
-      text: '${existing?['image_path'] ?? existing?['image_url'] ?? ''}',
-    );
+    String imagePath = '${existing?['image_path'] ?? existing?['image_url'] ?? ''}';
     String supplierType = '${existing?['supplier_type'] ?? 'platform'}';
-    if (!const {'platform', 'library', 'printer'}.contains(supplierType))
+    if (!const {'platform', 'printer'}.contains(supplierType)) {
       supplierType = 'platform';
-    String libraryId = '${existing?['supplier_account_id'] ?? ''}';
+    }
+    String printerId = supplierType == 'printer'
+        ? '${existing?['supplier_account_id'] ?? ''}'
+        : '';
     String status = '${existing?['status'] ?? 'published'}';
+    if (!const {'published', 'hidden'}.contains(status)) status = 'published';
+    bool uploading = false;
 
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
@@ -143,20 +178,20 @@ class _AdminBooksScreenState extends State<AdminBooksScreen> {
           if (supplierType == 'platform') {
             platformShare.text = '100';
             supplierShare.text = '0';
+            printerId = '';
           }
           return AlertDialog(
             title: Text(existing == null ? 'إضافة كتاب' : 'تعديل الكتاب'),
             content: SizedBox(
-              width: 650,
+              width: 680,
               child: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     TextField(
                       controller: name,
-                      decoration: const InputDecoration(
-                        labelText: 'اسم الكتاب *',
-                      ),
+                      decoration: const InputDecoration(labelText: 'اسم الكتاب *'),
                     ),
                     const SizedBox(height: 8),
                     Row(
@@ -165,9 +200,7 @@ class _AdminBooksScreenState extends State<AdminBooksScreen> {
                           child: TextField(
                             controller: price,
                             keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                              labelText: 'سعر البيع',
-                            ),
+                            decoration: const InputDecoration(labelText: 'سعر البيع'),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -175,9 +208,7 @@ class _AdminBooksScreenState extends State<AdminBooksScreen> {
                           child: TextField(
                             controller: stock,
                             keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                              labelText: 'المخزون',
-                            ),
+                            decoration: const InputDecoration(labelText: 'المخزون'),
                           ),
                         ),
                       ],
@@ -186,60 +217,47 @@ class _AdminBooksScreenState extends State<AdminBooksScreen> {
                     TextField(
                       controller: lowStock,
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'حد تنبيه المخزون',
-                      ),
+                      decoration: const InputDecoration(labelText: 'حد تنبيه المخزون'),
                     ),
                     const SizedBox(height: 8),
                     DropdownButtonFormField<String>(
                       initialValue: supplierType,
-                      decoration: const InputDecoration(
-                        labelText: 'نوع مصدر الكتاب',
-                      ),
+                      decoration: const InputDecoration(labelText: 'مصدر الكتاب'),
                       items: const [
                         DropdownMenuItem(
                           value: 'platform',
                           child: Text('مخزون منصة آلين'),
                         ),
                         DropdownMenuItem(
-                          value: 'library',
-                          child: Text('مكتبة'),
-                        ),
-                        DropdownMenuItem(
                           value: 'printer',
                           child: Text('مطبعة'),
                         ),
                       ],
-                      onChanged: (value) =>
-                          setLocal(() => supplierType = value ?? 'platform'),
+                      onChanged: (value) => setLocal(() {
+                        supplierType = value ?? 'platform';
+                        if (supplierType == 'platform') {
+                          platformShare.text = '100';
+                          supplierShare.text = '0';
+                          printerId = '';
+                        }
+                      }),
                     ),
-                    const SizedBox(height: 8),
-                    if (supplierType == 'library')
+                    if (supplierType == 'printer') ...[
+                      const SizedBox(height: 8),
                       DropdownButtonFormField<String>(
-                        initialValue: libraryId.isEmpty ? null : libraryId,
-                        decoration: const InputDecoration(
-                          labelText: 'المكتبة الموردة',
-                        ),
-                        items: libraries
+                        initialValue: printerId.isEmpty ? null : printerId,
+                        decoration: const InputDecoration(labelText: 'حساب المطبعة الموردة'),
+                        items: printers
                             .map(
                               (row) => DropdownMenuItem(
                                 value: '${row['id']}',
-                                child: Text(
-                                  '${row['name'] ?? row['username'] ?? row['id']}',
-                                ),
+                                child: Text('${row['name'] ?? row['username'] ?? row['id']}'),
                               ),
                             )
                             .toList(),
-                        onChanged: (value) =>
-                            setLocal(() => libraryId = value ?? ''),
+                        onChanged: (value) => setLocal(() => printerId = value ?? ''),
                       ),
-                    if (supplierType == 'printer')
-                      TextField(
-                        controller: supplierName,
-                        decoration: const InputDecoration(
-                          labelText: 'اسم المطبعة',
-                        ),
-                      ),
+                    ],
                     const SizedBox(height: 8),
                     Row(
                       children: [
@@ -248,9 +266,7 @@ class _AdminBooksScreenState extends State<AdminBooksScreen> {
                             controller: platformShare,
                             readOnly: supplierType == 'platform',
                             keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                              labelText: 'حصة المنصة %',
-                            ),
+                            decoration: const InputDecoration(labelText: 'حصة المنصة %'),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -259,9 +275,7 @@ class _AdminBooksScreenState extends State<AdminBooksScreen> {
                             controller: supplierShare,
                             readOnly: supplierType == 'platform',
                             keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                              labelText: 'حصة المورد %',
-                            ),
+                            decoration: const InputDecoration(labelText: 'حصة المطبعة %'),
                           ),
                         ),
                       ],
@@ -269,37 +283,105 @@ class _AdminBooksScreenState extends State<AdminBooksScreen> {
                     const SizedBox(height: 8),
                     DropdownButtonFormField<String>(
                       initialValue: status,
-                      decoration: const InputDecoration(
-                        labelText: 'حالة الكتاب',
-                      ),
+                      decoration: const InputDecoration(labelText: 'حالة الكتاب'),
                       items: const [
-                        DropdownMenuItem(
-                          value: 'published',
-                          child: Text('منشور'),
-                        ),
+                        DropdownMenuItem(value: 'published', child: Text('منشور')),
                         DropdownMenuItem(value: 'hidden', child: Text('مخفي')),
                       ],
-                      onChanged: (value) =>
-                          setLocal(() => status = value ?? 'published'),
+                      onChanged: (value) => setLocal(() => status = value ?? 'published'),
                     ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: imagePath,
-                      decoration: const InputDecoration(
-                        labelText: 'مسار/رابط صورة الكتاب',
-                      ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        SizedBox(
+                          width: 72,
+                          height: 84,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: imagePath.trim().isEmpty
+                                ? Container(
+                                    color: BusinessBrand.softBlue,
+                                    child: const Icon(
+                                      Icons.menu_book_rounded,
+                                      color: BusinessBrand.navy,
+                                      size: 32,
+                                    ),
+                                  )
+                                : Image.network(
+                                    imagePath,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => Container(
+                                      color: BusinessBrand.softBlue,
+                                      child: const Icon(Icons.broken_image_rounded),
+                                    ),
+                                  ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              const Text(
+                                'صورة الكتاب',
+                                style: TextStyle(fontWeight: FontWeight.w900),
+                              ),
+                              const SizedBox(height: 6),
+                              FilledButton.icon(
+                                onPressed: uploading
+                                    ? null
+                                    : () async {
+                                        setLocal(() => uploading = true);
+                                        try {
+                                          final url = await _pickAndUploadBookImage();
+                                          if (url != null && context.mounted) {
+                                            setLocal(() => imagePath = url);
+                                          }
+                                        } catch (e) {
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              SnackBar(
+                                                content: Text(
+                                                  '$e'.replaceFirst('Exception: ', ''),
+                                                ),
+                                              ),
+                                            );
+                                          }
+                                        } finally {
+                                          if (context.mounted) {
+                                            setLocal(() => uploading = false);
+                                          }
+                                        }
+                                      },
+                                icon: uploading
+                                    ? const SizedBox(
+                                        width: 18,
+                                        height: 18,
+                                        child: CircularProgressIndicator(strokeWidth: 2),
+                                      )
+                                    : const Icon(Icons.upload_rounded),
+                                label: Text(uploading ? 'جاري الرفع...' : 'رفع صورة من الجهاز'),
+                              ),
+                              if (imagePath.trim().isNotEmpty)
+                                TextButton.icon(
+                                  onPressed: () => setLocal(() => imagePath = ''),
+                                  icon: const Icon(Icons.delete_outline_rounded),
+                                  label: const Text('إزالة الصورة'),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 8),
                     TextField(
                       controller: description,
                       maxLines: 4,
-                      decoration: const InputDecoration(
-                        labelText: 'وصف الكتاب',
-                      ),
+                      decoration: const InputDecoration(labelText: 'وصف الكتاب'),
                     ),
                     const SizedBox(height: 8),
                     const Text(
-                      'أجرة المندوب مستقلة عن نسب الكتاب، مثل نظام الويب القديم.',
+                      'مورد الكتاب يكون منصة آلين أو مطبعة فقط، وأجرة المندوب مستقلة عن نسب الكتاب.',
                       style: TextStyle(color: BusinessBrand.muted),
                     ),
                   ],
@@ -308,76 +390,82 @@ class _AdminBooksScreenState extends State<AdminBooksScreen> {
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: uploading ? null : () => Navigator.pop(context),
                 child: const Text('إلغاء'),
               ),
               FilledButton(
-                onPressed: () {
-                  final bookName = name.text.trim();
-                  final bookPrice = num.tryParse(price.text.trim()) ?? -1;
-                  final bookStock = num.tryParse(stock.text.trim()) ?? -1;
-                  final p = num.tryParse(platformShare.text.trim()) ?? -1;
-                  final s = num.tryParse(supplierShare.text.trim()) ?? -1;
-                  if (bookName.isEmpty ||
-                      bookPrice < 0 ||
-                      bookStock < 0 ||
-                      p < 0 ||
-                      s < 0 ||
-                      p + s != 100) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'تحقق من الاسم والسعر والمخزون وأن مجموع النسب يساوي 100%',
-                        ),
-                      ),
-                    );
-                    return;
-                  }
-                  if (supplierType == 'library' && libraryId.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('اختر المكتبة الموردة')),
-                    );
-                    return;
-                  }
-                  final library = libraries
-                      .where((e) => '${e['id']}' == libraryId)
-                      .toList();
-                  final resolvedSupplierName = supplierType == 'library'
-                      ? (library.isEmpty
-                            ? ''
-                            : '${library.first['name'] ?? ''}')
-                      : supplierType == 'printer'
-                      ? supplierName.text.trim()
-                      : 'منصة آلين';
-                  Navigator.pop(context, {
-                    'name': bookName,
-                    'title': bookName,
-                    'type': 'book',
-                    'category': 'كتب',
-                    'category_id': 'CAT-BOOKS',
-                    'unit_price': bookPrice,
-                    'price': bookPrice,
-                    'stock': bookStock,
-                    'low_stock_limit': num.tryParse(lowStock.text.trim()) ?? 5,
-                    'description': description.text.trim(),
-                    'details': description.text.trim(),
-                    'image_path': imagePath.text.trim().isEmpty
-                        ? null
-                        : imagePath.text.trim(),
-                    'platform_share_percent': p,
-                    'supplier_share_percent': s,
-                    'supplier_type': supplierType,
-                    'supplier_account_id': supplierType == 'library'
-                        ? libraryId
-                        : null,
-                    'supplier_name': resolvedSupplierName.isEmpty
-                        ? null
-                        : resolvedSupplierName,
-                    'supplier_pickup_enabled': false,
-                    'status': status,
-                    'updated_at': DateTime.now().toUtc().toIso8601String(),
-                  });
-                },
+                onPressed: uploading
+                    ? null
+                    : () {
+                        final bookName = name.text.trim();
+                        final bookPrice = num.tryParse(price.text.trim()) ?? -1;
+                        final bookStock = num.tryParse(stock.text.trim()) ?? -1;
+                        final p = num.tryParse(platformShare.text.trim()) ?? -1;
+                        final s = num.tryParse(supplierShare.text.trim()) ?? -1;
+                        if (bookName.isEmpty ||
+                            bookPrice < 0 ||
+                            bookStock < 0 ||
+                            p < 0 ||
+                            s < 0 ||
+                            p > 100 ||
+                            s > 100 ||
+                            p + s != 100) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'تحقق من الاسم والسعر والمخزون وأن مجموع النسب يساوي 100%',
+                              ),
+                            ),
+                          );
+                          return;
+                        }
+                        if (supplierType == 'platform' && (p != 100 || s != 0)) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('مخزون المنصة يجب أن يكون 100% للمنصة'),
+                            ),
+                          );
+                          return;
+                        }
+                        if (supplierType == 'printer' && printerId.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('اختر المطبعة الموردة')),
+                          );
+                          return;
+                        }
+                        final printer = printers
+                            .where((e) => '${e['id']}' == printerId)
+                            .toList();
+                        final supplierName = supplierType == 'printer'
+                            ? (printer.isEmpty
+                                ? ''
+                                : '${printer.first['name'] ?? printer.first['username'] ?? ''}')
+                            : 'منصة آلين';
+                        Navigator.pop(context, {
+                          'name': bookName,
+                          'title': bookName,
+                          'type': 'book',
+                          'category': 'كتب',
+                          'category_id': 'CAT-BOOKS',
+                          'unit_price': bookPrice,
+                          'price': bookPrice,
+                          'sale_price': null,
+                          'stock': bookStock,
+                          'low_stock_limit': num.tryParse(lowStock.text.trim()) ?? 5,
+                          'description': description.text.trim(),
+                          'details': description.text.trim(),
+                          'image_path': imagePath.trim().isEmpty ? null : imagePath.trim(),
+                          'images': imagePath.trim().isEmpty ? <String>[] : [imagePath.trim()],
+                          'platform_share_percent': supplierType == 'platform' ? 100 : p,
+                          'supplier_share_percent': supplierType == 'platform' ? 0 : s,
+                          'supplier_type': supplierType,
+                          'supplier_account_id': supplierType == 'printer' ? printerId : null,
+                          'supplier_name': supplierName,
+                          'supplier_pickup_enabled': false,
+                          'status': status,
+                          'updated_at': DateTime.now().toUtc().toIso8601String(),
+                        });
+                      },
                 child: const Text('حفظ'),
               ),
             ],
@@ -393,13 +481,12 @@ class _AdminBooksScreenState extends State<AdminBooksScreen> {
       lowStock,
       platformShare,
       supplierShare,
-      supplierName,
       description,
-      imagePath,
     ]) {
       c.dispose();
     }
     if (result == null) return;
+
     try {
       if (existing == null) {
         await widget.repository.client.from('products').insert({
@@ -414,8 +501,9 @@ class _AdminBooksScreenState extends State<AdminBooksScreen> {
             .eq('id', '${existing['id']}');
       }
       await load();
-      if (mounted)
+      if (mounted) {
         _toast(existing == null ? 'تمت إضافة الكتاب' : 'تم تعديل الكتاب');
+      }
     } catch (e) {
       if (mounted) _toast('$e'.replaceFirst('Exception: ', ''));
     }
@@ -434,8 +522,9 @@ class _AdminBooksScreenState extends State<AdminBooksScreen> {
           })
           .eq('id', '${row['id']}');
       await load();
-      if (mounted)
+      if (mounted) {
         _toast(status == 'published' ? 'تم نشر الكتاب' : 'تم إخفاء الكتاب');
+      }
     } catch (e) {
       if (mounted) _toast('$e'.replaceFirst('Exception: ', ''));
     }
@@ -445,13 +534,12 @@ class _AdminBooksScreenState extends State<AdminBooksScreen> {
     if (settling) return;
     final key = '${row['supplier_key'] ?? ''}';
     if (key.isEmpty || n(row['pending_amount']) <= 0) return;
-    final ok =
-        await showDialog<bool>(
+    final ok = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
             title: const Text('تسوية مورد الكتب'),
             content: Text(
-              'تثبيت تسوية ${row['supplier_name'] ?? 'المورد'} بمبلغ ${money(row['pending_amount'])}؟\nهذه التسوية مستقلة عن الملازم والمندوبين.',
+              'تثبيت تسوية ${row['supplier_name'] ?? 'المطبعة'} بمبلغ ${money(row['pending_amount'])}؟\nهذه التسوية مستقلة عن الملازم والمندوبين.',
             ),
             actions: [
               TextButton(
@@ -467,6 +555,7 @@ class _AdminBooksScreenState extends State<AdminBooksScreen> {
         ) ??
         false;
     if (!ok) return;
+
     setState(() => settling = true);
     try {
       await widget.repository.client.rpc(
@@ -483,8 +572,8 @@ class _AdminBooksScreenState extends State<AdminBooksScreen> {
   }
 
   void _toast(String value) => ScaffoldMessenger.of(
-    context,
-  ).showSnackBar(SnackBar(content: Text(value)));
+        context,
+      ).showSnackBar(SnackBar(content: Text(value)));
 
   @override
   Widget build(BuildContext context) {
@@ -496,6 +585,7 @@ class _AdminBooksScreenState extends State<AdminBooksScreen> {
       0,
       (sum, e) => sum + n(e['pending_amount']),
     );
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('إدارة الكتب'),
@@ -512,121 +602,107 @@ class _AdminBooksScreenState extends State<AdminBooksScreen> {
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : error != null
-          ? Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Text(error!, textAlign: TextAlign.center),
-              ),
-            )
-          : RefreshIndicator(
-              onRefresh: load,
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
-                children: [
-                  LayoutBuilder(
-                    builder: (context, c) {
-                      final count = c.maxWidth >= 900 ? 4 : 2;
-                      return GridView.count(
-                        crossAxisCount: count,
-                        crossAxisSpacing: 10,
-                        mainAxisSpacing: 10,
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        childAspectRatio: c.maxWidth >= 900 ? 2.25 : 1.5,
-                        children: [
-                          _metric(
-                            'كل الكتب',
-                            '${books.length}',
-                            Icons.menu_book_rounded,
-                          ),
-                          _metric('منشورة', '$published', Icons.public_rounded),
-                          _metric(
-                            'إجمالي المخزون',
-                            '${totalStock.round()}',
-                            Icons.inventory_2_rounded,
-                          ),
-                          _metric(
-                            'مستحق الموردين',
-                            money(pending),
-                            Icons.account_balance_wallet_rounded,
-                          ),
-                        ],
-                      );
-                    },
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Text(error!, textAlign: TextAlign.center),
                   ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    onChanged: (value) => setState(() => search = value),
-                    decoration: const InputDecoration(
-                      labelText: 'بحث بالكتب أو المورد',
-                      prefixIcon: Icon(Icons.search_rounded),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  if (filtered.isEmpty)
-                    const Card(
-                      child: Padding(
-                        padding: EdgeInsets.all(28),
-                        child: Center(child: Text('لا توجد كتب')),
+                )
+              : RefreshIndicator(
+                  onRefresh: load,
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
+                    children: [
+                      LayoutBuilder(
+                        builder: (context, c) {
+                          final count = c.maxWidth >= 900 ? 4 : 2;
+                          return GridView.count(
+                            crossAxisCount: count,
+                            crossAxisSpacing: 10,
+                            mainAxisSpacing: 10,
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            childAspectRatio: c.maxWidth >= 900 ? 2.25 : 1.5,
+                            children: [
+                              _metric('كل الكتب', '${books.length}', Icons.menu_book_rounded),
+                              _metric('منشورة', '$published', Icons.public_rounded),
+                              _metric('إجمالي المخزون', '${totalStock.round()}', Icons.inventory_2_rounded),
+                              _metric('مستحق المطابع', money(pending), Icons.account_balance_wallet_rounded),
+                            ],
+                          );
+                        },
                       ),
-                    )
-                  else
-                    ...filtered.map(_bookCard),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'تسويات موردي الكتب',
-                    style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900),
-                  ),
-                  const SizedBox(height: 8),
-                  if (balances.isEmpty)
-                    const Card(
-                      child: Padding(
-                        padding: EdgeInsets.all(20),
-                        child: Text(
-                          'لا توجد مبالغ مستحقة لموردي الكتب حالياً.',
+                      const SizedBox(height: 12),
+                      TextField(
+                        onChanged: (value) => setState(() => search = value),
+                        decoration: const InputDecoration(
+                          labelText: 'بحث بالكتب أو المطبعة',
+                          prefixIcon: Icon(Icons.search_rounded),
                         ),
                       ),
-                    )
-                  else
-                    ...balances.map(_balanceCard),
-                ],
-              ),
-            ),
+                      const SizedBox(height: 12),
+                      if (filtered.isEmpty)
+                        const Card(
+                          child: Padding(
+                            padding: EdgeInsets.all(28),
+                            child: Center(child: Text('لا توجد كتب')),
+                          ),
+                        )
+                      else
+                        ...filtered.map(_bookCard),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'تسويات مطابع الكتب',
+                        style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900),
+                      ),
+                      const SizedBox(height: 8),
+                      if (balances.isEmpty)
+                        const Card(
+                          child: Padding(
+                            padding: EdgeInsets.all(20),
+                            child: Text('لا توجد مبالغ مستحقة لمطابع الكتب حالياً.'),
+                          ),
+                        )
+                      else
+                        ...balances.map(_balanceCard),
+                    ],
+                  ),
+                ),
     );
   }
 
   Widget _metric(String label, String value, IconData icon) => Card(
-    child: Padding(
-      padding: const EdgeInsets.all(12),
-      child: Row(
-        children: [
-          CircleAvatar(
-            backgroundColor: BusinessBrand.softBlue,
-            child: Icon(icon, color: BusinessBrand.navy),
-          ),
-          const SizedBox(width: 9),
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  value,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w900,
-                  ),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: BusinessBrand.softBlue,
+                child: Icon(icon, color: BusinessBrand.navy),
+              ),
+              const SizedBox(width: 9),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      value,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+                  ],
                 ),
-                Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
-    ),
-  );
+        ),
+      );
 
   Widget _bookCard(Map<String, dynamic> row) {
     final image = '${row['image_path'] ?? row['image_url'] ?? ''}'.trim();
@@ -674,16 +750,12 @@ class _AdminBooksScreenState extends State<AdminBooksScreen> {
                           fontWeight: FontWeight.w900,
                         ),
                       ),
+                      Text('${supplierLabel(row)} • ${money(row['unit_price'] ?? row['price'])}'),
                       Text(
-                        '${supplierLabel(row)} • ${money(row['unit_price'] ?? row['price'])}',
-                      ),
-                      Text(
-                        'المخزون: ${n(row['stock']).round()} • المنصة ${n(row['platform_share_percent']).round()}% • المورد ${n(row['supplier_share_percent']).round()}%',
+                        'المخزون: ${n(row['stock']).round()} • المنصة ${n(row['platform_share_percent']).round()}% • المطبعة ${n(row['supplier_share_percent']).round()}%',
                       ),
                       const SizedBox(height: 4),
-                      Chip(
-                        label: Text(status == 'published' ? 'منشور' : 'مخفي'),
-                      ),
+                      Chip(label: Text(status == 'published' ? 'منشور' : 'مخفي')),
                     ],
                   ),
                 ),
@@ -709,13 +781,14 @@ class _AdminBooksScreenState extends State<AdminBooksScreen> {
                 ),
               ],
             );
-            if (c.maxWidth >= 760)
+            if (c.maxWidth >= 760) {
               return Row(
                 children: [
                   Expanded(child: info),
                   actions,
                 ],
               );
+            }
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [info, const SizedBox(height: 10), actions],
@@ -727,24 +800,22 @@ class _AdminBooksScreenState extends State<AdminBooksScreen> {
   }
 
   Widget _balanceCard(Map<String, dynamic> row) => Card(
-    child: ListTile(
-      leading: const CircleAvatar(
-        backgroundColor: BusinessBrand.softBlue,
-        child: Icon(Icons.payments_rounded, color: BusinessBrand.navy),
-      ),
-      title: Text(
-        '${row['supplier_name'] ?? 'مورد كتب'}',
-        style: const TextStyle(fontWeight: FontWeight.w900),
-      ),
-      subtitle: Text(
-        '${row['supplier_type'] == 'library' ? 'مكتبة' : 'مطبعة'} • ${row['orders_count'] ?? 0} طلب',
-      ),
-      trailing: n(row['pending_amount']) > 0
-          ? FilledButton(
-              onPressed: settling ? null : () => settle(row),
-              child: Text('تسديد ${money(row['pending_amount'])}'),
-            )
-          : const Text('مسدد'),
-    ),
-  );
+        child: ListTile(
+          leading: const CircleAvatar(
+            backgroundColor: BusinessBrand.softBlue,
+            child: Icon(Icons.payments_rounded, color: BusinessBrand.navy),
+          ),
+          title: Text(
+            '${row['supplier_name'] ?? 'مطبعة'}',
+            style: const TextStyle(fontWeight: FontWeight.w900),
+          ),
+          subtitle: Text('مطبعة • ${row['orders_count'] ?? 0} طلب'),
+          trailing: n(row['pending_amount']) > 0
+              ? FilledButton(
+                  onPressed: settling ? null : () => settle(row),
+                  child: Text('تسديد ${money(row['pending_amount'])}'),
+                )
+              : const Text('مسدد'),
+        ),
+      );
 }
