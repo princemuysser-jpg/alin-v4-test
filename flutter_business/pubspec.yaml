@@ -3,7 +3,7 @@ description: تطبيق آلين للأعمال للإدارة والمدرس و
 publish_to: 'none'
 version: 1.0.6+14
 # Build 14: responsive role tools hub, admin coupons and reports.
-# Web rebuild: publish the verified courier relogin layout and unified receipt UI.
+# Web publish: verified role tools, settings and safe backup parity batch.
 environment:
   sdk: '>=3.10.0 <4.0.0'
 
