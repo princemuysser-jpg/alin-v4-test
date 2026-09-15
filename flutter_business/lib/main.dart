@@ -15,6 +15,7 @@ import 'screens/admin_dashboard_screen.dart';
 import 'screens/admin_desktop_dashboard_screen.dart';
 import 'screens/business_order_details_screen.dart';
 import 'screens/business_party_finance_screen.dart';
+import 'screens/business_role_tools_screen.dart';
 import 'screens/courier_dashboard_screen.dart';
 import 'screens/library_dashboard_screen.dart';
 import 'screens/printer_dashboard_screen.dart';
@@ -23,7 +24,8 @@ import 'widgets/admin_quick_actions_button.dart';
 import 'widgets/business_brand.dart';
 import 'widgets/business_notification_bell.dart';
 
-final GlobalKey<NavigatorState> businessNavigatorKey = GlobalKey<NavigatorState>();
+final GlobalKey<NavigatorState> businessNavigatorKey =
+    GlobalKey<NavigatorState>();
 
 const FirebaseOptions _alinBusinessAndroidFirebaseOptions = FirebaseOptions(
   apiKey: 'AIzaSyDjd9BA_V6qqiN96OcqBtC521VPzew9occ',
@@ -59,7 +61,8 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await _initializeFirebase();
-  if (!kIsWeb) FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  if (!kIsWeb)
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   await Supabase.initialize(
     url: BusinessConfig.supabaseUrl,
     publishableKey: BusinessConfig.supabasePublishableKey,
@@ -128,7 +131,8 @@ class _BusinessGateState extends State<BusinessGate> {
     final link = '${payload['url'] ?? payload['link'] ?? ''}'.trim();
     if (link.isEmpty) return null;
     final uri = Uri.tryParse(link);
-    final value = uri?.queryParameters['order'] ?? uri?.queryParameters['order_id'];
+    final value =
+        uri?.queryParameters['order'] ?? uri?.queryParameters['order_id'];
     return value == null || value.trim().isEmpty ? null : value.trim();
   }
 
@@ -201,7 +205,22 @@ class _BusinessGateState extends State<BusinessGate> {
 
   bool get _hasPersonalFinance {
     final role = account?.role;
-    return role == 'courier' || role == 'library' || role == 'printer' || role == 'teacher';
+    return role == 'courier' ||
+        role == 'library' ||
+        role == 'printer' ||
+        role == 'teacher';
+  }
+
+  void _openRoleTools() {
+    final value = account;
+    final navigator = businessNavigatorKey.currentState;
+    if (value == null || navigator == null) return;
+    navigator.push(
+      MaterialPageRoute(
+        builder: (_) =>
+            BusinessRoleToolsScreen(repository: repository, account: value),
+      ),
+    );
   }
 
   void _openPersonalFinance() {
@@ -210,10 +229,8 @@ class _BusinessGateState extends State<BusinessGate> {
     if (value == null || navigator == null || !_hasPersonalFinance) return;
     navigator.push(
       MaterialPageRoute(
-        builder: (_) => BusinessPartyFinanceScreen(
-          repository: repository,
-          account: value,
-        ),
+        builder: (_) =>
+            BusinessPartyFinanceScreen(repository: repository, account: value),
       ),
     );
   }
@@ -243,6 +260,16 @@ class _BusinessGateState extends State<BusinessGate> {
             ),
           ),
         Positioned(
+          left: 14,
+          bottom: _hasPersonalFinance || account?.role == 'admin' ? 154 : 88,
+          child: FloatingActionButton.extended(
+            heroTag: 'business-role-tools',
+            onPressed: _openRoleTools,
+            icon: const Icon(Icons.apps_rounded),
+            label: const Text('أدواتي'),
+          ),
+        ),
+        Positioned(
           right: 14,
           bottom: 88,
           child: Material(
@@ -264,7 +291,8 @@ class _BusinessGateState extends State<BusinessGate> {
 
   @override
   Widget build(BuildContext context) {
-    if (loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    if (loading)
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
 
     if (account == null) {
       return LoginScreen(repository: repository, onLoggedIn: _loggedIn);
@@ -277,16 +305,46 @@ class _BusinessGateState extends State<BusinessGate> {
       case 'admin':
       case 'accountant':
         page = desktopAdmin
-            ? AdminDesktopDashboardScreen(key: pageKey, repository: repository, account: account!, onLogout: _logout)
-            : AdminDashboardScreen(key: pageKey, repository: repository, account: account!, onLogout: _logout);
+            ? AdminDesktopDashboardScreen(
+                key: pageKey,
+                repository: repository,
+                account: account!,
+                onLogout: _logout,
+              )
+            : AdminDashboardScreen(
+                key: pageKey,
+                repository: repository,
+                account: account!,
+                onLogout: _logout,
+              );
       case 'courier':
-        page = CourierDashboardScreen(key: pageKey, repository: repository, account: account!, onLogout: _logout);
+        page = CourierDashboardScreen(
+          key: pageKey,
+          repository: repository,
+          account: account!,
+          onLogout: _logout,
+        );
       case 'library':
-        page = LibraryDashboardScreen(key: pageKey, repository: repository, account: account!, onLogout: _logout);
+        page = LibraryDashboardScreen(
+          key: pageKey,
+          repository: repository,
+          account: account!,
+          onLogout: _logout,
+        );
       case 'printer':
-        page = PrinterDashboardScreen(key: pageKey, repository: repository, account: account!, onLogout: _logout);
+        page = PrinterDashboardScreen(
+          key: pageKey,
+          repository: repository,
+          account: account!,
+          onLogout: _logout,
+        );
       case 'teacher':
-        page = TeacherDashboardScreen(key: pageKey, repository: repository, account: account!, onLogout: _logout);
+        page = TeacherDashboardScreen(
+          key: pageKey,
+          repository: repository,
+          account: account!,
+          onLogout: _logout,
+        );
       default:
         page = Scaffold(
           appBar: AppBar(title: const Text('آلين للأعمال')),
@@ -301,7 +359,11 @@ class LoginScreen extends StatefulWidget {
   final BusinessRepository repository;
   final ValueChanged<BusinessAccount> onLoggedIn;
 
-  const LoginScreen({super.key, required this.repository, required this.onLoggedIn});
+  const LoginScreen({
+    super.key,
+    required this.repository,
+    required this.onLoggedIn,
+  });
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -332,7 +394,10 @@ class _LoginScreenState extends State<LoginScreen> {
       error = null;
     });
     try {
-      final loggedAccount = await widget.repository.login(username: username.text.trim(), password: password.text);
+      final loggedAccount = await widget.repository.login(
+        username: username.text.trim(),
+        password: password.text,
+      );
       widget.onLoggedIn(loggedAccount);
     } catch (e) {
       if (!mounted) return;
@@ -351,54 +416,90 @@ class _LoginScreenState extends State<LoginScreen> {
             padding: const EdgeInsets.all(24),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 430),
-              child: Column(children: [
-                const AlinBrandMark(size: 94),
-                const SizedBox(height: 22),
-                Text(BusinessConfig.appName, style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w900, color: BusinessBrand.navy)),
-                const SizedBox(height: 6),
-                Text(BusinessConfig.appSubtitle, style: TextStyle(color: Colors.grey.shade600)),
-                const SizedBox(height: 32),
-                TextField(
-                  controller: username,
-                  textInputAction: TextInputAction.next,
-                  decoration: const InputDecoration(labelText: 'اسم الدخول', prefixIcon: Icon(Icons.person_outline)),
-                ),
-                const SizedBox(height: 14),
-                TextField(
-                  controller: password,
-                  obscureText: obscure,
-                  onSubmitted: (_) => submit(),
-                  decoration: InputDecoration(
-                    labelText: 'كلمة المرور',
-                    prefixIcon: const Icon(Icons.lock_outline),
-                    suffixIcon: IconButton(
-                      onPressed: () => setState(() => obscure = !obscure),
-                      icon: Icon(obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined),
+              child: Column(
+                children: [
+                  const AlinBrandMark(size: 94),
+                  const SizedBox(height: 22),
+                  Text(
+                    BusinessConfig.appName,
+                    style: const TextStyle(
+                      fontSize: 30,
+                      fontWeight: FontWeight.w900,
+                      color: BusinessBrand.navy,
                     ),
                   ),
-                ),
-                if (error != null) ...[
-                  const SizedBox(height: 12),
-                  Container(
+                  const SizedBox(height: 6),
+                  Text(
+                    BusinessConfig.appSubtitle,
+                    style: TextStyle(color: Colors.grey.shade600),
+                  ),
+                  const SizedBox(height: 32),
+                  TextField(
+                    controller: username,
+                    textInputAction: TextInputAction.next,
+                    decoration: const InputDecoration(
+                      labelText: 'اسم الدخول',
+                      prefixIcon: Icon(Icons.person_outline),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  TextField(
+                    controller: password,
+                    obscureText: obscure,
+                    onSubmitted: (_) => submit(),
+                    decoration: InputDecoration(
+                      labelText: 'كلمة المرور',
+                      prefixIcon: const Icon(Icons.lock_outline),
+                      suffixIcon: IconButton(
+                        onPressed: () => setState(() => obscure = !obscure),
+                        icon: Icon(
+                          obscure
+                              ? Icons.visibility_outlined
+                              : Icons.visibility_off_outlined,
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (error != null) ...[
+                    const SizedBox(height: 12),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFEEEE),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        error!,
+                        style: const TextStyle(color: Color(0xFFB42318)),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 18),
+                  SizedBox(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(color: const Color(0xFFFFEEEE), borderRadius: BorderRadius.circular(12)),
-                    child: Text(error!, style: const TextStyle(color: Color(0xFFB42318))),
+                    height: 54,
+                    child: FilledButton.icon(
+                      onPressed: busy ? null : submit,
+                      icon: busy
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.login_rounded),
+                      label: Text(
+                        busy ? 'جارٍ تسجيل الدخول...' : 'تسجيل الدخول',
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'يتم تحديد نوع الحساب تلقائياً من السيرفر',
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
                   ),
                 ],
-                const SizedBox(height: 18),
-                SizedBox(
-                  width: double.infinity,
-                  height: 54,
-                  child: FilledButton.icon(
-                    onPressed: busy ? null : submit,
-                    icon: busy ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.login_rounded),
-                    label: Text(busy ? 'جارٍ تسجيل الدخول...' : 'تسجيل الدخول'),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text('يتم تحديد نوع الحساب تلقائياً من السيرفر', style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
-              ]),
+              ),
             ),
           ),
         ),

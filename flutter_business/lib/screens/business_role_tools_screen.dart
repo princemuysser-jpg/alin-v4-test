@@ -34,10 +34,10 @@ class BusinessRoleToolsScreen extends StatelessWidget {
           final columns = constraints.maxWidth >= 1100
               ? 4
               : constraints.maxWidth >= 760
-                  ? 3
-                  : constraints.maxWidth >= 480
-                      ? 2
-                      : 1;
+              ? 3
+              : constraints.maxWidth >= 480
+              ? 2
+              : 1;
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
@@ -99,34 +99,35 @@ class BusinessRoleToolsScreen extends StatelessWidget {
   }
 
   String get _title => switch (account.role) {
-        'admin' || 'accountant' => 'أدوات الإدارة',
-        'teacher' => 'أدوات المدرس',
-        'library' => 'أدوات المكتبة',
-        'courier' || 'delegate' => 'أدوات المندوب',
-        'printer' => 'أدوات المطبعة',
-        _ => 'أدوات الحساب',
-      };
+    'admin' || 'accountant' => 'أدوات الإدارة',
+    'teacher' => 'أدوات المدرس',
+    'library' => 'أدوات المكتبة',
+    'courier' || 'delegate' => 'أدوات المندوب',
+    'printer' => 'أدوات المطبعة',
+    _ => 'أدوات الحساب',
+  };
 
   String get _subtitle => switch (account.role) {
-        'admin' || 'accountant' => 'كل أدوات الإدارة الإضافية من مكان واحد',
-        'teacher' => 'النشر والحسابات والإشعارات',
-        'library' => 'الحسابات والإشعارات وأدوات العمل',
-        'courier' || 'delegate' => 'الحسابات والإشعارات وأدوات التوصيل',
-        'printer' => 'الحسابات والإشعارات وأدوات المطبعة',
-        _ => 'أدوات الحساب',
-      };
+    'admin' || 'accountant' => 'كل أدوات الإدارة الإضافية من مكان واحد',
+    'teacher' => 'النشر والحسابات والإشعارات',
+    'library' => 'الحسابات والإشعارات وأدوات العمل',
+    'courier' || 'delegate' => 'الحسابات والإشعارات وأدوات التوصيل',
+    'printer' => 'الحسابات والإشعارات وأدوات المطبعة',
+    _ => 'أدوات الحساب',
+  };
 
   IconData get _roleIcon => switch (account.role) {
-        'admin' || 'accountant' => Icons.admin_panel_settings_rounded,
-        'teacher' => Icons.school_rounded,
-        'library' => Icons.store_rounded,
-        'courier' || 'delegate' => Icons.delivery_dining_rounded,
-        'printer' => Icons.print_rounded,
-        _ => Icons.apps_rounded,
-      };
+    'admin' || 'accountant' => Icons.admin_panel_settings_rounded,
+    'teacher' => Icons.school_rounded,
+    'library' => Icons.store_rounded,
+    'courier' || 'delegate' => Icons.delivery_dining_rounded,
+    'printer' => Icons.print_rounded,
+    _ => Icons.apps_rounded,
+  };
 
   List<_RoleTool> _tools(BuildContext context) {
-    void open(Widget page) => Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
+    void open(Widget page) =>
+        Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
 
     final common = <_RoleTool>[
       _RoleTool(
@@ -192,25 +193,42 @@ class BusinessRoleToolsScreen extends StatelessWidget {
           title: 'رفع ومتابعة الملازم',
           subtitle: 'رفع الملفات ومتابعة الموافقة والنشر',
           icon: Icons.upload_file_rounded,
-          onTap: () => open(TeacherPublishingScreen(repository: repository, account: account)),
+          onTap: () => open(
+            TeacherPublishingScreen(repository: repository, account: account),
+          ),
         ),
         _RoleTool(
           title: 'حسابي المالي',
           subtitle: 'الأرباح والتسويات والرصيد الحالي',
           icon: Icons.account_balance_wallet_rounded,
-          onTap: () => open(BusinessPartyFinanceScreen(repository: repository, account: account)),
+          onTap: () => open(
+            BusinessPartyFinanceScreen(
+              repository: repository,
+              account: account,
+            ),
+          ),
         ),
         ...common,
       ];
     }
 
-    if (const {'library', 'courier', 'delegate', 'printer'}.contains(account.role)) {
+    if (const {
+      'library',
+      'courier',
+      'delegate',
+      'printer',
+    }.contains(account.role)) {
       return [
         _RoleTool(
           title: 'حسابي المالي',
           subtitle: 'الأرباح والذمم والتسويات والوصولات',
           icon: Icons.account_balance_wallet_rounded,
-          onTap: () => open(BusinessPartyFinanceScreen(repository: repository, account: account)),
+          onTap: () => open(
+            BusinessPartyFinanceScreen(
+              repository: repository,
+              account: account,
+            ),
+          ),
         ),
         ...common,
       ];
@@ -257,14 +275,21 @@ class _ToolCard extends StatelessWidget {
               const Spacer(),
               Text(
                 tool.title,
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: BusinessBrand.navy),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w900,
+                  color: BusinessBrand.navy,
+                ),
               ),
               const SizedBox(height: 4),
               Text(
                 tool.subtitle,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 12, color: BusinessBrand.muted),
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: BusinessBrand.muted,
+                ),
               ),
             ],
           ),
