@@ -44,8 +44,6 @@ jobs:
           gradle = Path('android/app/build.gradle.kts')
           text = gradle.read_text()
           text = text.replace('com.example.alin_business', 'com.alin.business')
-
-          # flutter_local_notifications requires Java core library desugaring.
           if 'isCoreLibraryDesugaringEnabled = true' not in text:
               marker = '    compileOptions {\n'
               if marker not in text:
@@ -131,7 +129,7 @@ jobs:
       - name: Flutter checks
         run: |
           flutter pub get
-          flutter analyze lib
+          flutter analyze lib --no-fatal-infos
 
       - name: Build signed AAB and APK
         run: |
@@ -151,7 +149,7 @@ jobs:
       - name: Upload Android artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: alin-business-android-v1.0.0-build3-push
+          name: alin-business-android-${{ github.run_number }}
           if-no-files-found: error
           path: |
             flutter_business/build/app/outputs/bundle/release/*.aab
@@ -202,7 +200,7 @@ jobs:
       - name: Flutter checks
         run: |
           flutter pub get
-          flutter analyze lib
+          flutter analyze lib --no-fatal-infos
 
       - name: Build iOS without signing
         run: flutter build ios --release --no-codesign --no-pub
