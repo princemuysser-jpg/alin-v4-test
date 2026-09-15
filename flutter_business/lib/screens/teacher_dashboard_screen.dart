@@ -98,23 +98,24 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
   String money(dynamic value) => '${number(value).round()} د.ع';
 
   bool isDone(Map<String, dynamic> o) => const {
-    'completed',
-    'delivered',
-    'done',
-    'received',
-    'settled',
-  }.contains('${o['status']}'.toLowerCase());
+        'completed',
+        'delivered',
+        'done',
+        'received',
+        'settled',
+      }.contains('${o['status']}'.toLowerCase());
   bool isCancelled(Map<String, dynamic> o) => const {
-    'cancelled',
-    'canceled',
-    'rejected',
-  }.contains('${o['status']}'.toLowerCase());
+        'cancelled',
+        'canceled',
+        'rejected',
+      }.contains('${o['status']}'.toLowerCase());
 
   String bookletStatus(Map<String, dynamic> b) {
     if (b['is_published'] == true ||
         b['published'] == true ||
-        '${b['publish_status']}'.toLowerCase() == 'published')
+        '${b['publish_status']}'.toLowerCase() == 'published') {
       return 'منشورة';
+    }
     if (b['teacher_approved'] == true) return 'بانتظار النشر';
     final s = '${b['status'] ?? b['publish_status'] ?? ''}'.toLowerCase();
     if (s.contains('reject')) return 'مرفوضة';
@@ -171,153 +172,179 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
           ),
         ],
       ),
-      body: RefreshIndicator(
-        onRefresh: load,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            Container(
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF143B68), Color(0xFF255B91)],
-                ),
-                borderRadius: BorderRadius.circular(22),
+      body: LayoutBuilder(
+        builder: (context, pageConstraints) {
+          final pageWidth = pageConstraints.maxWidth;
+          final desktop = pageWidth >= 980;
+          final tablet = pageWidth >= 650;
+          final horizontalPadding = desktop
+              ? ((pageWidth - 1180) / 2).clamp(20.0, 120.0)
+              : tablet
+                  ? 20.0
+                  : 12.0;
+          return RefreshIndicator(
+            onRefresh: load,
+            child: ListView(
+              padding: EdgeInsets.fromLTRB(
+                horizontalPadding,
+                16,
+                horizontalPadding,
+                96,
               ),
-              child: Row(
-                children: [
-                  const CircleAvatar(
-                    radius: 27,
-                    backgroundColor: Color(0x26FFFFFF),
-                    child: Icon(
-                      Icons.school_rounded,
-                      color: Colors.white,
-                      size: 30,
+              children: [
+                Container(
+                  padding: EdgeInsets.all(desktop ? 24 : 18),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF143B68), Color(0xFF255B91)],
                     ),
+                    borderRadius: BorderRadius.circular(desktop ? 26 : 22),
                   ),
-                  const SizedBox(width: 13),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'مرحباً ${widget.account.name}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        const Text(
-                          'ملازمك ومبيعاتك وأرباحك',
-                          style: TextStyle(color: Colors.white70),
-                        ),
-                      ],
-                    ),
-                  ),
-                  FilledButton.tonalIcon(
-                    onPressed: openPublishing,
-                    icon: const Icon(Icons.upload_file_rounded),
-                    label: const Text('رفع ملزمة'),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            if (loading)
-              const Padding(
-                padding: EdgeInsets.all(36),
-                child: Center(child: CircularProgressIndicator()),
-              )
-            else if (error != null)
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
+                  child: Wrap(
+                    spacing: 14,
+                    runSpacing: 12,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
-                      Text(error!, textAlign: TextAlign.center),
-                      const SizedBox(height: 8),
-                      OutlinedButton.icon(
-                        onPressed: load,
-                        icon: const Icon(Icons.refresh),
-                        label: const Text('إعادة المحاولة'),
+                      const CircleAvatar(
+                        radius: 27,
+                        backgroundColor: Color(0x26FFFFFF),
+                        child: Icon(
+                          Icons.school_rounded,
+                          color: Colors.white,
+                          size: 30,
+                        ),
+                      ),
+                      SizedBox(
+                        width: desktop ? pageWidth - (horizontalPadding * 2) - 270 : null,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'مرحباً ${widget.account.name}',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: desktop ? 24 : 20,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            const Text(
+                              'ملازمك ومبيعاتك وأرباحك بمكان واحد',
+                              style: TextStyle(color: Colors.white70),
+                            ),
+                          ],
+                        ),
+                      ),
+                      FilledButton.tonalIcon(
+                        onPressed: openPublishing,
+                        icon: const Icon(Icons.upload_file_rounded),
+                        label: const Text('رفع ملزمة'),
                       ),
                     ],
                   ),
                 ),
-              )
-            else ...[
-              GridView.count(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: 2,
-                crossAxisSpacing: 10,
-                mainAxisSpacing: 10,
-                childAspectRatio: 1.55,
-                children: [
-                  _metric(
-                    'الملازم',
-                    '${booklets.length}',
-                    Icons.menu_book_rounded,
+                const SizedBox(height: 12),
+                if (loading)
+                  const Padding(
+                    padding: EdgeInsets.all(36),
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                else if (error != null)
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        children: [
+                          Text(error!, textAlign: TextAlign.center),
+                          const SizedBox(height: 8),
+                          OutlinedButton.icon(
+                            onPressed: load,
+                            icon: const Icon(Icons.refresh),
+                            label: const Text('إعادة المحاولة'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                else ...[
+                  LayoutBuilder(
+                    builder: (context, c) {
+                      final columns = c.maxWidth >= 900 ? 4 : 2;
+                      final gap = 10.0;
+                      final cardWidth = (c.maxWidth - gap * (columns - 1)) / columns;
+                      return Wrap(
+                        spacing: gap,
+                        runSpacing: gap,
+                        children: [
+                          SizedBox(
+                            width: cardWidth,
+                            child: _metric('الملازم', '${booklets.length}', Icons.menu_book_rounded),
+                          ),
+                          SizedBox(
+                            width: cardWidth,
+                            child: _metric('الطلبات المكتملة', '${doneOrders.length}', Icons.check_circle_rounded),
+                          ),
+                          SizedBox(
+                            width: cardWidth,
+                            child: _metric('إجمالي الأرباح', money(earned), Icons.payments_rounded),
+                          ),
+                          SizedBox(
+                            width: cardWidth,
+                            child: _metric('الرصيد الحالي', money(balance < 0 ? 0 : balance), Icons.account_balance_wallet_rounded),
+                          ),
+                        ],
+                      );
+                    },
                   ),
-                  _metric(
-                    'الطلبات المكتملة',
-                    '${doneOrders.length}',
-                    Icons.check_circle_rounded,
+                  const SizedBox(height: 15),
+                  Align(
+                    alignment: desktop ? Alignment.centerRight : Alignment.center,
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SegmentedButton<String>(
+                        segments: const [
+                          ButtonSegment(
+                            value: 'booklets',
+                            label: Text('ملازمي'),
+                            icon: Icon(Icons.menu_book_rounded),
+                          ),
+                          ButtonSegment(
+                            value: 'orders',
+                            label: Text('المبيعات'),
+                            icon: Icon(Icons.receipt_long_rounded),
+                          ),
+                          ButtonSegment(
+                            value: 'finance',
+                            label: Text('التسويات'),
+                            icon: Icon(Icons.account_balance_wallet_rounded),
+                          ),
+                        ],
+                        selected: {tab},
+                        onSelectionChanged: (v) => setState(() => tab = v.first),
+                      ),
+                    ),
                   ),
-                  _metric(
-                    'إجمالي الأرباح',
-                    money(earned),
-                    Icons.payments_rounded,
-                  ),
-                  _metric(
-                    'الرصيد الحالي',
-                    money(balance < 0 ? 0 : balance),
-                    Icons.account_balance_wallet_rounded,
-                  ),
+                  const SizedBox(height: 14),
+                  if (tab == 'booklets') _booklets(),
+                  if (tab == 'orders') _orders(),
+                  if (tab == 'finance') _finance(earned, paid, balance < 0 ? 0 : balance),
                 ],
-              ),
-              const SizedBox(height: 15),
-              SegmentedButton<String>(
-                segments: const [
-                  ButtonSegment(
-                    value: 'booklets',
-                    label: Text('ملازمي'),
-                    icon: Icon(Icons.menu_book_rounded),
-                  ),
-                  ButtonSegment(
-                    value: 'orders',
-                    label: Text('المبيعات'),
-                    icon: Icon(Icons.receipt_long_rounded),
-                  ),
-                  ButtonSegment(
-                    value: 'finance',
-                    label: Text('التسويات'),
-                    icon: Icon(Icons.account_balance_wallet_rounded),
-                  ),
-                ],
-                selected: {tab},
-                onSelectionChanged: (v) => setState(() => tab = v.first),
-              ),
-              const SizedBox(height: 14),
-              if (tab == 'booklets') _booklets(),
-              if (tab == 'orders') _orders(),
-              if (tab == 'finance')
-                _finance(earned, paid, balance < 0 ? 0 : balance),
-            ],
-          ],
-        ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
 
   Widget _metric(String label, String value, IconData icon) {
     return Container(
+      constraints: const BoxConstraints(minHeight: 112),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFE3EAF1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -326,6 +353,8 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
           const Spacer(),
           Text(
             value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: const TextStyle(
               fontSize: 19,
               fontWeight: FontWeight.w900,
@@ -339,8 +368,9 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
   }
 
   Widget _booklets() {
-    if (booklets.isEmpty)
+    if (booklets.isEmpty) {
       return const _TeacherEmpty(text: 'لا توجد ملازم مرتبطة بحسابك حالياً');
+    }
     return Column(
       children: booklets
           .map(
@@ -355,11 +385,9 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                   style: const TextStyle(fontWeight: FontWeight.w900),
                 ),
                 subtitle: Text(
-                  [
-                    b['subject'],
-                    b['grade'],
-                    b['year'],
-                  ].where((x) => '${x ?? ''}'.trim().isNotEmpty).join(' — '),
+                  [b['subject'], b['grade'], b['year']]
+                      .where((x) => '${x ?? ''}'.trim().isNotEmpty)
+                      .join(' — '),
                 ),
                 trailing: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -371,10 +399,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                     ),
                     Text(
                       bookletStatus(b),
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF143B68),
-                      ),
+                      style: const TextStyle(fontSize: 12, color: Color(0xFF143B68)),
                     ),
                   ],
                 ),
@@ -386,8 +411,9 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
   }
 
   Widget _orders() {
-    if (orders.isEmpty)
+    if (orders.isEmpty) {
       return const _TeacherEmpty(text: 'لا توجد طلبات مرتبطة بملازمك حالياً');
+    }
     return Column(
       children: orders
           .map(
@@ -398,8 +424,8 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                   isCancelled(o)
                       ? Icons.cancel_outlined
                       : isDone(o)
-                      ? Icons.check_circle_outline
-                      : Icons.schedule_rounded,
+                          ? Icons.check_circle_outline
+                          : Icons.schedule_rounded,
                 ),
                 title: Text(
                   '${o['order_number'] ?? o['id']} — ${o['title'] ?? 'ملزمة'}',
@@ -491,21 +517,21 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
   }
 
   Widget _line(String label, String value, {bool strong = false}) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 7),
-    child: Row(
-      children: [
-        Expanded(child: Text(label)),
-        Text(
-          value,
-          style: TextStyle(
-            fontWeight: strong ? FontWeight.w900 : FontWeight.w700,
-            fontSize: strong ? 18 : 15,
-            color: strong ? const Color(0xFF143B68) : null,
-          ),
+        padding: const EdgeInsets.symmetric(vertical: 7),
+        child: Row(
+          children: [
+            Expanded(child: Text(label)),
+            Text(
+              value,
+              style: TextStyle(
+                fontWeight: strong ? FontWeight.w900 : FontWeight.w700,
+                fontSize: strong ? 18 : 15,
+                color: strong ? const Color(0xFF143B68) : null,
+              ),
+            ),
+          ],
         ),
-      ],
-    ),
-  );
+      );
 
   static String _date(dynamic value) {
     final s = '${value ?? ''}';
@@ -518,9 +544,9 @@ class _TeacherEmpty extends StatelessWidget {
   const _TeacherEmpty({required this.text});
   @override
   Widget build(BuildContext context) => Card(
-    child: Padding(
-      padding: const EdgeInsets.all(22),
-      child: Center(child: Text(text)),
-    ),
-  );
+        child: Padding(
+          padding: const EdgeInsets.all(22),
+          child: Center(child: Text(text)),
+        ),
+      );
 }
