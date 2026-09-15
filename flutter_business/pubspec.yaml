@@ -1,9 +1,9 @@
 name: alin_business
 description: تطبيق آلين للأعمال للإدارة والمدرس والمكتبة والمطبعة والمندوب
 publish_to: 'none'
-version: 1.0.6+14
-# Build 14: responsive role tools hub, admin coupons and reports.
-# Old-web parity remains available through the unified role tools hub.
+version: 1.0.9+17
+# Build 17: old-web parity for courier/admin tools, courses, books, courier hub and shared branding.
+# Book suppliers are platform/printer only with real Supabase image upload.
 environment:
   sdk: '>=3.10.0 <4.0.0'
 
