@@ -1,9 +1,9 @@
 name: alin_business
 description: تطبيق آلين للأعمال للإدارة والمدرس والمكتبة والمطبعة والمندوب
 publish_to: 'none'
-version: 1.0.10+18
-# Build 18: professional role navigation for web/mobile/tablet.
-# Removes the floating Tools hub and exposes each business page in its proper role menu.
+version: 1.0.11+19
+# Build 19: admin products, categories and ads management with direct navigation.
+# Products, store categories/subcategories and banners are now first-class admin pages.
 environment:
   sdk: '>=3.10.0 <4.0.0'
 
