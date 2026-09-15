@@ -1,0 +1,53 @@
+name: Apply Professional ALIN Business Navigation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/apply_professional_business_navigation.py'
+      - 'flutter_business/lib/widgets/business_role_navigation.dart'
+      - '.github/workflows/apply-professional-business-navigation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply-and-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply professional navigation migration
+        run: python3 scripts/apply_professional_business_navigation.py
+
+      - name: Set up Flutter 3.44.9
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.9'
+          channel: stable
+          cache: true
+
+      - name: Verify Flutter Business
+        working-directory: flutter_business
+        run: |
+          flutter config --no-analytics
+          flutter pub get
+          dart format lib/main.dart lib/widgets/business_role_navigation.dart lib/screens/admin_dashboard_screen.dart lib/screens/admin_desktop_dashboard_screen.dart lib/screens/teacher_dashboard_screen.dart lib/screens/library_dashboard_screen.dart lib/screens/courier_dashboard_screen.dart lib/screens/printer_dashboard_screen.dart
+          flutter analyze lib --no-fatal-infos
+
+      - name: Commit verified navigation changes
+        run: |
+          if git diff --quiet; then
+            echo 'No changes to commit.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add flutter_business
+          git commit -m 'feat: replace tools hub with professional role navigation'
+          git push origin main
