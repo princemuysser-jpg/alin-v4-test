@@ -1,0 +1,53 @@
+name: Apply Admin Store Navigation
+
+on:
+  push:
+    paths:
+      - 'scripts/apply_admin_store_navigation.py'
+      - 'flutter_business/lib/screens/admin_store_management_screen.dart'
+      - '.github/workflows/apply-admin-store-navigation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Apply admin store navigation
+        run: python3 scripts/apply_admin_store_navigation.py
+
+      - name: Set up Flutter 3.44.9
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.9'
+          channel: stable
+          cache: true
+
+      - name: Verify Flutter Business
+        working-directory: flutter_business
+        run: |
+          set -euo pipefail
+          flutter pub get
+          dart format lib/widgets/business_role_navigation.dart lib/screens/admin_store_management_screen.dart
+          flutter analyze lib --no-fatal-warnings --no-fatal-infos
+
+      - name: Commit verified navigation
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add flutter_business/lib/widgets/business_role_navigation.dart flutter_business/lib/screens/admin_store_management_screen.dart
+          if git diff --cached --quiet; then
+            echo 'Admin store navigation already current.'
+            exit 0
+          fi
+          git commit -m 'feat: expose products categories and ads in admin navigation'
+          git push origin HEAD:main
