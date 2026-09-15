@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../data/business_courier_repository.dart';
+import '../data/business_finance_repository.dart';
 import '../data/business_repository.dart';
 import '../models/business_account.dart';
 import '../widgets/business_brand.dart';
 import '../widgets/grouped_order_receipt_list.dart';
+import 'business_notifications_screen.dart';
+import 'business_party_finance_screen.dart';
+import 'courier_profile_screen.dart';
+
+// Courier old-web parity Build 17
 
 class CourierDashboardScreen extends StatefulWidget {
   final BusinessRepository repository;
@@ -26,9 +32,10 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
   List<Map<String, dynamic>> orderRows = [];
   bool loading = true;
   String? error;
-  String filter = 'active';
+  String filter = 'home';
   String receiptSearch = '';
   String availability = 'available';
+  Map<String, dynamic> financeSummary = {};
   String courierArea = '';
   List<String> courierAreas = [];
   final Set<String> busyOrders = {};
@@ -118,6 +125,15 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
         widget.repository.courierGroupedOrderRows(widget.account.id),
         widget.repository.courierProfile(),
       ]);
+      Map<String, dynamic> finance = {};
+      try {
+        finance = await widget.repository.financePartySummaryV2(
+          role: 'delegate',
+          partyId: widget.account.id,
+        );
+      } catch (_) {
+        // Orders must remain usable even if the finance summary is unavailable.
+      }
       if (!mounted) return;
       final profile = Map<String, dynamic>.from(values[1] as Map);
       final rawAreas = profile['areas'];
@@ -129,6 +145,7 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
         availability = '${profile['availability'] ?? 'available'}';
         courierArea = '${profile['area'] ?? ''}'.trim();
         courierAreas = areas;
+        financeSummary = finance;
       });
     } catch (e) {
       if (!mounted) return;
@@ -331,11 +348,37 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final grouped = groupedOrders;
-    final active = grouped.where((o) => !isClosed(o)).length;
+    final newCount = grouped.where((o) {
+      final status = '${o['status'] ?? ''}';
+      return const {'assigned', 'new', 'pending_admin'}.contains(status);
+    }).length;
+    final inDeliveryCount = grouped.where((o) {
+      final status = '${o['status'] ?? ''}';
+      return const {
+        'accepted',
+        'picked_up',
+        'out_for_delivery',
+        'out_delivery',
+        'processing',
+      }.contains(status);
+    }).length;
     final completed = grouped.where(isDone).length;
+    final today = DateTime.now();
+    final deliveredToday = grouped.where((o) {
+      if (!isDone(o)) return false;
+      final value = o['delivered_at'] ?? o['completed_at'] ?? o['updated_at'];
+      final date = DateTime.tryParse('${value ?? ''}')?.toLocal();
+      return date != null &&
+          date.year == today.year &&
+          date.month == today.month &&
+          date.day == today.day;
+    }).length;
     final profit = grouped
         .where(isDone)
         .fold<num>(0, (sum, o) => sum + number(o['_courier_fee']));
+    final debt = number(
+      financeSummary['remaining'] ?? financeSummary['debt_total'],
+    );
     return Scaffold(
       appBar: AppBar(
         title: Row(
@@ -532,7 +575,11 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
             const SizedBox(height: 12),
             LayoutBuilder(
               builder: (context, constraints) {
-                final columns = constraints.maxWidth >= 900 ? 4 : 2;
+                final columns = constraints.maxWidth >= 1100
+                    ? 6
+                    : constraints.maxWidth >= 760
+                    ? 3
+                    : 2;
                 final gap = 10.0;
                 final width =
                     (constraints.maxWidth - (gap * (columns - 1))) / columns;
@@ -543,16 +590,34 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
                     SizedBox(
                       width: width,
                       child: _Metric(
-                        label: 'قيد التنفيذ',
-                        value: '$active',
-                        icon: Icons.delivery_dining_rounded,
+                        label: 'طلبات جديدة',
+                        value: '$newCount',
+                        icon: Icons.fiber_new_rounded,
                         accent: BusinessBrand.orange,
                       ),
                     ),
                     SizedBox(
                       width: width,
                       child: _Metric(
-                        label: 'مكتملة',
+                        label: 'قيد التوصيل',
+                        value: '$inDeliveryCount',
+                        icon: Icons.delivery_dining_rounded,
+                        accent: BusinessBrand.navy2,
+                      ),
+                    ),
+                    SizedBox(
+                      width: width,
+                      child: _Metric(
+                        label: 'تم التسليم اليوم',
+                        value: '$deliveredToday',
+                        icon: Icons.today_rounded,
+                        accent: BusinessBrand.teal,
+                      ),
+                    ),
+                    SizedBox(
+                      width: width,
+                      child: _Metric(
+                        label: 'كل المكتملة',
                         value: '$completed',
                         icon: Icons.task_alt_rounded,
                         accent: BusinessBrand.teal,
@@ -561,19 +626,19 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
                     SizedBox(
                       width: width,
                       child: _Metric(
-                        label: 'كل الطلبات',
-                        value: '${grouped.length}',
-                        icon: Icons.inventory_2_rounded,
-                        accent: BusinessBrand.navy2,
+                        label: 'أجرة التوصيل',
+                        value: money(profit),
+                        icon: Icons.account_balance_wallet_rounded,
+                        accent: BusinessBrand.navy,
                       ),
                     ),
                     SizedBox(
                       width: width,
                       child: _Metric(
-                        label: 'أجور التوصيل',
-                        value: money(profit),
-                        icon: Icons.account_balance_wallet_rounded,
-                        accent: BusinessBrand.navy,
+                        label: 'ذمتي للإدارة',
+                        value: money(debt),
+                        icon: Icons.account_balance_rounded,
+                        accent: BusinessBrand.orange,
                       ),
                     ),
                   ],
@@ -587,8 +652,13 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
                 final tabs = SegmentedButton<String>(
                   segments: const [
                     ButtonSegment(
+                      value: 'home',
+                      label: Text('الرئيسية'),
+                      icon: Icon(Icons.home_rounded),
+                    ),
+                    ButtonSegment(
                       value: 'active',
-                      label: Text('الحالية'),
+                      label: Text('طلبات التوصيل'),
                       icon: Icon(Icons.local_shipping_rounded),
                     ),
                     ButtonSegment(
@@ -597,19 +667,28 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
                       icon: Icon(Icons.check_circle_outline),
                     ),
                     ButtonSegment(
-                      value: 'all',
-                      label: Text('الكل'),
-                      icon: Icon(Icons.list_alt_rounded),
+                      value: 'finance',
+                      label: Text('الحسابات'),
+                      icon: Icon(Icons.account_balance_wallet_rounded),
                     ),
                     ButtonSegment(
                       value: 'receipts',
                       label: Text('الوصولات'),
                       icon: Icon(Icons.receipt_long_rounded),
                     ),
+                    ButtonSegment(
+                      value: 'notifications',
+                      label: Text('الإشعارات'),
+                      icon: Icon(Icons.notifications_rounded),
+                    ),
+                    ButtonSegment(
+                      value: 'profile',
+                      label: Text('حسابي'),
+                      icon: Icon(Icons.account_circle_rounded),
+                    ),
                   ],
                   selected: {filter},
-                  onSelectionChanged: (value) =>
-                      setState(() => filter = value.first),
+                  onSelectionChanged: (value) => _selectCourierTab(value.first),
                 );
                 if (wideTabs) {
                   return Align(alignment: Alignment.centerRight, child: tabs);
@@ -642,6 +721,8 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
                   ),
                 ),
               )
+            else if (filter == 'home')
+              _homeCenter(grouped)
             else if (filter == 'receipts')
               _receiptCenter(grouped)
             else if (visibleOrders.isEmpty)
@@ -656,6 +737,189 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Future<void> _selectCourierTab(String value) async {
+    if (value == 'finance') {
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => BusinessPartyFinanceScreen(
+            repository: widget.repository,
+            account: widget.account,
+          ),
+        ),
+      );
+      if (mounted) await load();
+      return;
+    }
+    if (value == 'notifications') {
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) =>
+              BusinessNotificationsScreen(repository: widget.repository),
+        ),
+      );
+      if (mounted) await load();
+      return;
+    }
+    if (value == 'profile') {
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => CourierProfileScreen(
+            repository: widget.repository,
+            account: widget.account,
+          ),
+        ),
+      );
+      if (mounted) await load();
+      return;
+    }
+    setState(() => filter = value);
+  }
+
+  Widget _homeCenter(List<Map<String, dynamic>> grouped) {
+    final current = grouped.where((o) => !isClosed(o)).take(5).toList();
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final desktop = constraints.maxWidth >= 850;
+        final statusCard = Card(
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.work_history_rounded, color: BusinessBrand.navy),
+                    SizedBox(width: 8),
+                    Text(
+                      'حالة العمل',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  statusLabel(availability),
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                    color: BusinessBrand.navy,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'مناطق العمل: ${[courierArea, ...courierAreas].where((e) => e.isNotEmpty).toSet().join('، ').isEmpty ? 'غير محددة' : [courierArea, ...courierAreas].where((e) => e.isNotEmpty).toSet().join('، ')}',
+                  style: const TextStyle(color: BusinessBrand.muted),
+                ),
+                const SizedBox(height: 14),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    ChoiceChip(
+                      label: const Text('متاح'),
+                      selected: availability == 'available',
+                      onSelected: (_) => setAvailability('available'),
+                    ),
+                    ChoiceChip(
+                      label: const Text('مشغول'),
+                      selected: availability == 'busy',
+                      onSelected: (_) => setAvailability('busy'),
+                    ),
+                    ChoiceChip(
+                      label: const Text('خارج الخدمة'),
+                      selected: availability == 'offline',
+                      onSelected: (_) => setAvailability('offline'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+
+        final ordersCard = Card(
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    const Expanded(
+                      child: Text(
+                        'طلبات تحتاج متابعة',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => setState(() => filter = 'active'),
+                      child: const Text('عرض الكل'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                if (current.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 18),
+                    child: Text('لا توجد طلبات حالياً'),
+                  )
+                else
+                  ...current.map(
+                    (order) => ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const CircleAvatar(
+                        backgroundColor: BusinessBrand.softBlue,
+                        child: Icon(
+                          Icons.delivery_dining_rounded,
+                          color: BusinessBrand.navy,
+                        ),
+                      ),
+                      title: Text(
+                        '${order['order_number'] ?? order['id'] ?? 'طلب'}',
+                        style: const TextStyle(fontWeight: FontWeight.w900),
+                      ),
+                      subtitle: Text(
+                        '${order['delivery_area'] ?? '—'} • ${order['_item_count'] ?? 1} مادة',
+                      ),
+                      trailing: Text(
+                        statusLabel('${order['status'] ?? ''}'),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          color: BusinessBrand.navy,
+                        ),
+                      ),
+                      onTap: () => setState(() => filter = 'active'),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        );
+
+        if (!desktop) {
+          return Column(
+            children: [statusCard, const SizedBox(height: 10), ordersCard],
+          );
+        }
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: statusCard),
+            const SizedBox(width: 10),
+            Expanded(flex: 2, child: ordersCard),
+          ],
+        );
+      },
     );
   }
 
