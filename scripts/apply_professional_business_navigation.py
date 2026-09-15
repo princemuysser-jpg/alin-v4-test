@@ -94,4 +94,5 @@ elif 'Widget _withBusinessOverlays(Widget child) => child;' not in text:
     raise RuntimeError('Unable to locate old business overlay block in main.dart')
 write(rel, text)
 
+# Trigger marker: navigation migration v1.
 print('Professional ALIN Business navigation patch applied.')
