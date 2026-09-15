@@ -67,6 +67,19 @@ Future<void> main() async {
     url: BusinessConfig.supabaseUrl,
     publishableKey: BusinessConfig.supabasePublishableKey,
   );
+  // Load the same visual identity used by the legacy web app.
+  try {
+    final rows = await Supabase.instance.client
+        .from('settings')
+        .select('key,value');
+    final values = <String, String>{};
+    for (final row in rows) {
+      values['${row['key']}'] = '${row['value'] ?? ''}';
+    }
+    BusinessBrand.configure(values);
+  } catch (_) {
+    // Keep the built-in ALIN identity if public settings are temporarily unavailable.
+  }
   runApp(const AlinBusinessApp());
 }
 

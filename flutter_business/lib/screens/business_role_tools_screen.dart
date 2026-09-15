@@ -5,6 +5,8 @@ import '../models/business_account.dart';
 import '../widgets/business_brand.dart';
 import 'admin_backup_screen.dart';
 import 'admin_books_screen.dart';
+import 'admin_branding_screen.dart';
+// Branding parity Build 17
 import 'admin_courier_hub_screen.dart';
 import 'admin_teacher_courses_screen.dart';
 // Admin old-web parity tools Build 17
@@ -146,6 +148,12 @@ class BusinessRoleToolsScreen extends StatelessWidget {
 
     if (account.role == 'admin' || account.role == 'accountant') {
       return [
+        _RoleTool(
+          title: 'الهوية البصرية',
+          subtitle: 'الشعار والأيقونة والألوان والقوالب البصرية',
+          icon: Icons.palette_rounded,
+          onTap: () => open(AdminBrandingScreen(repository: repository)),
+        ),
         _RoleTool(
           title: 'دورات المدرسين',
           subtitle: 'مراجعة الدورات والموافقة والنشر والإخفاء والرفض',

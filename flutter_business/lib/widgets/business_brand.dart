@@ -1,6 +1,45 @@
 import 'package:flutter/material.dart';
 
 class BusinessBrand {
+  // Runtime visual identity loaded from the shared settings table.
+  static Color runtimePrimary = navy;
+  static Color runtimeSecondary = teal;
+  static Color runtimeBackground = background;
+  static Color runtimeCard = Colors.white;
+  static Color runtimeSuccess = const Color(0xFF2F7D62);
+  static Color runtimeWarning = const Color(0xFFB98532);
+  static Color runtimeDanger = const Color(0xFFB44B4B);
+  static double runtimeRadius = 20;
+  static String runtimeLogoUrl = '';
+  static String runtimeLogoDarkUrl = '';
+  static String runtimeIconUrl = '';
+
+  static Color _hex(String? value, Color fallback) {
+    final raw = (value ?? '').trim().replaceFirst('#', '');
+    final parsed = int.tryParse('FF$raw', radix: 16);
+    return parsed == null ? fallback : Color(parsed);
+  }
+
+  static void configure(Map<String, String> settings) {
+    runtimePrimary = _hex(settings['visual_primary'], navy);
+    runtimeSecondary = _hex(settings['visual_secondary'], teal);
+    runtimeBackground = _hex(settings['visual_background'], background);
+    runtimeCard = _hex(settings['visual_card'], Colors.white);
+    runtimeSuccess = _hex(settings['visual_success'], const Color(0xFF2F7D62));
+    runtimeWarning = _hex(settings['visual_warning'], const Color(0xFFB98532));
+    runtimeDanger = _hex(settings['visual_danger'], const Color(0xFFB44B4B));
+    runtimeRadius = (double.tryParse(settings['visual_radius'] ?? '') ?? 20)
+        .clamp(8.0, 28.0)
+        .toDouble();
+    runtimeLogoUrl =
+        (settings['platform_logo_path'] ?? settings['platform_logo_url'] ?? '')
+            .trim();
+    runtimeLogoDarkUrl = (settings['platform_logo_dark_path'] ?? '').trim();
+    runtimeIconUrl =
+        (settings['platform_icon_path'] ?? settings['platform_icon_url'] ?? '')
+            .trim();
+  }
+
   static const navy = Color(0xFF143B68);
   static const navy2 = Color(0xFF255B91);
   static const teal = Color(0xFF19B8A8);
@@ -19,23 +58,25 @@ class BusinessBrand {
   );
 
   static ThemeData theme() {
-    final scheme = ColorScheme.fromSeed(
-      seedColor: navy,
-      brightness: Brightness.light,
-    ).copyWith(
-      primary: navy,
-      secondary: teal,
-      tertiary: orange,
-      surface: Colors.white,
-    );
+    final scheme =
+        ColorScheme.fromSeed(
+          seedColor: runtimePrimary,
+          brightness: Brightness.light,
+        ).copyWith(
+          primary: runtimePrimary,
+          secondary: runtimeSecondary,
+          tertiary: orange,
+          surface: runtimeCard,
+          error: runtimeDanger,
+        );
 
     return ThemeData(
       useMaterial3: true,
       colorScheme: scheme,
-      scaffoldBackgroundColor: background,
+      scaffoldBackgroundColor: runtimeBackground,
       dividerColor: border,
-      appBarTheme: const AppBarTheme(
-        backgroundColor: navy,
+      appBarTheme: AppBarTheme(
+        backgroundColor: runtimePrimary,
         foregroundColor: Colors.white,
         elevation: 0,
         centerTitle: false,
@@ -43,18 +84,21 @@ class BusinessBrand {
       ),
       cardTheme: CardThemeData(
         elevation: 0,
-        color: Colors.white,
+        color: runtimeCard,
         surfaceTintColor: Colors.transparent,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(runtimeRadius),
           side: const BorderSide(color: border),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 15,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: const BorderSide(color: border),
@@ -70,21 +114,25 @@ class BusinessBrand {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: navy,
+          backgroundColor: runtimePrimary,
           foregroundColor: Colors.white,
           minimumSize: const Size(0, 48),
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 13),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
           textStyle: const TextStyle(fontWeight: FontWeight.w800),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: navy,
+          foregroundColor: runtimePrimary,
           minimumSize: const Size(0, 46),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           side: const BorderSide(color: border),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
           textStyle: const TextStyle(fontWeight: FontWeight.w800),
         ),
       ),
@@ -100,8 +148,8 @@ class BusinessBrand {
         indicatorColor: softTeal,
         surfaceTintColor: Colors.transparent,
       ),
-      floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        backgroundColor: teal,
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: runtimeSecondary,
         foregroundColor: Colors.white,
       ),
       snackBarTheme: SnackBarThemeData(
@@ -121,6 +169,29 @@ class AlinBrandMark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final configured = light && BusinessBrand.runtimeLogoDarkUrl.isNotEmpty
+        ? BusinessBrand.runtimeLogoDarkUrl
+        : (BusinessBrand.runtimeLogoUrl.isNotEmpty
+              ? BusinessBrand.runtimeLogoUrl
+              : BusinessBrand.runtimeIconUrl);
+    if (configured.isNotEmpty) {
+      return SizedBox(
+        width: size,
+        height: size,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(size * .30),
+          child: Image.network(
+            configured,
+            fit: BoxFit.contain,
+            errorBuilder: (_, __, ___) => _fallbackMark(),
+          ),
+        ),
+      );
+    }
+    return _fallbackMark();
+  }
+
+  Widget _fallbackMark() {
     return Container(
       width: size,
       height: size,
@@ -153,7 +224,10 @@ class AlinBrandMark extends StatelessWidget {
             child: Container(
               width: size * .20,
               height: size * .20,
-              decoration: const BoxDecoration(color: BusinessBrand.orange, shape: BoxShape.circle),
+              decoration: const BoxDecoration(
+                color: BusinessBrand.orange,
+                shape: BoxShape.circle,
+              ),
             ),
           ),
           Positioned(
