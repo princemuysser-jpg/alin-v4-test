@@ -1,8 +1,8 @@
 name: alin_business
 description: تطبيق آلين للأعمال للإدارة والمدرس والمكتبة والمطبعة والمندوب
 publish_to: 'none'
-version: 1.0.8+16
-# Build 16: responsive web/mobile dashboard polish for teacher, library and printer.
+version: 1.0.6+14
+# Build 14: responsive role tools hub, admin coupons and reports.
 # Old-web parity remains available through the unified role tools hub.
 environment:
   sdk: '>=3.10.0 <4.0.0'
