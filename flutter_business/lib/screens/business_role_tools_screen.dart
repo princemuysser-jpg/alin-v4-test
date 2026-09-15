@@ -12,6 +12,7 @@ import 'admin_reports_screen.dart';
 import 'admin_settings_screen.dart';
 import 'business_notifications_screen.dart';
 import 'business_party_finance_screen.dart';
+import 'courier_profile_screen.dart';
 import 'teacher_profile_screen.dart';
 import 'teacher_publishing_screen.dart';
 
@@ -221,12 +222,32 @@ class BusinessRoleToolsScreen extends StatelessWidget {
       ];
     }
 
-    if (const {
-      'library',
-      'courier',
-      'delegate',
-      'printer',
-    }.contains(account.role)) {
+    if (account.role == 'courier' || account.role == 'delegate') {
+      return [
+        _RoleTool(
+          title: 'حسابي',
+          subtitle: 'بيانات المندوب ومناطق العمل وحالة التوفر',
+          icon: Icons.account_circle_rounded,
+          onTap: () => open(
+            CourierProfileScreen(repository: repository, account: account),
+          ),
+        ),
+        _RoleTool(
+          title: 'حسابي المالي',
+          subtitle: 'الأرباح والذمم والتسويات والوصولات',
+          icon: Icons.account_balance_wallet_rounded,
+          onTap: () => open(
+            BusinessPartyFinanceScreen(
+              repository: repository,
+              account: account,
+            ),
+          ),
+        ),
+        ...common,
+      ];
+    }
+
+    if (const {'library', 'printer'}.contains(account.role)) {
       return [
         _RoleTool(
           title: 'حسابي المالي',
