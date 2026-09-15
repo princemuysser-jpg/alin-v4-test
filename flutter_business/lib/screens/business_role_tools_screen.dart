@@ -4,6 +4,10 @@ import '../data/business_repository.dart';
 import '../models/business_account.dart';
 import '../widgets/business_brand.dart';
 import 'admin_backup_screen.dart';
+import 'admin_books_screen.dart';
+import 'admin_courier_hub_screen.dart';
+import 'admin_teacher_courses_screen.dart';
+// Admin old-web parity tools Build 17
 import 'admin_coupons_screen.dart';
 import 'admin_delivery_pricing_screen.dart';
 import 'admin_finance_v2_screen.dart';
@@ -142,6 +146,24 @@ class BusinessRoleToolsScreen extends StatelessWidget {
 
     if (account.role == 'admin' || account.role == 'accountant') {
       return [
+        _RoleTool(
+          title: 'دورات المدرسين',
+          subtitle: 'مراجعة الدورات والموافقة والنشر والإخفاء والرفض',
+          icon: Icons.video_library_rounded,
+          onTap: () => open(AdminTeacherCoursesScreen(repository: repository)),
+        ),
+        _RoleTool(
+          title: 'إدارة الكتب',
+          subtitle: 'الكتب والمخزون والموردون والنسب والتسويات',
+          icon: Icons.menu_book_rounded,
+          onTap: () => open(AdminBooksScreen(repository: repository)),
+        ),
+        _RoleTool(
+          title: 'مركز المندوبين',
+          subtitle: 'حالة المندوبين والطلبات والمناطق والحسابات',
+          icon: Icons.delivery_dining_rounded,
+          onTap: () => open(AdminCourierHubScreen(repository: repository)),
+        ),
         _RoleTool(
           title: 'المالية والتسويات',
           subtitle: 'الأرباح والذمم والتسويات والوصولات',
