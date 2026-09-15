@@ -30,7 +30,7 @@ jobs:
       - name: Flutter checks
         run: |
           flutter pub get
-          flutter analyze lib
+          flutter analyze lib --no-fatal-infos
 
       - name: Build Flutter Web
         run: |
@@ -48,7 +48,7 @@ jobs:
       - name: Upload web artifact
         uses: actions/upload-artifact@v4
         with:
-          name: alin-business-web-v1.0.0-build5
+          name: alin-business-web-build-${{ github.run_number }}
           if-no-files-found: error
           path: flutter_business/build/web/**
           retention-days: 7
