@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../data/business_repository.dart';
 import '../data/library_print_repository.dart';
 import '../models/business_account.dart';
+import '../widgets/business_role_navigation.dart';
 import '../widgets/alin_receipt_template.dart';
 import 'library_booklet_preview_screen.dart';
 
@@ -73,8 +74,10 @@ class _LibraryDashboardScreenState extends State<LibraryDashboardScreen> {
     }
   }
 
-  bool isDone(Map<String, dynamic> o) => doneStatuses.contains('${o['status']}');
-  bool isClosed(Map<String, dynamic> o) => closedStatuses.contains('${o['status']}');
+  bool isDone(Map<String, dynamic> o) =>
+      doneStatuses.contains('${o['status']}');
+  bool isClosed(Map<String, dynamic> o) =>
+      closedStatuses.contains('${o['status']}');
 
   List<Map<String, dynamic>> get visibleOrders {
     if (filter == 'ready') {
@@ -88,14 +91,14 @@ class _LibraryDashboardScreenState extends State<LibraryDashboardScreen> {
   }
 
   String statusLabel(String status) => switch (status) {
-        'new' || 'pending' || 'pending_admin' || 'accepted' => 'جديد',
-        'processing' || 'printing' => 'قيد التجهيز',
-        'ready' => 'جاهز',
-        'completed' || 'delivered' => 'مسلّم',
-        'cancelled' => 'ملغي',
-        'rejected' => 'مرفوض',
-        _ => status,
-      };
+    'new' || 'pending' || 'pending_admin' || 'accepted' => 'جديد',
+    'processing' || 'printing' => 'قيد التجهيز',
+    'ready' => 'جاهز',
+    'completed' || 'delivered' => 'مسلّم',
+    'cancelled' => 'ملغي',
+    'rejected' => 'مرفوض',
+    _ => status,
+  };
 
   Future<void> setOpen(bool value) async {
     try {
@@ -125,9 +128,9 @@ class _LibraryDashboardScreenState extends State<LibraryDashboardScreen> {
       await widget.repository.libraryTransition(id, status, reason: reason);
       await load();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تم تحديث الطلب')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('تم تحديث الطلب')));
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -209,9 +212,9 @@ class _LibraryDashboardScreenState extends State<LibraryDashboardScreen> {
       await widget.repository.librarySetOrderNote(id, result);
       await load();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تم حفظ ملاحظة المكتبة')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('تم حفظ ملاحظة المكتبة')));
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -276,6 +279,11 @@ class _LibraryDashboardScreenState extends State<LibraryDashboardScreen> {
         .fold<num>(0, (sum, s) => sum + number(s['amount']));
 
     return Scaffold(
+      drawer: BusinessRoleNavigationDrawer(
+        repository: widget.repository,
+        account: widget.account,
+        onLogout: widget.onLogout,
+      ),
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -310,8 +318,8 @@ class _LibraryDashboardScreenState extends State<LibraryDashboardScreen> {
           final horizontalPadding = desktop
               ? ((pageWidth - 1180) / 2).clamp(20.0, 120.0)
               : tablet
-                  ? 20.0
-                  : 12.0;
+              ? 20.0
+              : 12.0;
           return RefreshIndicator(
             onRefresh: load,
             child: ListView(
@@ -357,13 +365,19 @@ class _LibraryDashboardScreenState extends State<LibraryDashboardScreen> {
                             const SizedBox(height: 5),
                             const Text(
                               'طلبات الطباعة والتجهيز والتسليم والحسابات بمكان واحد',
-                              style: TextStyle(color: Colors.white70, fontSize: 12),
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 12,
+                              ),
                             ),
                           ],
                         ),
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 8,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: .12),
                           borderRadius: BorderRadius.circular(18),
@@ -389,20 +403,49 @@ class _LibraryDashboardScreenState extends State<LibraryDashboardScreen> {
                 const SizedBox(height: 12),
                 LayoutBuilder(
                   builder: (context, c) {
-                    final columns = c.maxWidth >= 1000 ? 5 : c.maxWidth >= 620 ? 3 : 2;
+                    final columns = c.maxWidth >= 1000
+                        ? 5
+                        : c.maxWidth >= 620
+                        ? 3
+                        : 2;
                     final gap = 8.0;
-                    final cardWidth = (c.maxWidth - gap * (columns - 1)) / columns;
+                    final cardWidth =
+                        (c.maxWidth - gap * (columns - 1)) / columns;
                     final cards = [
-                      _Metric(label: 'للتجهيز', value: '$preparing', icon: Icons.print_rounded),
-                      _Metric(label: 'جاهز', value: '$ready', icon: Icons.inventory_2_rounded),
-                      _Metric(label: 'مسلّم', value: '$completed', icon: Icons.check_circle_rounded),
-                      _Metric(label: 'أرباح المكتبة', value: money(profit), icon: Icons.payments_rounded),
-                      _Metric(label: 'تسويات مسجلة', value: money(settled), icon: Icons.account_balance_wallet_rounded),
+                      _Metric(
+                        label: 'للتجهيز',
+                        value: '$preparing',
+                        icon: Icons.print_rounded,
+                      ),
+                      _Metric(
+                        label: 'جاهز',
+                        value: '$ready',
+                        icon: Icons.inventory_2_rounded,
+                      ),
+                      _Metric(
+                        label: 'مسلّم',
+                        value: '$completed',
+                        icon: Icons.check_circle_rounded,
+                      ),
+                      _Metric(
+                        label: 'أرباح المكتبة',
+                        value: money(profit),
+                        icon: Icons.payments_rounded,
+                      ),
+                      _Metric(
+                        label: 'تسويات مسجلة',
+                        value: money(settled),
+                        icon: Icons.account_balance_wallet_rounded,
+                      ),
                     ];
                     return Wrap(
                       spacing: gap,
                       runSpacing: gap,
-                      children: cards.map((card) => SizedBox(width: cardWidth, child: card)).toList(),
+                      children: cards
+                          .map(
+                            (card) => SizedBox(width: cardWidth, child: card),
+                          )
+                          .toList(),
                     );
                   },
                 ),
@@ -419,7 +462,8 @@ class _LibraryDashboardScreenState extends State<LibraryDashboardScreen> {
                         ButtonSegment(value: 'all', label: Text('الكل')),
                       ],
                       selected: {filter},
-                      onSelectionChanged: (value) => setState(() => filter = value.first),
+                      onSelectionChanged: (value) =>
+                          setState(() => filter = value.first),
                     ),
                   ),
                 ),
@@ -468,7 +512,9 @@ class _LibraryDashboardScreenState extends State<LibraryDashboardScreen> {
                     ),
                   )
                 else
-                  ...settlements.take(5).map(
+                  ...settlements
+                      .take(5)
+                      .map(
                         (s) => Card(
                           child: ListTile(
                             leading: const CircleAvatar(
@@ -480,7 +526,9 @@ class _LibraryDashboardScreenState extends State<LibraryDashboardScreen> {
                             ),
                             trailing: Text(
                               money(s['amount']),
-                              style: const TextStyle(fontWeight: FontWeight.w900),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w900,
+                              ),
                             ),
                             onTap: () => showAlinSettlementReceipt(
                               context,
@@ -504,7 +552,8 @@ class _LibraryDashboardScreenState extends State<LibraryDashboardScreen> {
     final id = '${order['id']}';
     final busy = busyOrders.contains(id);
     final booklet = '${order['kind']}' == 'booklet';
-    final previewAllowed = booklet && ['processing', 'printing', 'ready'].contains(status);
+    final previewAllowed =
+        booklet && ['processing', 'printing', 'ready'].contains(status);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -526,7 +575,10 @@ class _LibraryDashboardScreenState extends State<LibraryDashboardScreen> {
                       const SizedBox(height: 3),
                       Text(
                         '${order['title'] ?? 'طلب طباعة'}',
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                     ],
                   ),
@@ -535,15 +587,35 @@ class _LibraryDashboardScreenState extends State<LibraryDashboardScreen> {
               ],
             ),
             const Divider(),
-            _line(Icons.person_outline, 'الطالب', '${order['student_name'] ?? '—'}'),
-            _line(Icons.phone_outlined, 'الهاتف', '${order['student_phone'] ?? '—'}'),
+            _line(
+              Icons.person_outline,
+              'الطالب',
+              '${order['student_name'] ?? '—'}',
+            ),
+            _line(
+              Icons.phone_outlined,
+              'الهاتف',
+              '${order['student_phone'] ?? '—'}',
+            ),
             _line(Icons.inventory_2_outlined, 'العدد', '${order['qty'] ?? 1}'),
             _line(Icons.payments_outlined, 'الإجمالي', money(order['total'])),
-            _line(Icons.account_balance_wallet_outlined, 'ربح المكتبة', money(order['library_profit'])),
+            _line(
+              Icons.account_balance_wallet_outlined,
+              'ربح المكتبة',
+              money(order['library_profit']),
+            ),
             if ('${order['notes'] ?? ''}'.trim().isNotEmpty)
-              _line(Icons.note_alt_outlined, 'ملاحظة الطالب', '${order['notes']}'),
+              _line(
+                Icons.note_alt_outlined,
+                'ملاحظة الطالب',
+                '${order['notes']}',
+              ),
             if ('${order['library_note'] ?? ''}'.trim().isNotEmpty)
-              _line(Icons.sticky_note_2_outlined, 'ملاحظة المكتبة', '${order['library_note']}'),
+              _line(
+                Icons.sticky_note_2_outlined,
+                'ملاحظة المكتبة',
+                '${order['library_note']}',
+              ),
             const SizedBox(height: 10),
             if (!isClosed(order))
               Wrap(
@@ -557,9 +629,15 @@ class _LibraryDashboardScreenState extends State<LibraryDashboardScreen> {
                   ),
                   if (booklet)
                     FilledButton.tonalIcon(
-                      onPressed: busy || !previewAllowed ? null : () => openBookletPreview(order),
+                      onPressed: busy || !previewAllowed
+                          ? null
+                          : () => openBookletPreview(order),
                       icon: const Icon(Icons.picture_as_pdf_rounded),
-                      label: Text(previewAllowed ? 'معاينة / طباعة' : 'ابدأ التجهيز أولاً'),
+                      label: Text(
+                        previewAllowed
+                            ? 'معاينة / طباعة'
+                            : 'ابدأ التجهيز أولاً',
+                      ),
                     ),
                 ],
               ),
@@ -640,25 +718,25 @@ class _LibraryDashboardScreenState extends State<LibraryDashboardScreen> {
   }
 
   Widget _line(IconData icon, String label, String value) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, size: 19, color: const Color(0xFF49647E)),
-            const SizedBox(width: 8),
-            SizedBox(
-              width: 105,
-              child: Text(label, style: const TextStyle(color: Color(0xFF667085))),
-            ),
-            Expanded(
-              child: Text(
-                value,
-                style: const TextStyle(fontWeight: FontWeight.w700),
-              ),
-            ),
-          ],
+    padding: const EdgeInsets.symmetric(vertical: 4),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 19, color: const Color(0xFF49647E)),
+        const SizedBox(width: 8),
+        SizedBox(
+          width: 105,
+          child: Text(label, style: const TextStyle(color: Color(0xFF667085))),
         ),
-      );
+        Expanded(
+          child: Text(
+            value,
+            style: const TextStyle(fontWeight: FontWeight.w700),
+          ),
+        ),
+      ],
+    ),
+  );
 }
 
 class _Metric extends StatelessWidget {

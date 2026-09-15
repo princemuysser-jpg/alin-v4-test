@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../data/business_repository.dart';
 import '../models/business_account.dart';
+import '../widgets/business_role_navigation.dart';
 import '../widgets/alin_receipt_template.dart';
 
 class PrinterDashboardScreen extends StatefulWidget {
@@ -54,27 +55,47 @@ class _PrinterDashboardScreenState extends State<PrinterDashboardScreen> {
   List<Map<String, dynamic>> listOf(String key) {
     final raw = summary[key];
     if (raw is! List) return const [];
-    return raw.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+    return raw
+        .whereType<Map>()
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      drawer: BusinessRoleNavigationDrawer(
+        repository: widget.repository,
+        account: widget.account,
+        onLogout: widget.onLogout,
+      ),
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('لوحة المطبعة', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
-            Text(widget.account.name, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w400)),
+            const Text(
+              'لوحة المطبعة',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+            ),
+            Text(
+              widget.account.name,
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w400),
+            ),
           ],
         ),
         actions: [
-          IconButton(onPressed: load, tooltip: 'تحديث', icon: const Icon(Icons.refresh_rounded)),
+          IconButton(
+            onPressed: load,
+            tooltip: 'تحديث',
+            icon: const Icon(Icons.refresh_rounded),
+          ),
           PopupMenuButton<String>(
             onSelected: (value) {
               if (value == 'logout') widget.onLogout();
             },
-            itemBuilder: (_) => const [PopupMenuItem(value: 'logout', child: Text('تسجيل الخروج'))],
+            itemBuilder: (_) => const [
+              PopupMenuItem(value: 'logout', child: Text('تسجيل الخروج')),
+            ],
           ),
         ],
       ),
@@ -86,8 +107,8 @@ class _PrinterDashboardScreenState extends State<PrinterDashboardScreen> {
           final horizontalPadding = desktop
               ? ((pageWidth - 1180) / 2).clamp(20.0, 120.0)
               : tablet
-                  ? 20.0
-                  : 12.0;
+              ? 20.0
+              : 12.0;
           return RefreshIndicator(
             onRefresh: load,
             child: ListView(
@@ -111,17 +132,32 @@ class _PrinterDashboardScreenState extends State<PrinterDashboardScreen> {
                   _metrics(),
                   const SizedBox(height: 16),
                   Align(
-                    alignment: desktop ? Alignment.centerRight : Alignment.center,
+                    alignment: desktop
+                        ? Alignment.centerRight
+                        : Alignment.center,
                     child: SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: SegmentedButton<String>(
                         segments: const [
-                          ButtonSegment(value: 'books', label: Text('توريد الكتب'), icon: Icon(Icons.menu_book_rounded)),
-                          ButtonSegment(value: 'debt', label: Text('الذمة'), icon: Icon(Icons.account_balance_wallet_rounded)),
-                          ButtonSegment(value: 'settlements', label: Text('التسويات'), icon: Icon(Icons.receipt_long_rounded)),
+                          ButtonSegment(
+                            value: 'books',
+                            label: Text('توريد الكتب'),
+                            icon: Icon(Icons.menu_book_rounded),
+                          ),
+                          ButtonSegment(
+                            value: 'debt',
+                            label: Text('الذمة'),
+                            icon: Icon(Icons.account_balance_wallet_rounded),
+                          ),
+                          ButtonSegment(
+                            value: 'settlements',
+                            label: Text('التسويات'),
+                            icon: Icon(Icons.receipt_long_rounded),
+                          ),
                         ],
                         selected: {tab},
-                        onSelectionChanged: (value) => setState(() => tab = value.first),
+                        onSelectionChanged: (value) =>
+                            setState(() => tab = value.first),
                       ),
                     ),
                   ),
@@ -142,7 +178,9 @@ class _PrinterDashboardScreenState extends State<PrinterDashboardScreen> {
     return Container(
       padding: EdgeInsets.all(desktop ? 24 : 18),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(colors: [Color(0xFF143B68), Color(0xFF255B91)]),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF143B68), Color(0xFF255B91)],
+        ),
         borderRadius: BorderRadius.circular(desktop ? 26 : 22),
       ),
       child: Row(
@@ -166,7 +204,10 @@ class _PrinterDashboardScreenState extends State<PrinterDashboardScreen> {
                   ),
                 ),
                 const SizedBox(height: 4),
-                const Text('حساب المطبعة وتوريد الكتب والتسويات والوصولات', style: TextStyle(color: Colors.white70)),
+                const Text(
+                  'حساب المطبعة وتوريد الكتب والتسويات والوصولات',
+                  style: TextStyle(color: Colors.white70),
+                ),
               ],
             ),
           ),
@@ -182,15 +223,33 @@ class _PrinterDashboardScreenState extends State<PrinterDashboardScreen> {
         final gap = 10.0;
         final cardWidth = (c.maxWidth - gap * (columns - 1)) / columns;
         final cards = [
-          _metric('ذمة المطبعة للإدارة', money(summary['collector_remaining']), Icons.account_balance_wallet_rounded),
-          _metric('المسدّد من الذمة', money(summary['collector_settled']), Icons.check_circle_rounded),
-          _metric('توريد كتب مستحق', money(summary['book_supply_pending']), Icons.menu_book_rounded),
-          _metric('طلبات الكتب', '${summary['book_orders_count'] ?? 0}', Icons.receipt_long_rounded),
+          _metric(
+            'ذمة المطبعة للإدارة',
+            money(summary['collector_remaining']),
+            Icons.account_balance_wallet_rounded,
+          ),
+          _metric(
+            'المسدّد من الذمة',
+            money(summary['collector_settled']),
+            Icons.check_circle_rounded,
+          ),
+          _metric(
+            'توريد كتب مستحق',
+            money(summary['book_supply_pending']),
+            Icons.menu_book_rounded,
+          ),
+          _metric(
+            'طلبات الكتب',
+            '${summary['book_orders_count'] ?? 0}',
+            Icons.receipt_long_rounded,
+          ),
         ];
         return Wrap(
           spacing: gap,
           runSpacing: gap,
-          children: cards.map((card) => SizedBox(width: cardWidth, child: card)).toList(),
+          children: cards
+              .map((card) => SizedBox(width: cardWidth, child: card))
+              .toList(),
         );
       },
     );
@@ -205,17 +264,24 @@ class _PrinterDashboardScreenState extends State<PrinterDashboardScreen> {
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: const Color(0xFFE3EAF1)),
       ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Icon(icon, color: const Color(0xFF143B68)),
-        const Spacer(),
-        Text(
-          value,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w900, color: Color(0xFF143B68)),
-        ),
-        Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
-      ]),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: const Color(0xFF143B68)),
+          const Spacer(),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 19,
+              fontWeight: FontWeight.w900,
+              color: Color(0xFF143B68),
+            ),
+          ),
+          Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+        ],
+      ),
     );
   }
 
@@ -224,30 +290,55 @@ class _PrinterDashboardScreenState extends State<PrinterDashboardScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('طلبات وحركات توريد الكتب', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
+        const Text(
+          'طلبات وحركات توريد الكتب',
+          style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900),
+        ),
         const SizedBox(height: 5),
-        Text('المستحق ${money(summary['book_supply_pending'])} — المسدد ${money(summary['book_supply_settled'])}', style: TextStyle(color: Colors.grey.shade700)),
+        Text(
+          'المستحق ${money(summary['book_supply_pending'])} — المسدد ${money(summary['book_supply_settled'])}',
+          style: TextStyle(color: Colors.grey.shade700),
+        ),
         const SizedBox(height: 10),
         if (rows.isEmpty)
           const _EmptyCard(text: 'لا توجد حركات توريد كتب حالياً')
         else
-          ...rows.map((row) => Card(
-                margin: const EdgeInsets.only(bottom: 10),
-                child: ListTile(
-                  leading: const CircleAvatar(child: Icon(Icons.menu_book_rounded)),
-                  title: Text('${row['order_number'] ?? row['order_id'] ?? 'طلب كتاب'}', style: const TextStyle(fontWeight: FontWeight.w900)),
-                  subtitle: Text('${row['title'] ?? 'كتاب'}\n${_date(row['created_at'])}'),
-                  isThreeLine: true,
-                  trailing: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(money(row['amount']), style: const TextStyle(fontWeight: FontWeight.w900)),
-                      Text('${row['status']}' == 'settled' ? 'مسدد' : 'مستحق', style: TextStyle(color: '${row['status']}' == 'settled' ? Colors.green : Colors.orange)),
-                    ],
-                  ),
+          ...rows.map(
+            (row) => Card(
+              margin: const EdgeInsets.only(bottom: 10),
+              child: ListTile(
+                leading: const CircleAvatar(
+                  child: Icon(Icons.menu_book_rounded),
                 ),
-              )),
+                title: Text(
+                  '${row['order_number'] ?? row['order_id'] ?? 'طلب كتاب'}',
+                  style: const TextStyle(fontWeight: FontWeight.w900),
+                ),
+                subtitle: Text(
+                  '${row['title'] ?? 'كتاب'}\n${_date(row['created_at'])}',
+                ),
+                isThreeLine: true,
+                trailing: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      money(row['amount']),
+                      style: const TextStyle(fontWeight: FontWeight.w900),
+                    ),
+                    Text(
+                      '${row['status']}' == 'settled' ? 'مسدد' : 'مستحق',
+                      style: TextStyle(
+                        color: '${row['status']}' == 'settled'
+                            ? Colors.green
+                            : Colors.orange,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
       ],
     );
   }
@@ -258,32 +349,55 @@ class _PrinterDashboardScreenState extends State<PrinterDashboardScreen> {
         final debt = Card(
           child: Padding(
             padding: const EdgeInsets.all(18),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text('ذمة المطبعة مع الإدارة', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
-              const SizedBox(height: 16),
-              _row('إجمالي الذمة', money(summary['collector_debt_total'])),
-              _row('المسدّد', money(summary['collector_settled'])),
-              const Divider(),
-              _row('المتبقي', money(summary['collector_remaining']), strong: true),
-            ]),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'ذمة المطبعة مع الإدارة',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+                ),
+                const SizedBox(height: 16),
+                _row('إجمالي الذمة', money(summary['collector_debt_total'])),
+                _row('المسدّد', money(summary['collector_settled'])),
+                const Divider(),
+                _row(
+                  'المتبقي',
+                  money(summary['collector_remaining']),
+                  strong: true,
+                ),
+              ],
+            ),
           ),
         );
         final note = Card(
           child: Padding(
             padding: const EdgeInsets.all(16),
-            child: Row(children: [
-              const Icon(Icons.info_outline_rounded, color: Color(0xFF143B68)),
-              const SizedBox(width: 10),
-              Expanded(child: Text('ذمة المطبعة منفصلة عن مستحق توريد الكتب. التسوية من الإدارة تحفظ السجل ولا تمس حساب توريد الكتب.', style: TextStyle(color: Colors.grey.shade700))),
-            ]),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.info_outline_rounded,
+                  color: Color(0xFF143B68),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'ذمة المطبعة منفصلة عن مستحق توريد الكتب. التسوية من الإدارة تحفظ السجل ولا تمس حساب توريد الكتب.',
+                    style: TextStyle(color: Colors.grey.shade700),
+                  ),
+                ),
+              ],
+            ),
           ),
         );
         if (c.maxWidth >= 850) {
-          return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Expanded(child: debt),
-            const SizedBox(width: 10),
-            Expanded(child: note),
-          ]);
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(child: debt),
+              const SizedBox(width: 10),
+              Expanded(child: note),
+            ],
+          );
         }
         return Column(children: [debt, const SizedBox(height: 10), note]);
       },
@@ -293,21 +407,32 @@ class _PrinterDashboardScreenState extends State<PrinterDashboardScreen> {
   Widget _settlementsSection() {
     final book = listOf('book_settlements');
     final debt = listOf('collector_settlements');
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      const Text('تسويات توريد الكتب', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
-      const SizedBox(height: 8),
-      if (book.isEmpty)
-        const _EmptyCard(text: 'لا توجد تسويات توريد كتب بعد')
-      else
-        ...book.map((row) => _settlementCard(row, fallback: 'تسوية توريد كتب')),
-      const SizedBox(height: 14),
-      const Text('تسويات ذمة المطبعة', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
-      const SizedBox(height: 8),
-      if (debt.isEmpty)
-        const _EmptyCard(text: 'لا توجد تسويات ذمة بعد')
-      else
-        ...debt.map((row) => _settlementCard(row, fallback: 'تسوية ذمة')),
-    ]);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'تسويات توريد الكتب',
+          style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900),
+        ),
+        const SizedBox(height: 8),
+        if (book.isEmpty)
+          const _EmptyCard(text: 'لا توجد تسويات توريد كتب بعد')
+        else
+          ...book.map(
+            (row) => _settlementCard(row, fallback: 'تسوية توريد كتب'),
+          ),
+        const SizedBox(height: 14),
+        const Text(
+          'تسويات ذمة المطبعة',
+          style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900),
+        ),
+        const SizedBox(height: 8),
+        if (debt.isEmpty)
+          const _EmptyCard(text: 'لا توجد تسويات ذمة بعد')
+        else
+          ...debt.map((row) => _settlementCard(row, fallback: 'تسوية ذمة')),
+      ],
+    );
   }
 
   Widget _settlementCard(Map<String, dynamic> row, {required String fallback}) {
@@ -315,10 +440,21 @@ class _PrinterDashboardScreenState extends State<PrinterDashboardScreen> {
     return Card(
       margin: const EdgeInsets.only(bottom: 9),
       child: ListTile(
-        leading: const Icon(Icons.receipt_long_rounded, color: Color(0xFF143B68)),
+        leading: const Icon(
+          Icons.receipt_long_rounded,
+          color: Color(0xFF143B68),
+        ),
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
-        subtitle: Text('${_date(row['created_at'])}${'${row['payment_method'] ?? ''}'.isNotEmpty ? ' — ${row['payment_method']}' : ''}'),
-        trailing: Text(money(row['amount']), style: const TextStyle(fontWeight: FontWeight.w900, color: Colors.green)),
+        subtitle: Text(
+          '${_date(row['created_at'])}${'${row['payment_method'] ?? ''}'.isNotEmpty ? ' — ${row['payment_method']}' : ''}',
+        ),
+        trailing: Text(
+          money(row['amount']),
+          style: const TextStyle(
+            fontWeight: FontWeight.w900,
+            color: Colors.green,
+          ),
+        ),
         onTap: () => showAlinSettlementReceipt(
           context,
           row,
@@ -332,10 +468,19 @@ class _PrinterDashboardScreenState extends State<PrinterDashboardScreen> {
   Widget _row(String label, String value, {bool strong = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 7),
-      child: Row(children: [
-        Expanded(child: Text(label)),
-        Text(value, style: TextStyle(fontWeight: strong ? FontWeight.w900 : FontWeight.w700, fontSize: strong ? 18 : 15, color: strong ? const Color(0xFF143B68) : null)),
-      ]),
+      child: Row(
+        children: [
+          Expanded(child: Text(label)),
+          Text(
+            value,
+            style: TextStyle(
+              fontWeight: strong ? FontWeight.w900 : FontWeight.w700,
+              fontSize: strong ? 18 : 15,
+              color: strong ? const Color(0xFF143B68) : null,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -343,13 +488,26 @@ class _PrinterDashboardScreenState extends State<PrinterDashboardScreen> {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(18),
-        child: Column(children: [
-          const Icon(Icons.error_outline_rounded, color: Colors.red, size: 36),
-          const SizedBox(height: 8),
-          Text(error ?? 'تعذر تحميل بيانات المطبعة', textAlign: TextAlign.center),
-          const SizedBox(height: 10),
-          OutlinedButton.icon(onPressed: load, icon: const Icon(Icons.refresh), label: const Text('إعادة المحاولة')),
-        ]),
+        child: Column(
+          children: [
+            const Icon(
+              Icons.error_outline_rounded,
+              color: Colors.red,
+              size: 36,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              error ?? 'تعذر تحميل بيانات المطبعة',
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 10),
+            OutlinedButton.icon(
+              onPressed: load,
+              icon: const Icon(Icons.refresh),
+              label: const Text('إعادة المحاولة'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -366,6 +524,11 @@ class _EmptyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(child: Padding(padding: const EdgeInsets.all(22), child: Center(child: Text(text))));
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(22),
+        child: Center(child: Text(text)),
+      ),
+    );
   }
 }

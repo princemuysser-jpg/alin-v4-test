@@ -14,15 +14,11 @@ import 'models/business_account.dart';
 import 'screens/admin_dashboard_screen.dart';
 import 'screens/admin_desktop_dashboard_screen.dart';
 import 'screens/business_order_details_screen.dart';
-import 'screens/business_party_finance_screen.dart';
-import 'screens/business_role_tools_screen.dart';
 import 'screens/courier_dashboard_screen.dart';
 import 'screens/library_dashboard_screen.dart';
 import 'screens/printer_dashboard_screen.dart';
 import 'screens/teacher_dashboard_screen.dart';
-import 'widgets/admin_quick_actions_button.dart';
 import 'widgets/business_brand.dart';
-import 'widgets/business_notification_bell.dart';
 
 final GlobalKey<NavigatorState> businessNavigatorKey =
     GlobalKey<NavigatorState>();
@@ -211,96 +207,7 @@ class _BusinessGateState extends State<BusinessGate> {
     super.dispose();
   }
 
-  Future<void> _refreshBusinessView() async {
-    if (!mounted) return;
-    setState(() => notificationTick++);
-  }
-
-  bool get _hasPersonalFinance {
-    final role = account?.role;
-    return role == 'courier' ||
-        role == 'library' ||
-        role == 'printer' ||
-        role == 'teacher';
-  }
-
-  void _openRoleTools() {
-    final value = account;
-    final navigator = businessNavigatorKey.currentState;
-    if (value == null || navigator == null) return;
-    navigator.push(
-      MaterialPageRoute(
-        builder: (_) =>
-            BusinessRoleToolsScreen(repository: repository, account: value),
-      ),
-    );
-  }
-
-  void _openPersonalFinance() {
-    final value = account;
-    final navigator = businessNavigatorKey.currentState;
-    if (value == null || navigator == null || !_hasPersonalFinance) return;
-    navigator.push(
-      MaterialPageRoute(
-        builder: (_) =>
-            BusinessPartyFinanceScreen(repository: repository, account: value),
-      ),
-    );
-  }
-
-  Widget _withBusinessOverlays(Widget child) {
-    return Stack(
-      children: [
-        Positioned.fill(child: child),
-        if (account?.role == 'admin')
-          Positioned(
-            left: 14,
-            bottom: 88,
-            child: AdminQuickActionsButton(
-              repository: repository,
-              onChanged: _refreshBusinessView,
-            ),
-          ),
-        if (_hasPersonalFinance)
-          Positioned(
-            left: 14,
-            bottom: 88,
-            child: FloatingActionButton.extended(
-              heroTag: 'business-personal-finance',
-              onPressed: _openPersonalFinance,
-              icon: const Icon(Icons.account_balance_wallet_rounded),
-              label: const Text('حسابي المالي'),
-            ),
-          ),
-        Positioned(
-          left: 14,
-          bottom: _hasPersonalFinance || account?.role == 'admin' ? 154 : 88,
-          child: FloatingActionButton.extended(
-            heroTag: 'business-role-tools',
-            onPressed: _openRoleTools,
-            icon: const Icon(Icons.apps_rounded),
-            label: const Text('أدواتي'),
-          ),
-        ),
-        Positioned(
-          right: 14,
-          bottom: 88,
-          child: Material(
-            elevation: 8,
-            color: BusinessBrand.navy,
-            shape: const CircleBorder(),
-            child: IconTheme(
-              data: const IconThemeData(color: Colors.white),
-              child: BusinessNotificationBell(
-                key: ValueKey('bell-$notificationTick'),
-                repository: repository,
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
+  Widget _withBusinessOverlays(Widget child) => child;
 
   @override
   Widget build(BuildContext context) {

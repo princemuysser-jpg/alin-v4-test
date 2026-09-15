@@ -4,6 +4,7 @@ import '../data/business_courier_repository.dart';
 import '../data/business_finance_repository.dart';
 import '../data/business_repository.dart';
 import '../models/business_account.dart';
+import '../widgets/business_role_navigation.dart';
 import '../widgets/business_brand.dart';
 import '../widgets/grouped_order_receipt_list.dart';
 import 'business_notifications_screen.dart';
@@ -380,6 +381,11 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
       financeSummary['remaining'] ?? financeSummary['debt_total'],
     );
     return Scaffold(
+      drawer: BusinessRoleNavigationDrawer(
+        repository: widget.repository,
+        account: widget.account,
+        onLogout: widget.onLogout,
+      ),
       appBar: AppBar(
         title: Row(
           children: [

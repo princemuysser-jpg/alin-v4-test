@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../data/business_repository.dart';
 import '../models/business_account.dart';
+import '../widgets/business_role_navigation.dart';
 import '../widgets/alin_receipt_template.dart';
 import 'teacher_publishing_screen.dart';
 
@@ -98,17 +99,17 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
   String money(dynamic value) => '${number(value).round()} د.ع';
 
   bool isDone(Map<String, dynamic> o) => const {
-        'completed',
-        'delivered',
-        'done',
-        'received',
-        'settled',
-      }.contains('${o['status']}'.toLowerCase());
+    'completed',
+    'delivered',
+    'done',
+    'received',
+    'settled',
+  }.contains('${o['status']}'.toLowerCase());
   bool isCancelled(Map<String, dynamic> o) => const {
-        'cancelled',
-        'canceled',
-        'rejected',
-      }.contains('${o['status']}'.toLowerCase());
+    'cancelled',
+    'canceled',
+    'rejected',
+  }.contains('${o['status']}'.toLowerCase());
 
   String bookletStatus(Map<String, dynamic> b) {
     if (b['is_published'] == true ||
@@ -141,6 +142,11 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     final balance = earned - paid;
 
     return Scaffold(
+      drawer: BusinessRoleNavigationDrawer(
+        repository: widget.repository,
+        account: widget.account,
+        onLogout: widget.onLogout,
+      ),
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -180,8 +186,8 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
           final horizontalPadding = desktop
               ? ((pageWidth - 1180) / 2).clamp(20.0, 120.0)
               : tablet
-                  ? 20.0
-                  : 12.0;
+              ? 20.0
+              : 12.0;
           return RefreshIndicator(
             onRefresh: load,
             child: ListView(
@@ -215,7 +221,9 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                         ),
                       ),
                       SizedBox(
-                        width: desktop ? pageWidth - (horizontalPadding * 2) - 270 : null,
+                        width: desktop
+                            ? pageWidth - (horizontalPadding * 2) - 270
+                            : null,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -271,26 +279,43 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                     builder: (context, c) {
                       final columns = c.maxWidth >= 900 ? 4 : 2;
                       final gap = 10.0;
-                      final cardWidth = (c.maxWidth - gap * (columns - 1)) / columns;
+                      final cardWidth =
+                          (c.maxWidth - gap * (columns - 1)) / columns;
                       return Wrap(
                         spacing: gap,
                         runSpacing: gap,
                         children: [
                           SizedBox(
                             width: cardWidth,
-                            child: _metric('الملازم', '${booklets.length}', Icons.menu_book_rounded),
+                            child: _metric(
+                              'الملازم',
+                              '${booklets.length}',
+                              Icons.menu_book_rounded,
+                            ),
                           ),
                           SizedBox(
                             width: cardWidth,
-                            child: _metric('الطلبات المكتملة', '${doneOrders.length}', Icons.check_circle_rounded),
+                            child: _metric(
+                              'الطلبات المكتملة',
+                              '${doneOrders.length}',
+                              Icons.check_circle_rounded,
+                            ),
                           ),
                           SizedBox(
                             width: cardWidth,
-                            child: _metric('إجمالي الأرباح', money(earned), Icons.payments_rounded),
+                            child: _metric(
+                              'إجمالي الأرباح',
+                              money(earned),
+                              Icons.payments_rounded,
+                            ),
                           ),
                           SizedBox(
                             width: cardWidth,
-                            child: _metric('الرصيد الحالي', money(balance < 0 ? 0 : balance), Icons.account_balance_wallet_rounded),
+                            child: _metric(
+                              'الرصيد الحالي',
+                              money(balance < 0 ? 0 : balance),
+                              Icons.account_balance_wallet_rounded,
+                            ),
                           ),
                         ],
                       );
@@ -298,7 +323,9 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                   ),
                   const SizedBox(height: 15),
                   Align(
-                    alignment: desktop ? Alignment.centerRight : Alignment.center,
+                    alignment: desktop
+                        ? Alignment.centerRight
+                        : Alignment.center,
                     child: SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: SegmentedButton<String>(
@@ -320,14 +347,16 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                           ),
                         ],
                         selected: {tab},
-                        onSelectionChanged: (v) => setState(() => tab = v.first),
+                        onSelectionChanged: (v) =>
+                            setState(() => tab = v.first),
                       ),
                     ),
                   ),
                   const SizedBox(height: 14),
                   if (tab == 'booklets') _booklets(),
                   if (tab == 'orders') _orders(),
-                  if (tab == 'finance') _finance(earned, paid, balance < 0 ? 0 : balance),
+                  if (tab == 'finance')
+                    _finance(earned, paid, balance < 0 ? 0 : balance),
                 ],
               ],
             ),
@@ -385,9 +414,11 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                   style: const TextStyle(fontWeight: FontWeight.w900),
                 ),
                 subtitle: Text(
-                  [b['subject'], b['grade'], b['year']]
-                      .where((x) => '${x ?? ''}'.trim().isNotEmpty)
-                      .join(' — '),
+                  [
+                    b['subject'],
+                    b['grade'],
+                    b['year'],
+                  ].where((x) => '${x ?? ''}'.trim().isNotEmpty).join(' — '),
                 ),
                 trailing: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -399,7 +430,10 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                     ),
                     Text(
                       bookletStatus(b),
-                      style: const TextStyle(fontSize: 12, color: Color(0xFF143B68)),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF143B68),
+                      ),
                     ),
                   ],
                 ),
@@ -424,8 +458,8 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                   isCancelled(o)
                       ? Icons.cancel_outlined
                       : isDone(o)
-                          ? Icons.check_circle_outline
-                          : Icons.schedule_rounded,
+                      ? Icons.check_circle_outline
+                      : Icons.schedule_rounded,
                 ),
                 title: Text(
                   '${o['order_number'] ?? o['id']} — ${o['title'] ?? 'ملزمة'}',
@@ -517,21 +551,21 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
   }
 
   Widget _line(String label, String value, {bool strong = false}) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 7),
-        child: Row(
-          children: [
-            Expanded(child: Text(label)),
-            Text(
-              value,
-              style: TextStyle(
-                fontWeight: strong ? FontWeight.w900 : FontWeight.w700,
-                fontSize: strong ? 18 : 15,
-                color: strong ? const Color(0xFF143B68) : null,
-              ),
-            ),
-          ],
+    padding: const EdgeInsets.symmetric(vertical: 7),
+    child: Row(
+      children: [
+        Expanded(child: Text(label)),
+        Text(
+          value,
+          style: TextStyle(
+            fontWeight: strong ? FontWeight.w900 : FontWeight.w700,
+            fontSize: strong ? 18 : 15,
+            color: strong ? const Color(0xFF143B68) : null,
+          ),
         ),
-      );
+      ],
+    ),
+  );
 
   static String _date(dynamic value) {
     final s = '${value ?? ''}';
@@ -544,9 +578,9 @@ class _TeacherEmpty extends StatelessWidget {
   const _TeacherEmpty({required this.text});
   @override
   Widget build(BuildContext context) => Card(
-        child: Padding(
-          padding: const EdgeInsets.all(22),
-          child: Center(child: Text(text)),
-        ),
-      );
+    child: Padding(
+      padding: const EdgeInsets.all(22),
+      child: Center(child: Text(text)),
+    ),
+  );
 }

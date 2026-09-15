@@ -159,7 +159,12 @@ class BusinessRoleNavigationDrawer extends StatelessWidget {
       ),
       const SizedBox(height: 8),
       _section('المالية والتسويق'),
-      _adminSectionTile(context, 3, Icons.account_balance_wallet_rounded, 'المالية'),
+      _adminSectionTile(
+        context,
+        3,
+        Icons.account_balance_wallet_rounded,
+        'المالية',
+      ),
       _adminSectionTile(context, 5, Icons.receipt_long_outlined, 'الوصولات'),
       _routeTile(
         context,
@@ -219,7 +224,12 @@ class BusinessRoleNavigationDrawer extends StatelessWidget {
   List<Widget> _roleMenu(BuildContext context) {
     final widgets = <Widget>[
       _section('القائمة الرئيسية'),
-      _closeTile(context, Icons.dashboard_rounded, 'لوحة العمل', 'العودة إلى الصفحة الرئيسية'),
+      _closeTile(
+        context,
+        Icons.dashboard_rounded,
+        'لوحة العمل',
+        'العودة إلى الصفحة الرئيسية',
+      ),
     ];
 
     if (account.role == 'teacher') {
@@ -230,7 +240,10 @@ class BusinessRoleNavigationDrawer extends StatelessWidget {
           icon: Icons.upload_file_rounded,
           title: 'رفع ومتابعة الملازم',
           subtitle: 'رفع الملفات ومتابعة الموافقة والنشر',
-          page: TeacherPublishingScreen(repository: repository, account: account),
+          page: TeacherPublishingScreen(
+            repository: repository,
+            account: account,
+          ),
         ),
         _routeTile(
           context,
@@ -262,7 +275,10 @@ class BusinessRoleNavigationDrawer extends StatelessWidget {
         icon: Icons.account_balance_wallet_rounded,
         title: 'الحساب المالي',
         subtitle: 'الأرباح والذمم والتسويات والوصولات',
-        page: BusinessPartyFinanceScreen(repository: repository, account: account),
+        page: BusinessPartyFinanceScreen(
+          repository: repository,
+          account: account,
+        ),
       ),
       _routeTile(
         context,
@@ -276,16 +292,16 @@ class BusinessRoleNavigationDrawer extends StatelessWidget {
   }
 
   Widget _section(String text) => Padding(
-        padding: const EdgeInsets.fromLTRB(12, 12, 12, 7),
-        child: Text(
-          text,
-          style: const TextStyle(
-            color: BusinessBrand.muted,
-            fontSize: 11.5,
-            fontWeight: FontWeight.w900,
-          ),
-        ),
-      );
+    padding: const EdgeInsets.fromLTRB(12, 12, 12, 7),
+    child: Text(
+      text,
+      style: const TextStyle(
+        color: BusinessBrand.muted,
+        fontSize: 11.5,
+        fontWeight: FontWeight.w900,
+      ),
+    ),
+  );
 
   Widget _adminSectionTile(
     BuildContext context,
@@ -351,7 +367,9 @@ class BusinessRoleNavigationDrawer extends StatelessWidget {
         color: selected ? BusinessBrand.softBlue : Colors.transparent,
         borderRadius: BorderRadius.circular(14),
         child: ListTile(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
           dense: subtitle == null,
           leading: Container(
             width: 38,
@@ -376,9 +394,16 @@ class BusinessRoleNavigationDrawer extends StatelessWidget {
                   subtitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 10.5, color: BusinessBrand.muted),
+                  style: const TextStyle(
+                    fontSize: 10.5,
+                    color: BusinessBrand.muted,
+                  ),
                 ),
-          trailing: const Icon(Icons.chevron_left_rounded, size: 19, color: BusinessBrand.muted),
+          trailing: const Icon(
+            Icons.chevron_left_rounded,
+            size: 19,
+            color: BusinessBrand.muted,
+          ),
           onTap: onTap,
         ),
       ),
@@ -407,14 +432,14 @@ class BusinessRoleNavigationDrawer extends StatelessWidget {
   }
 
   String _roleLabel(String role) => switch (role) {
-        'admin' => 'مدير المنصة',
-        'accountant' => 'الحسابات',
-        'teacher' => 'مدرس',
-        'library' => 'مكتبة',
-        'courier' || 'delegate' => 'مندوب',
-        'printer' => 'مطبعة',
-        _ => role,
-      };
+    'admin' => 'مدير المنصة',
+    'accountant' => 'الحسابات',
+    'teacher' => 'مدرس',
+    'library' => 'مكتبة',
+    'courier' || 'delegate' => 'مندوب',
+    'printer' => 'مطبعة',
+    _ => role,
+  };
 }
 
 class AdminDesktopNavigationSidebar extends StatelessWidget {
@@ -452,23 +477,82 @@ class AdminDesktopNavigationSidebar extends StatelessWidget {
                   _sectionItem(Icons.groups_rounded, 'الحسابات', 2),
                   _group('المحتوى'),
                   _sectionItem(Icons.inventory_2_rounded, 'المحتوى', 4),
-                  _routeItem(context, Icons.menu_book_rounded, 'إدارة الكتب', AdminBooksScreen(repository: repository)),
-                  _routeItem(context, Icons.video_library_rounded, 'دورات المدرسين', AdminTeacherCoursesScreen(repository: repository)),
+                  _routeItem(
+                    context,
+                    Icons.menu_book_rounded,
+                    'إدارة الكتب',
+                    AdminBooksScreen(repository: repository),
+                  ),
+                  _routeItem(
+                    context,
+                    Icons.video_library_rounded,
+                    'دورات المدرسين',
+                    AdminTeacherCoursesScreen(repository: repository),
+                  ),
                   _group('التوصيل والعملاء'),
-                  _routeItem(context, Icons.delivery_dining_rounded, 'مركز المندوبين', AdminCourierHubScreen(repository: repository)),
-                  _routeItem(context, Icons.local_shipping_rounded, 'أسعار التوصيل', AdminDeliveryPricingScreen(repository: repository)),
-                  _routeItem(context, Icons.person_search_rounded, 'العملاء والطلبات', AdminGrowthControlsScreen(repository: repository)),
+                  _routeItem(
+                    context,
+                    Icons.delivery_dining_rounded,
+                    'مركز المندوبين',
+                    AdminCourierHubScreen(repository: repository),
+                  ),
+                  _routeItem(
+                    context,
+                    Icons.local_shipping_rounded,
+                    'أسعار التوصيل',
+                    AdminDeliveryPricingScreen(repository: repository),
+                  ),
+                  _routeItem(
+                    context,
+                    Icons.person_search_rounded,
+                    'العملاء والطلبات',
+                    AdminGrowthControlsScreen(repository: repository),
+                  ),
                   _group('المالية والتسويق'),
-                  _sectionItem(Icons.account_balance_wallet_rounded, 'المالية', 3),
+                  _sectionItem(
+                    Icons.account_balance_wallet_rounded,
+                    'المالية',
+                    3,
+                  ),
                   _sectionItem(Icons.receipt_long_outlined, 'الوصولات', 5),
-                  _routeItem(context, Icons.analytics_rounded, 'التقارير والتحليلات', AdminReportsScreen(repository: repository)),
-                  _routeItem(context, Icons.confirmation_number_rounded, 'العروض والكوبونات', AdminCouponsScreen(repository: repository)),
+                  _routeItem(
+                    context,
+                    Icons.analytics_rounded,
+                    'التقارير والتحليلات',
+                    AdminReportsScreen(repository: repository),
+                  ),
+                  _routeItem(
+                    context,
+                    Icons.confirmation_number_rounded,
+                    'العروض والكوبونات',
+                    AdminCouponsScreen(repository: repository),
+                  ),
                   _group('النظام'),
-                  _routeItem(context, Icons.palette_rounded, 'الهوية البصرية', AdminBrandingScreen(repository: repository)),
-                  _routeItem(context, Icons.settings_rounded, 'إعدادات المنصة', AdminSettingsScreen(repository: repository)),
+                  _routeItem(
+                    context,
+                    Icons.palette_rounded,
+                    'الهوية البصرية',
+                    AdminBrandingScreen(repository: repository),
+                  ),
+                  _routeItem(
+                    context,
+                    Icons.settings_rounded,
+                    'إعدادات المنصة',
+                    AdminSettingsScreen(repository: repository),
+                  ),
                   if (account.role == 'admin')
-                    _routeItem(context, Icons.backup_rounded, 'النسخ الاحتياطي', AdminBackupScreen(repository: repository)),
-                  _routeItem(context, Icons.notifications_rounded, 'الإشعارات', BusinessNotificationsScreen(repository: repository)),
+                    _routeItem(
+                      context,
+                      Icons.backup_rounded,
+                      'النسخ الاحتياطي',
+                      AdminBackupScreen(repository: repository),
+                    ),
+                  _routeItem(
+                    context,
+                    Icons.notifications_rounded,
+                    'الإشعارات',
+                    BusinessNotificationsScreen(repository: repository),
+                  ),
                 ],
               ),
             ),
@@ -480,28 +564,45 @@ class AdminDesktopNavigationSidebar extends StatelessWidget {
   }
 
   Widget _desktopHeader() => Padding(
-        padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
-        child: Row(
-          children: [
-            const AlinBrandMark(size: 48),
-            const SizedBox(width: 11),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('آلين للأعمال', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 17)),
-                  Text(account.role == 'accountant' ? 'لوحة الحسابات' : 'لوحة الإدارة', style: const TextStyle(color: Colors.white70, fontSize: 11.5)),
-                ],
+    padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
+    child: Row(
+      children: [
+        const AlinBrandMark(size: 48),
+        const SizedBox(width: 11),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'آلين للأعمال',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 17,
+                ),
               ),
-            ),
-          ],
+              Text(
+                account.role == 'accountant' ? 'لوحة الحسابات' : 'لوحة الإدارة',
+                style: const TextStyle(color: Colors.white70, fontSize: 11.5),
+              ),
+            ],
+          ),
         ),
-      );
+      ],
+    ),
+  );
 
   Widget _group(String text) => Padding(
-        padding: const EdgeInsets.fromLTRB(11, 15, 11, 6),
-        child: Text(text, style: const TextStyle(color: Colors.white54, fontSize: 10.5, fontWeight: FontWeight.w900)),
-      );
+    padding: const EdgeInsets.fromLTRB(11, 15, 11, 6),
+    child: Text(
+      text,
+      style: const TextStyle(
+        color: Colors.white54,
+        fontSize: 10.5,
+        fontWeight: FontWeight.w900,
+      ),
+    ),
+  );
 
   Widget _sectionItem(IconData icon, String title, int value) {
     final selected = selectedSection == value;
@@ -513,12 +614,17 @@ class AdminDesktopNavigationSidebar extends StatelessWidget {
     );
   }
 
-  Widget _routeItem(BuildContext context, IconData icon, String title, Widget page) =>
-      _desktopItem(
-        icon: icon,
-        title: title,
-        onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => page)),
-      );
+  Widget _routeItem(
+    BuildContext context,
+    IconData icon,
+    String title,
+    Widget page,
+  ) => _desktopItem(
+    icon: icon,
+    title: title,
+    onTap: () =>
+        Navigator.of(context).push(MaterialPageRoute(builder: (_) => page)),
+  );
 
   Widget _desktopItem({
     required IconData icon,
@@ -529,7 +635,9 @@ class AdminDesktopNavigationSidebar extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 3),
       child: Material(
-        color: selected ? Colors.white.withValues(alpha: .14) : Colors.transparent,
+        color: selected
+            ? Colors.white.withValues(alpha: .14)
+            : Colors.transparent,
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
@@ -538,7 +646,11 @@ class AdminDesktopNavigationSidebar extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10.5),
             child: Row(
               children: [
-                Icon(icon, color: selected ? Colors.white : Colors.white70, size: 19),
+                Icon(
+                  icon,
+                  color: selected ? Colors.white : Colors.white70,
+                  size: 19,
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
@@ -559,22 +671,38 @@ class AdminDesktopNavigationSidebar extends StatelessWidget {
   }
 
   Widget _desktopFooter() => Container(
-        padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
-        decoration: const BoxDecoration(border: Border(top: BorderSide(color: Colors.white12))),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(account.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900)),
-            const SizedBox(height: 2),
-            Text(account.role == 'accountant' ? 'الحسابات' : 'مدير المنصة', style: const TextStyle(color: Colors.white54, fontSize: 11)),
-            const SizedBox(height: 9),
-            OutlinedButton.icon(
-              onPressed: onLogout,
-              style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white24)),
-              icon: const Icon(Icons.logout_rounded, size: 18),
-              label: const Text('تسجيل الخروج'),
-            ),
-          ],
+    padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
+    decoration: const BoxDecoration(
+      border: Border(top: BorderSide(color: Colors.white12)),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          account.name,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w900,
+          ),
         ),
-      );
+        const SizedBox(height: 2),
+        Text(
+          account.role == 'accountant' ? 'الحسابات' : 'مدير المنصة',
+          style: const TextStyle(color: Colors.white54, fontSize: 11),
+        ),
+        const SizedBox(height: 9),
+        OutlinedButton.icon(
+          onPressed: onLogout,
+          style: OutlinedButton.styleFrom(
+            foregroundColor: Colors.white,
+            side: const BorderSide(color: Colors.white24),
+          ),
+          icon: const Icon(Icons.logout_rounded, size: 18),
+          label: const Text('تسجيل الخروج'),
+        ),
+      ],
+    ),
+  );
 }
