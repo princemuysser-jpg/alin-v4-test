@@ -1,6 +1,5 @@
 from pathlib import Path
 
-# Trigger Build 14 verification after adding the role tools workflow.
 ROOT = Path(__file__).resolve().parents[1]
 MAIN = ROOT / 'flutter_business/lib/main.dart'
 PUBSPEC = ROOT / 'flutter_business/pubspec.yaml'
@@ -30,11 +29,13 @@ method_block = """  void _openRoleTools() {
   }
 
 """
-if method_block.strip() not in text:
+if 'void _openRoleTools()' not in text:
     if method_marker not in text:
         raise SystemExit('open personal finance marker not found')
     text = text.replace(method_marker, method_block + method_marker, 1)
 
+# Detect the button by heroTag instead of exact formatting so dart format cannot
+# make the patch add a duplicate on later workflow runs.
 overlay_marker = """        Positioned(
           right: 14,
           bottom: 88,
@@ -51,15 +52,16 @@ tools_button = """        Positioned(
           ),
         ),
 """
-if tools_button.strip() not in text:
+if "heroTag: 'business-role-tools'" not in text:
     if overlay_marker not in text:
         raise SystemExit('overlay marker not found')
     text = text.replace(overlay_marker, tools_button + overlay_marker, 1)
 
 MAIN.write_text(text, encoding='utf-8')
 
+# Do not downgrade a newer build. Build 14 is only the minimum version for this patch.
 pub = PUBSPEC.read_text(encoding='utf-8')
-if 'version: 1.0.6+14' not in pub:
+if 'version: 1.0.6+14' not in pub and 'version: 1.0.7+15' not in pub:
     import re
     pub = re.sub(r'version:\s*[^\n]+', 'version: 1.0.6+14', pub, count=1)
     lines = pub.splitlines()
