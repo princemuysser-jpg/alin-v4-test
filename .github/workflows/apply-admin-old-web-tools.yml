@@ -1,5 +1,6 @@
 name: Apply Admin Old Web Tools
 
+# Trigger after workflow creation so the admin parity patch runs on main.
 on:
   push:
     paths:
