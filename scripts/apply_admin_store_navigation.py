@@ -1,5 +1,6 @@
 from pathlib import Path
 
+# Integrates direct Products, Categories and Ads entries into the admin navigation.
 path = Path('flutter_business/lib/widgets/business_role_navigation.dart')
 text = path.read_text(encoding='utf-8')
 
