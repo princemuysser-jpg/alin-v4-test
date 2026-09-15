@@ -73,14 +73,13 @@ class _LibraryDashboardScreenState extends State<LibraryDashboardScreen> {
     }
   }
 
-  bool isDone(Map<String, dynamic> o) =>
-      doneStatuses.contains('${o['status']}');
-  bool isClosed(Map<String, dynamic> o) =>
-      closedStatuses.contains('${o['status']}');
+  bool isDone(Map<String, dynamic> o) => doneStatuses.contains('${o['status']}');
+  bool isClosed(Map<String, dynamic> o) => closedStatuses.contains('${o['status']}');
 
   List<Map<String, dynamic>> get visibleOrders {
-    if (filter == 'ready')
+    if (filter == 'ready') {
       return orders.where((o) => '${o['status']}' == 'ready').toList();
+    }
     if (filter == 'completed') return orders.where(isDone).toList();
     if (filter == 'all') return orders;
     return orders
@@ -89,14 +88,14 @@ class _LibraryDashboardScreenState extends State<LibraryDashboardScreen> {
   }
 
   String statusLabel(String status) => switch (status) {
-    'new' || 'pending' || 'pending_admin' || 'accepted' => 'جديد',
-    'processing' || 'printing' => 'قيد التجهيز',
-    'ready' => 'جاهز',
-    'completed' || 'delivered' => 'مسلّم',
-    'cancelled' => 'ملغي',
-    'rejected' => 'مرفوض',
-    _ => status,
-  };
+        'new' || 'pending' || 'pending_admin' || 'accepted' => 'جديد',
+        'processing' || 'printing' => 'قيد التجهيز',
+        'ready' => 'جاهز',
+        'completed' || 'delivered' => 'مسلّم',
+        'cancelled' => 'ملغي',
+        'rejected' => 'مرفوض',
+        _ => status,
+      };
 
   Future<void> setOpen(bool value) async {
     try {
@@ -126,9 +125,9 @@ class _LibraryDashboardScreenState extends State<LibraryDashboardScreen> {
       await widget.repository.libraryTransition(id, status, reason: reason);
       await load();
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('تم تحديث الطلب')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('تم تحديث الطلب')),
+      );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -210,9 +209,9 @@ class _LibraryDashboardScreenState extends State<LibraryDashboardScreen> {
       await widget.repository.librarySetOrderNote(id, result);
       await load();
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('تم حفظ ملاحظة المكتبة')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('تم حفظ ملاحظة المكتبة')),
+      );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -303,188 +302,199 @@ class _LibraryDashboardScreenState extends State<LibraryDashboardScreen> {
           ),
         ],
       ),
-      body: RefreshIndicator(
-        onRefresh: load,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            Container(
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF143B68), Color(0xFF255B91)],
-                ),
-                borderRadius: BorderRadius.circular(22),
+      body: LayoutBuilder(
+        builder: (context, pageConstraints) {
+          final pageWidth = pageConstraints.maxWidth;
+          final desktop = pageWidth >= 980;
+          final tablet = pageWidth >= 650;
+          final horizontalPadding = desktop
+              ? ((pageWidth - 1180) / 2).clamp(20.0, 120.0)
+              : tablet
+                  ? 20.0
+                  : 12.0;
+          return RefreshIndicator(
+            onRefresh: load,
+            child: ListView(
+              padding: EdgeInsets.fromLTRB(
+                horizontalPadding,
+                16,
+                horizontalPadding,
+                96,
               ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'مرحباً ${widget.account.name}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w900,
-                            fontSize: 20,
+              children: [
+                Container(
+                  padding: EdgeInsets.all(desktop ? 24 : 18),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF143B68), Color(0xFF255B91)],
+                    ),
+                    borderRadius: BorderRadius.circular(desktop ? 26 : 22),
+                  ),
+                  child: Wrap(
+                    spacing: 16,
+                    runSpacing: 12,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    alignment: WrapAlignment.spaceBetween,
+                    children: [
+                      SizedBox(
+                        width: desktop ? 760 : null,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'مرحباً ${widget.account.name}',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w900,
+                                fontSize: desktop ? 24 : 20,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              '${profile['area'] ?? widget.account.area}${('${profile['landmark'] ?? widget.account.landmark}').trim().isEmpty ? '' : ' — ${profile['landmark'] ?? widget.account.landmark}'}',
+                              style: const TextStyle(color: Colors.white70),
+                            ),
+                            const SizedBox(height: 5),
+                            const Text(
+                              'طلبات الطباعة والتجهيز والتسليم والحسابات بمكان واحد',
+                              style: TextStyle(color: Colors.white70, fontSize: 12),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: .12),
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              isOpen ? 'مفتوح' : 'مغلق',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Switch(value: isOpen, onChanged: setOpen),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                LayoutBuilder(
+                  builder: (context, c) {
+                    final columns = c.maxWidth >= 1000 ? 5 : c.maxWidth >= 620 ? 3 : 2;
+                    final gap = 8.0;
+                    final cardWidth = (c.maxWidth - gap * (columns - 1)) / columns;
+                    final cards = [
+                      _Metric(label: 'للتجهيز', value: '$preparing', icon: Icons.print_rounded),
+                      _Metric(label: 'جاهز', value: '$ready', icon: Icons.inventory_2_rounded),
+                      _Metric(label: 'مسلّم', value: '$completed', icon: Icons.check_circle_rounded),
+                      _Metric(label: 'أرباح المكتبة', value: money(profit), icon: Icons.payments_rounded),
+                      _Metric(label: 'تسويات مسجلة', value: money(settled), icon: Icons.account_balance_wallet_rounded),
+                    ];
+                    return Wrap(
+                      spacing: gap,
+                      runSpacing: gap,
+                      children: cards.map((card) => SizedBox(width: cardWidth, child: card)).toList(),
+                    );
+                  },
+                ),
+                const SizedBox(height: 14),
+                Align(
+                  alignment: desktop ? Alignment.centerRight : Alignment.center,
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: SegmentedButton<String>(
+                      segments: const [
+                        ButtonSegment(value: 'work', label: Text('للتجهيز')),
+                        ButtonSegment(value: 'ready', label: Text('جاهز')),
+                        ButtonSegment(value: 'completed', label: Text('مسلّم')),
+                        ButtonSegment(value: 'all', label: Text('الكل')),
+                      ],
+                      selected: {filter},
+                      onSelectionChanged: (value) => setState(() => filter = value.first),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                if (loading)
+                  const Padding(
+                    padding: EdgeInsets.all(36),
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                else if (error != null)
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        children: [
+                          Text(error!),
+                          const SizedBox(height: 8),
+                          OutlinedButton(
+                            onPressed: load,
+                            child: const Text('إعادة المحاولة'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                else if (visibleOrders.isEmpty)
+                  const Card(
+                    child: Padding(
+                      padding: EdgeInsets.all(24),
+                      child: Center(child: Text('لا توجد طلبات في هذا القسم')),
+                    ),
+                  )
+                else
+                  ...visibleOrders.map(orderCard),
+                const SizedBox(height: 18),
+                const Text(
+                  'آخر التسويات',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+                ),
+                const SizedBox(height: 8),
+                if (settlements.isEmpty)
+                  const Card(
+                    child: Padding(
+                      padding: EdgeInsets.all(18),
+                      child: Text('لا توجد تسويات مسجلة بعد.'),
+                    ),
+                  )
+                else
+                  ...settlements.take(5).map(
+                        (s) => Card(
+                          child: ListTile(
+                            leading: const CircleAvatar(
+                              child: Icon(Icons.receipt_long_rounded),
+                            ),
+                            title: Text('${s['receipt_number'] ?? s['id']}'),
+                            subtitle: Text(
+                              '${s['payment_method'] ?? '—'} • ${s['status'] ?? '—'}',
+                            ),
+                            trailing: Text(
+                              money(s['amount']),
+                              style: const TextStyle(fontWeight: FontWeight.w900),
+                            ),
+                            onTap: () => showAlinSettlementReceipt(
+                              context,
+                              s,
+                              partyName: widget.account.name,
+                              partyRole: 'library',
+                            ),
                           ),
                         ),
-                        const SizedBox(height: 6),
-                        Text(
-                          '${profile['area'] ?? widget.account.area}${('${profile['landmark'] ?? widget.account.landmark}').trim().isEmpty ? '' : ' — ${profile['landmark'] ?? widget.account.landmark}'}',
-                          style: const TextStyle(color: Colors.white70),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Column(
-                    children: [
-                      Text(
-                        isOpen ? 'مفتوح' : 'مغلق',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w900,
-                        ),
                       ),
-                      Switch(value: isOpen, onChanged: setOpen),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: _Metric(
-                    label: 'للتجهيز',
-                    value: '$preparing',
-                    icon: Icons.print_rounded,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _Metric(
-                    label: 'جاهز',
-                    value: '$ready',
-                    icon: Icons.inventory_2_rounded,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _Metric(
-                    label: 'مسلّم',
-                    value: '$completed',
-                    icon: Icons.check_circle_rounded,
-                  ),
-                ),
               ],
             ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: _Metric(
-                    label: 'أرباح المكتبة',
-                    value: money(profit),
-                    icon: Icons.payments_rounded,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _Metric(
-                    label: 'تسويات مسجلة',
-                    value: money(settled),
-                    icon: Icons.account_balance_wallet_rounded,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            SegmentedButton<String>(
-              segments: const [
-                ButtonSegment(value: 'work', label: Text('للتجهيز')),
-                ButtonSegment(value: 'ready', label: Text('جاهز')),
-                ButtonSegment(value: 'completed', label: Text('مسلّم')),
-                ButtonSegment(value: 'all', label: Text('الكل')),
-              ],
-              selected: {filter},
-              onSelectionChanged: (value) =>
-                  setState(() => filter = value.first),
-            ),
-            const SizedBox(height: 14),
-            if (loading)
-              const Padding(
-                padding: EdgeInsets.all(36),
-                child: Center(child: CircularProgressIndicator()),
-              )
-            else if (error != null)
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    children: [
-                      Text(error!),
-                      const SizedBox(height: 8),
-                      OutlinedButton(
-                        onPressed: load,
-                        child: const Text('إعادة المحاولة'),
-                      ),
-                    ],
-                  ),
-                ),
-              )
-            else if (visibleOrders.isEmpty)
-              const Card(
-                child: Padding(
-                  padding: EdgeInsets.all(24),
-                  child: Center(child: Text('لا توجد طلبات في هذا القسم')),
-                ),
-              )
-            else
-              ...visibleOrders.map(orderCard),
-            const SizedBox(height: 18),
-            const Text(
-              'آخر التسويات',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
-            ),
-            const SizedBox(height: 8),
-            if (settlements.isEmpty)
-              const Card(
-                child: Padding(
-                  padding: EdgeInsets.all(18),
-                  child: Text('لا توجد تسويات مسجلة بعد.'),
-                ),
-              )
-            else
-              ...settlements
-                  .take(5)
-                  .map(
-                    (s) => Card(
-                      child: ListTile(
-                        leading: const CircleAvatar(
-                          child: Icon(Icons.receipt_long_rounded),
-                        ),
-                        title: Text('${s['receipt_number'] ?? s['id']}'),
-                        subtitle: Text(
-                          '${s['payment_method'] ?? '—'} • ${s['status'] ?? '—'}',
-                        ),
-                        trailing: Text(
-                          money(s['amount']),
-                          style: const TextStyle(fontWeight: FontWeight.w900),
-                        ),
-                        onTap: () => showAlinSettlementReceipt(
-                          context,
-                          s,
-                          partyName: widget.account.name,
-                          partyRole: 'library',
-                        ),
-                      ),
-                    ),
-                  ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -494,8 +504,7 @@ class _LibraryDashboardScreenState extends State<LibraryDashboardScreen> {
     final id = '${order['id']}';
     final busy = busyOrders.contains(id);
     final booklet = '${order['kind']}' == 'booklet';
-    final previewAllowed =
-        booklet && ['processing', 'printing', 'ready'].contains(status);
+    final previewAllowed = booklet && ['processing', 'printing', 'ready'].contains(status);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -517,10 +526,7 @@ class _LibraryDashboardScreenState extends State<LibraryDashboardScreen> {
                       const SizedBox(height: 3),
                       Text(
                         '${order['title'] ?? 'طلب طباعة'}',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                        ),
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
                       ),
                     ],
                   ),
@@ -529,35 +535,15 @@ class _LibraryDashboardScreenState extends State<LibraryDashboardScreen> {
               ],
             ),
             const Divider(),
-            _line(
-              Icons.person_outline,
-              'الطالب',
-              '${order['student_name'] ?? '—'}',
-            ),
-            _line(
-              Icons.phone_outlined,
-              'الهاتف',
-              '${order['student_phone'] ?? '—'}',
-            ),
+            _line(Icons.person_outline, 'الطالب', '${order['student_name'] ?? '—'}'),
+            _line(Icons.phone_outlined, 'الهاتف', '${order['student_phone'] ?? '—'}'),
             _line(Icons.inventory_2_outlined, 'العدد', '${order['qty'] ?? 1}'),
             _line(Icons.payments_outlined, 'الإجمالي', money(order['total'])),
-            _line(
-              Icons.account_balance_wallet_outlined,
-              'ربح المكتبة',
-              money(order['library_profit']),
-            ),
+            _line(Icons.account_balance_wallet_outlined, 'ربح المكتبة', money(order['library_profit'])),
             if ('${order['notes'] ?? ''}'.trim().isNotEmpty)
-              _line(
-                Icons.note_alt_outlined,
-                'ملاحظة الطالب',
-                '${order['notes']}',
-              ),
+              _line(Icons.note_alt_outlined, 'ملاحظة الطالب', '${order['notes']}'),
             if ('${order['library_note'] ?? ''}'.trim().isNotEmpty)
-              _line(
-                Icons.sticky_note_2_outlined,
-                'ملاحظة المكتبة',
-                '${order['library_note']}',
-              ),
+              _line(Icons.sticky_note_2_outlined, 'ملاحظة المكتبة', '${order['library_note']}'),
             const SizedBox(height: 10),
             if (!isClosed(order))
               Wrap(
@@ -571,15 +557,9 @@ class _LibraryDashboardScreenState extends State<LibraryDashboardScreen> {
                   ),
                   if (booklet)
                     FilledButton.tonalIcon(
-                      onPressed: busy || !previewAllowed
-                          ? null
-                          : () => openBookletPreview(order),
+                      onPressed: busy || !previewAllowed ? null : () => openBookletPreview(order),
                       icon: const Icon(Icons.picture_as_pdf_rounded),
-                      label: Text(
-                        previewAllowed
-                            ? 'معاينة / طباعة'
-                            : 'ابدأ التجهيز أولاً',
-                      ),
+                      label: Text(previewAllowed ? 'معاينة / طباعة' : 'ابدأ التجهيز أولاً'),
                     ),
                 ],
               ),
@@ -660,25 +640,25 @@ class _LibraryDashboardScreenState extends State<LibraryDashboardScreen> {
   }
 
   Widget _line(IconData icon, String label, String value) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 4),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, size: 19, color: const Color(0xFF49647E)),
-        const SizedBox(width: 8),
-        SizedBox(
-          width: 105,
-          child: Text(label, style: const TextStyle(color: Color(0xFF667085))),
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, size: 19, color: const Color(0xFF49647E)),
+            const SizedBox(width: 8),
+            SizedBox(
+              width: 105,
+              child: Text(label, style: const TextStyle(color: Color(0xFF667085))),
+            ),
+            Expanded(
+              child: Text(
+                value,
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+            ),
+          ],
         ),
-        Expanded(
-          child: Text(
-            value,
-            style: const TextStyle(fontWeight: FontWeight.w700),
-          ),
-        ),
-      ],
-    ),
-  );
+      );
 }
 
 class _Metric extends StatelessWidget {
@@ -690,22 +670,28 @@ class _Metric extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      constraints: const BoxConstraints(minHeight: 112),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE3EAF1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(icon, color: const Color(0xFF143B68)),
-          const SizedBox(height: 8),
+          const Spacer(),
           Text(
             value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 17),
           ),
           Text(
             label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: const TextStyle(fontSize: 12, color: Color(0xFF667085)),
           ),
         ],
