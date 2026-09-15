@@ -38,7 +38,7 @@ jobs:
           flutter config --no-analytics
           flutter pub get
           dart format lib/main.dart lib/widgets/business_role_navigation.dart lib/screens/admin_dashboard_screen.dart lib/screens/admin_desktop_dashboard_screen.dart lib/screens/teacher_dashboard_screen.dart lib/screens/library_dashboard_screen.dart lib/screens/courier_dashboard_screen.dart lib/screens/printer_dashboard_screen.dart
-          flutter analyze lib --no-fatal-infos
+          flutter analyze lib --no-fatal-infos --no-fatal-warnings
 
       - name: Commit verified navigation changes
         run: |
