@@ -16,12 +16,11 @@ import 'screens/admin_desktop_shell_screen.dart';
 import 'screens/business_order_details_screen.dart';
 import 'screens/courier_dashboard_screen.dart';
 import 'screens/library_dashboard_screen.dart';
-import 'screens/printer_dashboard_screen.dart';
+import 'screens/printer_dual_dashboard_screen.dart';
 import 'screens/teacher_dashboard_screen.dart';
 import 'widgets/business_brand.dart';
 
-final GlobalKey<NavigatorState> businessNavigatorKey =
-    GlobalKey<NavigatorState>();
+final GlobalKey<NavigatorState> businessNavigatorKey = GlobalKey<NavigatorState>();
 
 const FirebaseOptions _alinBusinessAndroidFirebaseOptions = FirebaseOptions(
   apiKey: 'AIzaSyDjd9BA_V6qqiN96OcqBtC521VPzew9occ',
@@ -57,16 +56,13 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await _initializeFirebase();
-  if (!kIsWeb)
-    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  if (!kIsWeb) FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   await Supabase.initialize(
     url: BusinessConfig.supabaseUrl,
     publishableKey: BusinessConfig.supabasePublishableKey,
   );
   try {
-    final rows = await Supabase.instance.client
-        .from('settings')
-        .select('key,value');
+    final rows = await Supabase.instance.client.from('settings').select('key,value');
     final values = <String, String>{};
     for (final row in rows) {
       values['${row['key']}'] = '${row['value'] ?? ''}';
@@ -137,8 +133,7 @@ class _BusinessGateState extends State<BusinessGate> {
     final link = '${payload['url'] ?? payload['link'] ?? ''}'.trim();
     if (link.isEmpty) return null;
     final uri = Uri.tryParse(link);
-    final value =
-        uri?.queryParameters['order'] ?? uri?.queryParameters['order_id'];
+    final value = uri?.queryParameters['order'] ?? uri?.queryParameters['order_id'];
     return value == null || value.trim().isEmpty ? null : value.trim();
   }
 
@@ -161,10 +156,7 @@ class _BusinessGateState extends State<BusinessGate> {
       pendingOrderId = null;
       navigator.push(
         MaterialPageRoute(
-          builder: (_) => BusinessOrderDetailsScreen(
-            repository: repository,
-            orderId: orderId,
-          ),
+          builder: (_) => BusinessOrderDetailsScreen(repository: repository, orderId: orderId),
         ),
       );
     });
@@ -208,12 +200,8 @@ class _BusinessGateState extends State<BusinessGate> {
 
   @override
   Widget build(BuildContext context) {
-    if (loading)
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-
-    if (account == null) {
-      return LoginScreen(repository: repository, onLoggedIn: _loggedIn);
-    }
+    if (loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    if (account == null) return LoginScreen(repository: repository, onLoggedIn: _loggedIn);
 
     final pageKey = ValueKey('${account!.role}-$notificationTick');
     final desktopAdmin = kIsWeb && MediaQuery.sizeOf(context).width >= 900;
@@ -222,46 +210,16 @@ class _BusinessGateState extends State<BusinessGate> {
       case 'admin':
       case 'accountant':
         page = desktopAdmin
-            ? AdminDesktopShellScreen(
-                key: pageKey,
-                repository: repository,
-                account: account!,
-                onLogout: _logout,
-              )
-            : AdminDashboardScreen(
-                key: pageKey,
-                repository: repository,
-                account: account!,
-                onLogout: _logout,
-              );
+            ? AdminDesktopShellScreen(key: pageKey, repository: repository, account: account!, onLogout: _logout)
+            : AdminDashboardScreen(key: pageKey, repository: repository, account: account!, onLogout: _logout);
       case 'courier':
-        page = CourierDashboardScreen(
-          key: pageKey,
-          repository: repository,
-          account: account!,
-          onLogout: _logout,
-        );
+        page = CourierDashboardScreen(key: pageKey, repository: repository, account: account!, onLogout: _logout);
       case 'library':
-        page = LibraryDashboardScreen(
-          key: pageKey,
-          repository: repository,
-          account: account!,
-          onLogout: _logout,
-        );
+        page = LibraryDashboardScreen(key: pageKey, repository: repository, account: account!, onLogout: _logout);
       case 'printer':
-        page = PrinterDashboardScreen(
-          key: pageKey,
-          repository: repository,
-          account: account!,
-          onLogout: _logout,
-        );
+        page = PrinterDualDashboardScreen(key: pageKey, repository: repository, account: account!, onLogout: _logout);
       case 'teacher':
-        page = TeacherDashboardScreen(
-          key: pageKey,
-          repository: repository,
-          account: account!,
-          onLogout: _logout,
-        );
+        page = TeacherDashboardScreen(key: pageKey, repository: repository, account: account!, onLogout: _logout);
       default:
         page = Scaffold(
           appBar: AppBar(title: const Text('آلين للأعمال')),
@@ -276,11 +234,7 @@ class LoginScreen extends StatefulWidget {
   final BusinessRepository repository;
   final ValueChanged<BusinessAccount> onLoggedIn;
 
-  const LoginScreen({
-    super.key,
-    required this.repository,
-    required this.onLoggedIn,
-  });
+  const LoginScreen({super.key, required this.repository, required this.onLoggedIn});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -339,25 +293,15 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 22),
                   Text(
                     BusinessConfig.appName,
-                    style: const TextStyle(
-                      fontSize: 30,
-                      fontWeight: FontWeight.w900,
-                      color: BusinessBrand.navy,
-                    ),
+                    style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w900, color: BusinessBrand.navy),
                   ),
                   const SizedBox(height: 6),
-                  Text(
-                    BusinessConfig.appSubtitle,
-                    style: TextStyle(color: Colors.grey.shade600),
-                  ),
+                  Text(BusinessConfig.appSubtitle, style: TextStyle(color: Colors.grey.shade600)),
                   const SizedBox(height: 32),
                   TextField(
                     controller: username,
                     textInputAction: TextInputAction.next,
-                    decoration: const InputDecoration(
-                      labelText: 'اسم الدخول',
-                      prefixIcon: Icon(Icons.person_outline),
-                    ),
+                    decoration: const InputDecoration(labelText: 'اسم الدخول', prefixIcon: Icon(Icons.person_outline)),
                   ),
                   const SizedBox(height: 14),
                   TextField(
@@ -369,11 +313,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       prefixIcon: const Icon(Icons.lock_outline),
                       suffixIcon: IconButton(
                         onPressed: () => setState(() => obscure = !obscure),
-                        icon: Icon(
-                          obscure
-                              ? Icons.visibility_outlined
-                              : Icons.visibility_off_outlined,
-                        ),
+                        icon: Icon(obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined),
                       ),
                     ),
                   ),
@@ -382,14 +322,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFEEEE),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        error!,
-                        style: const TextStyle(color: Color(0xFFB42318)),
-                      ),
+                      decoration: BoxDecoration(color: const Color(0xFFFFEEEE), borderRadius: BorderRadius.circular(12)),
+                      child: Text(error!, style: const TextStyle(color: Color(0xFFB42318))),
                     ),
                   ],
                   const SizedBox(height: 18),
@@ -399,22 +333,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: FilledButton.icon(
                       onPressed: busy ? null : submit,
                       icon: busy
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
+                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
                           : const Icon(Icons.login_rounded),
-                      label: Text(
-                        busy ? 'جارٍ تسجيل الدخول...' : 'تسجيل الدخول',
-                      ),
+                      label: Text(busy ? 'جارٍ تسجيل الدخول...' : 'تسجيل الدخول'),
                     ),
                   ),
                   const SizedBox(height: 16),
-                  Text(
-                    'يتم تحديد نوع الحساب تلقائياً من السيرفر',
-                    style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
-                  ),
+                  Text('يتم تحديد نوع الحساب تلقائياً من السيرفر', style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
                 ],
               ),
             ),
