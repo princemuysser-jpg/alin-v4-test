@@ -42,7 +42,7 @@
         areas:selectedAreas,
         status:'active'
       };
-      if(!['teacher','library','courier','accountant'].includes(role))throw new Error('اختر نوع الحساب');
+      if(!['teacher','library','printer','courier','accountant'].includes(role))throw new Error('اختر نوع الحساب');
       if(role==='courier'&&!payload.areas.length)throw new Error('اختر منطقة عمل واحدة على الأقل');
       if(role==='courier'&&!payload.phone)throw new Error('أدخل رقم هاتف المندوب');
       const account=await createAccount(payload);
