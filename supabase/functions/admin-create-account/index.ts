@@ -7,10 +7,11 @@ import {
   normalizeUsername,
   publicAccount,
   requireAdmin,
+  requireSuperAdmin,
   assertStrongPassword,
 } from '../_shared/admin.ts';
 
-const ALLOWED_ROLES = new Set(['teacher', 'library', 'courier', 'accountant', 'printer']);
+const ALLOWED_ROLES = new Set(['admin', 'teacher', 'library', 'courier', 'accountant', 'printer']);
 
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders(req) });
@@ -19,7 +20,8 @@ Deno.serve(async (req: Request) => {
   let createdUserId = '';
   let accountId = '';
   try {
-    const { admin } = await requireAdmin(req, 'accounts');
+    const context = await requireAdmin(req, 'accounts');
+    const { admin } = context;
     const body = await req.json();
     const role = cleanText(body.role, 30).toLowerCase();
     const name = cleanText(body.name, 120);
@@ -33,6 +35,7 @@ Deno.serve(async (req: Request) => {
       ? (requestedAreas[0] || cleanText(body.area, 120))
       : cleanText(body.area, 120);
     if (!ALLOWED_ROLES.has(role)) throw new Error('نوع الحساب غير مدعوم');
+    if (role === 'admin') requireSuperAdmin(context);
     if (!name || !username || !password) throw new Error('أكمل الاسم واسم الدخول وكلمة المرور');
     assertStrongPassword(password);
     if (role === 'courier' && !requestedAreas.length && !primaryArea) throw new Error('اختر منطقة عمل واحدة على الأقل للمندوب');
@@ -59,6 +62,7 @@ Deno.serve(async (req: Request) => {
       username,
       status,
       auth_user_id: resolved.id,
+      ...(role === 'admin' ? { admin_level: 'operator' } : {}),
       area: primaryArea,
       landmark: cleanText(body.landmark, 180),
       phone: cleanText(body.phone, 40),
