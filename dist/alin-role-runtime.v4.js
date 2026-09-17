@@ -5516,7 +5516,7 @@ window.AlinCourierModules['recordCourierSettlementForOrder']=typeof recordCourie
 
 /* modules/core/account-admin-service.js */
 // === core/account-admin-service.js ===
-/* ALIN RC7 — account administration through authenticated Edge Functions only. */
+/* ALIN RC7.1 — account administration through authenticated Edge Functions only. */
 (function(){
   'use strict';
   const runtime=()=>window.ALINAuthRuntime||{};
@@ -5527,7 +5527,6 @@ window.AlinCourierModules['recordCourierSettlementForOrder']=typeof recordCourie
     if(typeof invoke!=='function')throw new Error('خدمة إدارة الحسابات غير جاهزة');
     return invoke(name,body);
   };
-
 
   async function createAccount(payload){
     if(!payload?.name||!payload?.username||!payload?.password)throw new Error('أكمل الاسم واسم الدخول وكلمة المرور');
