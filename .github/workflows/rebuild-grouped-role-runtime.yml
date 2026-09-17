@@ -6,6 +6,9 @@ on:
       - main
     paths:
       - '.github/workflows/rebuild-grouped-role-runtime.yml'
+      - 'modules/core/account-admin-service.js'
+      - 'modules/admin/accounts.js'
+      - 'scripts/build-runtime.py'
   workflow_dispatch:
 
 permissions:
@@ -23,10 +26,11 @@ jobs:
       - name: Rebuild role runtime
         run: python3 scripts/build-runtime.py
 
-      - name: Verify grouped modules
+      - name: Verify grouped modules and printer account creation
         run: |
           grep -q 'modules/admin/orders-grouped.js' dist/alin-role-runtime.v4.js
           grep -q 'groupedOrderReceipts' dist/alin-role-runtime.v4.js
+          grep -Fq "['teacher','library','printer','courier','accountant']" dist/alin-role-runtime.v4.js
           node --check dist/alin-role-runtime.v4.js
 
       - name: Commit runtime
@@ -38,5 +42,5 @@ jobs:
             echo 'Runtime already current.'
             exit 0
           fi
-          git commit -m 'build: restore grouped orders in role runtime'
+          git commit -m 'build: refresh role runtime for printer account creation'
           git push origin HEAD:main
