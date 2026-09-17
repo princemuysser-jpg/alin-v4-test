@@ -63,6 +63,7 @@ Deno.serve(async (req: Request) => {
       status,
       auth_user_id: resolved.id,
       ...(role === 'admin' ? { admin_level: 'operator' } : {}),
+      ...(role === 'printer' ? { is_open: true, open_status: 'open' } : {}),
       area: primaryArea,
       landmark: cleanText(body.landmark, 180),
       phone: cleanText(body.phone, 40),
