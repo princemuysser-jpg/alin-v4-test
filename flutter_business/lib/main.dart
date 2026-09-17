@@ -12,7 +12,7 @@ import 'core/business_notification_service.dart';
 import 'data/business_repository.dart';
 import 'models/business_account.dart';
 import 'screens/admin_dashboard_screen.dart';
-import 'screens/admin_desktop_dashboard_screen.dart';
+import 'screens/admin_desktop_shell_screen.dart';
 import 'screens/business_order_details_screen.dart';
 import 'screens/courier_dashboard_screen.dart';
 import 'screens/library_dashboard_screen.dart';
@@ -63,7 +63,6 @@ Future<void> main() async {
     url: BusinessConfig.supabaseUrl,
     publishableKey: BusinessConfig.supabasePublishableKey,
   );
-  // Load the same visual identity used by the legacy web app.
   try {
     final rows = await Supabase.instance.client
         .from('settings')
@@ -73,9 +72,7 @@ Future<void> main() async {
       values['${row['key']}'] = '${row['value'] ?? ''}';
     }
     BusinessBrand.configure(values);
-  } catch (_) {
-    // Keep the built-in ALIN identity if public settings are temporarily unavailable.
-  }
+  } catch (_) {}
   runApp(const AlinBusinessApp());
 }
 
@@ -225,7 +222,7 @@ class _BusinessGateState extends State<BusinessGate> {
       case 'admin':
       case 'accountant':
         page = desktopAdmin
-            ? AdminDesktopDashboardScreen(
+            ? AdminDesktopShellScreen(
                 key: pageKey,
                 repository: repository,
                 account: account!,
