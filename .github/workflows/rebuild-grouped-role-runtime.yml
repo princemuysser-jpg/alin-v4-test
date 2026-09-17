@@ -26,21 +26,45 @@ jobs:
       - name: Rebuild role runtime
         run: python3 scripts/build-runtime.py
 
+      - name: Bust staff runtime cache
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+          from datetime import datetime, timezone
+
+          token='4.2.0-printer-account-'+datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')
+          cfg=Path('alin-config.js')
+          text=cfg.read_text(encoding='utf-8')
+          text,count=re.subn(r"assetVersion:'[^']+'",f"assetVersion:'{token}'",text,count=1)
+          if count != 1:
+              raise SystemExit('Could not update assetVersion')
+          cfg.write_text(text,encoding='utf-8')
+
+          for name in ('store-desktop.html','store-mobile.html','store-tablet.html'):
+              path=Path(name)
+              html=path.read_text(encoding='utf-8')
+              html,count=re.subn(r'alin-config\.js\?v=[^\"]+',f'alin-config.js?v={token}',html,count=1)
+              if count != 1:
+                  raise SystemExit(f'Could not update config token in {name}')
+              path.write_text(html,encoding='utf-8')
+
       - name: Verify grouped modules and printer account creation
         run: |
           grep -q 'modules/admin/orders-grouped.js' dist/alin-role-runtime.v4.js
           grep -q 'groupedOrderReceipts' dist/alin-role-runtime.v4.js
           grep -Fq "['teacher','library','printer','courier','accountant']" dist/alin-role-runtime.v4.js
+          grep -Fq '4.2.0-printer-account-' alin-config.js
           node --check dist/alin-role-runtime.v4.js
 
       - name: Commit runtime
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add dist/alin-role-runtime.v4.js dist/alin-core.v4.js alin-app-desktop.v4.2.0.js alin-app-mobile.v4.2.0.js alin-app-tablet.v4.2.0.js
+          git add dist/alin-role-runtime.v4.js dist/alin-core.v4.js alin-app-desktop.v4.2.0.js alin-app-mobile.v4.2.0.js alin-app-tablet.v4.2.0.js alin-config.js store-desktop.html store-mobile.html store-tablet.html
           if git diff --cached --quiet; then
             echo 'Runtime already current.'
             exit 0
           fi
-          git commit -m 'build: refresh role runtime for printer account creation'
+          git commit -m 'build: publish printer account runtime fix'
           git push origin HEAD:main
