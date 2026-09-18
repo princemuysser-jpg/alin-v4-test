@@ -20,7 +20,7 @@
   const client=()=>window.ALINAuthRuntime?.client?.()||window.sb||window.AlinCloud?.client?.()||null;
 
   function findOrder(id){return (window.db?.orders||[]).find(row=>String(row.id)===String(id));}
-  function currentLibraryId(){return String(window.current?.role==='library'?(window.current.id||window.current.library_id||''):'');}
+  function currentLibraryId(){return String(['library','printer'].includes(window.current?.role)?(window.current.id||window.current.library_id||''):'');}
   function orderLibraryId(order){return String(order?.library_id||order?.pickup_library_id||order?.assigned_library_id||'');}
   function ownsOrder(order){
     const id=currentLibraryId();
@@ -57,7 +57,7 @@
   async function libraryOrderStatus(id,status){
     const order=findOrder(id);
     if(!order)throw new Error('الطلب غير موجود');
-    if(window.current?.role==='library'&&!ownsOrder(order))throw new Error('هذا الطلب غير مسند إلى مكتبتك');
+    if(['library','printer'].includes(window.current?.role)&&!ownsOrder(order))throw new Error(window.current?.role==='printer'?'هذا الطلب غير مسند إلى مطبعتك':'هذا الطلب غير مسند إلى مكتبتك');
     const target=normalize(status),source=normalize(order.status);
     if(!canMove(source,target))throw new Error('لا يمكن نقل الطلب من '+source+' إلى '+target);
     if(source===target)return order;
@@ -74,7 +74,7 @@
     if(!text)throw new Error('اكتب سبب الإلغاء');
     const order=findOrder(id);
     if(!order)throw new Error('الطلب غير موجود');
-    if(window.current?.role==='library'&&!ownsOrder(order))throw new Error('هذا الطلب غير مسند إلى مكتبتك');
+    if(['library','printer'].includes(window.current?.role)&&!ownsOrder(order))throw new Error(window.current?.role==='printer'?'هذا الطلب غير مسند إلى مطبعتك':'هذا الطلب غير مسند إلى مكتبتك');
     await callOrderRpc(order,'cancelled',text);
     if(typeof audit==='function')await audit('order',`المكتبة ألغت الطلب ${order.order_number||order.id}: ${text}`);
     if(typeof load==='function')await load({force:true,reason:'library-order-cancel'});
