@@ -41,7 +41,7 @@
   function receiptCenterIsActive(){
     const role=String(document.body.dataset.alin415ReceiptsRole||'');
     if(!role)return false;
-    const hostId=role==='admin'||role==='accountant'?'adminContent':role==='teacher'?'teacherContent':role==='library'?'libraryV116Content':'courierV161Content';
+    const hostId=role==='admin'||role==='accountant'?'adminContent':role==='teacher'?'teacherContent':(role==='library'||role==='printer')?'libraryV116Content':'courierV161Content';
     const host=document.getElementById(hostId);
     if(!host||host.closest('.hidden')||host.hidden)return false;
     const center=host.querySelector(`.alin415r-center[data-alin415r-role="${role}"]`);
