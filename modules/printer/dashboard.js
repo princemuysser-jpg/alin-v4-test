@@ -52,6 +52,8 @@
     }
     const receipt=document.querySelector('[data-alin415-receipts-role]');
     if(receipt)receipt.setAttribute('data-alin415-receipts-role','printer');
+    const heading=document.querySelector('#libraryPage .library-v116-identity small');
+    if(heading)heading.textContent='لوحة إدارة المطبعة';
     const name=document.getElementById('libraryV116Name');
     if(name)name.textContent=window.current?.name||'المطبعة';
     const loc=document.getElementById('libraryV116Location');
