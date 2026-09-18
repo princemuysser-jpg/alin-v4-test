@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../data/business_repository.dart';
 import '../models/business_account.dart';
+import 'business_notifications_screen.dart';
+import 'business_party_finance_screen.dart';
 import 'library_dashboard_screen.dart';
 import 'printer_dashboard_screen.dart';
+import 'printer_settings_screen.dart';
 
 class PrinterDualDashboardScreen extends StatelessWidget {
   final BusinessRepository repository;
@@ -44,6 +47,26 @@ class PrinterDualDashboardScreen extends StatelessWidget {
           ],
         ),
         actions: [
+          IconButton(
+            tooltip: 'الإشعارات',
+            onPressed: () => _open(
+              context,
+              BusinessNotificationsScreen(repository: repository),
+            ),
+            icon: const Icon(Icons.notifications_rounded),
+          ),
+          IconButton(
+            tooltip: 'الإعدادات',
+            onPressed: () => _open(
+              context,
+              PrinterSettingsScreen(
+                repository: repository,
+                account: account,
+                onLogout: onLogout,
+              ),
+            ),
+            icon: const Icon(Icons.settings_rounded),
+          ),
           PopupMenuButton<String>(
             onSelected: (value) {
               if (value == 'logout') onLogout();
@@ -106,6 +129,80 @@ class PrinterDualDashboardScreen extends StatelessWidget {
                   const SizedBox(height: 14),
                   _bookletCard(context),
                 ],
+                const SizedBox(height: 22),
+                const Text(
+                  'الخيارات',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
+                ),
+                const SizedBox(height: 10),
+                LayoutBuilder(
+                  builder: (context, box) {
+                    final columns = box.maxWidth >= 900
+                        ? 4
+                        : box.maxWidth >= 560
+                        ? 2
+                        : 1;
+                    final spacing = 10.0;
+                    final width =
+                        (box.maxWidth - (spacing * (columns - 1))) / columns;
+                    final tools = <Widget>[
+                      _toolCard(
+                        icon: Icons.notifications_rounded,
+                        title: 'الإشعارات',
+                        subtitle: 'عرض التنبيهات وتحديدها كمقروءة',
+                        onTap: () => _open(
+                          context,
+                          BusinessNotificationsScreen(repository: repository),
+                        ),
+                      ),
+                      _toolCard(
+                        icon: Icons.account_balance_wallet_rounded,
+                        title: 'الحساب المالي',
+                        subtitle: 'ذمة الملازم وتوريد الكتب والتسويات',
+                        onTap: () => _open(
+                          context,
+                          BusinessPartyFinanceScreen(
+                            repository: repository,
+                            account: account,
+                          ),
+                        ),
+                      ),
+                      _toolCard(
+                        icon: Icons.settings_rounded,
+                        title: 'الإعدادات',
+                        subtitle: 'حالة استقبال الملازم وبيانات المطبعة',
+                        onTap: () => _open(
+                          context,
+                          PrinterSettingsScreen(
+                            repository: repository,
+                            account: account,
+                            onLogout: onLogout,
+                          ),
+                        ),
+                      ),
+                      _toolCard(
+                        icon: Icons.receipt_long_rounded,
+                        title: 'الطلبات والملازم',
+                        subtitle: 'استلام وتجهيز وطباعة وتسليم الملازم',
+                        onTap: () => _open(
+                          context,
+                          LibraryDashboardScreen(
+                            repository: repository,
+                            account: account,
+                            onLogout: onLogout,
+                          ),
+                        ),
+                      ),
+                    ];
+                    return Wrap(
+                      spacing: spacing,
+                      runSpacing: spacing,
+                      children: tools
+                          .map((tool) => SizedBox(width: width, child: tool))
+                          .toList(),
+                    );
+                  },
+                ),
                 const SizedBox(height: 20),
                 const Card(
                   child: Padding(
@@ -163,6 +260,48 @@ class PrinterDualDashboardScreen extends StatelessWidget {
           repository: repository,
           account: account,
           onLogout: onLogout,
+        ),
+      ),
+    );
+  }
+
+  Widget _toolCard({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              CircleAvatar(child: Icon(icon)),
+              const SizedBox(width: 11),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(fontWeight: FontWeight.w900),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      subtitle,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 11.5),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_left_rounded),
+            ],
+          ),
         ),
       ),
     );
