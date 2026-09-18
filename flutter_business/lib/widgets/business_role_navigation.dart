@@ -19,6 +19,7 @@ import '../screens/business_party_finance_screen.dart';
 import '../screens/courier_profile_screen.dart';
 import '../screens/teacher_profile_screen.dart';
 import '../screens/teacher_publishing_screen.dart';
+import '../screens/printer_settings_screen.dart';
 import 'business_brand.dart';
 
 class BusinessRoleNavigationDrawer extends StatelessWidget {
@@ -295,6 +296,23 @@ class BusinessRoleNavigationDrawer extends StatelessWidget {
           title: 'حسابي',
           subtitle: 'البيانات والمناطق وحالة العمل',
           page: CourierProfileScreen(repository: repository, account: account),
+        ),
+      ]);
+    }
+
+    if (account.role == 'printer') {
+      widgets.addAll([
+        _section('المطبعة'),
+        _routeTile(
+          context,
+          icon: Icons.settings_rounded,
+          title: 'إعدادات المطبعة',
+          subtitle: 'استقبال الملازم وبيانات الحساب',
+          page: PrinterSettingsScreen(
+            repository: repository,
+            account: account,
+            onLogout: onLogout,
+          ),
         ),
       ]);
     }
