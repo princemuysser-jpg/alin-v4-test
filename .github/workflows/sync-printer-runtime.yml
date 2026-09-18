@@ -2,10 +2,16 @@ name: Sync printer role runtime
 
 on:
   push:
+    branches:
+      - main
     paths:
       - ".github/workflows/sync-printer-runtime.yml"
       - "modules/module-order.json"
       - "modules/admin/orders-grouped.js"
+      - "modules/printer/dashboard.js"
+      - "modules/library/dashboard.js"
+      - "modules/library/orders.js"
+      - "modules/core/receipts-center.js"
 
 permissions:
   contents: write
@@ -29,7 +35,7 @@ jobs:
           root=Path('.')
           order=json.loads((root/'modules/module-order.json').read_text(encoding='utf-8'))
           role_paths=order.get('role_runtime') or []
-          required_sources=['modules/admin/accounts.js','modules/admin/orders-grouped.js']
+          required_sources=['modules/admin/accounts.js','modules/admin/orders-grouped.js','modules/printer/dashboard.js']
           for required in required_sources:
               if required not in role_paths:
                   raise SystemExit(f'{required} missing from role runtime order')
@@ -49,6 +55,8 @@ jobs:
               '<option value="printer">مطبعة</option>',
               'modules/admin/accounts.js',
               'modules/admin/orders-grouped.js',
+              'modules/printer/dashboard.js',
+              'AlinPrinterDashboard',
               'عرض القائمة',
               'قائمة تجهيز الطلب',
           ]
