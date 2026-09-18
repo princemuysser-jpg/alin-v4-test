@@ -35,7 +35,7 @@
 
   function roleAccounts(role){
     const accounts=db().accounts||{};
-    return arr(role==='teacher'?accounts.teachers:role==='library'?accounts.libraries:role==='courier'?accounts.couriers:[]);
+    return arr(role==='teacher'?accounts.teachers:role==='library'?accounts.libraries:role==='printer'?(accounts.printers||[]):role==='courier'?accounts.couriers:[]);
   }
 
   function roleAccount(role){
@@ -63,7 +63,7 @@
       const bookIds=teacherBookIds(id);
       return rows.filter(row=>same(row.teacher_id,id)||bookIds.has(String(row.item_id||row.booklet_id||'')));
     }
-    if(role==='library')return rows.filter(row=>[row.library_id,row.pickup_library_id,row.assigned_library_id].some(value=>same(value,id)));
+    if(role==='library'||role==='printer')return rows.filter(row=>[row.library_id,row.pickup_library_id,row.assigned_library_id].some(value=>same(value,id)));
     if(role==='courier')return rows.filter(row=>[row.courier_id,row.delegate_id,row.assigned_courier_id].some(value=>same(value,id)));
     return [];
   }
@@ -86,7 +86,7 @@
 
   function settlementRole(row){
     const explicit=String(row.role||row.party_role||row.account_role||'').toLowerCase();
-    if(['teacher','library','courier','delegate','admin'].includes(explicit))return explicit==='delegate'?'courier':explicit;
+    if(['teacher','library','printer','courier','delegate','admin'].includes(explicit))return explicit==='delegate'?'courier':explicit;
     if(row.teacher_id)return'teacher';
     if(row.library_id)return'library';
     if(row.courier_id||row.delegate_id)return'courier';
@@ -94,7 +94,7 @@
   }
 
   function settlementPartyId(row){
-    return String(row.party_id||row.account_id||row.teacher_id||row.library_id||row.courier_id||row.delegate_id||'');
+    return String(row.party_id||row.account_id||row.teacher_id||row.printer_id||row.library_id||row.courier_id||row.delegate_id||'');
   }
 
   function scopedSettlements(role){
@@ -142,7 +142,7 @@
     ].some(item=>item!==undefined&&item!==null&&same(item,value)))||null;
   }
 
-  function roleName(role){return({teacher:'مدرس',library:'مكتبة',courier:'مندوب',admin:'الإدارة',accountant:'الحسابات'})[role]||'حساب'}
+  function roleName(role){return({teacher:'مدرس',library:'مكتبة',printer:'مطبعة',courier:'مندوب',admin:'الإدارة',accountant:'الحسابات'})[role]||'حساب'}
   function accountNameById(role,id){
     return roleAccounts(role).find(row=>same(row.id,id))?.name||'';
   }
@@ -251,7 +251,7 @@
     </section>`;
   }
 
-  function hostFor(role){return document.getElementById(role==='admin'||role==='accountant'?'adminContent':role==='teacher'?'teacherContent':role==='library'?'libraryV116Content':'courierV161Content')}
+  function hostFor(role){return document.getElementById(role==='admin'||role==='accountant'?'adminContent':role==='teacher'?'teacherContent':(role==='library'||role==='printer')?'libraryV116Content':'courierV161Content')}
   function renderCenter(role,host){
     const target=host||hostFor(role);
     if(!target)return false;
@@ -360,7 +360,7 @@
   function printSettlement(key,role=String(current().role||'admin')){const row=findSettlement(key,role);return row?printDocument(settlementReceipt(row,role),'وصل تسوية'):false}
 
   function markPartnerTab(role,button){
-    const selector=role==='library'?'.library-v116-tabs button':role==='courier'?'.courier-v161-tabs button':'';
+    const selector=(role==='library'||role==='printer')?'.library-v116-tabs button':role==='courier'?'.courier-v161-tabs button':'';
     if(selector)document.querySelectorAll(selector).forEach(node=>node.classList.toggle('active',node===button));
   }
   function openCenter(role,button){markPartnerTab(role,button||null);return renderCenter(role)}
