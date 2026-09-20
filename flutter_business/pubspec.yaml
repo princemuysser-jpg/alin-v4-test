@@ -1,9 +1,8 @@
 name: alin_business
 description: تطبيق آلين للأعمال للإدارة والمدرس والمكتبة والمطبعة والمندوب
 publish_to: 'none'
-version: 1.0.11+19
-# Build 19: admin products, categories and ads management with direct navigation.
-# Products, store categories/subcategories and banners are now first-class admin pages.
+version: 1.0.12+20
+# Build 20: printer dual system, booklet orders, working printer notifications/settings.
 environment:
   sdk: '>=3.10.0 <4.0.0'
 

@@ -16,7 +16,7 @@ import 'screens/admin_desktop_dashboard_screen.dart';
 import 'screens/business_order_details_screen.dart';
 import 'screens/courier_dashboard_screen.dart';
 import 'screens/library_dashboard_screen.dart';
-import 'screens/printer_dashboard_screen.dart';
+import 'screens/printer_dual_dashboard_screen.dart';
 import 'screens/teacher_dashboard_screen.dart';
 import 'widgets/business_brand.dart';
 
@@ -252,7 +252,7 @@ class _BusinessGateState extends State<BusinessGate> {
           onLogout: _logout,
         );
       case 'printer':
-        page = PrinterDashboardScreen(
+        page = PrinterDualDashboardScreen(
           key: pageKey,
           repository: repository,
           account: account!,

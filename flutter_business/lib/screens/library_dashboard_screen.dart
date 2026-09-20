@@ -32,6 +32,14 @@ class _LibraryDashboardScreenState extends State<LibraryDashboardScreen> {
   String filter = 'work';
   final Set<String> busyOrders = {};
 
+  bool get isPrinter => widget.account.role == 'printer';
+  String get placeLabel => isPrinter ? 'المطبعة' : 'المكتبة';
+  String get dashboardTitle =>
+      isPrinter ? 'نظام الملازم - المطبعة' : 'لوحة المكتبة';
+  String get profitLabel =>
+      isPrinter ? 'ربح المطبعة من الملازم' : 'أرباح المكتبة';
+  String get noteLabel => isPrinter ? 'ملاحظة المطبعة' : 'ملاحظة المكتبة';
+
   static const doneStatuses = {'completed', 'delivered'};
   static const closedStatuses = {
     'completed',
@@ -106,7 +114,13 @@ class _LibraryDashboardScreenState extends State<LibraryDashboardScreen> {
       await load();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(value ? 'تم فتح المكتبة' : 'تم غلق المكتبة')),
+        SnackBar(
+          content: Text(
+            value
+                ? 'تم فتح $placeLabel لاستقبال طلبات الملازم'
+                : 'تم غلق $placeLabel وإيقاف الطلبات الجديدة',
+          ),
+        ),
       );
     } catch (e) {
       if (!mounted) return;
@@ -181,7 +195,7 @@ class _LibraryDashboardScreenState extends State<LibraryDashboardScreen> {
     final result = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('ملاحظة المكتبة'),
+        title: Text(noteLabel),
         content: TextField(
           controller: controller,
           maxLines: 4,
@@ -214,7 +228,7 @@ class _LibraryDashboardScreenState extends State<LibraryDashboardScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('تم حفظ ملاحظة المكتبة')));
+      ).showSnackBar(SnackBar(content: Text('تم حفظ $noteLabel')));
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -288,9 +302,9 @@ class _LibraryDashboardScreenState extends State<LibraryDashboardScreen> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'لوحة المكتبة',
-              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
+            Text(
+              dashboardTitle,
+              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
             ),
             Text(
               widget.account.name,
@@ -428,7 +442,7 @@ class _LibraryDashboardScreenState extends State<LibraryDashboardScreen> {
                         icon: Icons.check_circle_rounded,
                       ),
                       _Metric(
-                        label: 'أرباح المكتبة',
+                        label: profitLabel,
                         value: money(profit),
                         icon: Icons.payments_rounded,
                       ),
@@ -534,7 +548,7 @@ class _LibraryDashboardScreenState extends State<LibraryDashboardScreen> {
                               context,
                               s,
                               partyName: widget.account.name,
-                              partyRole: 'library',
+                              partyRole: widget.account.role,
                             ),
                           ),
                         ),
@@ -601,7 +615,7 @@ class _LibraryDashboardScreenState extends State<LibraryDashboardScreen> {
             _line(Icons.payments_outlined, 'الإجمالي', money(order['total'])),
             _line(
               Icons.account_balance_wallet_outlined,
-              'ربح المكتبة',
+              isPrinter ? 'ربح المطبعة من الملزمة' : 'ربح المكتبة',
               money(order['library_profit']),
             ),
             if ('${order['notes'] ?? ''}'.trim().isNotEmpty)
@@ -613,7 +627,7 @@ class _LibraryDashboardScreenState extends State<LibraryDashboardScreen> {
             if ('${order['library_note'] ?? ''}'.trim().isNotEmpty)
               _line(
                 Icons.sticky_note_2_outlined,
-                'ملاحظة المكتبة',
+                noteLabel,
                 '${order['library_note']}',
               ),
             const SizedBox(height: 10),
@@ -625,7 +639,7 @@ class _LibraryDashboardScreenState extends State<LibraryDashboardScreen> {
                   OutlinedButton.icon(
                     onPressed: busy ? null : () => saveLibraryNote(order),
                     icon: const Icon(Icons.sticky_note_2_outlined),
-                    label: const Text('ملاحظة المكتبة'),
+                    label: Text(noteLabel),
                   ),
                   if (booklet)
                     FilledButton.tonalIcon(
