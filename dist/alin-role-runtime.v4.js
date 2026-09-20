@@ -1160,11 +1160,21 @@ window.AlinTeacherModules.unpublishTeacherBooklet=unpublishTeacherBooklet;
   const escx=v=>typeof esc==='function'?esc(v):String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   const moneyx=v=>typeof money==='function'?money(v):Number(v||0).toLocaleString(window.AlinI18n?.locale?.()||'ar-IQ');
   const currentUser=()=>window.current||null;
-  const dbx=()=>window.db||{accounts:{libraries:[]},orders:[],ledger:[],notifications:[]};
+  const currentRole=()=>String(currentUser()?.role||'').toLowerCase();
+  const isPickupRole=()=>['library','printer'].includes(currentRole());
+  const isPrinter=()=>currentRole()==='printer';
+  const partyRole=()=>isPrinter()?'printer':'library';
+  const placeLabel=()=>isPrinter()?'المطبعة':'المكتبة';
+  const dbx=()=>window.db||{accounts:{libraries:[],printers:[]},orders:[],ledger:[],notifications:[]};
   function getLibrary(){
-    const c=currentUser(); if(c?.role!=='library') return null;
-    const libs=arr(dbx().accounts?.libraries); const ids=[c.id,c.library_id,c.account_id,c.user_id].filter(Boolean);
-    return libs.find(x=>ids.some(id=>eq(x.id,id)||eq(x.account_id,id)||eq(x.user_id,id)))||libs.find(x=>c.username&&eq(x.username,c.username))||libs.find(x=>c.name&&eq(x.name,c.name))||null;
+    const c=currentUser(); if(!isPickupRole()) return null;
+    const accounts=dbx().accounts||{};
+    const pool=[...arr(accounts.libraries),...arr(accounts.printers)];
+    const ids=[c.id,c.library_id,c.account_id,c.user_id].filter(Boolean);
+    return pool.find(x=>ids.some(id=>eq(x.id,id)||eq(x.account_id,id)||eq(x.user_id,id)))||
+      pool.find(x=>c.username&&eq(x.username,c.username))||
+      pool.find(x=>c.name&&eq(x.name,c.name))||
+      c;
   }
   function libId(){const l=getLibrary(),c=currentUser();return String(l?.id||c?.library_id||c?.id||'')}
   function orders(){const id=libId();return arr(dbx().orders).filter(o=>eq(o.library_id,id)||eq(o.pickup_library_id,id)||eq(o.assigned_library_id,id))}
@@ -1175,31 +1185,37 @@ window.AlinTeacherModules.unpublishTeacherBooklet=unpublishTeacherBooklet;
   function financeSummary(){return window.AlinV120Finance?.summary?.(libId())||{gross:0,libraryProfit:0,debtTotal:0,settled:0,debtRemaining:0,monthProfit:0,rows:[],settlements:[]}}
   function due(){return financeSummary().debtRemaining}
   function todayCount(){const d=new Date().toISOString().slice(0,10);return orders().filter(o=>statusKey(o)==='completed'&&String(o.updated_at||o.created_at||'').slice(0,10)===d).length}
-  function notifications(){return window.AlinNotifications?.visible?.({role:'library',id:libId()})||arr(dbx().notifications).filter(n=>n.status!=='inactive'&&((n.target_id||n.library_id)?eq(n.target_id||n.library_id,libId()):['all','library'].includes(n.target_role||n.audience))) }
+  function notifications(){
+    const role=partyRole(),id=libId();
+    return window.AlinNotifications?.visible?.({role,id})||
+      arr(dbx().notifications).filter(n=>n.status!=='inactive'&&
+        ((n.target_id||n.library_id)?eq(n.target_id||n.library_id,id):['all',role].includes(n.target_role||n.audience)));
+  }
   function updateHeader(){
     const lib=getLibrary(),name=document.getElementById('libraryV116Name'),loc=document.getElementById('libraryV116Location'),status=document.getElementById('libraryV116Status');
-    if(name)name.textContent=lib?.name||currentUser()?.name||'المكتبة';
-    if(loc)loc.textContent=[lib?.area,lib?.landmark].filter(Boolean).join(' — ')||'إدارة الطلبات والطباعة والتسليم';
-    if(status){const open=isOpen(lib);status.innerHTML=`<div class="library-v116-status-card ${open?'open':'closed'}"><span class="library-v116-status-dot"></span><div><b>${open?'المكتبة مفتوحة':'المكتبة مغلقة'}</b><small>${open?'تستقبل طلبات جديدة':'لا تستقبل طلبات جديدة'}</small></div><button type="button" data-alin-click="AlinLibraryV116.toggleOpen">${open?'إغلاق':'فتح'}</button></div>`}
+    const label=placeLabel();
+    if(name)name.textContent=lib?.name||currentUser()?.name||label;
+    if(loc)loc.textContent=[lib?.area,lib?.landmark].filter(Boolean).join(' — ')||'إدارة طلبات الملازم والطباعة والتسليم';
+    if(status){const open=isOpen(lib);status.innerHTML=`<div class="library-v116-status-card ${open?'open':'closed'}"><span class="library-v116-status-dot"></span><div><b>${label} ${open?'مفتوحة':'مغلقة'}</b><small>${open?'تستقبل طلبات ملازم جديدة':'لا تستقبل طلبات ملازم جديدة'}</small></div><button type="button" data-alin-click="AlinLibraryV116.toggleOpen">${open?'إغلاق':'فتح'}</button></div>`}
     const ob=document.getElementById('libraryV116OrdersBadge'),nb=document.getElementById('libraryV116NotifyBadge');
-    const oc=orders().filter(o=>statusKey(o)==='new').length,nc=window.AlinNotifications?.unreadCount?.({role:'library',id:libId()})??notifications().filter(n=>!(n.read_at||n.is_read)).length;
+    const oc=orders().filter(o=>statusKey(o)==='new').length,nc=window.AlinNotifications?.unreadCount?.({role:partyRole(),id:libId()})??notifications().filter(n=>!(n.read_at||n.is_read)).length;
     if(ob){ob.textContent=oc;ob.hidden=!oc} if(nb){nb.textContent=nc;nb.hidden=!nc}
   }
-  function statsHtml(){const os=orders();return `<section class="library-v116-stats"><article class="library-v116-stat"><small>طلبات جديدة</small><strong>${os.filter(o=>statusKey(o)==='new').length}</strong></article><article class="library-v116-stat"><small>قيد الطباعة</small><strong>${os.filter(o=>statusKey(o)==='processing').length}</strong></article><article class="library-v116-stat"><small>جاهزة للتسليم</small><strong>${os.filter(o=>statusKey(o)==='ready').length}</strong></article><article class="library-v116-stat"><small>تسليمات اليوم</small><strong>${todayCount()}</strong></article><article class="library-v116-stat"><small>طلبات ملغاة</small><strong>${os.filter(o=>statusKey(o)==='cancelled').length}</strong></article><article class="library-v116-stat accent"><small>المبلغ بذمة المكتبة</small><strong>${moneyx(due())} د.ع</strong></article></section>`}
-  function orderCard(o){const s=statusKey(o);return `<article class="library-v116-order"><div><div style="display:flex;justify-content:space-between;gap:10px;align-items:center"><h4>${escx(o.order_number||o.id)} — ${escx(o.title||'طلب')}</h4><span class="library-v116-status ${s}">${statusLabel(s)}</span></div><p>${escx(o.student_name||'بدون اسم')} • ${escx(o.student_phone||'بدون رقم')} • الكمية ${o.qty||1}</p><div class="library-v116-order-meta"><span class="library-v116-chip">${o.kind==='booklet'?'ملزمة':'منتج'}</span><span class="library-v116-chip">${moneyx(o.total||0)} د.ع</span><span class="library-v116-chip">${escx(o.fulfillment_type==='delivery'?'توصيل':'استلام من المكتبة')}</span></div></div><div class="library-v116-actions"><button class="secondary" data-alin-click="AlinLibraryV116.details" data-alin-click-arg0="${escx(o.id)}">التفاصيل</button>${o.kind==='booklet'&&!['completed','cancelled'].includes(s)?`<button data-alin-click="openLibraryBookletPdf" data-alin-click-arg0="${escx(o.id)}">طباعة</button>`:''}${s==='new'?`<button data-alin-click="AlinLibraryV116.setStatus" data-alin-click-arg0="${escx(o.id)}" data-alin-click-arg1="processing">بدء الطباعة</button>`:''}${s==='processing'?`<button data-alin-click="AlinLibraryV116.setStatus" data-alin-click-arg0="${escx(o.id)}" data-alin-click-arg1="ready">جاهز للتسليم</button>`:''}${s==='ready'?`<button class="success" data-alin-click="AlinLibraryV116.setStatus" data-alin-click-arg0="${escx(o.id)}" data-alin-click-arg1="completed">تم التسليم</button>`:''}${!['completed','cancelled'].includes(s)?`<button class="danger" data-alin-click="AlinLibraryV116.cancel" data-alin-click-arg0="${escx(o.id)}">إلغاء</button>`:''}</div></article>`}
-  function home(){const os=orders().filter(o=>!['completed','cancelled'].includes(statusKey(o))).slice(0,5);return `${statsHtml()}<section class="library-v116-grid"><div class="library-v116-panel"><h3>آخر الطلبات التي تحتاج إجراء</h3><div class="library-v116-order-list">${os.map(orderCard).join('')||'<div class="library-v116-empty">لا توجد طلبات تحتاج إجراء حالياً</div>'}</div></div><aside class="library-v116-panel"><h3>ملخص اليوم</h3><div class="library-v116-list"><div class="library-v116-row"><div><b>الطلبات الجاهزة</b><small>بانتظار استلام الطالب</small></div><span>${orders().filter(o=>statusKey(o)==='ready').length}</span></div><div class="library-v116-row"><div><b>تم التسليم اليوم</b><small>طلبات مكتملة اليوم</small></div><span>${todayCount()}</span></div><div class="library-v116-row"><div><b>المبلغ المطلوب تسليمه</b><small>حصة المنصة والمدرس بعد خصم ربح المكتبة</small></div><span class="library-v116-money debt">${moneyx(due())} د.ع</span></div></div></aside></section>`}
+  function statsHtml(){const os=orders();return `<section class="library-v116-stats"><article class="library-v116-stat"><small>طلبات جديدة</small><strong>${os.filter(o=>statusKey(o)==='new').length}</strong></article><article class="library-v116-stat"><small>قيد الطباعة</small><strong>${os.filter(o=>statusKey(o)==='processing').length}</strong></article><article class="library-v116-stat"><small>جاهزة للتسليم</small><strong>${os.filter(o=>statusKey(o)==='ready').length}</strong></article><article class="library-v116-stat"><small>تسليمات اليوم</small><strong>${todayCount()}</strong></article><article class="library-v116-stat"><small>طلبات ملغاة</small><strong>${os.filter(o=>statusKey(o)==='cancelled').length}</strong></article><article class="library-v116-stat accent"><small>المبلغ بذمة ${placeLabel()}</small><strong>${moneyx(due())} د.ع</strong></article></section>`}
+  function orderCard(o){const s=statusKey(o);return `<article class="library-v116-order"><div><div style="display:flex;justify-content:space-between;gap:10px;align-items:center"><h4>${escx(o.order_number||o.id)} — ${escx(o.title||'طلب')}</h4><span class="library-v116-status ${s}">${statusLabel(s)}</span></div><p>${escx(o.student_name||'بدون اسم')} • ${escx(o.student_phone||'بدون رقم')} • الكمية ${o.qty||1}</p><div class="library-v116-order-meta"><span class="library-v116-chip">${o.kind==='booklet'?'ملزمة':'منتج'}</span><span class="library-v116-chip">${moneyx(o.total||0)} د.ع</span><span class="library-v116-chip">${escx(o.fulfillment_type==='delivery'?'توصيل':'استلام من '+placeLabel())}</span></div></div><div class="library-v116-actions"><button class="secondary" data-alin-click="AlinLibraryV116.details" data-alin-click-arg0="${escx(o.id)}">التفاصيل</button>${o.kind==='booklet'&&!['completed','cancelled'].includes(s)?`<button data-alin-click="openLibraryBookletPdf" data-alin-click-arg0="${escx(o.id)}">طباعة</button>`:''}${s==='new'?`<button data-alin-click="AlinLibraryV116.setStatus" data-alin-click-arg0="${escx(o.id)}" data-alin-click-arg1="processing">بدء الطباعة</button>`:''}${s==='processing'?`<button data-alin-click="AlinLibraryV116.setStatus" data-alin-click-arg0="${escx(o.id)}" data-alin-click-arg1="ready">جاهز للتسليم</button>`:''}${s==='ready'?`<button class="success" data-alin-click="AlinLibraryV116.setStatus" data-alin-click-arg0="${escx(o.id)}" data-alin-click-arg1="completed">تم التسليم</button>`:''}${!['completed','cancelled'].includes(s)?`<button class="danger" data-alin-click="AlinLibraryV116.cancel" data-alin-click-arg0="${escx(o.id)}">إلغاء</button>`:''}</div></article>`}
+  function home(){const os=orders().filter(o=>!['completed','cancelled'].includes(statusKey(o))).slice(0,5);return `${statsHtml()}<section class="library-v116-grid"><div class="library-v116-panel"><h3>آخر الطلبات التي تحتاج إجراء</h3><div class="library-v116-order-list">${os.map(orderCard).join('')||'<div class="library-v116-empty">لا توجد طلبات تحتاج إجراء حالياً</div>'}</div></div><aside class="library-v116-panel"><h3>ملخص اليوم</h3><div class="library-v116-list"><div class="library-v116-row"><div><b>الطلبات الجاهزة</b><small>بانتظار استلام الطالب</small></div><span>${orders().filter(o=>statusKey(o)==='ready').length}</span></div><div class="library-v116-row"><div><b>تم التسليم اليوم</b><small>طلبات مكتملة اليوم</small></div><span>${todayCount()}</span></div><div class="library-v116-row"><div><b>المبلغ المطلوب تسليمه</b><small>حصة المنصة والمدرس بعد خصم ربح ${placeLabel()}</small></div><span class="library-v116-money debt">${moneyx(due())} د.ع</span></div></div></aside></section>`}
   function ordersView(){let list=orders();if(state.filter!=='all')list=list.filter(o=>statusKey(o)===state.filter);const q=state.search.trim().toLowerCase();if(q)list=list.filter(o=>[o.order_number,o.id,o.title,o.student_name,o.student_phone].some(v=>String(v||'').toLowerCase().includes(q)));return `<section class="library-v116-panel"><div class="library-v116-toolbar"><input id="libraryV116Search" value="${escx(state.search)}" placeholder="ابحث برقم الطلب أو اسم الطالب" data-alin-input="AlinLibraryV116.search" data-alin-input-arg0-source="value"><div class="library-v116-filter-row">${[['all','الكل'],['new','جديد'],['processing','قيد الطباعة'],['ready','جاهز'],['completed','تم التسليم'],['cancelled','ملغي']].map(([k,l])=>`<button class="${state.filter===k?'active':''}" data-alin-click="AlinLibraryV116.filter" data-alin-click-arg0="${k}">${l}</button>`).join('')}</div></div><div class="library-v116-order-list">${list.map(orderCard).join('')||'<div class="library-v116-empty">لا توجد طلبات مطابقة</div>'}</div></section>`}
   function financeView(){
     const f=financeSummary();
-    const movements=f.rows.slice(0,30).map(x=>`<div class="library-v120-movement"><div><b>${escx(x.order_number||x.order_id)}</b><small>${escx(x.title||'طلب مكتمل')} — استلمت المكتبة ${moneyx(x.gross)} د.ع</small></div><div class="library-v120-split"><span class="profit">ربح المكتبة +${moneyx(x.libraryProfit)} د.ع</span><span class="debt">بذمة المكتبة ${moneyx(x.debt)} د.ع</span></div></div>`).join('')||'<div class="library-v116-empty">لا توجد حركات مالية بعد</div>';
+    const movements=f.rows.slice(0,30).map(x=>`<div class="library-v120-movement"><div><b>${escx(x.order_number||x.order_id)}</b><small>${escx(x.title||'طلب مكتمل')} — استلمت ${placeLabel()} ${moneyx(x.gross)} د.ع</small></div><div class="library-v120-split"><span class="profit">ربح ${placeLabel()} +${moneyx(x.libraryProfit)} د.ع</span><span class="debt">بذمة ${placeLabel()} ${moneyx(x.debt)} د.ع</span></div></div>`).join('')||'<div class="library-v116-empty">لا توجد حركات مالية بعد</div>';
     const settlements=f.settlements.slice(0,15).map(x=>`<div class="library-v116-row"><div><b>${escx(x.receipt_number||x.id||'تسوية')}</b><small>${escx(x.created_at||'')} — ${escx(x.payment_method||'')}</small></div><span class="library-v116-money settled">-${moneyx(x.amount)} د.ع</span></div>`).join('')||'<div class="library-v116-empty">لا توجد تسويات مثبتة بعد</div>';
-    return `<section class="library-v120-finance-cards"><article><small>إجمالي المبالغ المستلمة من الطلبات</small><strong>${moneyx(f.gross)} د.ع</strong></article><article class="profit"><small>أرباح المكتبة المتراكمة</small><strong>${moneyx(f.libraryProfit)} د.ع</strong></article><article><small>أرباح هذا الشهر</small><strong>${moneyx(f.monthProfit)} د.ع</strong></article><article class="debt"><small>المبلغ بذمة المكتبة</small><strong>${moneyx(f.debtRemaining)} د.ع</strong></article><article class="settled"><small>المبالغ المسددة للمدير</small><strong>${moneyx(f.settled)} د.ع</strong></article></section><section class="library-v116-grid library-v120-grid"><div class="library-v116-panel"><h3>تفاصيل الطلبات المالية</h3><p class="library-v120-help">عند تسليم الطلب يُثبت ربح المكتبة، ويُسجل باقي المبلغ بذمتها لحين تصفية المدير.</p><div class="library-v120-movements">${movements}</div></div><aside class="library-v116-panel"><h3>التسويات مع الإدارة</h3><div class="library-v120-debt-box"><small>المطلوب تسليمه حالياً</small><strong>${moneyx(f.debtRemaining)} د.ع</strong><span>إجمالي الذمة ${moneyx(f.debtTotal)} د.ع — المسدد ${moneyx(f.settled)} د.ع</span></div><div class="library-v116-list">${settlements}</div><div class="library-v116-note" style="margin-top:12px">التصفية يثبتها المدير فقط. بعد تسجيل كامل المبلغ تصبح الذمة صفراً، وتبقى أرباح المكتبة وسجل الحركات محفوظة.</div></aside></section>`
+    return `<section class="library-v120-finance-cards"><article><small>إجمالي المبالغ المستلمة من الطلبات</small><strong>${moneyx(f.gross)} د.ع</strong></article><article class="profit"><small>أرباح ${placeLabel()} المتراكمة</small><strong>${moneyx(f.libraryProfit)} د.ع</strong></article><article><small>أرباح هذا الشهر</small><strong>${moneyx(f.monthProfit)} د.ع</strong></article><article class="debt"><small>المبلغ بذمة ${placeLabel()}</small><strong>${moneyx(f.debtRemaining)} د.ع</strong></article><article class="settled"><small>المبالغ المسددة للمدير</small><strong>${moneyx(f.settled)} د.ع</strong></article></section><section class="library-v116-grid library-v120-grid"><div class="library-v116-panel"><h3>تفاصيل الطلبات المالية</h3><p class="library-v120-help">عند تسليم الطلب يُثبت ربح ${placeLabel()}، ويُسجل باقي المبلغ بذمتها لحين تصفية المدير.</p><div class="library-v120-movements">${movements}</div></div><aside class="library-v116-panel"><h3>التسويات مع الإدارة</h3><div class="library-v120-debt-box"><small>المطلوب تسليمه حالياً</small><strong>${moneyx(f.debtRemaining)} د.ع</strong><span>إجمالي الذمة ${moneyx(f.debtTotal)} د.ع — المسدد ${moneyx(f.settled)} د.ع</span></div><div class="library-v116-list">${settlements}</div><div class="library-v116-note" style="margin-top:12px">التصفية يثبتها المدير فقط. بعد تسجيل كامل المبلغ تصبح الذمة صفراً، وتبقى أرباح ${placeLabel()} وسجل الحركات محفوظة.</div></aside></section>`
   }
-  function notificationsView(){const ns=notifications();return `<section class="library-v116-panel"><div class="library-v116-toolbar"><h3>إشعارات المكتبة</h3><button data-alin-click="AlinLibraryV116.markAllRead">تحديد الكل كمقروء</button></div><div class="library-v116-list">${ns.map(n=>{const read=window.AlinNotifications?.isRead?.(n,{role:'library',id:libId()})??Boolean(n.read_at||n.is_read);return `<article class="library-v116-notification ${read?'':'unread'}"><b>${escx(n.title||'إشعار')}</b><p>${escx(n.message||n.text||'')}</p><small>${escx(n.created_at||'')}</small></article>`}).join('')||'<div class="library-v116-empty">لا توجد إشعارات</div>'}</div></section>`}
-  function settingsView(){const l=getLibrary()||{};return `<section class="library-v116-panel"><h3>إعدادات المكتبة</h3><div class="library-v116-settings"><div class="library-v116-field"><small>اسم المكتبة</small><b>${escx(l.name||'—')}</b></div><div class="library-v116-field"><small>المنطقة</small><b>${escx(l.area||'—')}</b></div><div class="library-v116-field"><small>أقرب نقطة دالة</small><b>${escx(l.landmark||'—')}</b></div><div class="library-v116-field"><small>واتساب</small><b>${escx(l.whatsapp||l.phone||'—')}</b></div><div class="library-v116-field"><small>اسم الدخول</small><b>${escx(l.username||currentUser()?.username||'—')}</b></div><div class="library-v116-field"><small>حالة المكتبة</small><b>${isOpen(l)?'مفتوحة':'مغلقة'}</b></div><div class="library-v116-settings-actions"><button data-alin-click="AlinLibraryV116.toggleOpen">${isOpen(l)?'إغلاق المكتبة':'فتح المكتبة'}</button><button class="secondary" data-alin-click="alert" data-alin-click-arg0="تغيير كلمة المرور يكون من إدارة الحسابات حالياً">تغيير كلمة المرور</button><button class="logout" data-alin-click="logout">تسجيل الخروج</button></div></div></section>`}
-  function render(){if(currentUser()?.role!=='library')return;updateHeader();document.querySelectorAll('.library-v116-tabs button').forEach(b=>b.classList.toggle('active',b.dataset.libraryTab===state.tab));const c=document.getElementById('libraryV116Content');if(!c)return;c.innerHTML=state.tab==='orders'?ordersView():state.tab==='finance'?financeView():state.tab==='notifications'?notificationsView():state.tab==='settings'?settingsView():home()}
+  function notificationsView(){const ns=notifications(),role=partyRole(),label=placeLabel();return `<section class="library-v116-panel"><div class="library-v116-toolbar"><h3>إشعارات ${label}</h3><button data-alin-click="AlinLibraryV116.markAllRead">تحديد الكل كمقروء</button></div><div class="library-v116-list">${ns.map(n=>{const read=window.AlinNotifications?.isRead?.(n,{role,id:libId()})??Boolean(n.read_at||n.is_read);return `<article class="library-v116-notification ${read?'':'unread'}"><b>${escx(n.title||'إشعار')}</b><p>${escx(n.message||n.text||'')}</p><small>${escx(n.created_at||'')}</small></article>`}).join('')||'<div class="library-v116-empty">لا توجد إشعارات</div>'}</div></section>`}
+  function settingsView(){const l=getLibrary()||{};return `<section class="library-v116-panel"><h3>إعدادات ${placeLabel()}</h3><div class="library-v116-settings"><div class="library-v116-field"><small>اسم ${placeLabel()}</small><b>${escx(l.name||'—')}</b></div><div class="library-v116-field"><small>المنطقة</small><b>${escx(l.area||'—')}</b></div><div class="library-v116-field"><small>أقرب نقطة دالة</small><b>${escx(l.landmark||'—')}</b></div><div class="library-v116-field"><small>واتساب</small><b>${escx(l.whatsapp||l.phone||'—')}</b></div><div class="library-v116-field"><small>اسم الدخول</small><b>${escx(l.username||currentUser()?.username||'—')}</b></div><div class="library-v116-field"><small>حالة ${placeLabel()}</small><b>${isOpen(l)?'مفتوحة':'مغلقة'}</b></div><div class="library-v116-settings-actions"><button data-alin-click="AlinLibraryV116.toggleOpen">${(isOpen(l)?'إغلاق ':'فتح ')+placeLabel()}</button><button class="secondary" data-alin-click="alert" data-alin-click-arg0="تغيير كلمة المرور يكون من إدارة الحسابات حالياً">تغيير كلمة المرور</button><button class="logout" data-alin-click="logout">تسجيل الخروج</button></div></div></section>`}
+  function render(){if(!isPickupRole())return;updateHeader();document.querySelectorAll('.library-v116-tabs button').forEach(b=>b.classList.toggle('active',b.dataset.libraryTab===state.tab));const c=document.getElementById('libraryV116Content');if(!c)return;c.innerHTML=state.tab==='orders'?ordersView():state.tab==='finance'?financeView():state.tab==='notifications'?notificationsView():state.tab==='settings'?settingsView():home()}
   async function toggleOpen(){
-    const lib=getLibrary();if(!lib)return alert('تعذر تحديد حساب المكتبة');
+    const lib=getLibrary();if(!lib)return alert(`تعذر تحديد حساب ${placeLabel()}`);
     const open=!isOpen(lib);
     try{
       const client=window.ALINAuthRuntime?.client?.()||window.sb||window.AlinCloud?.client?.()||null;
@@ -1207,16 +1223,16 @@ window.AlinTeacherModules.unpublishTeacherBooklet=unpublishTeacherBooklet;
       const {data,error}=await client.rpc('alin_set_library_open',{p_open:open});
       if(error){
         const message=String(error.message||'');
-        if(/alin_set_library_open|function .* does not exist|schema cache/i.test(message))throw new Error('خدمة حالة المكتبة غير مهيأة في مشروع Supabase الجديد. نفّذ ALIN_V4_CLEAN_PROJECT_MASTER.sql مرة واحدة.');
+        if(/alin_set_library_open|function .* does not exist|schema cache/i.test(message))throw new Error(`خدمة حالة ${placeLabel()} غير مهيأة. حاول تسجيل الدخول من جديد، وإذا استمرت المشكلة راجع إعدادات النظام.`);
         throw error;
       }
-      if(!data?.ok)throw new Error('لم يؤكد الخادم تحديث حالة المكتبة');
+      if(!data?.ok)throw new Error(`لم يؤكد الخادم تحديث حالة ${placeLabel()}`);
       const updated=data.library||{};
       Object.assign(lib,updated,{is_open:open,open_status:open?'open':'closed'});
-      if(typeof audit==='function')await audit('library',open?'فتح المكتبة':'إغلاق المكتبة');
+      if(typeof audit==='function')await audit(partyRole(),open?`فتح ${placeLabel()}`:`إغلاق ${placeLabel()}`);
       if(typeof load==='function')await load({force:true,reason:'library-open-status'});
       render();
-      if(typeof toast==='function')toast(open?'تم فتح المكتبة واستقبال الطلبات':'تم إغلاق المكتبة وإيقاف الطلبات الجديدة');
+      if(typeof toast==='function')toast(open?`تم فتح ${placeLabel()} واستقبال طلبات الملازم`:`تم إغلاق ${placeLabel()} وإيقاف طلبات الملازم الجديدة`);
     }catch(e){console.error(e);alert(e?.message||'تعذر تحديث حالة المكتبة')}
   }
   async function setStatus(id,status){
@@ -1238,11 +1254,11 @@ window.AlinTeacherModules.unpublishTeacherBooklet=unpublishTeacherBooklet;
     }catch(error){console.error(error);alert(error?.message||'تعذر إلغاء الطلب')}
   }
   function details(id){const o=orders().find(x=>eq(x.id,id));if(!o)return;const html=`<h2>تفاصيل الطلب</h2><div class="library-v116-list"><div class="library-v116-row"><b>رقم الطلب</b><span>${escx(o.order_number||o.id)}</span></div><div class="library-v116-row"><b>الطالب</b><span>${escx(o.student_name||'—')}</span></div><div class="library-v116-row"><b>الهاتف</b><span>${escx(o.student_phone||'—')}</span></div><div class="library-v116-row"><b>الطلب</b><span>${escx(o.title||'—')}</span></div><div class="library-v116-row"><b>الكمية</b><span>${o.qty||1}</span></div><div class="library-v116-row"><b>المبلغ</b><span>${moneyx(o.total||0)} د.ع</span></div><div class="library-v116-row"><b>الملاحظات</b><span>${escx(o.notes||o.note||'لا توجد')}</span></div></div>`;if(window.checkoutBox&&window.checkoutModal){checkoutBox.innerHTML=html;checkoutModal.classList.remove('hidden')}}
-  async function markAllRead(){if(window.AlinNotifications?.markAll)await window.AlinNotifications.markAll({role:'library',id:libId()});else notifications().forEach(n=>n.read_at=n.read_at||new Date().toISOString());render()}
+  async function markAllRead(){if(window.AlinNotifications?.markAll)await window.AlinNotifications.markAll({role:partyRole(),id:libId()});else notifications().forEach(n=>n.read_at=n.read_at||new Date().toISOString());render()}
   window.AlinLibraryV116={render,toggleOpen,setStatus,cancel,details,filter:k=>{state.filter=k;render()},search:q=>{state.search=q;render()},markAllRead};
   window.renderLibrary=render;window.AlinLibraryModules.renderLibrary=render;window.setLibraryOpen=toggleOpen;window.AlinLibraryModules.setLibraryOpen=toggleOpen;
   document.addEventListener('click',e=>{const b=e.target.closest('[data-library-tab]');if(!b)return;state.tab=b.dataset.libraryTab;render()});
-  const boot=()=>{if(currentUser()?.role==='library')setTimeout(render,20)};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+  const boot=()=>{if(isPickupRole())setTimeout(render,20)};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
 
 
@@ -1272,7 +1288,7 @@ window.AlinTeacherModules.unpublishTeacherBooklet=unpublishTeacherBooklet;
   const client=()=>window.ALINAuthRuntime?.client?.()||window.sb||window.AlinCloud?.client?.()||null;
 
   function findOrder(id){return (window.db?.orders||[]).find(row=>String(row.id)===String(id));}
-  function currentLibraryId(){return String(window.current?.role==='library'?(window.current.id||window.current.library_id||''):'');}
+  function currentLibraryId(){return String(['library','printer'].includes(window.current?.role)?(window.current.id||window.current.library_id||''):'');}
   function orderLibraryId(order){return String(order?.library_id||order?.pickup_library_id||order?.assigned_library_id||'');}
   function ownsOrder(order){
     const id=currentLibraryId();
@@ -1309,7 +1325,7 @@ window.AlinTeacherModules.unpublishTeacherBooklet=unpublishTeacherBooklet;
   async function libraryOrderStatus(id,status){
     const order=findOrder(id);
     if(!order)throw new Error('الطلب غير موجود');
-    if(window.current?.role==='library'&&!ownsOrder(order))throw new Error('هذا الطلب غير مسند إلى مكتبتك');
+    if(['library','printer'].includes(window.current?.role)&&!ownsOrder(order))throw new Error(window.current?.role==='printer'?'هذا الطلب غير مسند إلى مطبعتك':'هذا الطلب غير مسند إلى مكتبتك');
     const target=normalize(status),source=normalize(order.status);
     if(!canMove(source,target))throw new Error('لا يمكن نقل الطلب من '+source+' إلى '+target);
     if(source===target)return order;
@@ -1326,7 +1342,7 @@ window.AlinTeacherModules.unpublishTeacherBooklet=unpublishTeacherBooklet;
     if(!text)throw new Error('اكتب سبب الإلغاء');
     const order=findOrder(id);
     if(!order)throw new Error('الطلب غير موجود');
-    if(window.current?.role==='library'&&!ownsOrder(order))throw new Error('هذا الطلب غير مسند إلى مكتبتك');
+    if(['library','printer'].includes(window.current?.role)&&!ownsOrder(order))throw new Error(window.current?.role==='printer'?'هذا الطلب غير مسند إلى مطبعتك':'هذا الطلب غير مسند إلى مكتبتك');
     await callOrderRpc(order,'cancelled',text);
     if(typeof audit==='function')await audit('order',`المكتبة ألغت الطلب ${order.order_number||order.id}: ${text}`);
     if(typeof load==='function')await load({force:true,reason:'library-order-cancel'});
@@ -1599,6 +1615,113 @@ window.AlinTeacherModules.unpublishTeacherBooklet=unpublishTeacherBooklet;
 
 
 ;
+;
+
+/* modules/printer/dashboard.js */
+/* ALIN — Printer dashboard: collector debt + book supply account + settlements. */
+(function(){
+  'use strict';
+  if(window.__ALIN_PRINTER_DASHBOARD__)return;
+  window.__ALIN_PRINTER_DASHBOARD__=true;
+
+  const money=v=>Math.max(0,Number(v)||0).toLocaleString(window.AlinI18n?.locale?.()||'ar-IQ');
+  const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const client=()=>window.ALINAuthRuntime?.client?.()||window.sb||window.AlinCloud?.client?.()||null;
+  let cache=null,running=false,activeTab='home';
+
+  async function loadSummary(force=false){
+    if(cache&&!force)return cache;
+    const c=client();if(!c?.rpc)throw new Error('خدمة حسابات المطبعة غير متاحة');
+    const {data,error}=await c.rpc('alin_printer_finance_summary');if(error)throw error;
+    cache=data||{};return cache;
+  }
+
+  function settlementRows(rows,label){
+    return (Array.isArray(rows)?rows:[]).map(x=>`<div class="library-v116-row"><div><b>${esc(x.receipt_number||x.id||label)}</b><small>${esc(String(x.created_at||'').slice(0,10))}${x.payment_method?' — '+esc(x.payment_method):''}</small></div><span class="library-v116-money settled">${money(x.amount)} د.ع</span></div>`).join('')||'<div class="library-v116-empty">لا توجد تسويات بعد</div>';
+  }
+
+  function bookRows(rows){
+    return (Array.isArray(rows)?rows:[]).map(x=>`<div class="library-v120-movement"><div><b>${esc(x.order_number||x.order_id||'طلب كتاب')}</b><small>${esc(x.title||'كتاب')}</small></div><div class="library-v120-split"><span class="profit">+${money(x.amount)} د.ع</span><span class="${x.status==='settled'?'settled':'debt'}">${x.status==='settled'?'مسدد':'مستحق'}</span></div></div>`).join('')||'<div class="library-v116-empty">لا توجد حركات توريد كتب بعد</div>';
+  }
+
+  function html(s){
+    return `<section class="library-v116-finance alin-printer-finance"><header class="library-v116-header" style="margin-bottom:16px"><div class="library-v116-identity"><div aria-hidden="true" class="library-v116-logo">ط</div><div><small>حساب المطبعة</small><h2>${esc(s.printer_name||window.current?.name||'المطبعة')}</h2><p>ذمة التشغيل وحساب توريد الكتب والتسويات</p></div></div></header>
+      <section class="library-v120-finance-cards"><article class="debt"><small>ذمة المطبعة للإدارة</small><strong>${money(s.collector_remaining)} د.ع</strong></article><article class="settled"><small>المسدد من الذمة</small><strong>${money(s.collector_settled)} د.ع</strong></article><article class="profit"><small>توريد الكتب المستحق</small><strong>${money(s.book_supply_pending)} د.ع</strong></article><article><small>توريد الكتب المسدد</small><strong>${money(s.book_supply_settled)} د.ع</strong></article></section>
+      <section class="library-v116-grid library-v120-grid" style="margin-top:16px"><div class="library-v116-panel"><h3>حساب توريد الكتب</h3><p class="library-v120-help">هذا الحساب مستقل عن ذمة المطبعة. تسويته من الإدارة تصفّر المستحق فقط وتبقي السجل.</p><div class="library-v120-movements">${bookRows(s.book_rows)}</div></div><aside class="library-v116-panel"><h3>تسويات توريد الكتب</h3><div class="library-v116-list">${settlementRows(s.book_settlements,'تسوية توريد')}</div></aside></section>
+      <section class="library-v116-grid library-v120-grid" style="margin-top:16px"><div class="library-v116-panel"><h3>ذمة المطبعة مع الإدارة</h3><div class="library-v120-debt-box"><small>المتبقي بذمة المطبعة</small><strong>${money(s.collector_remaining)} د.ع</strong><span>إجمالي الذمة ${money(s.collector_debt_total)} د.ع — المسدد ${money(s.collector_settled)} د.ع</span></div></div><aside class="library-v116-panel"><h3>تسويات الذمة</h3><div class="library-v116-list">${settlementRows(s.collector_settlements,'تسوية ذمة')}</div></aside></section>
+      <div class="row-actions" style="margin-top:16px"><button class="secondary" data-alin-click="AlinPrinterDashboard.refresh">تحديث الحسابات</button><button class="logout" data-alin-click="logout">تسجيل الخروج</button></div>
+    </section>`;
+  }
+
+  function prepareShell(){
+    const tabs=document.querySelector('.library-v116-tabs');
+    if(tabs){
+      tabs.removeAttribute('hidden');
+      tabs.setAttribute('aria-label','أقسام المطبعة');
+      tabs.querySelectorAll('[data-library-tab]').forEach(btn=>{
+        const tab=btn.dataset.libraryTab;
+        const labels={home:'الرئيسية',orders:'طلبات الملازم',finance:'الحسابات',notifications:'الإشعارات',settings:'الإعدادات'};
+        if(labels[tab]){
+          const badge=btn.querySelector('span');
+          btn.childNodes.forEach(node=>{if(node.nodeType===Node.TEXT_NODE)node.textContent=''});
+          btn.insertAdjacentText('afterbegin',labels[tab]+' ');
+          if(badge)btn.appendChild(badge);
+        }
+        btn.classList.toggle('active',tab===activeTab);
+      });
+    }
+    const receipt=document.querySelector('[data-alin415-receipts-role]');
+    if(receipt)receipt.setAttribute('data-alin415-receipts-role','printer');
+    const heading=document.querySelector('#libraryPage .library-v116-identity small');
+    if(heading)heading.textContent='لوحة إدارة المطبعة';
+    const name=document.getElementById('libraryV116Name');
+    if(name)name.textContent=window.current?.name||'المطبعة';
+    const loc=document.getElementById('libraryV116Location');
+    if(loc)loc.textContent=activeTab==='finance'?'الحسابات والتسويات':'توريد الكتب وطلبات الملازم والطباعة';
+    const status=document.getElementById('libraryV116Status');
+    if(status)status.innerHTML='<div class="library-v116-status-card open"><span class="library-v116-status-dot"></span><div><b>حساب مطبعة</b><small>نظاما توريد الكتب والملازم مفعّلان</small></div></div>';
+  }
+
+  async function render(force=false){
+    if(String(window.current?.role||'')!=='printer')return false;
+    const page=document.getElementById('libraryPage'),host=document.getElementById('libraryV116Content');
+    if(!page||!host)return false;
+    prepareShell();
+    if(!['home','finance'].includes(activeTab)){
+      window.AlinLibraryV116?.render?.();
+      return true;
+    }
+    if(running)return true;running=true;
+    try{
+      host.innerHTML='<div class="library-v116-empty">جارٍ تحميل حسابات المطبعة...</div>';
+      const summary=await loadSummary(force);
+      host.innerHTML=html(summary);
+      prepareShell();
+    }catch(e){
+      console.error('[ALIN printer finance]',e);
+      host.innerHTML=`<div class="library-v116-empty">${esc(e?.message||'تعذر تحميل حسابات المطبعة')}</div>`;
+    }finally{running=false}
+    return true;
+  }
+
+  window.AlinPrinterDashboard=Object.freeze({
+    render,
+    refresh:()=>{cache=null;return render(true)},
+    openTab:tab=>{activeTab=String(tab||'home');return render(false)}
+  });
+  window.renderPrinter=render;
+  document.addEventListener('click',event=>{
+    if(String(window.current?.role||'')!=='printer')return;
+    const button=event.target.closest('[data-library-tab]');
+    if(!button)return;
+    activeTab=String(button.dataset.libraryTab||'home');
+    if(['home','finance'].includes(activeTab))setTimeout(()=>render(activeTab==='finance'),0);
+    else setTimeout(()=>prepareShell(),0);
+  });
+  window.addEventListener('alin:page-open',e=>{if(e.detail?.page==='printer'||(e.detail?.page==='library'&&window.current?.role==='printer'))setTimeout(()=>render(false),0)});
+  window.addEventListener('alin:data-refreshed',()=>{if(window.current?.role==='printer'){cache=null;setTimeout(()=>{if(['home','finance'].includes(activeTab))render(true);else window.AlinLibraryV116?.render?.()},0)}});
+  setTimeout(()=>{if(window.current?.role==='printer')render(false)},100);
+})();
 ;
 
 /* modules/admin/dashboard.js */
@@ -6249,7 +6372,7 @@ window.AlinCourierModules['recordCourierSettlementForOrder']=typeof recordCourie
 
   function roleAccounts(role){
     const accounts=db().accounts||{};
-    return arr(role==='teacher'?accounts.teachers:role==='library'?accounts.libraries:role==='courier'?accounts.couriers:[]);
+    return arr(role==='teacher'?accounts.teachers:role==='library'?accounts.libraries:role==='printer'?(accounts.printers||[]):role==='courier'?accounts.couriers:[]);
   }
 
   function roleAccount(role){
@@ -6277,7 +6400,7 @@ window.AlinCourierModules['recordCourierSettlementForOrder']=typeof recordCourie
       const bookIds=teacherBookIds(id);
       return rows.filter(row=>same(row.teacher_id,id)||bookIds.has(String(row.item_id||row.booklet_id||'')));
     }
-    if(role==='library')return rows.filter(row=>[row.library_id,row.pickup_library_id,row.assigned_library_id].some(value=>same(value,id)));
+    if(role==='library'||role==='printer')return rows.filter(row=>[row.library_id,row.pickup_library_id,row.assigned_library_id].some(value=>same(value,id)));
     if(role==='courier')return rows.filter(row=>[row.courier_id,row.delegate_id,row.assigned_courier_id].some(value=>same(value,id)));
     return [];
   }
@@ -6300,7 +6423,7 @@ window.AlinCourierModules['recordCourierSettlementForOrder']=typeof recordCourie
 
   function settlementRole(row){
     const explicit=String(row.role||row.party_role||row.account_role||'').toLowerCase();
-    if(['teacher','library','courier','delegate','admin'].includes(explicit))return explicit==='delegate'?'courier':explicit;
+    if(['teacher','library','printer','courier','delegate','admin'].includes(explicit))return explicit==='delegate'?'courier':explicit;
     if(row.teacher_id)return'teacher';
     if(row.library_id)return'library';
     if(row.courier_id||row.delegate_id)return'courier';
@@ -6308,7 +6431,7 @@ window.AlinCourierModules['recordCourierSettlementForOrder']=typeof recordCourie
   }
 
   function settlementPartyId(row){
-    return String(row.party_id||row.account_id||row.teacher_id||row.library_id||row.courier_id||row.delegate_id||'');
+    return String(row.party_id||row.account_id||row.teacher_id||row.printer_id||row.library_id||row.courier_id||row.delegate_id||'');
   }
 
   function scopedSettlements(role){
@@ -6356,7 +6479,7 @@ window.AlinCourierModules['recordCourierSettlementForOrder']=typeof recordCourie
     ].some(item=>item!==undefined&&item!==null&&same(item,value)))||null;
   }
 
-  function roleName(role){return({teacher:'مدرس',library:'مكتبة',courier:'مندوب',admin:'الإدارة',accountant:'الحسابات'})[role]||'حساب'}
+  function roleName(role){return({teacher:'مدرس',library:'مكتبة',printer:'مطبعة',courier:'مندوب',admin:'الإدارة',accountant:'الحسابات'})[role]||'حساب'}
   function accountNameById(role,id){
     return roleAccounts(role).find(row=>same(row.id,id))?.name||'';
   }
@@ -6465,7 +6588,7 @@ window.AlinCourierModules['recordCourierSettlementForOrder']=typeof recordCourie
     </section>`;
   }
 
-  function hostFor(role){return document.getElementById(role==='admin'||role==='accountant'?'adminContent':role==='teacher'?'teacherContent':role==='library'?'libraryV116Content':'courierV161Content')}
+  function hostFor(role){return document.getElementById(role==='admin'||role==='accountant'?'adminContent':role==='teacher'?'teacherContent':(role==='library'||role==='printer')?'libraryV116Content':'courierV161Content')}
   function renderCenter(role,host){
     const target=host||hostFor(role);
     if(!target)return false;
@@ -6574,7 +6697,7 @@ window.AlinCourierModules['recordCourierSettlementForOrder']=typeof recordCourie
   function printSettlement(key,role=String(current().role||'admin')){const row=findSettlement(key,role);return row?printDocument(settlementReceipt(row,role),'وصل تسوية'):false}
 
   function markPartnerTab(role,button){
-    const selector=role==='library'?'.library-v116-tabs button':role==='courier'?'.courier-v161-tabs button':'';
+    const selector=(role==='library'||role==='printer')?'.library-v116-tabs button':role==='courier'?'.courier-v161-tabs button':'';
     if(selector)document.querySelectorAll(selector).forEach(node=>node.classList.toggle('active',node===button));
   }
   function openCenter(role,button){markPartnerTab(role,button||null);return renderCenter(role)}
@@ -6644,7 +6767,7 @@ window.AlinCourierModules['recordCourierSettlementForOrder']=typeof recordCourie
   function receiptCenterIsActive(){
     const role=String(document.body.dataset.alin415ReceiptsRole||'');
     if(!role)return false;
-    const hostId=role==='admin'||role==='accountant'?'adminContent':role==='teacher'?'teacherContent':role==='library'?'libraryV116Content':'courierV161Content';
+    const hostId=role==='admin'||role==='accountant'?'adminContent':role==='teacher'?'teacherContent':(role==='library'||role==='printer')?'libraryV116Content':'courierV161Content';
     const host=document.getElementById(hostId);
     if(!host||host.closest('.hidden')||host.hidden)return false;
     const center=host.querySelector(`.alin415r-center[data-alin415r-role="${role}"]`);

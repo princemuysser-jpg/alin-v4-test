@@ -7,7 +7,7 @@
   const money=v=>Math.max(0,Number(v)||0).toLocaleString(window.AlinI18n?.locale?.()||'ar-IQ');
   const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   const client=()=>window.ALINAuthRuntime?.client?.()||window.sb||window.AlinCloud?.client?.()||null;
-  let cache=null,running=false;
+  let cache=null,running=false,activeTab='home';
 
   async function loadSummary(force=false){
     if(cache&&!force)return cache;
@@ -33,21 +33,72 @@
     </section>`;
   }
 
+  function prepareShell(){
+    const tabs=document.querySelector('.library-v116-tabs');
+    if(tabs){
+      tabs.removeAttribute('hidden');
+      tabs.setAttribute('aria-label','أقسام المطبعة');
+      tabs.querySelectorAll('[data-library-tab]').forEach(btn=>{
+        const tab=btn.dataset.libraryTab;
+        const labels={home:'الرئيسية',orders:'طلبات الملازم',finance:'الحسابات',notifications:'الإشعارات',settings:'الإعدادات'};
+        if(labels[tab]){
+          const badge=btn.querySelector('span');
+          btn.childNodes.forEach(node=>{if(node.nodeType===Node.TEXT_NODE)node.textContent=''});
+          btn.insertAdjacentText('afterbegin',labels[tab]+' ');
+          if(badge)btn.appendChild(badge);
+        }
+        btn.classList.toggle('active',tab===activeTab);
+      });
+    }
+    const receipt=document.querySelector('[data-alin415-receipts-role]');
+    if(receipt)receipt.setAttribute('data-alin415-receipts-role','printer');
+    const heading=document.querySelector('#libraryPage .library-v116-identity small');
+    if(heading)heading.textContent='لوحة إدارة المطبعة';
+    const name=document.getElementById('libraryV116Name');
+    if(name)name.textContent=window.current?.name||'المطبعة';
+    const loc=document.getElementById('libraryV116Location');
+    if(loc)loc.textContent=activeTab==='finance'?'الحسابات والتسويات':'توريد الكتب وطلبات الملازم والطباعة';
+    const status=document.getElementById('libraryV116Status');
+    if(status)status.innerHTML='<div class="library-v116-status-card open"><span class="library-v116-status-dot"></span><div><b>حساب مطبعة</b><small>نظاما توريد الكتب والملازم مفعّلان</small></div></div>';
+  }
+
   async function render(force=false){
     if(String(window.current?.role||'')!=='printer')return false;
-    const page=document.getElementById('libraryPage'),host=document.getElementById('libraryV116Content');if(!page||!host)return false;
-    document.querySelector('.library-v116-tabs')?.setAttribute('hidden','');
-    const name=document.getElementById('libraryV116Name');if(name)name.textContent=window.current?.name||'المطبعة';
-    const loc=document.getElementById('libraryV116Location');if(loc)loc.textContent='الحسابات والتسويات';
-    const status=document.getElementById('libraryV116Status');if(status)status.innerHTML='<div class="library-v116-status-card open"><span class="library-v116-status-dot"></span><div><b>حساب مطبعة</b><small>متصل بمنصة آلين</small></div></div>';
+    const page=document.getElementById('libraryPage'),host=document.getElementById('libraryV116Content');
+    if(!page||!host)return false;
+    prepareShell();
+    if(!['home','finance'].includes(activeTab)){
+      window.AlinLibraryV116?.render?.();
+      return true;
+    }
     if(running)return true;running=true;
-    try{host.innerHTML='<div class="library-v116-empty">جارٍ تحميل حسابات المطبعة...</div>';const s=await loadSummary(force);host.innerHTML=html(s)}catch(e){console.error('[ALIN printer finance]',e);host.innerHTML=`<div class="library-v116-empty">${esc(e?.message||'تعذر تحميل حسابات المطبعة')}</div>`}finally{running=false}
+    try{
+      host.innerHTML='<div class="library-v116-empty">جارٍ تحميل حسابات المطبعة...</div>';
+      const summary=await loadSummary(force);
+      host.innerHTML=html(summary);
+      prepareShell();
+    }catch(e){
+      console.error('[ALIN printer finance]',e);
+      host.innerHTML=`<div class="library-v116-empty">${esc(e?.message||'تعذر تحميل حسابات المطبعة')}</div>`;
+    }finally{running=false}
     return true;
   }
 
-  window.AlinPrinterDashboard=Object.freeze({render,refresh:()=>{cache=null;return render(true)}});
+  window.AlinPrinterDashboard=Object.freeze({
+    render,
+    refresh:()=>{cache=null;return render(true)},
+    openTab:tab=>{activeTab=String(tab||'home');return render(false)}
+  });
   window.renderPrinter=render;
+  document.addEventListener('click',event=>{
+    if(String(window.current?.role||'')!=='printer')return;
+    const button=event.target.closest('[data-library-tab]');
+    if(!button)return;
+    activeTab=String(button.dataset.libraryTab||'home');
+    if(['home','finance'].includes(activeTab))setTimeout(()=>render(activeTab==='finance'),0);
+    else setTimeout(()=>prepareShell(),0);
+  });
   window.addEventListener('alin:page-open',e=>{if(e.detail?.page==='printer'||(e.detail?.page==='library'&&window.current?.role==='printer'))setTimeout(()=>render(false),0)});
-  window.addEventListener('alin:data-refreshed',()=>{if(window.current?.role==='printer'){cache=null;setTimeout(()=>render(true),0)}});
+  window.addEventListener('alin:data-refreshed',()=>{if(window.current?.role==='printer'){cache=null;setTimeout(()=>{if(['home','finance'].includes(activeTab))render(true);else window.AlinLibraryV116?.render?.()},0)}});
   setTimeout(()=>{if(window.current?.role==='printer')render(false)},100);
 })();

@@ -55,6 +55,7 @@
     "modules/library/orders.js",
     "modules/library/finance.js",
     "modules/library/printing.js",
+    "modules/printer/dashboard.js",
     "modules/admin/dashboard.js",
     "modules/admin/orders.js",
     "modules/admin/orders-grouped.js",
