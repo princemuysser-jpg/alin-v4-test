@@ -53,3 +53,4 @@ concat(PUBLIC_APP+['store/notifications.js'],ROOT/'alin-app-desktop.v4.2.0.js')
 concat(PUBLIC_APP+['store/mobile-navigation.js','store/notifications.js'],ROOT/'alin-app-mobile.v4.2.0.js')
 concat(PUBLIC_APP+['store/mobile-navigation.js','store/notifications.js'],ROOT/'alin-app-tablet.v4.2.0.js')
 concat(ROLE_APP,ROOT/'dist/alin-role-runtime.v4.js')
+# Printer dual finance runtime publish trigger 2026-09-20
