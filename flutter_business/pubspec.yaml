@@ -1,8 +1,8 @@
 name: alin_business
 description: تطبيق آلين للأعمال للإدارة والمدرس والمكتبة والمطبعة والمندوب
 publish_to: 'none'
-version: 1.0.12+20
-# Build 20: printer dual system, booklet orders, working printer notifications/settings.
+version: 1.0.13+21
+# Build 21: separate printer booklet and book finance accounts.
 environment:
   sdk: '>=3.10.0 <4.0.0'
 

@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import '../data/business_repository.dart';
 import '../models/business_account.dart';
 import 'business_notifications_screen.dart';
-import 'business_party_finance_screen.dart';
 import 'library_dashboard_screen.dart';
 import 'printer_dashboard_screen.dart';
+import 'printer_booklet_finance_screen.dart';
 import 'printer_settings_screen.dart';
 
 class PrinterDualDashboardScreen extends StatelessWidget {
@@ -156,14 +156,27 @@ class PrinterDualDashboardScreen extends StatelessWidget {
                         ),
                       ),
                       _toolCard(
-                        icon: Icons.account_balance_wallet_rounded,
-                        title: 'الحساب المالي',
-                        subtitle: 'ذمة الملازم وتوريد الكتب والتسويات',
+                        icon: Icons.auto_stories_rounded,
+                        title: 'حساب الملازم',
+                        subtitle: 'المبيعات والربح والذمة وتسويات الملازم',
                         onTap: () => _open(
                           context,
-                          BusinessPartyFinanceScreen(
+                          PrinterBookletFinanceScreen(
                             repository: repository,
                             account: account,
+                          ),
+                        ),
+                      ),
+                      _toolCard(
+                        icon: Icons.menu_book_rounded,
+                        title: 'حساب الكتب',
+                        subtitle: 'توريد الكتب والمستحقات والتسويات',
+                        onTap: () => _open(
+                          context,
+                          PrinterDashboardScreen(
+                            repository: repository,
+                            account: account,
+                            onLogout: onLogout,
                           ),
                         ),
                       ),

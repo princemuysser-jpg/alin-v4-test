@@ -20,6 +20,8 @@ import '../screens/courier_profile_screen.dart';
 import '../screens/teacher_profile_screen.dart';
 import '../screens/teacher_publishing_screen.dart';
 import '../screens/printer_settings_screen.dart';
+import '../screens/printer_booklet_finance_screen.dart';
+import '../screens/printer_dashboard_screen.dart';
 import 'business_brand.dart';
 
 class BusinessRoleNavigationDrawer extends StatelessWidget {
@@ -305,6 +307,27 @@ class BusinessRoleNavigationDrawer extends StatelessWidget {
         _section('المطبعة'),
         _routeTile(
           context,
+          icon: Icons.auto_stories_rounded,
+          title: 'حساب الملازم',
+          subtitle: 'مبيعات وأرباح وذمة وتسويات الملازم',
+          page: PrinterBookletFinanceScreen(
+            repository: repository,
+            account: account,
+          ),
+        ),
+        _routeTile(
+          context,
+          icon: Icons.menu_book_rounded,
+          title: 'حساب الكتب',
+          subtitle: 'توريد الكتب والمستحقات والتسويات',
+          page: PrinterDashboardScreen(
+            repository: repository,
+            account: account,
+            onLogout: onLogout,
+          ),
+        ),
+        _routeTile(
+          context,
           icon: Icons.settings_rounded,
           title: 'إعدادات المطبعة',
           subtitle: 'استقبال الملازم وبيانات الحساب',
@@ -319,16 +342,17 @@ class BusinessRoleNavigationDrawer extends StatelessWidget {
 
     widgets.addAll([
       _section('الحساب والتنبيهات'),
-      _routeTile(
-        context,
-        icon: Icons.account_balance_wallet_rounded,
-        title: 'الحساب المالي',
-        subtitle: 'الأرباح والذمم والتسويات والوصولات',
-        page: BusinessPartyFinanceScreen(
-          repository: repository,
-          account: account,
+      if (account.role != 'printer')
+        _routeTile(
+          context,
+          icon: Icons.account_balance_wallet_rounded,
+          title: 'الحساب المالي',
+          subtitle: 'الأرباح والذمم والتسويات والوصولات',
+          page: BusinessPartyFinanceScreen(
+            repository: repository,
+            account: account,
+          ),
         ),
-      ),
       _routeTile(
         context,
         icon: Icons.notifications_rounded,
