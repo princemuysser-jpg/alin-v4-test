@@ -101,7 +101,7 @@ jobs:
       - name: Upload unsigned iOS validation build
         uses: actions/upload-artifact@v4
         with:
-          name: alin-flutter-ios-unsigned-v5.6.0-build22
+          name: alin-flutter-ios-unsigned-v5.6.2-build35
           if-no-files-found: error
           path: flutter_app/build/ios/iphoneos/Runner.app
           retention-days: 7
