@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/alin_config.dart';
 import '../models/catalog.dart';
@@ -6,8 +7,50 @@ class AlinRepository {
   final SupabaseClient client;
   AlinRepository(this.client);
 
-  Future<dynamic> _rpc(String name, {Map<String, dynamic>? params}) =>
-      client.rpc(name, params: params).timeout(const Duration(seconds: 25));
+  String _arabicRpcMessage(Object error, {String fallback = 'تعذر تنفيذ العملية حالياً'}) {
+    if (error is PostgrestException) {
+      final message = error.message.trim();
+      if (message.contains('يوجد حساب بهذا الرقم')) {
+        return 'هذا الرقم مسجّل مسبقاً. استخدم تسجيل الدخول.';
+      }
+      if (message.contains('بيانات الدخول غير صحيحة')) {
+        return 'رقم الهاتف أو الرمز السري غير صحيح.';
+      }
+      if (message.contains('تم إيقاف المحاولات مؤقتاً')) {
+        return 'تم إيقاف محاولات الدخول مؤقتاً. حاول مرة أخرى بعد قليل.';
+      }
+      if (message.contains('اكتب اسم الطالب بصورة صحيحة')) {
+        return 'اكتب اسم الطالب بصورة صحيحة.';
+      }
+      if (message.contains('اكتب رقم هاتف صحيح')) {
+        return 'اكتب رقم هاتف صحيح.';
+      }
+      if (message.contains('الرمز السري يجب أن يكون')) {
+        return 'الرمز السري يجب أن يكون 6 أحرف أو أرقام على الأقل.';
+      }
+      if (message.contains('جلسة الطالب منتهية')) {
+        return 'انتهت جلسة الحساب. سجّل الدخول من جديد.';
+      }
+      if (message.contains('بيانات الطالب غير صحيحة')) {
+        return 'بيانات الطالب غير صحيحة.';
+      }
+      return fallback;
+    }
+    if (error is TimeoutException) {
+      return 'الاتصال بطيء. حاول مرة أخرى.';
+    }
+    return fallback;
+  }
+
+  Future<dynamic> _rpc(String name, {Map<String, dynamic>? params}) async {
+    try {
+      return await client
+          .rpc(name, params: params)
+          .timeout(const Duration(seconds: 25));
+    } catch (error) {
+      throw Exception(_arabicRpcMessage(error));
+    }
+  }
 
   Future<BootstrapData> loadBootstrap({bool includeReviews = true}) async {
     final raw = await _rpc('alin_public_store_bootstrap');
@@ -106,13 +149,19 @@ class AlinRepository {
     required String pin,
     required String deviceId,
   }) async {
-    final raw = await _rpc('alin_student_register', params: {
-      'p_name': name,
-      'p_phone': phone,
-      'p_pin': pin,
-      'p_device': deviceId,
-    });
-    return Map<String, dynamic>.from(raw as Map);
+    try {
+      final raw = await _rpc('alin_student_register', params: {
+        'p_name': name.trim(),
+        'p_phone': phone.trim(),
+        'p_pin': pin,
+        'p_device': deviceId,
+      });
+      if (raw is! Map) throw Exception('تعذر إنشاء الحساب حالياً.');
+      return Map<String, dynamic>.from(raw);
+    } catch (error) {
+      final text = '$error'.replaceFirst('Exception: ', '').trim();
+      throw Exception(text.isEmpty ? 'تعذر إنشاء الحساب حالياً.' : text);
+    }
   }
 
   Future<Map<String, dynamic>> studentLogin({
@@ -120,12 +169,18 @@ class AlinRepository {
     required String pin,
     required String deviceId,
   }) async {
-    final raw = await _rpc('alin_student_login', params: {
-      'p_phone': phone,
-      'p_pin': pin,
-      'p_device': deviceId,
-    });
-    return Map<String, dynamic>.from(raw as Map);
+    try {
+      final raw = await _rpc('alin_student_login', params: {
+        'p_phone': phone.trim(),
+        'p_pin': pin,
+        'p_device': deviceId,
+      });
+      if (raw is! Map) throw Exception('تعذر تسجيل الدخول حالياً.');
+      return Map<String, dynamic>.from(raw);
+    } catch (error) {
+      final text = '$error'.replaceFirst('Exception: ', '').trim();
+      throw Exception(text.isEmpty ? 'تعذر تسجيل الدخول حالياً.' : text);
+    }
   }
 
   Future<StudentModel?> studentProfile({
