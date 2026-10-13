@@ -647,7 +647,16 @@ class PersonalOffersScreen extends StatelessWidget {
       setState(() => message = createMode ? 'تم إنشاء الحساب وتسجيل الدخول' : 'تم تسجيل الدخول');
     } catch (e) {
       if (!mounted) return;
-      setState(() => message = '$e'.replaceFirst('Exception: ', ''));
+      var text = '$e'.replaceFirst('Exception: ', '').trim();
+      if (text.contains('PostgrestException') ||
+          text.contains('code:') ||
+          text.contains('details:') ||
+          text.contains('Bad Request')) {
+        text = createMode
+            ? 'تعذر إنشاء الحساب حالياً. تحقق من البيانات وحاول مرة أخرى.'
+            : 'رقم الهاتف أو الرمز السري غير صحيح.';
+      }
+      setState(() => message = text);
     } finally {
       if (mounted) setState(() => busy = false);
     }
@@ -732,7 +741,7 @@ class PersonalOffersScreen extends StatelessWidget {
             ],
             TextField(controller: phone, keyboardType: TextInputType.phone, textInputAction: TextInputAction.next, decoration: const InputDecoration(labelText: 'رقم الهاتف', prefixIcon: Icon(Icons.phone_outlined))),
             const SizedBox(height: 12),
-            TextField(controller: pin, obscureText: true, onSubmitted: (_) => submit(), decoration: const InputDecoration(labelText: 'الرمز السري', prefixIcon: Icon(Icons.lock_outline), helperText: '6 أحرف أو أرقام على الأقل')),
+            TextField(controller: pin, obscureText: true, onSubmitted: (_) => submit(), decoration: const InputDecoration(labelText: 'الرمز السري', prefixIcon: Icon(Icons.lock_outline), helperText: 'اكتب 6 أحرف أو أرقام على الأقل')),
             const SizedBox(height: 16),
             ElevatedButton.icon(
               onPressed: busy ? null : submit,
