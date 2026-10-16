@@ -1,4 +1,4 @@
-name: Build Alin Flutter Android 5.6.3 Build 35 Signed
+name: Build Alin Flutter Android 5.6.4 Build 35 Signed
 
 on:
   push:
@@ -11,8 +11,8 @@ permissions:
   contents: read
 
 env:
-  APP_VERSION: '5.6.3'
-  BUILD_NUMBER: '35'
+  APP_VERSION: '5.6.4'
+  BUILD_NUMBER: '36'
 
 jobs:
   build-android:
@@ -100,6 +100,18 @@ jobs:
       - name: Build signed release APK
         run: flutter build apk --release --no-pub --build-name "$APP_VERSION" --build-number "$BUILD_NUMBER"
 
+      - name: Verify packaged APK does not declare foreground-service location
+        run: |
+          APK="$(find build/app/outputs/flutter-apk -maxdepth 1 -name '*.apk' -print -quit)"
+          test -n "$APK"
+          PERMISSIONS="$("$ANDROID_HOME/build-tools/36.0.0/aapt2" dump permissions "$APK")"
+          printf '%s\n' "$PERMISSIONS"
+          if printf '%s\n' "$PERMISSIONS" | grep -q "android.permission.FOREGROUND_SERVICE_LOCATION"; then
+            echo "Unexpected foreground-service location permission in APK"
+            exit 1
+          fi
+          echo "Confirmed: no foreground-service location permission in packaged APK."
+
       - name: Verify APK signing
         run: |
           APK="$(find build/app/outputs/flutter-apk -maxdepth 1 -name '*.apk' -print -quit)"
@@ -112,7 +124,7 @@ jobs:
       - name: Upload signed Android release artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: alin-flutter-v5.6.3-build35-ANDROID-SIGNED
+          name: alin-flutter-v5.6.4-build36-ANDROID-SIGNED
           if-no-files-found: error
           path: |
             flutter_app/build/app/outputs/bundle/release/*.aab
