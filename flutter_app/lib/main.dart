@@ -42,8 +42,12 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await _initializeFirebase();
-  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  try {
+    await _initializeFirebase().timeout(const Duration(seconds: 5));
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  } catch (_) {
+    // Push notifications must never block the store from opening.
+  }
   await Supabase.initialize(
     url: AlinConfig.supabaseUrl,
     publishableKey: AlinConfig.supabasePublishableKey,

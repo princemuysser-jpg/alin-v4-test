@@ -21,7 +21,11 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> _start() async {
     final controller = AppScope.of(context);
     final started = DateTime.now();
-    await controller.initialize();
+    try {
+      await controller.initialize().timeout(const Duration(seconds: 12));
+    } catch (_) {
+      // Always enter the store instead of leaving the user stuck on the logo.
+    }
     final elapsed = DateTime.now().difference(started);
     if (elapsed < const Duration(milliseconds: 1500)) {
       await Future.delayed(const Duration(milliseconds: 1500) - elapsed);

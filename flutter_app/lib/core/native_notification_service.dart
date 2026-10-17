@@ -38,30 +38,34 @@ class NativeNotificationService {
     _started = true;
 
     if (_supportsNativePush) {
-      // Permission is intentionally NOT requested here. The store UI owns the
-      // permission prompt so nothing appears over the splash screen.
-      if (_isIOS) {
-        await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
-          alert: true,
-          badge: true,
-          sound: true,
-        );
-      }
+      try {
+        // Permission is intentionally NOT requested here. The store UI owns the
+        // permission prompt so nothing appears over the splash screen.
+        if (_isIOS) {
+          await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
+            alert: true,
+            badge: true,
+            sound: true,
+          );
+        }
 
-      await _registerCurrentToken();
-      _tokenRefreshSub = FirebaseMessaging.instance.onTokenRefresh.listen((token) {
-        unawaited(_registerToken(token));
-      });
-      _foregroundSub = FirebaseMessaging.onMessage.listen((message) {
-        unawaited(_handleFcmMessage(message));
-      });
-      _openedSub = FirebaseMessaging.onMessageOpenedApp.listen((message) {
-        unawaited(_handleFcmOpened(message));
-      });
+        await _registerCurrentToken();
+        _tokenRefreshSub = FirebaseMessaging.instance.onTokenRefresh.listen((token) {
+          unawaited(_registerToken(token));
+        });
+        _foregroundSub = FirebaseMessaging.onMessage.listen((message) {
+          unawaited(_handleFcmMessage(message));
+        });
+        _openedSub = FirebaseMessaging.onMessageOpenedApp.listen((message) {
+          unawaited(_handleFcmOpened(message));
+        });
 
-      final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
-      if (initialMessage != null) {
-        unawaited(_handleFcmOpened(initialMessage));
+        final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
+        if (initialMessage != null) {
+          unawaited(_handleFcmOpened(initialMessage));
+        }
+      } catch (_) {
+        // Push setup is optional; realtime/store startup must continue.
       }
     }
 

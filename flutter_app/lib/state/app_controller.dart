@@ -37,17 +37,29 @@ class AppController extends ChangeNotifier {
   Timer? _notificationTimer;
 
   Future<void> initialize() async {
-    await _restoreLocalState();
-    await Future.wait([
-      refreshCatalog(),
-      restoreStudent(),
-    ]);
-    loading = false;
-    notifyListeners();
-    _activityTimer?.cancel();
-    _activityTimer = Timer.periodic(const Duration(minutes: 5), (_) => touchStudent());
-    _notificationTimer?.cancel();
-    _notificationTimer = Timer.periodic(const Duration(seconds: 45), (_) => refreshNotifications());
+    try {
+      try {
+        await _restoreLocalState().timeout(const Duration(seconds: 3));
+      } catch (_) {
+        // A damaged/slow local session must not keep the app on the splash screen.
+      }
+
+      try {
+        await Future.wait([
+          refreshCatalog().timeout(const Duration(seconds: 8)),
+          restoreStudent().timeout(const Duration(seconds: 6)),
+        ]).timeout(const Duration(seconds: 9));
+      } catch (_) {
+        error ??= 'تعذر تحميل بعض البيانات حالياً. تحقق من الإنترنت وحاول التحديث.';
+      }
+    } finally {
+      loading = false;
+      notifyListeners();
+      _activityTimer?.cancel();
+      _activityTimer = Timer.periodic(const Duration(minutes: 5), (_) => touchStudent());
+      _notificationTimer?.cancel();
+      _notificationTimer = Timer.periodic(const Duration(seconds: 45), (_) => refreshNotifications());
+    }
   }
 
   void disposeController() {
