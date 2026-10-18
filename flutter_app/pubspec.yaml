@@ -1,7 +1,7 @@
 name: alin_flutter
 description: تطبيق الطالب الرسمي لمنصة آلين - Flutter
 publish_to: 'none'
-version: 5.6.4+40
+version: 5.6.4+41
 
 environment:
   sdk: '>=3.10.0 <4.0.0'
@@ -19,6 +19,12 @@ dependencies:
   firebase_core: ^4.13.0
   firebase_messaging: ^16.5.0
   package_info_plus: ^10.2.1
+
+# shared_preferences_android 2.5.0 was released after our last known-good Android build
+# and can fail at runtime with this pinned Flutter toolchain. Keep the Android
+# implementation on the last compatible release until Flutter is upgraded.
+dependency_overrides:
+  shared_preferences_android: 2.4.28
 
 dev_dependencies:
   flutter_test:
