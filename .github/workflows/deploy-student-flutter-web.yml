@@ -1,0 +1,119 @@
+name: Deploy Student Flutter Web to Store
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/deploy-student-flutter-web.yml'
+      - 'flutter_app/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: deploy-student-flutter-web
+  cancel-in-progress: true
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Install Flutter 3.44.9 stable
+        run: |
+          git clone --depth 1 --branch 3.44.9 https://github.com/flutter/flutter.git "$HOME/flutter"
+          echo "$HOME/flutter/bin" >> "$GITHUB_PATH"
+          "$HOME/flutter/bin/flutter" config --no-analytics
+          "$HOME/flutter/bin/flutter" --version
+
+      - name: Prepare Flutter web platform
+        working-directory: flutter_app
+        run: |
+          flutter config --enable-web
+          if [ ! -f web/index.html ]; then
+            flutter create --platforms=web --project-name alin_flutter --org com.alin .
+          fi
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+
+          web = Path('web')
+          index = web / 'index.html'
+          text = index.read_text(encoding='utf-8')
+          text = text.replace('<title>alin_flutter</title>', '<title>منصة آلين</title>')
+          text = text.replace('content="alin_flutter"', 'content="منصة آلين"')
+          index.write_text(text, encoding='utf-8')
+
+          manifest = web / 'manifest.json'
+          if manifest.exists():
+              data = json.loads(manifest.read_text(encoding='utf-8'))
+              data['name'] = 'منصة آلين'
+              data['short_name'] = 'آلين'
+              data['description'] = 'متجر الطالب - منصة آلين'
+              data['lang'] = 'ar'
+              data['dir'] = 'rtl'
+              data['start_url'] = '.'
+              data['display'] = 'standalone'
+              manifest.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding='utf-8')
+
+          logo = Path('assets/images/alin_icon.png')
+          if logo.exists():
+              (web / 'icons').mkdir(parents=True, exist_ok=True)
+              for name in ('Icon-192.png','Icon-512.png','Icon-maskable-192.png','Icon-maskable-512.png'):
+                  (web / 'icons' / name).write_bytes(logo.read_bytes())
+              (web / 'favicon.png').write_bytes(logo.read_bytes())
+          PY
+
+      - name: Get packages
+        working-directory: flutter_app
+        run: flutter pub get
+
+      - name: Analyze
+        working-directory: flutter_app
+        run: flutter analyze
+
+      - name: Test
+        working-directory: flutter_app
+        run: flutter test
+
+      - name: Build Flutter Web for /store
+        working-directory: flutter_app
+        run: flutter build web --release --no-pub --base-href /store/
+
+      - name: Validate web build
+        run: |
+          test -f flutter_app/build/web/index.html
+          test -f flutter_app/build/web/main.dart.js
+          grep -Fq '<base href="/store/">' flutter_app/build/web/index.html
+          grep -Fq 'منصة آلين' flutter_app/build/web/index.html
+
+      - name: Publish build into /store without deleting legacy store assets
+        run: |
+          set -euo pipefail
+          rm -f store/index.html store/flutter.js store/flutter_bootstrap.js store/main.dart.js store/flutter_service_worker.js store/manifest.json store/version.json store/favicon.png
+          rm -rf store/assets store/canvaskit store/icons
+          cp -a flutter_app/build/web/. store/
+          printf '%s\n' "Flutter student store build from $GITHUB_SHA" > store/flutter-web-release.txt
+
+      - name: Commit published Flutter web store
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add store
+          if git diff --cached --quiet; then
+            echo 'Student Flutter web output is already current.'
+            exit 0
+          fi
+          git commit -m 'build: publish student Flutter web at /store'
+          git pull --rebase origin main
+          git push origin HEAD:main
