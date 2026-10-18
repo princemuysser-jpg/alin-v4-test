@@ -1,18 +1,18 @@
 name: Diagnose Android Startup
 
 on:
-  workflow_dispatch:
   push:
     branches:
       - main
     paths:
       - '.github/workflows/diagnose-android-startup.yml'
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  android-startup-diagnostic:
+  diagnose:
     runs-on: macos-14
     timeout-minutes: 45
 
@@ -33,15 +33,19 @@ jobs:
           "$HOME/flutter/bin/flutter" config --no-analytics
           "$HOME/flutter/bin/flutter" --version
 
-      - name: Flutter pub get
+      - name: Get packages
         working-directory: flutter_app
         run: flutter pub get
+
+      - name: Analyze
+        working-directory: flutter_app
+        run: flutter analyze
 
       - name: Build debug APK
         working-directory: flutter_app
         run: flutter build apk --debug --no-pub
 
-      - name: Boot emulator and inspect startup
+      - name: Run startup diagnostic on emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
@@ -52,40 +56,41 @@ jobs:
             set -euo pipefail
             adb install -r flutter_app/build/app/outputs/flutter-apk/app-debug.apk
             adb logcat -c
-            adb shell am force-stop com.alin.platform
-            adb shell am start -n com.alin.platform/.MainActivity
+            adb shell pm clear com.alin.platform
+            adb shell am start -W -n com.alin.platform/.MainActivity
             sleep 25
+
             adb shell uiautomator dump /sdcard/window.xml || true
             adb pull /sdcard/window.xml window.xml || true
             adb exec-out screencap -p > android-startup.png || true
-            adb logcat -d > android-startup-logcat.txt
+            adb logcat -d -v time > android-startup-logcat.txt
 
-            echo "=== Flutter/plugin errors ==="
-            grep -Ei "MissingPluginException|PlatformException|shared_preferences|flutter_secure_storage|firebase|FATAL EXCEPTION|E/flutter|Unable to start activity" android-startup-logcat.txt || true
+            echo "===== FILTERED STARTUP ERRORS ====="
+            grep -Eai "MissingPluginException|PlatformException|shared_preferences|flutter_secure_storage|firebase|Supabase|FATAL EXCEPTION|E/flutter|Unable to start activity|No implementation found|channel-error" android-startup-logcat.txt || true
 
-            echo "=== Visible UI ==="
+            echo "===== VISIBLE UI ====="
             cat window.xml || true
 
             if grep -Eqi "MissingPluginException|No implementation found for method|FATAL EXCEPTION|Unable to start activity" android-startup-logcat.txt; then
-              echo "::error::Android startup/plugin failure reproduced in emulator"
+              echo "::error::Plugin/native startup failure reproduced"
               exit 1
             fi
 
             if grep -Fq "إعادة المحاولة" window.xml; then
-              echo "::error::Bootstrap error screen reproduced in emulator"
+              echo "::error::Bootstrap error screen reproduced"
               exit 1
             fi
 
-            echo "Android startup diagnostic passed without plugin/bootstrap failure."
+            echo "Startup diagnostic reached app UI without the known bootstrap failure."
 
       - name: Upload diagnostic evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: android-startup-diagnostic
+          if-no-files-found: ignore
+          retention-days: 3
           path: |
             android-startup-logcat.txt
             android-startup.png
             window.xml
-          if-no-files-found: ignore
-          retention-days: 3
