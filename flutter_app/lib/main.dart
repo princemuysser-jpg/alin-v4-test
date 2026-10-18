@@ -84,19 +84,16 @@ class _AlinBootstrapAppState extends State<AlinBootstrapApp> {
         // Notifications are optional and must never block the storefront.
       }
 
-      SupabaseClient client;
-      try {
-        client = Supabase.instance.client;
-      } catch (_) {
-        await Supabase.initialize(
-          url: AlinConfig.supabaseUrl,
-          publishableKey: AlinConfig.supabasePublishableKey,
-        ).timeout(const Duration(seconds: 8));
-        client = Supabase.instance.client;
-      }
+      // The student store only needs public RPC/Storage/Realtime access.
+      // Use a direct client so Android startup does not depend on the global
+      // Supabase.initialize plugin/storage boot sequence.
+      final client = SupabaseClient(
+        AlinConfig.supabaseUrl,
+        AlinConfig.supabasePublishableKey,
+      );
 
       final prefs = await SharedPreferences.getInstance()
-          .timeout(const Duration(seconds: 5));
+          .timeout(const Duration(seconds: 8));
 
       final controller = AppController(
         repository: AlinRepository(client),
@@ -116,12 +113,19 @@ class _AlinBootstrapAppState extends State<AlinBootstrapApp> {
         _controller = controller;
         _booting = false;
       });
-    } catch (_) {
+    } catch (error) {
       if (!mounted) return;
+      final raw = '$error'.toLowerCase();
+      var message = 'تعذر تهيئة متجر آلين على هذا الجهاز. اضغط إعادة المحاولة.';
+      if (raw.contains('timeout')) {
+        message = 'استغرق تشغيل المتجر وقتاً أطول من المتوقع. اضغط إعادة المحاولة.';
+      } else if (raw.contains('shared_preferences') ||
+          raw.contains('platformexception')) {
+        message = 'تعذر فتح التخزين المحلي للتطبيق. أغلق التطبيق وافتحه من جديد.';
+      }
       setState(() {
         _booting = false;
-        _error =
-            'تعذر تشغيل متجر آلين حالياً. تحقق من الإنترنت ثم اضغط إعادة المحاولة.';
+        _error = message;
       });
     }
   }
@@ -209,7 +213,7 @@ class _AlinAppState extends State<AlinApp> {
     super.initState();
     widget.controller.addListener(_controllerChanged);
     _notifications = NativeNotificationService(
-      client: Supabase.instance.client,
+      client: widget.controller.repository.client,
       store: widget.controller.store,
       studentTokenProvider: () => widget.controller.studentToken,
       onNotificationReceived: widget.controller.refreshNotifications,
