@@ -414,29 +414,27 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        if (requiresHomeDelivery)
+                        if (requiresHomeDelivery && !hasCourierOnlyBooklet)
                           Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
                               color: Theme.of(context).colorScheme.surfaceContainerHighest,
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: Row(
+                            child: const Row(
                               children: [
-                                const Icon(Icons.delivery_dining),
-                                const SizedBox(width: 10),
+                                Icon(Icons.delivery_dining),
+                                SizedBox(width: 10),
                                 Expanded(
                                   child: Text(
-                                    hasCourierOnlyBooklet
-                                        ? 'هذه السلة تحتوي ملزمة حصة المكتبة فيها صفر، لذلك التوصيل عن طريق المندوب هو الخيار الوحيد.'
-                                        : 'الكتب والقرطاسية والهدايا متاحة بالتوصيل فقط.',
-                                    style: const TextStyle(fontWeight: FontWeight.w800),
+                                    'الكتب والقرطاسية والهدايا متاحة بالتوصيل فقط.',
+                                    style: TextStyle(fontWeight: FontWeight.w800),
                                   ),
                                 ),
                               ],
                             ),
                           )
-                        else
+                        else if (!requiresHomeDelivery)
                           SegmentedButton<String>(
                             segments: const [
                               ButtonSegment(value: 'pickup', icon: Icon(Icons.store_mall_directory_outlined), label: Text('استلام من مكتبة')),
