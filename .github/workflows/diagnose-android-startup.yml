@@ -1,0 +1,91 @@
+name: Diagnose Android Startup
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/diagnose-android-startup.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  android-startup-diagnostic:
+    runs-on: macos-14
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install Flutter 3.44.9
+        run: |
+          git clone --depth 1 --branch 3.44.9 https://github.com/flutter/flutter.git "$HOME/flutter"
+          echo "$HOME/flutter/bin" >> "$GITHUB_PATH"
+          "$HOME/flutter/bin/flutter" config --no-analytics
+          "$HOME/flutter/bin/flutter" --version
+
+      - name: Flutter pub get
+        working-directory: flutter_app
+        run: flutter pub get
+
+      - name: Build debug APK
+        working-directory: flutter_app
+        run: flutter build apk --debug --no-pub
+
+      - name: Boot emulator and inspect startup
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          script: |
+            set -euo pipefail
+            adb install -r flutter_app/build/app/outputs/flutter-apk/app-debug.apk
+            adb logcat -c
+            adb shell am force-stop com.alin.platform
+            adb shell am start -n com.alin.platform/.MainActivity
+            sleep 25
+            adb shell uiautomator dump /sdcard/window.xml || true
+            adb pull /sdcard/window.xml window.xml || true
+            adb exec-out screencap -p > android-startup.png || true
+            adb logcat -d > android-startup-logcat.txt
+
+            echo "=== Flutter/plugin errors ==="
+            grep -Ei "MissingPluginException|PlatformException|shared_preferences|flutter_secure_storage|firebase|FATAL EXCEPTION|E/flutter|Unable to start activity" android-startup-logcat.txt || true
+
+            echo "=== Visible UI ==="
+            cat window.xml || true
+
+            if grep -Eqi "MissingPluginException|No implementation found for method|FATAL EXCEPTION|Unable to start activity" android-startup-logcat.txt; then
+              echo "::error::Android startup/plugin failure reproduced in emulator"
+              exit 1
+            fi
+
+            if grep -Fq "إعادة المحاولة" window.xml; then
+              echo "::error::Bootstrap error screen reproduced in emulator"
+              exit 1
+            fi
+
+            echo "Android startup diagnostic passed without plugin/bootstrap failure."
+
+      - name: Upload diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-startup-diagnostic
+          path: |
+            android-startup-logcat.txt
+            android-startup.png
+            window.xml
+          if-no-files-found: ignore
+          retention-days: 3
