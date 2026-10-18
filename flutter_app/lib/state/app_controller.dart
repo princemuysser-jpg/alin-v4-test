@@ -173,7 +173,13 @@ class AppController extends ChangeNotifier {
       rows = rows.where((e) => e.categoryId == selectedCategoryId).toList();
     }
     if (selectedSubcategoryId.isNotEmpty) {
-      rows = rows.where((e) => e.subcategoryId == selectedSubcategoryId).toList();
+      if (selectedCategoryId == 'CAT-BOOKLETS' &&
+          selectedSubcategoryId.startsWith('TSC-')) {
+        final teacherId = selectedSubcategoryId.substring(4);
+        rows = rows.where((e) => e.isBooklet && e.teacherId == teacherId).toList();
+      } else {
+        rows = rows.where((e) => e.subcategoryId == selectedSubcategoryId).toList();
+      }
     }
     final q = search.trim().toLowerCase();
     if (q.isNotEmpty) {
