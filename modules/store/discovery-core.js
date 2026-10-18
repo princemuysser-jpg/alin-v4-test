@@ -44,7 +44,7 @@
       const teacher=teacherBy(row.teacher_id)||{};
       return {
         kind:'booklet',id:String(row.id),raw:row,title:row.title||'ملزمة',teacher:teacher.name||'',teacherId:row.teacher_id||'',
-        subject:row.subject||'',grade:row.grade||'',category:'ملازم',price:num(row.price),unitPrice:num(row.price),listPrice:num(row.original_price||row.price),originalPrice:num(row.original_price),
+        subject:row.subject||'',grade:row.grade||'',category:'ملازم',categoryId:'CAT-BOOKLETS',subcategoryId:row.teacher_id?('TSC-'+String(row.teacher_id)):'',price:num(row.price),unitPrice:num(row.price),listPrice:num(row.original_price||row.price),originalPrice:num(row.original_price),
         stock:row.stock==null?null:num(row.stock),image:row.cover_path||row.image_path||'',cover:row.cover_path||row.image_path||'',
         created:row.created_at||'',sold:num(row.sales_count)||counts[`booklet:${row.id}`]||0,badge:row.badge||'',prep:num(row.prep_minutes),
         dealPrice:num(row.deal_price||row.sale_price),dealStart:row.deal_start,dealEnd:row.deal_end,description:row.description||'',status:row.status

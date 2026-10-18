@@ -8,6 +8,8 @@ on:
       - '.github/workflows/rebuild-grouped-role-runtime.yml'
       - 'modules/core/account-admin-service.js'
       - 'modules/admin/accounts.js'
+      - 'modules/store/discovery-core.js'
+      - 'modules/store/discovery-catalog.js'
       - 'scripts/build-runtime.py'
   workflow_dispatch:
 
@@ -44,9 +46,15 @@ jobs:
           for name in ('store-desktop.html','store-mobile.html','store-tablet.html'):
               path=Path(name)
               html=path.read_text(encoding='utf-8')
-              html,count=re.subn(r'alin-config\.js\?v=[^\"]+',f'alin-config.js?v={token}',html,count=1)
-              if count != 1:
-                  raise SystemExit(f'Could not update config token in {name}')
+              replacements=[
+                  (r'alin-config\\.js\\?v=[^\\"]+',f'alin-config.js?v={token}'),
+                  (r'dist/alin-core\\.v4\\.js\\?v=[^\\"]+',f'dist/alin-core.v4.js?v={token}'),
+                  (r'alin-app-(desktop|mobile|tablet)\\.v4\\.2\\.0\\.js\\?v=[^\\"]+',lambda m:f'alin-app-{m.group(1)}.v4.2.0.js?v={token}'),
+              ]
+              for pattern,replacement in replacements:
+                  html,count=re.subn(pattern,replacement,html,count=1)
+                  if count != 1:
+                      raise SystemExit(f'Could not update runtime token in {name}: {pattern}')
               path.write_text(html,encoding='utf-8')
 
       - name: Verify grouped modules and printer account creation
