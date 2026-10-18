@@ -28,6 +28,7 @@ const FirebaseOptions _alinIOSFirebaseOptions = FirebaseOptions(
 );
 
 Future<void> _initializeFirebase() async {
+  if (Firebase.apps.isNotEmpty) return;
   if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
     await Firebase.initializeApp(options: _alinIOSFirebaseOptions);
     return;
@@ -42,22 +43,152 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  try {
-    await _initializeFirebase().timeout(const Duration(seconds: 5));
-    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-  } catch (_) {
-    // Push notifications must never block the store from opening.
+
+  // Render Flutter immediately so Android never stays trapped on the native
+  // launch screen while network/plugins initialize.
+  runApp(const AlinBootstrapApp());
+}
+
+class AlinBootstrapApp extends StatefulWidget {
+  const AlinBootstrapApp({super.key});
+
+  @override
+  State<AlinBootstrapApp> createState() => _AlinBootstrapAppState();
+}
+
+class _AlinBootstrapAppState extends State<AlinBootstrapApp> {
+  AppController? _controller;
+  bool _booting = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _bootstrap());
   }
-  await Supabase.initialize(
-    url: AlinConfig.supabaseUrl,
-    publishableKey: AlinConfig.supabasePublishableKey,
-  );
-  final prefs = await SharedPreferences.getInstance();
-  final controller = AppController(
-    repository: AlinRepository(Supabase.instance.client),
-    store: DeviceStore(prefs, secureStorage: const FlutterSecureStorage()),
-  );
-  runApp(AlinApp(controller: controller));
+
+  Future<void> _bootstrap() async {
+    if (!mounted) return;
+    setState(() {
+      _booting = true;
+      _error = null;
+    });
+
+    try {
+      try {
+        await _initializeFirebase().timeout(const Duration(seconds: 5));
+        if (!kIsWeb) {
+          FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+        }
+      } catch (_) {
+        // Notifications are optional and must never block the storefront.
+      }
+
+      SupabaseClient client;
+      try {
+        client = Supabase.instance.client;
+      } catch (_) {
+        await Supabase.initialize(
+          url: AlinConfig.supabaseUrl,
+          publishableKey: AlinConfig.supabasePublishableKey,
+        ).timeout(const Duration(seconds: 8));
+        client = Supabase.instance.client;
+      }
+
+      final prefs = await SharedPreferences.getInstance()
+          .timeout(const Duration(seconds: 5));
+
+      final controller = AppController(
+        repository: AlinRepository(client),
+        store: DeviceStore(
+          prefs,
+          secureStorage: const FlutterSecureStorage(),
+        ),
+      );
+
+      if (!mounted) {
+        controller.disposeController();
+        controller.dispose();
+        return;
+      }
+
+      setState(() {
+        _controller = controller;
+        _booting = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _booting = false;
+        _error =
+            'تعذر تشغيل متجر آلين حالياً. تحقق من الإنترنت ثم اضغط إعادة المحاولة.';
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = _controller;
+    if (controller != null) {
+      return AlinApp(controller: controller);
+    }
+
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: AlinConfig.appName,
+      theme: AlinTheme.light(),
+      home: Directionality(
+        textDirection: TextDirection.rtl,
+        child: Scaffold(
+          backgroundColor: Colors.white,
+          body: SafeArea(
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(28),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Image.asset(
+                      'assets/images/alin_logo.png',
+                      width: 132,
+                      fit: BoxFit.contain,
+                    ),
+                    const SizedBox(height: 28),
+                    if (_booting) ...[
+                      const SizedBox(
+                        width: 34,
+                        height: 34,
+                        child: CircularProgressIndicator(strokeWidth: 3),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'جاري فتح متجر آلين...',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                      ),
+                    ] else ...[
+                      const Icon(Icons.wifi_off_rounded, size: 38),
+                      const SizedBox(height: 14),
+                      Text(
+                        _error ?? 'تعذر تشغيل المتجر.',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 16, height: 1.6),
+                      ),
+                      const SizedBox(height: 18),
+                      FilledButton.icon(
+                        onPressed: _bootstrap,
+                        icon: const Icon(Icons.refresh_rounded),
+                        label: const Text('إعادة المحاولة'),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class AlinApp extends StatefulWidget {
