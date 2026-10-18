@@ -41,6 +41,10 @@ jobs:
           flutter config --enable-web
           if [ ! -f web/index.html ]; then
             flutter create --platforms=web --project-name alin_flutter --org com.alin .
+            # flutter create adds its demo widget_test.dart. Restore our real tests
+            # and remove only generated untracked tests before analyze/test.
+            git checkout -- test 2>/dev/null || true
+            git clean -f test
           fi
           python3 - <<'PY'
           from pathlib import Path
