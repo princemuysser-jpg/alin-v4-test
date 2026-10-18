@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   diagnose:
-    runs-on: macos-14
+    runs-on: ubuntu-latest
     timeout-minutes: 45
 
     steps:
@@ -30,7 +30,7 @@ jobs:
         run: |
           git clone --depth 1 --branch 3.44.9 https://github.com/flutter/flutter.git "$HOME/flutter"
           echo "$HOME/flutter/bin" >> "$GITHUB_PATH"
-          "$HOME/flutter/bin/flutter" config --no-analytics
+          "$HOME/flutter/bin/flutter" config --no-analytics --enable-android
           "$HOME/flutter/bin/flutter" --version
 
       - name: Get packages
