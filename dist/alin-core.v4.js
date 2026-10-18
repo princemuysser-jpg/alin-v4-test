@@ -2879,7 +2879,7 @@ window.Alin.helpers={
       const teacher=teacherBy(row.teacher_id)||{};
       return {
         kind:'booklet',id:String(row.id),raw:row,title:row.title||'ملزمة',teacher:teacher.name||'',teacherId:row.teacher_id||'',
-        subject:row.subject||'',grade:row.grade||'',category:'ملازم',price:num(row.price),unitPrice:num(row.price),listPrice:num(row.original_price||row.price),originalPrice:num(row.original_price),
+        subject:row.subject||'',grade:row.grade||'',category:'ملازم',categoryId:'CAT-BOOKLETS',subcategoryId:row.teacher_id?('TSC-'+String(row.teacher_id)):'',price:num(row.price),unitPrice:num(row.price),listPrice:num(row.original_price||row.price),originalPrice:num(row.original_price),
         stock:row.stock==null?null:num(row.stock),image:row.cover_path||row.image_path||'',cover:row.cover_path||row.image_path||'',
         created:row.created_at||'',sold:num(row.sales_count)||counts[`booklet:${row.id}`]||0,badge:row.badge||'',prep:num(row.prep_minutes),
         dealPrice:num(row.deal_price||row.sale_price),dealStart:row.deal_start,dealEnd:row.deal_end,description:row.description||'',status:row.status
@@ -3477,7 +3477,7 @@ window.Alin.helpers={
 
   function selectedParentCategoryId(){
     const section=storefrontSections().find(item=>item.key===String(state.categoryKey||''));
-    if(!section||!['stationery','gift'].includes(normalizeCategoryType(section.type)))return '';
+    if(!section||!['booklet','stationery','gift'].includes(normalizeCategoryType(section.type)))return '';
     if(section.rowId)return String(section.rowId);
     const row=categoryRows().find(item=>isBuiltinRow(item)&&normalizeCategoryType(item.type)===normalizeCategoryType(section.type));
     return String(row?.id||'');
@@ -3486,18 +3486,20 @@ window.Alin.helpers={
   function shelfModeActive(){
     if(state.storeView!=='catalog'||state.searchCatalog||state.subcategoryId||String(state.categoryQuery||'').trim())return false;
     const section=storefrontSections().find(item=>item.key===String(state.categoryKey||''));
-    if(!section||!['stationery','gift'].includes(normalizeCategoryType(section.type)))return false;
+    if(!section||!['booklet','stationery','gift'].includes(normalizeCategoryType(section.type)))return false;
     const f=state.filters||{};
     return !f.grade&&!f.subject&&!f.teacher&&!f.min&&!f.max&&!f.available&&!f.badge&&(!f.sort||f.sort==='recommended');
   }
 
   function shelfRows(allRows){
     const parentId=selectedParentCategoryId();if(!parentId)return [];
+    const section=storefrontSections().find(item=>item.key===String(state.categoryKey||''));
+    const bookletSection=normalizeCategoryType(section?.type)==='booklet';
     const subcats=productSubcategoryRows().filter(item=>String(item.parent_category_id)===parentId&&String(item.status||'active')==='active').sort((a,b)=>Number(a.sort_order||0)-Number(b.sort_order||0)||String(a.name||'').localeCompare(String(b.name||''),'ar'));
-    const rows=subcats.map(subcategory=>({subcategory,items:allRows.filter(item=>String(item.subcategoryId||'')===String(subcategory.id))})).filter(row=>row.items.length);
+    const rows=subcats.map(subcategory=>({subcategory,items:allRows.filter(item=>String(item.subcategoryId||'')===String(subcategory.id))})).filter(row=>bookletSection||row.items.length);
     const activeIds=new Set(subcats.map(item=>String(item.id)));
     const unassigned=allRows.filter(item=>!String(item.subcategoryId||'')||!activeIds.has(String(item.subcategoryId||'')));
-    if(unassigned.length)rows.push({subcategory:{id:'__other__',name:'منتجات أخرى'},items:unassigned,other:true});
+    if(unassigned.length)rows.push({subcategory:{id:'__other__',name:bookletSection?'ملازم أخرى':'منتجات أخرى'},items:unassigned,other:true});
     return rows;
   }
 
@@ -3506,7 +3508,9 @@ window.Alin.helpers={
     const limit=isMobile()?4:5;
     const grid=$('#storeGrid');if(!grid)return false;
     grid.classList.add('alin-product-shelves');
-    grid.innerHTML=shelves.map(row=>`<section class="alin-product-shelf"><header><div><h2>${esc(row.subcategory.name)}</h2><small>${fmt(row.items.length)} منتج</small></div>${!row.other?`<button type="button" class="alin-shelf-more" data-v99-action="subcategoryMore" data-subcategory-id="${esc(row.subcategory.id)}">عرض المزيد</button>`:''}</header><div class="alin-product-shelf-rail">${row.items.slice(0,limit).map(card).join('')}</div></section>`).join('');
+    const section=storefrontSections().find(item=>item.key===String(state.categoryKey||''));
+    const bookletSection=normalizeCategoryType(section?.type)==='booklet';
+    grid.innerHTML=shelves.map(row=>`<section class="alin-product-shelf"><header><div><h2>${esc(row.subcategory.name)}</h2><small>${fmt(row.items.length)} ${bookletSection?'ملزمة':'منتج'}</small></div>${!row.other?`<button type="button" class="alin-shelf-more" data-v99-action="subcategoryMore" data-subcategory-id="${esc(row.subcategory.id)}">عرض المزيد</button>`:''}</header><div class="alin-product-shelf-rail">${row.items.length?row.items.slice(0,limit).map(card).join(''):(bookletSection?'<div class="v99-empty"><b>لا توجد ملازم منشورة لهذا المدرس حالياً</b></div>':'')}</div></section>`).join('');
     return true;
   }
 
