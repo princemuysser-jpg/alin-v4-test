@@ -47,9 +47,9 @@ jobs:
               path=Path(name)
               html=path.read_text(encoding='utf-8')
               replacements=[
-                  (r'alin-config\\.js\\?v=[^\\"]+',f'alin-config.js?v={token}'),
-                  (r'dist/alin-core\\.v4\\.js\\?v=[^\\"]+',f'dist/alin-core.v4.js?v={token}'),
-                  (r'alin-app-(desktop|mobile|tablet)\\.v4\\.2\\.0\\.js\\?v=[^\\"]+',lambda m:f'alin-app-{m.group(1)}.v4.2.0.js?v={token}'),
+                  (r'alin-config\.js\?v=[^"]+',f'alin-config.js?v={token}'),
+                  (r'dist/alin-core\.v4\.js\?v=[^"]+',f'dist/alin-core.v4.js?v={token}'),
+                  (r'alin-app-(desktop|mobile|tablet)\.v4\.2\.0\.js\?v=[^"]+',lambda m:f'alin-app-{m.group(1)}.v4.2.0.js?v={token}'),
               ]
               for pattern,replacement in replacements:
                   html,count=re.subn(pattern,replacement,html,count=1)
