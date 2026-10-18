@@ -120,14 +120,20 @@ jobs:
           fi
           echo "Confirmed: FOREGROUND_SERVICE_LOCATION is absent from the release APK."
 
-      - name: Upload signed Android release artifacts
+      - name: Upload Google Play AAB
         uses: actions/upload-artifact@v4
         with:
-          name: alin-flutter-v5.6.4-build39-ANDROID-SIGNED
+          name: alin-v5.6.4-build39-GOOGLE-PLAY-AAB
           if-no-files-found: error
-          path: |
-            flutter_app/build/app/outputs/bundle/release/*.aab
-            flutter_app/build/app/outputs/flutter-apk/*.apk
+          path: flutter_app/build/app/outputs/bundle/release/*.aab
+          retention-days: 7
+
+      - name: Upload APK for manual testing
+        uses: actions/upload-artifact@v4
+        with:
+          name: alin-v5.6.4-build39-APK-TEST
+          if-no-files-found: error
+          path: flutter_app/build/app/outputs/flutter-apk/*.apk
           retention-days: 7
 
       - name: Remove signing files from runner
