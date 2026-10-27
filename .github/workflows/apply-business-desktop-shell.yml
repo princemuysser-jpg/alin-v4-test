@@ -1,9 +1,7 @@
 name: Apply ALIN Business Desktop Shell
 
 on:
-  push:
-    paths:
-      - '.github/workflows/apply-business-desktop-shell.yml'
+  # Legacy one-off patch workflow. Keep available for manual recovery only.
   workflow_dispatch:
 
 permissions:
