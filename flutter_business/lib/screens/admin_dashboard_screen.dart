@@ -3,6 +3,7 @@ import '../data/business_repository.dart';
 import '../models/business_account.dart';
 import '../widgets/business_role_navigation.dart';
 import '../widgets/grouped_order_receipt_card.dart';
+import 'business_order_details_screen.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   final BusinessRepository repository;
@@ -33,12 +34,20 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   List<Map<String, dynamic>> settlements = [];
   List<Map<String, dynamic>> ledger = [];
   String orderFilter = 'active';
+  String orderSearch = '';
+  final TextEditingController orderSearchController = TextEditingController();
   String accountFilter = 'all';
 
   @override
   void initState() {
     super.initState();
     load();
+  }
+
+  @override
+  void dispose() {
+    orderSearchController.dispose();
+    super.dispose();
   }
 
   Future<void> load() async {
@@ -161,25 +170,88 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   List<Map<String, dynamic>> get groupedOrders => groupOrders(orders);
 
   List<Map<String, dynamic>> get visibleOrders {
-    final grouped = groupedOrders;
-    if (orderFilter == 'all') return grouped;
-    if (orderFilter == 'done')
-      return grouped
-          .where(
-            (e) => ((e['_items'] as List).cast<Map<String, dynamic>>()).every(
-              (row) => ['completed', 'delivered'].contains('${row['status']}'),
-            ),
-          )
-          .toList();
-    if (orderFilter == 'cancelled')
-      return grouped
-          .where(
-            (e) => ((e['_items'] as List).cast<Map<String, dynamic>>()).every(
-              (row) => ['cancelled', 'rejected'].contains('${row['status']}'),
-            ),
-          )
-          .toList();
-    return grouped.where((e) => !isClosed(e)).toList();
+    Iterable<Map<String, dynamic>> rows = groupedOrders;
+
+    bool hasAnyStatus(Map<String, dynamic> order, Set<String> statuses) {
+      final items =
+          ((order['_items'] as List?) ?? const <dynamic>[])
+              .whereType<Map>()
+              .map((e) => Map<String, dynamic>.from(e))
+              .toList();
+      final source = items.isEmpty ? <Map<String, dynamic>>[order] : items;
+      return source.any((row) => statuses.contains('${row['status']}'));
+    }
+
+    bool allStatuses(Map<String, dynamic> order, Set<String> statuses) {
+      final items =
+          ((order['_items'] as List?) ?? const <dynamic>[])
+              .whereType<Map>()
+              .map((e) => Map<String, dynamic>.from(e))
+              .toList();
+      final source = items.isEmpty ? <Map<String, dynamic>>[order] : items;
+      return source.isNotEmpty &&
+          source.every((row) => statuses.contains('${row['status']}'));
+    }
+
+    switch (orderFilter) {
+      case 'new':
+        rows = rows.where(
+          (e) => hasAnyStatus(e, const {'new', 'pending', 'pending_admin'}),
+        );
+        break;
+      case 'processing':
+        rows = rows.where(
+          (e) => hasAnyStatus(e, const {
+            'assigned',
+            'accepted',
+            'processing',
+            'printing',
+            'picked_up',
+            'out_for_delivery',
+          }),
+        );
+        break;
+      case 'ready':
+        rows = rows.where((e) => hasAnyStatus(e, const {'ready'}));
+        break;
+      case 'done':
+        rows = rows.where(
+          (e) => allStatuses(e, const {'completed', 'delivered', 'done'}),
+        );
+        break;
+      case 'cancelled':
+        rows = rows.where(
+          (e) => allStatuses(e, const {'cancelled', 'rejected', 'canceled'}),
+        );
+        break;
+      case 'active':
+        rows = rows.where((e) => !isClosed(e));
+        break;
+      case 'all':
+      default:
+        break;
+    }
+
+    final query = orderSearch.trim().toLowerCase();
+    if (query.isEmpty) return rows.toList();
+
+    return rows.where((order) {
+      final items =
+          ((order['_items'] as List?) ?? const <dynamic>[])
+              .whereType<Map>()
+              .map((e) => Map<String, dynamic>.from(e))
+              .toList();
+      final searchable = <String>[
+        '${order['order_number'] ?? ''}',
+        '${order['id'] ?? ''}',
+        '${order['student_name'] ?? ''}',
+        '${order['student_phone'] ?? ''}',
+        '${order['delivery_area'] ?? ''}',
+        '${order['title'] ?? ''}',
+        ...items.map((e) => '${e['title'] ?? ''}'),
+      ].join(' ').toLowerCase();
+      return searchable.contains(query);
+    }).toList();
   }
 
   List<Map<String, dynamic>> get visibleAccounts {
@@ -809,141 +881,478 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
 
   Widget _orders() {
-    return _scroll([
-      const Text(
-        'إدارة الطلبات',
-        style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
-      ),
-      const SizedBox(height: 10),
-      SegmentedButton<String>(
-        segments: const [
-          ButtonSegment(value: 'active', label: Text('الحالية')),
-          ButtonSegment(value: 'done', label: Text('المكتملة')),
-          ButtonSegment(value: 'cancelled', label: Text('الملغاة')),
-          ButtonSegment(value: 'all', label: Text('الكل')),
-        ],
-        selected: {orderFilter},
-        onSelectionChanged: (value) =>
-            setState(() => orderFilter = value.first),
-      ),
-      const SizedBox(height: 12),
-      if (visibleOrders.isEmpty)
-        const Card(
-          child: Padding(
-            padding: EdgeInsets.all(22),
-            child: Center(child: Text('لا توجد طلبات')),
+    final all = groupedOrders;
+    int countFor(String filter) {
+      final previous = orderFilter;
+      orderFilter = filter;
+      final count = visibleOrders.length;
+      orderFilter = previous;
+      return count;
+    }
+
+    final activeCount = countFor('active');
+    final newCount = countFor('new');
+    final processingCount = countFor('processing');
+    final readyCount = countFor('ready');
+    final doneCount = countFor('done');
+    final cancelledCount = countFor('cancelled');
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(14, 16, 14, 28),
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'إدارة الطلبات',
+                    style: TextStyle(
+                      fontSize: 21,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF143B68),
+                    ),
+                  ),
+                  SizedBox(height: 3),
+                  Text(
+                    'بحث، فلترة، تعيين مندوب وتحديث حالة الطلب',
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      color: Color(0xFF667085),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEAF2FB),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Text(
+                '${visibleOrders.length} طلب',
+                style: const TextStyle(
+                  color: Color(0xFF143B68),
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        TextField(
+          controller: orderSearchController,
+          onChanged: (value) => setState(() => orderSearch = value),
+          decoration: InputDecoration(
+            hintText: 'ابحث برقم الطلب، اسم الطالب، الهاتف أو المنطقة',
+            prefixIcon: const Icon(Icons.search_rounded),
+            suffixIcon: orderSearch.isEmpty
+                ? null
+                : IconButton(
+                    onPressed: () {
+                      orderSearchController.clear();
+                      setState(() => orderSearch = '');
+                    },
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(color: Color(0xFFE3EAF1)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(color: Color(0xFFE3EAF1)),
+            ),
           ),
-        )
-      else
-        ...visibleOrders.map(_orderCard),
-    ]);
+        ),
+        const SizedBox(height: 12),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              _orderFilterChip('الحالية', 'active', activeCount),
+              _orderFilterChip('جديد', 'new', newCount),
+              _orderFilterChip('قيد التنفيذ', 'processing', processingCount),
+              _orderFilterChip('جاهز', 'ready', readyCount),
+              _orderFilterChip('مكتمل', 'done', doneCount),
+              _orderFilterChip('ملغي', 'cancelled', cancelledCount),
+              _orderFilterChip('الكل', 'all', all.length),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+        if (visibleOrders.isEmpty)
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 38, horizontal: 20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: const Color(0xFFE3EAF1)),
+            ),
+            child: const Column(
+              children: [
+                Icon(
+                  Icons.search_off_rounded,
+                  size: 42,
+                  color: Color(0xFF98A2B3),
+                ),
+                SizedBox(height: 10),
+                Text(
+                  'لا توجد طلبات مطابقة',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w900,
+                    color: Color(0xFF143B68),
+                  ),
+                ),
+              ],
+            ),
+          )
+        else
+          ...visibleOrders.map(_orderCard),
+      ],
+    );
+  }
+
+  Widget _orderFilterChip(String label, String value, int count) {
+    final selected = orderFilter == value;
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(end: 8),
+      child: ChoiceChip(
+        selected: selected,
+        onSelected: (_) => setState(() => orderFilter = value),
+        label: Text('$label  $count'),
+        labelStyle: TextStyle(
+          fontWeight: FontWeight.w800,
+          color: selected ? Colors.white : const Color(0xFF143B68),
+        ),
+        selectedColor: const Color(0xFF143B68),
+        backgroundColor: Colors.white,
+        side: BorderSide(
+          color: selected
+              ? const Color(0xFF143B68)
+              : const Color(0xFFE3EAF1),
+        ),
+      ),
+    );
   }
 
   Widget _orderCard(Map<String, dynamic> o) {
     final deliveryOrder = isDeliveryOrder(o);
+    final status = '${o['status'] ?? ''}';
+    final itemCount = number(o['_item_count']).round();
+    final items =
+        ((o['_items'] as List?) ?? const <dynamic>[])
+            .whereType<Map>()
+            .map((e) => Map<String, dynamic>.from(e))
+            .toList();
+
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
-      child: Padding(
-        padding: const EdgeInsets.all(13),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+        side: const BorderSide(color: Color(0xFFE3EAF1)),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: () => _openOrderDetails(o),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: deliveryOrder
+                          ? const Color(0xFFEAF3FF)
+                          : const Color(0xFFE9F9EF),
+                      borderRadius: BorderRadius.circular(13),
+                    ),
+                    child: Icon(
+                      deliveryOrder
+                          ? Icons.delivery_dining_rounded
+                          : Icons.store_rounded,
+                      color: deliveryOrder
+                          ? const Color(0xFF1677FF)
+                          : const Color(0xFF16A34A),
+                    ),
+                  ),
+                  const SizedBox(width: 11),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'طلب #${o['order_number'] ?? o['id']}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFF143B68),
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          itemCount > 1
+                              ? '$itemCount مواد • ${number(o['_qty_count']).round()} قطعة'
+                              : '${o['title'] ?? 'طلب'}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: Color(0xFF667085),
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  _orderStatusChip(status),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  const Icon(
+                    Icons.person_rounded,
+                    size: 18,
+                    color: Color(0xFF667085),
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      '${o['student_name'] ?? '—'}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.w800),
+                    ),
+                  ),
+                  Text(
+                    money(o['total']),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF143B68),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 7),
+              Wrap(
+                spacing: 8,
+                runSpacing: 6,
+                children: [
+                  _orderInfoPill(
+                    Icons.phone_rounded,
+                    '${o['student_phone'] ?? '—'}',
+                  ),
+                  _orderInfoPill(
+                    Icons.location_on_rounded,
+                    '${o['delivery_area'] ?? '—'}',
+                  ),
+                  _orderInfoPill(
+                    deliveryOrder
+                        ? Icons.local_shipping_rounded
+                        : Icons.storefront_rounded,
+                    deliveryOrder ? 'توصيل مندوب' : 'استلام من مكتبة',
+                  ),
+                ],
+              ),
+              if (items.length > 1) ...[
+                const SizedBox(height: 11),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(13),
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        '${o['order_number'] ?? o['id']}',
-                        style: const TextStyle(fontWeight: FontWeight.w900),
-                      ),
-                      Text(
-                        number(o['_item_count']) > 1
-                            ? 'طلب واحد • ${number(o['_item_count']).round()} مواد'
-                            : '${o['title'] ?? 'طلب'}',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
+                      const Text(
+                        'مواد الطلب',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w900,
+                          color: Color(0xFF143B68),
                         ),
                       ),
+                      const SizedBox(height: 5),
+                      ...items.take(3).map(
+                        (item) => Padding(
+                          padding: const EdgeInsets.only(bottom: 3),
+                          child: Text(
+                            '• ${item['title'] ?? 'مادة'} × ${(number(item['qty']) <= 0 ? 1 : number(item['qty'])).round()}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 11.5,
+                              color: Color(0xFF475467),
+                            ),
+                          ),
+                        ),
+                      ),
+                      if (items.length > 3)
+                        Text(
+                          '+ ${items.length - 3} مواد أخرى',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF1677FF),
+                          ),
+                        ),
                     ],
                   ),
                 ),
-                Chip(label: Text(_status('${o['status']}'))),
               ],
-            ),
-            const Divider(),
-            if (number(o['_item_count']) > 1) ...[
-              const Text(
-                'مواد الطلب',
-                style: TextStyle(
-                  fontWeight: FontWeight.w900,
-                  color: Color(0xFF143B68),
-                ),
+              if ('${o['courier_id'] ?? o['delegate_id'] ?? ''}'.isNotEmpty ||
+                  '${o['library_id'] ?? o['pickup_library_id'] ?? ''}'
+                      .isNotEmpty) ...[
+                const SizedBox(height: 9),
+                if ('${o['courier_id'] ?? o['delegate_id'] ?? ''}'.isNotEmpty)
+                  _line(
+                    'المندوب',
+                    _courierName(
+                      '${o['courier_id'] ?? o['delegate_id']}',
+                    ),
+                  ),
+                if ('${o['library_id'] ?? o['pickup_library_id'] ?? ''}'
+                    .isNotEmpty)
+                  _line(
+                    'المكتبة',
+                    '${o['library_id'] ?? o['pickup_library_id']}',
+                  ),
+              ],
+              const SizedBox(height: 11),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: () => _openOrderDetails(o),
+                    icon: const Icon(Icons.visibility_rounded),
+                    label: const Text('التفاصيل'),
+                  ),
+                  if (deliveryOrder && !isClosed(o))
+                    OutlinedButton.icon(
+                      onPressed: () => _assignCourier(o),
+                      icon: const Icon(Icons.delivery_dining_rounded),
+                      label: const Text('تعيين مندوب'),
+                    ),
+                  if (!isClosed(o))
+                    FilledButton.icon(
+                      onPressed: () => _changeOrderStatus(o),
+                      icon: const Icon(Icons.sync_alt_rounded),
+                      label: const Text('تغيير الحالة'),
+                    ),
+                ],
               ),
-              const SizedBox(height: 6),
-              ...((o['_items'] as List).cast<Map<String, dynamic>>())
-                  .asMap()
-                  .entries
-                  .map((entry) {
-                    final item = entry.value;
-                    final qty = number(item['qty']) <= 0
-                        ? 1
-                        : number(item['qty']);
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 5),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              '${entry.key + 1}. ${item['title'] ?? 'مادة'}',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                          Text(
-                            '× ${qty.round()} • ${money(item['total'])}',
-                            style: const TextStyle(fontWeight: FontWeight.w700),
-                          ),
-                        ],
-                      ),
-                    );
-                  }),
-              const Divider(),
             ],
-            _line('الطالب', '${o['student_name'] ?? '—'}'),
-            _line('الهاتف', '${o['student_phone'] ?? '—'}'),
-            _line('المنطقة', '${o['delivery_area'] ?? '—'}'),
-            _line('الإجمالي', money(o['total'])),
-            if ('${o['courier_id'] ?? o['delegate_id'] ?? ''}'.isNotEmpty)
-              _line(
-                'المندوب',
-                _courierName('${o['courier_id'] ?? o['delegate_id']}'),
-              ),
-            if ('${o['library_id'] ?? o['pickup_library_id'] ?? ''}'.isNotEmpty)
-              _line('المكتبة', '${o['library_id'] ?? o['pickup_library_id']}'),
-            const SizedBox(height: 9),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                if (deliveryOrder && !isClosed(o))
-                  OutlinedButton.icon(
-                    onPressed: () => _assignCourier(o),
-                    icon: const Icon(Icons.delivery_dining_rounded),
-                    label: const Text('تعيين مندوب'),
-                  ),
-                if (!isClosed(o))
-                  OutlinedButton.icon(
-                    onPressed: () => _changeOrderStatus(o),
-                    icon: const Icon(Icons.sync_alt_rounded),
-                    label: const Text('تغيير الحالة'),
-                  ),
-              ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _orderInfoPill(IconData icon, String text) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+    decoration: BoxDecoration(
+      color: const Color(0xFFF8FAFC),
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: const Color(0xFFEEF2F6)),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 14, color: const Color(0xFF667085)),
+        const SizedBox(width: 4),
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 150),
+          child: Text(
+            text,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 10.8,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF475467),
             ),
-          ],
+          ),
+        ),
+      ],
+    ),
+  );
+
+  Widget _orderStatusChip(String status) {
+    final (background, foreground) = switch (status) {
+      'completed' || 'delivered' || 'done' => (
+          const Color(0xFFE9F9EF),
+          const Color(0xFF15803D),
+        ),
+      'cancelled' || 'canceled' || 'rejected' => (
+          const Color(0xFFFFEAF0),
+          const Color(0xFFBE123C),
+        ),
+      'ready' => (
+          const Color(0xFFEAF3FF),
+          const Color(0xFF1D4ED8),
+        ),
+      'processing' || 'printing' || 'assigned' || 'accepted' => (
+          const Color(0xFFFFF4DB),
+          const Color(0xFFB45309),
+        ),
+      'out_for_delivery' || 'picked_up' => (
+          const Color(0xFFF1EBFF),
+          const Color(0xFF6D28D9),
+        ),
+      _ => (
+          const Color(0xFFEAF2FB),
+          const Color(0xFF143B68),
+        ),
+    };
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        _status(status),
+        style: TextStyle(
+          fontSize: 10.8,
+          color: foreground,
+          fontWeight: FontWeight.w900,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openOrderDetails(Map<String, dynamic> order) async {
+    final items =
+        ((order['_items'] as List?) ?? const <dynamic>[])
+            .whereType<Map>()
+            .map((e) => Map<String, dynamic>.from(e))
+            .toList();
+    final id = '${items.isNotEmpty ? items.first['id'] : order['id']}';
+    if (id.trim().isEmpty || id == 'null') return;
+
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => BusinessOrderDetailsScreen(
+          repository: widget.repository,
+          orderId: id,
         ),
       ),
     );
