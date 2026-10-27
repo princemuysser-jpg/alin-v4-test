@@ -102,6 +102,9 @@ jobs:
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          # flutter pub get may refresh the lockfile during CI; the deploy job
+          # should publish only the generated /business web bundle.
+          git restore flutter_business/pubspec.lock 2>/dev/null || true
           git add -A business
           if git diff --cached --quiet; then
             echo 'Business web build is already current.'
