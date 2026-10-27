@@ -137,6 +137,9 @@ class _BusinessRoleNavigationDrawerState
       const SizedBox(height: 8),
       _adminGroup(
         keyName: 'daily',
+        accent: const Color(0xFFFF7A00),
+        soft: const Color(0xFFFFF0DE),
+        emoji: '🛒',
         icon: Icons.receipt_long_rounded,
         title: 'الطلبات',
         subtitle: 'الطلبات والوصولات',
@@ -157,6 +160,9 @@ class _BusinessRoleNavigationDrawerState
       ),
       _adminGroup(
         keyName: 'accounts',
+        accent: const Color(0xFF7C3AED),
+        soft: const Color(0xFFF0E7FF),
+        emoji: '👥',
         icon: Icons.groups_rounded,
         title: 'الحسابات',
         subtitle: 'المدرسون والمكتبات والمندوبون والمطابع',
@@ -173,6 +179,9 @@ class _BusinessRoleNavigationDrawerState
       ),
       _adminGroup(
         keyName: 'content',
+        accent: const Color(0xFF0088FF),
+        soft: const Color(0xFFE3F1FF),
+        emoji: '📚',
         icon: Icons.inventory_2_rounded,
         title: 'المتجر والمحتوى',
         subtitle: 'الملازم والمنتجات والأقسام',
@@ -221,6 +230,9 @@ class _BusinessRoleNavigationDrawerState
       ),
       _adminGroup(
         keyName: 'delivery',
+        accent: const Color(0xFF14B8A6),
+        soft: const Color(0xFFDFF8F4),
+        emoji: '🚚',
         icon: Icons.local_shipping_rounded,
         title: 'التوصيل والعملاء',
         subtitle: 'المندوبون والأسعار والتحكم',
@@ -243,6 +255,9 @@ class _BusinessRoleNavigationDrawerState
       ),
       _adminGroup(
         keyName: 'finance',
+        accent: const Color(0xFF00A86B),
+        soft: const Color(0xFFDFF7EB),
+        emoji: '💰',
         icon: Icons.account_balance_wallet_rounded,
         title: 'المالية',
         subtitle: 'الأرباح والذمم والتسويات',
@@ -264,6 +279,9 @@ class _BusinessRoleNavigationDrawerState
       ),
       _adminGroup(
         keyName: 'marketing',
+        accent: const Color(0xFFE11D8A),
+        soft: const Color(0xFFFFE2F1),
+        emoji: '📣',
         icon: Icons.campaign_rounded,
         title: 'التسويق',
         subtitle: 'الإعلانات والعروض والكوبونات',
@@ -289,6 +307,9 @@ class _BusinessRoleNavigationDrawerState
       ),
       _adminGroup(
         keyName: 'reports',
+        accent: const Color(0xFF6D28D9),
+        soft: const Color(0xFFEEE7FF),
+        emoji: '📊',
         icon: Icons.analytics_rounded,
         title: 'التقارير',
         subtitle: 'المبيعات والأرباح والأداء',
@@ -304,6 +325,9 @@ class _BusinessRoleNavigationDrawerState
       ),
       _adminGroup(
         keyName: 'system',
+        accent: const Color(0xFF475569),
+        soft: const Color(0xFFEEF2F6),
+        emoji: '⚙️',
         icon: Icons.settings_rounded,
         title: 'النظام',
         subtitle: 'الإعدادات والهوية والنسخ الاحتياطي',
@@ -340,16 +364,21 @@ class _BusinessRoleNavigationDrawerState
     required IconData icon,
     required String title,
     required String subtitle,
+    required Color accent,
+    required Color soft,
+    required String emoji,
     required List<Widget> children,
   }) {
     final expanded = openGroup == keyName;
     return Container(
       margin: const EdgeInsets.only(bottom: 7),
       decoration: BoxDecoration(
-        color: expanded ? Colors.white : Colors.transparent,
+        color: expanded ? soft : accent.withValues(alpha: .035),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: expanded ? BusinessBrand.border : Colors.transparent,
+          color: expanded
+              ? accent.withValues(alpha: .28)
+              : accent.withValues(alpha: .08),
         ),
       ),
       child: Column(
@@ -362,17 +391,15 @@ class _BusinessRoleNavigationDrawerState
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: expanded
-                    ? BusinessBrand.softBlue
-                    : const Color(0xFFEFF4F9),
+                color: expanded ? Colors.white : soft,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, size: 20, color: BusinessBrand.navy),
+              child: Icon(icon, size: 20, color: accent),
             ),
             title: Text(
-              title,
-              style: const TextStyle(
-                color: BusinessBrand.navy,
+              '$emoji $title',
+              style: TextStyle(
+                color: accent,
                 fontWeight: FontWeight.w900,
                 fontSize: 13.5,
               ),
@@ -389,9 +416,9 @@ class _BusinessRoleNavigationDrawerState
             trailing: AnimatedRotation(
               turns: expanded ? .5 : 0,
               duration: const Duration(milliseconds: 180),
-              child: const Icon(
+              child: Icon(
                 Icons.keyboard_arrow_down_rounded,
-                color: BusinessBrand.muted,
+                color: accent,
               ),
             ),
             onTap: () => setState(
