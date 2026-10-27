@@ -1,9 +1,7 @@
 name: Fix teacher order delivery labels
 
 on:
-  push:
-    paths:
-      - ".github/workflows/fix-teacher-order-delivery-label.yml"
+  # Legacy one-off patch workflow. Keep available for manual recovery only.
   workflow_dispatch:
 
 permissions:
