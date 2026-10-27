@@ -202,11 +202,17 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       _catalog(),
       _receipts(),
     ];
+    final mobile = MediaQuery.sizeOf(context).width < 700;
     return Scaffold(
       drawer: BusinessRoleNavigationDrawer(
         repository: widget.repository,
         account: widget.account,
         onLogout: widget.onLogout,
+        adminSection: index,
+        onAdminSectionChanged: (value) {
+          if (!mounted) return;
+          setState(() => index = value);
+        },
       ),
       appBar: AppBar(
         title: Column(
@@ -256,36 +262,38 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               ),
             )
           : RefreshIndicator(onRefresh: load, child: pages[index]),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: index,
-        onDestinationSelected: (value) => setState(() => index = value),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.dashboard_rounded),
-            label: 'الرئيسية',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.receipt_long_rounded),
-            label: 'الطلبات',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.groups_rounded),
-            label: 'الحسابات',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.account_balance_wallet_rounded),
-            label: 'المالية',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.inventory_2_rounded),
-            label: 'المحتوى',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.receipt_long_rounded),
-            label: 'الوصولات',
-          ),
-        ],
-      ),
+      bottomNavigationBar: mobile
+          ? null
+          : NavigationBar(
+              selectedIndex: index,
+              onDestinationSelected: (value) => setState(() => index = value),
+              destinations: const [
+                NavigationDestination(
+                  icon: Icon(Icons.dashboard_rounded),
+                  label: 'الرئيسية',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.receipt_long_rounded),
+                  label: 'الطلبات',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.groups_rounded),
+                  label: 'الحسابات',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.account_balance_wallet_rounded),
+                  label: 'المالية',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.inventory_2_rounded),
+                  label: 'المحتوى',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.receipt_long_rounded),
+                  label: 'الوصولات',
+                ),
+              ],
+            ),
     );
   }
 
