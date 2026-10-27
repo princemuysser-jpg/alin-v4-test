@@ -24,7 +24,7 @@ import '../screens/printer_booklet_finance_screen.dart';
 import '../screens/printer_dashboard_screen.dart';
 import 'business_brand.dart';
 
-class BusinessRoleNavigationDrawer extends StatelessWidget {
+class BusinessRoleNavigationDrawer extends StatefulWidget {
   final BusinessRepository repository;
   final BusinessAccount account;
   final Future<void> Function() onLogout;
@@ -39,6 +39,22 @@ class BusinessRoleNavigationDrawer extends StatelessWidget {
     this.onAdminSectionChanged,
     this.adminSection,
   });
+
+  @override
+  State<BusinessRoleNavigationDrawer> createState() =>
+      _BusinessRoleNavigationDrawerState();
+}
+
+class _BusinessRoleNavigationDrawerState
+    extends State<BusinessRoleNavigationDrawer> {
+  String openGroup = 'daily';
+
+  BusinessRepository get repository => widget.repository;
+  BusinessAccount get account => widget.account;
+  Future<void> Function() get onLogout => widget.onLogout;
+  ValueChanged<int>? get onAdminSectionChanged =>
+      widget.onAdminSectionChanged;
+  int? get adminSection => widget.adminSection;
 
   bool get _isAdmin => account.role == 'admin' || account.role == 'accountant';
 
@@ -117,142 +133,285 @@ class BusinessRoleNavigationDrawer extends StatelessWidget {
 
   List<Widget> _adminMenu(BuildContext context) {
     return [
-      _section('الرئيسية والإدارة اليومية'),
       _adminSectionTile(context, 0, Icons.dashboard_rounded, 'الرئيسية'),
-      _adminSectionTile(context, 1, Icons.receipt_long_rounded, 'الطلبات'),
-      _adminSectionTile(context, 2, Icons.groups_rounded, 'الحسابات'),
       const SizedBox(height: 8),
-      _section('المحتوى والمتجر'),
-      _adminSectionTile(context, 4, Icons.inventory_2_rounded, 'المحتوى'),
-      _routeTile(
-        context,
-        icon: Icons.inventory_2_outlined,
-        title: 'المنتجات',
-        subtitle: 'إضافة وتعديل الأسعار والمخزون',
-        page: AdminStoreManagementScreen(
-          repository: repository,
-          initialTab: StoreManagementTab.products,
-        ),
+      _adminGroup(
+        keyName: 'daily',
+        icon: Icons.receipt_long_rounded,
+        title: 'الطلبات',
+        subtitle: 'الطلبات والوصولات',
+        children: [
+          _adminSectionTile(
+            context,
+            1,
+            Icons.receipt_long_rounded,
+            'إدارة الطلبات',
+          ),
+          _adminSectionTile(
+            context,
+            5,
+            Icons.receipt_long_outlined,
+            'الوصولات',
+          ),
+        ],
       ),
-      _routeTile(
-        context,
-        icon: Icons.category_rounded,
-        title: 'الأقسام',
-        subtitle: 'أقسام المتجر والشعب الفرعية',
-        page: AdminStoreManagementScreen(
-          repository: repository,
-          initialTab: StoreManagementTab.categories,
-        ),
+      _adminGroup(
+        keyName: 'accounts',
+        icon: Icons.groups_rounded,
+        title: 'الحسابات',
+        subtitle: 'المدرسون والمكتبات والمندوبون والمطابع',
+        children: [
+          _adminSectionTile(context, 2, Icons.groups_rounded, 'كل الحسابات'),
+          _routeTile(
+            context,
+            icon: Icons.delivery_dining_rounded,
+            title: 'مركز المندوبين',
+            subtitle: 'الحالة والمناطق والطلبات',
+            page: AdminCourierHubScreen(repository: repository),
+          ),
+        ],
       ),
-      _routeTile(
-        context,
-        icon: Icons.campaign_rounded,
-        title: 'الإعلانات',
-        subtitle: 'بنرات المتجر والعروض المرئية',
-        page: AdminStoreManagementScreen(
-          repository: repository,
-          initialTab: StoreManagementTab.banners,
-        ),
+      _adminGroup(
+        keyName: 'content',
+        icon: Icons.inventory_2_rounded,
+        title: 'المتجر والمحتوى',
+        subtitle: 'الملازم والمنتجات والأقسام',
+        children: [
+          _adminSectionTile(
+            context,
+            4,
+            Icons.inventory_2_rounded,
+            'نظرة المحتوى',
+          ),
+          _routeTile(
+            context,
+            icon: Icons.inventory_2_outlined,
+            title: 'المنتجات',
+            subtitle: 'الأسعار والمخزون',
+            page: AdminStoreManagementScreen(
+              repository: repository,
+              initialTab: StoreManagementTab.products,
+            ),
+          ),
+          _routeTile(
+            context,
+            icon: Icons.category_rounded,
+            title: 'الأقسام',
+            subtitle: 'أقسام المتجر والشعب الفرعية',
+            page: AdminStoreManagementScreen(
+              repository: repository,
+              initialTab: StoreManagementTab.categories,
+            ),
+          ),
+          _routeTile(
+            context,
+            icon: Icons.menu_book_rounded,
+            title: 'إدارة الكتب',
+            subtitle: 'المخزون والموردون والنسب',
+            page: AdminBooksScreen(repository: repository),
+          ),
+          _routeTile(
+            context,
+            icon: Icons.video_library_rounded,
+            title: 'دورات المدرسين',
+            subtitle: 'المراجعة والنشر والإخفاء',
+            page: AdminTeacherCoursesScreen(repository: repository),
+          ),
+        ],
       ),
-      _routeTile(
-        context,
-        icon: Icons.menu_book_rounded,
-        title: 'إدارة الكتب',
-        subtitle: 'المخزون والموردون والنسب',
-        page: AdminBooksScreen(repository: repository),
-      ),
-      _routeTile(
-        context,
-        icon: Icons.video_library_rounded,
-        title: 'دورات المدرسين',
-        subtitle: 'المراجعة والنشر والإخفاء',
-        page: AdminTeacherCoursesScreen(repository: repository),
-      ),
-      const SizedBox(height: 8),
-      _section('التوصيل والعملاء'),
-      _routeTile(
-        context,
-        icon: Icons.delivery_dining_rounded,
-        title: 'مركز المندوبين',
-        subtitle: 'الحالة والمناطق والطلبات',
-        page: AdminCourierHubScreen(repository: repository),
-      ),
-      _routeTile(
-        context,
+      _adminGroup(
+        keyName: 'delivery',
         icon: Icons.local_shipping_rounded,
-        title: 'أسعار التوصيل',
-        subtitle: 'سعر الطالب وأجرة المندوب',
-        page: AdminDeliveryPricingScreen(repository: repository),
+        title: 'التوصيل والعملاء',
+        subtitle: 'المندوبون والأسعار والتحكم',
+        children: [
+          _routeTile(
+            context,
+            icon: Icons.local_shipping_rounded,
+            title: 'أسعار التوصيل',
+            subtitle: 'سعر الطالب وأجرة المندوب',
+            page: AdminDeliveryPricingScreen(repository: repository),
+          ),
+          _routeTile(
+            context,
+            icon: Icons.person_search_rounded,
+            title: 'العملاء والتحكم بالطلبات',
+            subtitle: 'النشطون وإيقاف الطلبات مؤقتاً',
+            page: AdminGrowthControlsScreen(repository: repository),
+          ),
+        ],
       ),
-      _routeTile(
-        context,
-        icon: Icons.person_search_rounded,
-        title: 'العملاء والتحكم بالطلبات',
-        subtitle: 'النشطون وإيقاف الطلبات مؤقتاً',
-        page: AdminGrowthControlsScreen(repository: repository),
+      _adminGroup(
+        keyName: 'finance',
+        icon: Icons.account_balance_wallet_rounded,
+        title: 'المالية',
+        subtitle: 'الأرباح والذمم والتسويات',
+        children: [
+          _adminSectionTile(
+            context,
+            3,
+            Icons.account_balance_wallet_rounded,
+            'الملخص المالي',
+          ),
+          _routeTile(
+            context,
+            icon: Icons.account_balance_rounded,
+            title: 'المالية والتسويات المتقدمة',
+            subtitle: 'الذمم والتسويات والأرباح',
+            page: AdminFinanceV2Screen(repository: repository),
+          ),
+        ],
       ),
-      const SizedBox(height: 8),
-      _section('المالية والتسويق'),
-      _adminSectionTile(
-        context,
-        3,
-        Icons.account_balance_wallet_rounded,
-        'المالية',
+      _adminGroup(
+        keyName: 'marketing',
+        icon: Icons.campaign_rounded,
+        title: 'التسويق',
+        subtitle: 'الإعلانات والعروض والكوبونات',
+        children: [
+          _routeTile(
+            context,
+            icon: Icons.campaign_rounded,
+            title: 'الإعلانات والبنرات',
+            subtitle: 'بنرات المتجر والعروض المرئية',
+            page: AdminStoreManagementScreen(
+              repository: repository,
+              initialTab: StoreManagementTab.banners,
+            ),
+          ),
+          _routeTile(
+            context,
+            icon: Icons.confirmation_number_rounded,
+            title: 'العروض والكوبونات',
+            subtitle: 'أكواد الخصم والعروض',
+            page: AdminCouponsScreen(repository: repository),
+          ),
+        ],
       ),
-      _adminSectionTile(context, 5, Icons.receipt_long_outlined, 'الوصولات'),
-      _routeTile(
-        context,
-        icon: Icons.account_balance_rounded,
-        title: 'المالية والتسويات المتقدمة',
-        subtitle: 'الذمم والتسويات والأرباح',
-        page: AdminFinanceV2Screen(repository: repository),
-      ),
-      _routeTile(
-        context,
+      _adminGroup(
+        keyName: 'reports',
         icon: Icons.analytics_rounded,
-        title: 'التقارير والتحليلات',
+        title: 'التقارير',
         subtitle: 'المبيعات والأرباح والأداء',
-        page: AdminReportsScreen(repository: repository),
+        children: [
+          _routeTile(
+            context,
+            icon: Icons.analytics_rounded,
+            title: 'التقارير والتحليلات',
+            subtitle: 'اليومي والشهري والأداء',
+            page: AdminReportsScreen(repository: repository),
+          ),
+        ],
       ),
-      _routeTile(
-        context,
-        icon: Icons.confirmation_number_rounded,
-        title: 'العروض والكوبونات',
-        subtitle: 'أكواد الخصم والعروض',
-        page: AdminCouponsScreen(repository: repository),
-      ),
-      const SizedBox(height: 8),
-      _section('النظام'),
-      _routeTile(
-        context,
-        icon: Icons.palette_rounded,
-        title: 'الهوية البصرية',
-        subtitle: 'الشعار والأيقونة والألوان',
-        page: AdminBrandingScreen(repository: repository),
-      ),
-      _routeTile(
-        context,
+      _adminGroup(
+        keyName: 'system',
         icon: Icons.settings_rounded,
-        title: 'إعدادات المنصة',
-        subtitle: 'الطلبات والتوصيل والتواصل',
-        page: AdminSettingsScreen(repository: repository),
-      ),
-      if (account.role == 'admin')
-        _routeTile(
-          context,
-          icon: Icons.backup_rounded,
-          title: 'النسخ الاحتياطي',
-          subtitle: 'نسخ واستعادة الكتالوج والإعدادات',
-          page: AdminBackupScreen(repository: repository),
-        ),
-      _routeTile(
-        context,
-        icon: Icons.notifications_rounded,
-        title: 'الإشعارات',
-        subtitle: 'مركز الإشعارات والتنبيهات',
-        page: BusinessNotificationsScreen(repository: repository),
+        title: 'النظام',
+        subtitle: 'الإعدادات والهوية والنسخ الاحتياطي',
+        children: [
+          _routeTile(
+            context,
+            icon: Icons.palette_rounded,
+            title: 'الهوية البصرية',
+            subtitle: 'الشعار والأيقونة والألوان',
+            page: AdminBrandingScreen(repository: repository),
+          ),
+          _routeTile(
+            context,
+            icon: Icons.settings_rounded,
+            title: 'إعدادات المنصة',
+            subtitle: 'الطلبات والتوصيل والتواصل',
+            page: AdminSettingsScreen(repository: repository),
+          ),
+          if (account.role == 'admin')
+            _routeTile(
+              context,
+              icon: Icons.backup_rounded,
+              title: 'النسخ الاحتياطي',
+              subtitle: 'نسخ واستعادة الكتالوج والإعدادات',
+              page: AdminBackupScreen(repository: repository),
+            ),
+        ],
       ),
     ];
+  }
+
+  Widget _adminGroup({
+    required String keyName,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required List<Widget> children,
+  }) {
+    final expanded = openGroup == keyName;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 7),
+      decoration: BoxDecoration(
+        color: expanded ? Colors.white : Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: expanded ? BusinessBrand.border : Colors.transparent,
+        ),
+      ),
+      child: Column(
+        children: [
+          ListTile(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            leading: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: expanded
+                    ? BusinessBrand.softBlue
+                    : const Color(0xFFEFF4F9),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, size: 20, color: BusinessBrand.navy),
+            ),
+            title: Text(
+              title,
+              style: const TextStyle(
+                color: BusinessBrand.navy,
+                fontWeight: FontWeight.w900,
+                fontSize: 13.5,
+              ),
+            ),
+            subtitle: Text(
+              subtitle,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: BusinessBrand.muted,
+                fontSize: 10.5,
+              ),
+            ),
+            trailing: AnimatedRotation(
+              turns: expanded ? .5 : 0,
+              duration: const Duration(milliseconds: 180),
+              child: const Icon(
+                Icons.keyboard_arrow_down_rounded,
+                color: BusinessBrand.muted,
+              ),
+            ),
+            onTap: () => setState(
+              () => openGroup = expanded ? '' : keyName,
+            ),
+          ),
+          AnimatedCrossFade(
+            duration: const Duration(milliseconds: 180),
+            crossFadeState: expanded
+                ? CrossFadeState.showSecond
+                : CrossFadeState.showFirst,
+            firstChild: const SizedBox.shrink(),
+            secondChild: Padding(
+              padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+              child: Column(children: children),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   List<Widget> _roleMenu(BuildContext context) {
