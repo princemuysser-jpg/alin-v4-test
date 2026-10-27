@@ -1169,10 +1169,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
       elevation: 0,
-      color: roleAccent.withValues(alpha: .035),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(18),
-        side: BorderSide(color: roleAccent.withValues(alpha: .16)),
+        side: const BorderSide(color: Color(0xFFE3EAF1)),
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(18),
@@ -1748,9 +1747,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     return Card(
       margin: const EdgeInsets.only(bottom: 9),
       elevation: 0,
+      color: roleAccent.withValues(alpha: .035),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(18),
-        side: const BorderSide(color: Color(0xFFE3EAF1)),
+        side: BorderSide(color: roleAccent.withValues(alpha: .16)),
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(18),
