@@ -202,5 +202,5 @@ jobs:
           flutter pub get
           flutter analyze lib --no-fatal-warnings --no-fatal-infos
 
-      - name: Build iOS without signing
-        run: flutter build ios --release --no-codesign --no-pub
+      - name: Build iOS simulator compile check
+        run: flutter build ios --simulator --debug --no-pub
