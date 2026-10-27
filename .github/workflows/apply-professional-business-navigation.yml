@@ -1,12 +1,7 @@
 name: Apply Professional ALIN Business Navigation
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'scripts/apply_professional_business_navigation.py'
-      - 'flutter_business/lib/widgets/business_role_navigation.dart'
-      - '.github/workflows/apply-professional-business-navigation.yml'
+  # Legacy one-off patch workflow. Keep available for manual recovery only.
   workflow_dispatch:
 
 permissions:

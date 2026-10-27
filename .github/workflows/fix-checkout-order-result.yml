@@ -1,10 +1,8 @@
 name: Fix checkout order result and stale cart total
 
 on:
+  # Legacy one-off patch workflow. Keep available for manual recovery only.
   workflow_dispatch:
-  push:
-    paths:
-      - ".github/workflows/fix-checkout-order-result.yml"
 
 permissions:
   contents: write
