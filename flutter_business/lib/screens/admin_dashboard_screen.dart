@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import '../data/business_repository.dart';
+import '../data/business_notification_repository.dart';
 import '../models/business_account.dart';
 import '../widgets/business_role_navigation.dart';
 import '../widgets/grouped_order_receipt_card.dart';
 import 'business_order_details_screen.dart';
+import 'business_notifications_screen.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   final BusinessRepository repository;
@@ -37,11 +39,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   String orderSearch = '';
   final TextEditingController orderSearchController = TextEditingController();
   String accountFilter = 'all';
+  int unreadNotifications = 0;
 
   @override
   void initState() {
     super.initState();
     load();
+    refreshUnreadNotifications();
   }
 
   @override
@@ -83,6 +87,31 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     } finally {
       if (mounted) setState(() => loading = false);
     }
+  }
+
+  Future<void> refreshUnreadNotifications() async {
+    try {
+      final value = await widget.repository.businessNotificationUnreadCount();
+      if (!mounted) return;
+      setState(() => unreadNotifications = value);
+    } catch (_) {
+      // Keep the dashboard usable even if the unread-count RPC is unavailable.
+    }
+  }
+
+  Future<void> _refreshAll() async {
+    await load();
+    await refreshUnreadNotifications();
+  }
+
+  Future<void> _openNotifications() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) =>
+            BusinessNotificationsScreen(repository: widget.repository),
+      ),
+    );
+    await refreshUnreadNotifications();
   }
 
   num number(dynamic value) => num.tryParse('$value') ?? 0;
@@ -315,8 +344,42 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         ),
         actions: [
           IconButton(
+            tooltip: 'الإشعارات',
+            onPressed: _openNotifications,
+            icon: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                const Icon(Icons.notifications_rounded),
+                if (unreadNotifications > 0)
+                  PositionedDirectional(
+                    top: -7,
+                    start: -8,
+                    child: Container(
+                      constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade600,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.white, width: 1.5),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        unreadNotifications > 99 ? '99+' : '$unreadNotifications',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w900,
+                          height: 1,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          IconButton(
             tooltip: 'تحديث',
-            onPressed: load,
+            onPressed: _refreshAll,
             icon: const Icon(Icons.refresh_rounded),
           ),
           if (!desktop)
