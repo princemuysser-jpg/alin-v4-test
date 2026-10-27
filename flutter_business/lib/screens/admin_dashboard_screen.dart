@@ -798,6 +798,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     ),
   );
 
+
+  Widget _metric(String label, String value, IconData icon) => _metricCard(
+    label,
+    value,
+    icon,
+    const Color(0xFF143B68),
+    const Color(0xFFEAF2FB),
+  );
+
+
   Widget _orders() {
     return _scroll([
       const Text(
