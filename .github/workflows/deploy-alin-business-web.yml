@@ -41,20 +41,24 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
 
+          import os
+
           pubspec = Path('pubspec.yaml').read_text(encoding='utf-8')
           version_line = next(line for line in pubspec.splitlines() if line.startswith('version:'))
           version = version_line.split(':', 1)[1].strip().replace('+', '-')
+          sha = os.environ.get('GITHUB_SHA', '')[:12] or 'local'
+          cache_token = f'{version}-{sha}'
 
           index_path = Path('build/web/index.html')
           index = index_path.read_text(encoding='utf-8')
           index = index.replace('<base href="/business/">', '<base href="./">')
           index = index.replace(
               '<script src="flutter_bootstrap.js" async></script>',
-              f'<script src="flutter_bootstrap.js?v={version}" async></script>',
+              f'<script src="flutter_bootstrap.js?v={cache_token}" async></script>',
           )
           index = index.replace(
               '<meta charset="UTF-8">',
-              f'<meta charset="UTF-8">\n  <meta name="alin-business-build" content="{version}">',
+              f'<meta charset="UTF-8">\n  <meta name="alin-business-build" content="{cache_token}">',
           )
           index_path.write_text(index, encoding='utf-8')
 
@@ -62,11 +66,11 @@ jobs:
           bootstrap = bootstrap_path.read_text(encoding='utf-8')
           bootstrap = bootstrap.replace(
               '"mainJsPath":"main.dart.js"',
-              f'"mainJsPath":"main.dart.js?v={version}"',
+              f'"mainJsPath":"main.dart.js?v={cache_token}"',
           )
           bootstrap_path.write_text(bootstrap, encoding='utf-8')
 
-          print(f'ALIN Business web cache token: {version}')
+          print(f'ALIN Business web cache token: {cache_token}')
           PY
 
       - name: Publish build into /business
