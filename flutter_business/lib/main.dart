@@ -12,7 +12,6 @@ import 'core/business_notification_service.dart';
 import 'data/business_repository.dart';
 import 'models/business_account.dart';
 import 'screens/admin_dashboard_screen.dart';
-import 'screens/admin_desktop_dashboard_screen.dart';
 import 'screens/business_order_details_screen.dart';
 import 'screens/courier_dashboard_screen.dart';
 import 'screens/library_dashboard_screen.dart';
@@ -219,24 +218,16 @@ class _BusinessGateState extends State<BusinessGate> {
     }
 
     final pageKey = ValueKey('${account!.role}-$notificationTick');
-    final desktopAdmin = kIsWeb && MediaQuery.sizeOf(context).width >= 900;
     Widget page;
     switch (account!.role) {
       case 'admin':
       case 'accountant':
-        page = desktopAdmin
-            ? AdminDesktopDashboardScreen(
-                key: pageKey,
-                repository: repository,
-                account: account!,
-                onLogout: _logout,
-              )
-            : AdminDashboardScreen(
-                key: pageKey,
-                repository: repository,
-                account: account!,
-                onLogout: _logout,
-              );
+        page = AdminDashboardScreen(
+          key: pageKey,
+          repository: repository,
+          account: account!,
+          onLogout: _logout,
+        );
       case 'courier':
         page = CourierDashboardScreen(
           key: pageKey,
