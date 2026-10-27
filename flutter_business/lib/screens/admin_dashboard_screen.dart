@@ -274,19 +274,24 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       _catalog(),
       _receipts(),
     ];
-    final mobile = MediaQuery.sizeOf(context).width < 700;
-    return Scaffold(
-      drawer: BusinessRoleNavigationDrawer(
-        repository: widget.repository,
-        account: widget.account,
-        onLogout: widget.onLogout,
-        adminSection: index,
-        onAdminSectionChanged: (value) {
-          if (!mounted) return;
-          setState(() => index = value);
-        },
-      ),
+    final width = MediaQuery.sizeOf(context).width;
+    final desktop = width >= 900;
+
+    final content = Scaffold(
+      drawer: desktop
+          ? null
+          : BusinessRoleNavigationDrawer(
+              repository: widget.repository,
+              account: widget.account,
+              onLogout: widget.onLogout,
+              adminSection: index,
+              onAdminSectionChanged: (value) {
+                if (!mounted) return;
+                setState(() => index = value);
+              },
+            ),
       appBar: AppBar(
+        automaticallyImplyLeading: !desktop,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -294,24 +299,35 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               widget.account.role == 'accountant'
                   ? 'لوحة الحسابات'
                   : 'لوحة إدارة آلين',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w900,
+              ),
             ),
             Text(
               widget.account.name,
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w400),
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w400,
+              ),
             ),
           ],
         ),
         actions: [
-          IconButton(onPressed: load, icon: const Icon(Icons.refresh_rounded)),
-          PopupMenuButton<String>(
-            onSelected: (value) {
-              if (value == 'logout') widget.onLogout();
-            },
-            itemBuilder: (_) => const [
-              PopupMenuItem(value: 'logout', child: Text('تسجيل الخروج')),
-            ],
+          IconButton(
+            tooltip: 'تحديث',
+            onPressed: load,
+            icon: const Icon(Icons.refresh_rounded),
           ),
+          if (!desktop)
+            PopupMenuButton<String>(
+              onSelected: (value) {
+                if (value == 'logout') widget.onLogout();
+              },
+              itemBuilder: (_) => const [
+                PopupMenuItem(value: 'logout', child: Text('تسجيل الخروج')),
+              ],
+            ),
         ],
       ),
       body: loading
@@ -334,38 +350,27 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               ),
             )
           : RefreshIndicator(onRefresh: load, child: pages[index]),
-      bottomNavigationBar: mobile
-          ? null
-          : NavigationBar(
-              selectedIndex: index,
-              onDestinationSelected: (value) => setState(() => index = value),
-              destinations: const [
-                NavigationDestination(
-                  icon: Icon(Icons.dashboard_rounded),
-                  label: 'الرئيسية',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.receipt_long_rounded),
-                  label: 'الطلبات',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.groups_rounded),
-                  label: 'الحسابات',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.account_balance_wallet_rounded),
-                  label: 'المالية',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.inventory_2_rounded),
-                  label: 'المحتوى',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.receipt_long_rounded),
-                  label: 'الوصولات',
-                ),
-              ],
-            ),
+    );
+
+    if (!desktop) return content;
+
+    return Scaffold(
+      body: Row(
+        textDirection: TextDirection.rtl,
+        children: [
+          AdminDesktopNavigationSidebar(
+            repository: widget.repository,
+            account: widget.account,
+            selectedSection: index,
+            onSectionChanged: (value) {
+              if (!mounted) return;
+              setState(() => index = value);
+            },
+            onLogout: widget.onLogout,
+          ),
+          Expanded(child: content),
+        ],
+      ),
     );
   }
 
