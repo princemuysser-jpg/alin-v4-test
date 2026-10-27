@@ -834,124 +834,166 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     IconData icon,
     Color accent,
     Color soft,
-  ) => Container(
-    padding: const EdgeInsets.all(13),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(18),
-      border: Border.all(color: const Color(0xFFE3EAF1)),
-      boxShadow: const [
-        BoxShadow(
-          color: Color(0x0A143B68),
-          blurRadius: 10,
-          offset: Offset(0, 4),
+  ) {
+    final deep = Color.lerp(accent, Colors.black, .10)!;
+
+    return Container(
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topRight,
+          end: Alignment.bottomLeft,
+          colors: [accent, deep],
         ),
-      ],
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 39,
-          height: 39,
-          decoration: BoxDecoration(
-            color: soft,
-            borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: accent.withValues(alpha: .20),
+            blurRadius: 16,
+            offset: const Offset(0, 7),
           ),
-          child: Icon(icon, color: accent, size: 21),
-        ),
-        const Spacer(),
-        Text(
-          value,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w900,
-            color: accent,
+        ],
+      ),
+      child: Stack(
+        children: [
+          PositionedDirectional(
+            end: -8,
+            top: 24,
+            child: Icon(
+              icon,
+              size: 82,
+              color: Colors.white.withValues(alpha: .16),
+            ),
           ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            fontSize: 12,
-            color: Color(0xFF475467),
-            fontWeight: FontWeight.w700,
+          Positioned(
+            left: 0,
+            right: 0,
+            top: 62,
+            child: Container(
+              height: 1,
+              color: Colors.black.withValues(alpha: .10),
+            ),
           ),
-        ),
-      ],
-    ),
-  );
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 13.5,
+                    height: 1.15,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 28,
+                    height: 1,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: .2,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
 
   Widget _quickSection(
     String title,
     String subtitle,
     IconData icon,
     VoidCallback onTap,
-  ) => Material(
-    color: Colors.white,
-    borderRadius: BorderRadius.circular(18),
-    child: InkWell(
+  ) {
+    final accent = switch (title) {
+      'الطلبات' => const Color(0xFFFF7A00),
+      'الحسابات' => const Color(0xFF7C3AED),
+      'المالية' => const Color(0xFF00A86B),
+      'المحتوى' => const Color(0xFF0088FF),
+      'الوصولات' => const Color(0xFFE11D8A),
+      _ => const Color(0xFF14B8A6),
+    };
+    final emoji = switch (title) {
+      'الطلبات' => '🛒',
+      'الحسابات' => '👥',
+      'المالية' => '💰',
+      'المحتوى' => '📚',
+      'الوصولات' => '🧾',
+      _ => '✨',
+    };
+
+    return Material(
+      color: accent.withValues(alpha: .08),
       borderRadius: BorderRadius.circular(18),
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(13),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: const Color(0xFFE3EAF1)),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 43,
-              height: 43,
-              decoration: BoxDecoration(
-                color: const Color(0xFFEAF2FB),
-                borderRadius: BorderRadius.circular(13),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(13),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: accent.withValues(alpha: .20)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 45,
+                height: 45,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: .92),
+                  borderRadius: BorderRadius.circular(13),
+                ),
+                child: Icon(icon, color: accent),
               ),
-              child: Icon(icon, color: const Color(0xFF143B68)),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w900,
-                      color: Color(0xFF143B68),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      '$emoji $title',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w900,
+                        color: accent,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 10.5,
-                      height: 1.25,
-                      color: Color(0xFF667085),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 10.5,
+                        height: 1.25,
+                        color: Color(0xFF667085),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            const Icon(
-              Icons.chevron_left_rounded,
-              color: Color(0xFF98A2B3),
-            ),
-          ],
+              Icon(Icons.chevron_left_rounded, color: accent),
+            ],
+          ),
         ),
       ),
-    ),
-  );
+    );
+  }
 
 
   Widget _metric(String label, String value, IconData icon) => _metricCard(
@@ -1103,26 +1145,42 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   Widget _orderFilterChip(String label, String value, int count) {
     final selected = orderFilter == value;
+    final accent = switch (value) {
+      'new' => const Color(0xFF18A957),
+      'processing' => const Color(0xFFFF8A00),
+      'ready' => const Color(0xFF0088FF),
+      'done' => const Color(0xFF7C3AED),
+      'cancelled' => const Color(0xFFE11D48),
+      'active' => const Color(0xFF14B8A6),
+      _ => const Color(0xFF475569),
+    };
+    final emoji = switch (value) {
+      'new' => '🆕',
+      'processing' => '🛠️',
+      'ready' => '📦',
+      'done' => '✅',
+      'cancelled' => '❌',
+      'active' => '⚡',
+      _ => '📋',
+    };
+
     return Padding(
       padding: const EdgeInsetsDirectional.only(end: 8),
       child: ChoiceChip(
         selected: selected,
         onSelected: (_) => setState(() => orderFilter = value),
-        label: Text('$label  $count'),
+        label: Text('$emoji $label  $count'),
         labelStyle: TextStyle(
-          fontWeight: FontWeight.w800,
-          color: selected ? Colors.white : const Color(0xFF143B68),
+          fontWeight: FontWeight.w900,
+          color: selected ? Colors.white : accent,
         ),
-        selectedColor: const Color(0xFF143B68),
-        backgroundColor: Colors.white,
-        side: BorderSide(
-          color: selected
-              ? const Color(0xFF143B68)
-              : const Color(0xFFE3EAF1),
-        ),
+        selectedColor: accent,
+        backgroundColor: accent.withValues(alpha: .08),
+        side: BorderSide(color: accent.withValues(alpha: selected ? 1 : .25)),
       ),
     );
   }
+
 
   Widget _orderCard(Map<String, dynamic> o) {
     final deliveryOrder = isDeliveryOrder(o);
@@ -1378,30 +1436,46 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   );
 
   Widget _orderStatusChip(String status) {
-    final (background, foreground) = switch (status) {
+    final (background, foreground, emoji) = switch (status) {
       'completed' || 'delivered' || 'done' => (
-          const Color(0xFFE9F9EF),
-          const Color(0xFF15803D),
+          const Color(0xFFDDFCE8),
+          const Color(0xFF087A36),
+          '✅',
         ),
       'cancelled' || 'canceled' || 'rejected' => (
-          const Color(0xFFFFEAF0),
-          const Color(0xFFBE123C),
+          const Color(0xFFFFE0E7),
+          const Color(0xFFC1123F),
+          '❌',
         ),
       'ready' => (
-          const Color(0xFFEAF3FF),
-          const Color(0xFF1D4ED8),
+          const Color(0xFFDBEEFF),
+          const Color(0xFF006DCC),
+          '📦',
         ),
       'processing' || 'printing' || 'assigned' || 'accepted' => (
-          const Color(0xFFFFF4DB),
-          const Color(0xFFB45309),
+          const Color(0xFFFFE9C7),
+          const Color(0xFFB85C00),
+          '🛠️',
         ),
       'out_for_delivery' || 'picked_up' => (
-          const Color(0xFFF1EBFF),
-          const Color(0xFF6D28D9),
+          const Color(0xFFEDE1FF),
+          const Color(0xFF6C21C9),
+          '🚚',
+        ),
+      'new' => (
+          const Color(0xFFDCFCE7),
+          const Color(0xFF11823F),
+          '🆕',
+        ),
+      'pending' || 'pending_admin' => (
+          const Color(0xFFFFF2BF),
+          const Color(0xFF9A6500),
+          '⏳',
         ),
       _ => (
-          const Color(0xFFEAF2FB),
+          const Color(0xFFE8F1FB),
           const Color(0xFF143B68),
+          '📌',
         ),
     };
 
@@ -1410,9 +1484,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       decoration: BoxDecoration(
         color: background,
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: foreground.withValues(alpha: .16)),
       ),
       child: Text(
-        _status(status),
+        '$emoji ${_status(status)}',
         style: TextStyle(
           fontSize: 10.8,
           color: foreground,
@@ -1421,6 +1496,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       ),
     );
   }
+
 
   Future<void> _openOrderDetails(Map<String, dynamic> order) async {
     final items =
@@ -1685,13 +1761,22 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   Widget _accountCard(Map<String, dynamic> account) {
     final active = '${account['status']}' == 'active';
     final role = '${account['role'] ?? ''}';
+    final roleAccent = switch (role) {
+      'teacher' => const Color(0xFF7C3AED),
+      'library' => const Color(0xFF0088FF),
+      'courier' || 'delegate' => const Color(0xFFFF7A00),
+      'printer' => const Color(0xFFE11D8A),
+      'accountant' => const Color(0xFF00A86B),
+      _ => const Color(0xFF14B8A6),
+    };
 
     return Card(
       margin: const EdgeInsets.only(bottom: 9),
       elevation: 0,
+      color: roleAccent.withValues(alpha: .035),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(18),
-        side: const BorderSide(color: Color(0xFFE3EAF1)),
+        side: BorderSide(color: roleAccent.withValues(alpha: .16)),
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(18),
@@ -1705,13 +1790,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEAF2FB),
+                  color: roleAccent.withValues(alpha: .12),
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: Icon(
-                  _roleIcon(role),
-                  color: const Color(0xFF143B68),
-                ),
+                child: Icon(_roleIcon(role), color: roleAccent),
               ),
               const SizedBox(width: 11),
               Expanded(
@@ -1744,7 +1826,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Text(
-                            active ? 'فعال' : 'غير فعال',
+                            active ? '😊 فعال' : '😴 غير فعال',
                             style: TextStyle(
                               fontSize: 10.5,
                               fontWeight: FontWeight.w900,

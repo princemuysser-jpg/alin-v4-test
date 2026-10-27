@@ -137,6 +137,9 @@ class _BusinessRoleNavigationDrawerState
       const SizedBox(height: 8),
       _adminGroup(
         keyName: 'daily',
+        accent: const Color(0xFFFF7A00),
+        soft: const Color(0xFFFFF0DE),
+        emoji: '🛒',
         icon: Icons.receipt_long_rounded,
         title: 'الطلبات',
         subtitle: 'الطلبات والوصولات',
@@ -157,6 +160,9 @@ class _BusinessRoleNavigationDrawerState
       ),
       _adminGroup(
         keyName: 'accounts',
+        accent: const Color(0xFF7C3AED),
+        soft: const Color(0xFFF0E7FF),
+        emoji: '👥',
         icon: Icons.groups_rounded,
         title: 'الحسابات',
         subtitle: 'المدرسون والمكتبات والمندوبون والمطابع',
@@ -173,6 +179,9 @@ class _BusinessRoleNavigationDrawerState
       ),
       _adminGroup(
         keyName: 'content',
+        accent: const Color(0xFF0088FF),
+        soft: const Color(0xFFE3F1FF),
+        emoji: '📚',
         icon: Icons.inventory_2_rounded,
         title: 'المتجر والمحتوى',
         subtitle: 'الملازم والمنتجات والأقسام',
@@ -221,6 +230,9 @@ class _BusinessRoleNavigationDrawerState
       ),
       _adminGroup(
         keyName: 'delivery',
+        accent: const Color(0xFF14B8A6),
+        soft: const Color(0xFFDFF8F4),
+        emoji: '🚚',
         icon: Icons.local_shipping_rounded,
         title: 'التوصيل والعملاء',
         subtitle: 'المندوبون والأسعار والتحكم',
@@ -243,6 +255,9 @@ class _BusinessRoleNavigationDrawerState
       ),
       _adminGroup(
         keyName: 'finance',
+        accent: const Color(0xFF00A86B),
+        soft: const Color(0xFFDFF7EB),
+        emoji: '💰',
         icon: Icons.account_balance_wallet_rounded,
         title: 'المالية',
         subtitle: 'الأرباح والذمم والتسويات',
@@ -264,6 +279,9 @@ class _BusinessRoleNavigationDrawerState
       ),
       _adminGroup(
         keyName: 'marketing',
+        accent: const Color(0xFFE11D8A),
+        soft: const Color(0xFFFFE2F1),
+        emoji: '📣',
         icon: Icons.campaign_rounded,
         title: 'التسويق',
         subtitle: 'الإعلانات والعروض والكوبونات',
@@ -289,6 +307,9 @@ class _BusinessRoleNavigationDrawerState
       ),
       _adminGroup(
         keyName: 'reports',
+        accent: const Color(0xFF6D28D9),
+        soft: const Color(0xFFEEE7FF),
+        emoji: '📊',
         icon: Icons.analytics_rounded,
         title: 'التقارير',
         subtitle: 'المبيعات والأرباح والأداء',
@@ -304,6 +325,9 @@ class _BusinessRoleNavigationDrawerState
       ),
       _adminGroup(
         keyName: 'system',
+        accent: const Color(0xFF475569),
+        soft: const Color(0xFFEEF2F6),
+        emoji: '⚙️',
         icon: Icons.settings_rounded,
         title: 'النظام',
         subtitle: 'الإعدادات والهوية والنسخ الاحتياطي',
@@ -340,16 +364,21 @@ class _BusinessRoleNavigationDrawerState
     required IconData icon,
     required String title,
     required String subtitle,
+    required Color accent,
+    required Color soft,
+    required String emoji,
     required List<Widget> children,
   }) {
     final expanded = openGroup == keyName;
     return Container(
       margin: const EdgeInsets.only(bottom: 7),
       decoration: BoxDecoration(
-        color: expanded ? Colors.white : Colors.transparent,
+        color: expanded ? soft : accent.withValues(alpha: .035),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: expanded ? BusinessBrand.border : Colors.transparent,
+          color: expanded
+              ? accent.withValues(alpha: .28)
+              : accent.withValues(alpha: .08),
         ),
       ),
       child: Column(
@@ -362,17 +391,15 @@ class _BusinessRoleNavigationDrawerState
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: expanded
-                    ? BusinessBrand.softBlue
-                    : const Color(0xFFEFF4F9),
+                color: expanded ? Colors.white : soft,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, size: 20, color: BusinessBrand.navy),
+              child: Icon(icon, size: 20, color: accent),
             ),
             title: Text(
-              title,
-              style: const TextStyle(
-                color: BusinessBrand.navy,
+              '$emoji $title',
+              style: TextStyle(
+                color: accent,
                 fontWeight: FontWeight.w900,
                 fontSize: 13.5,
               ),
@@ -389,9 +416,9 @@ class _BusinessRoleNavigationDrawerState
             trailing: AnimatedRotation(
               turns: expanded ? .5 : 0,
               duration: const Duration(milliseconds: 180),
-              child: const Icon(
+              child: Icon(
                 Icons.keyboard_arrow_down_rounded,
-                color: BusinessBrand.muted,
+                color: accent,
               ),
             ),
             onTap: () => setState(
@@ -703,114 +730,166 @@ class AdminDesktopNavigationSidebar extends StatelessWidget {
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
                 children: [
-                  _group('الأساسي'),
-                  _sectionItem(Icons.dashboard_rounded, 'الرئيسية', 0),
-                  _sectionItem(Icons.receipt_long_rounded, 'الطلبات', 1),
-                  _sectionItem(Icons.groups_rounded, 'الحسابات', 2),
-                  _group('المحتوى'),
-                  _sectionItem(Icons.inventory_2_rounded, 'المحتوى', 4),
-                  _routeItem(
-                    context,
-                    Icons.inventory_2_outlined,
-                    'المنتجات',
-                    AdminStoreManagementScreen(
-                      repository: repository,
-                      initialTab: StoreManagementTab.products,
-                    ),
+                  _sectionItem(Icons.dashboard_rounded, '🏠 الرئيسية', 0),
+                  const SizedBox(height: 8),
+                  _desktopGroup(
+                    '🛒 الطلبات',
+                    Icons.receipt_long_rounded,
+                    const Color(0xFFFF7A00),
+                    [
+                      _sectionItem(Icons.receipt_long_rounded, 'إدارة الطلبات', 1),
+                      _sectionItem(Icons.receipt_long_outlined, 'الوصولات', 5),
+                    ],
                   ),
-                  _routeItem(
-                    context,
-                    Icons.category_rounded,
-                    'الأقسام',
-                    AdminStoreManagementScreen(
-                      repository: repository,
-                      initialTab: StoreManagementTab.categories,
-                    ),
+                  _desktopGroup(
+                    '👥 الحسابات',
+                    Icons.groups_rounded,
+                    const Color(0xFF7C3AED),
+                    [
+                      _sectionItem(Icons.groups_rounded, 'كل الحسابات', 2),
+                      _routeItem(
+                        context,
+                        Icons.delivery_dining_rounded,
+                        'مركز المندوبين',
+                        AdminCourierHubScreen(repository: repository),
+                      ),
+                    ],
                   ),
-                  _routeItem(
-                    context,
-                    Icons.campaign_rounded,
-                    'الإعلانات',
-                    AdminStoreManagementScreen(
-                      repository: repository,
-                      initialTab: StoreManagementTab.banners,
-                    ),
+                  _desktopGroup(
+                    '📚 المتجر والمحتوى',
+                    Icons.inventory_2_rounded,
+                    const Color(0xFF0088FF),
+                    [
+                      _sectionItem(Icons.inventory_2_rounded, 'نظرة المحتوى', 4),
+                      _routeItem(
+                        context,
+                        Icons.inventory_2_outlined,
+                        'المنتجات',
+                        AdminStoreManagementScreen(
+                          repository: repository,
+                          initialTab: StoreManagementTab.products,
+                        ),
+                      ),
+                      _routeItem(
+                        context,
+                        Icons.category_rounded,
+                        'الأقسام',
+                        AdminStoreManagementScreen(
+                          repository: repository,
+                          initialTab: StoreManagementTab.categories,
+                        ),
+                      ),
+                      _routeItem(
+                        context,
+                        Icons.menu_book_rounded,
+                        'إدارة الكتب',
+                        AdminBooksScreen(repository: repository),
+                      ),
+                      _routeItem(
+                        context,
+                        Icons.video_library_rounded,
+                        'دورات المدرسين',
+                        AdminTeacherCoursesScreen(repository: repository),
+                      ),
+                    ],
                   ),
-                  _routeItem(
-                    context,
-                    Icons.menu_book_rounded,
-                    'إدارة الكتب',
-                    AdminBooksScreen(repository: repository),
-                  ),
-                  _routeItem(
-                    context,
-                    Icons.video_library_rounded,
-                    'دورات المدرسين',
-                    AdminTeacherCoursesScreen(repository: repository),
-                  ),
-                  _group('التوصيل والعملاء'),
-                  _routeItem(
-                    context,
-                    Icons.delivery_dining_rounded,
-                    'مركز المندوبين',
-                    AdminCourierHubScreen(repository: repository),
-                  ),
-                  _routeItem(
-                    context,
+                  _desktopGroup(
+                    '🚚 التوصيل والعملاء',
                     Icons.local_shipping_rounded,
-                    'أسعار التوصيل',
-                    AdminDeliveryPricingScreen(repository: repository),
+                    const Color(0xFF14B8A6),
+                    [
+                      _routeItem(
+                        context,
+                        Icons.local_shipping_rounded,
+                        'أسعار التوصيل',
+                        AdminDeliveryPricingScreen(repository: repository),
+                      ),
+                      _routeItem(
+                        context,
+                        Icons.person_search_rounded,
+                        'العملاء والتحكم بالطلبات',
+                        AdminGrowthControlsScreen(repository: repository),
+                      ),
+                    ],
                   ),
-                  _routeItem(
-                    context,
-                    Icons.person_search_rounded,
-                    'العملاء والطلبات',
-                    AdminGrowthControlsScreen(repository: repository),
-                  ),
-                  _group('المالية والتسويق'),
-                  _sectionItem(
+                  _desktopGroup(
+                    '💰 المالية',
                     Icons.account_balance_wallet_rounded,
-                    'المالية',
-                    3,
+                    const Color(0xFF00A86B),
+                    [
+                      _sectionItem(
+                        Icons.account_balance_wallet_rounded,
+                        'الملخص المالي',
+                        3,
+                      ),
+                      _routeItem(
+                        context,
+                        Icons.account_balance_rounded,
+                        'المالية والتسويات المتقدمة',
+                        AdminFinanceV2Screen(repository: repository),
+                      ),
+                    ],
                   ),
-                  _sectionItem(Icons.receipt_long_outlined, 'الوصولات', 5),
-                  _routeItem(
-                    context,
+                  _desktopGroup(
+                    '📣 التسويق',
+                    Icons.campaign_rounded,
+                    const Color(0xFFE11D8A),
+                    [
+                      _routeItem(
+                        context,
+                        Icons.campaign_rounded,
+                        'الإعلانات والبنرات',
+                        AdminStoreManagementScreen(
+                          repository: repository,
+                          initialTab: StoreManagementTab.banners,
+                        ),
+                      ),
+                      _routeItem(
+                        context,
+                        Icons.confirmation_number_rounded,
+                        'العروض والكوبونات',
+                        AdminCouponsScreen(repository: repository),
+                      ),
+                    ],
+                  ),
+                  _desktopGroup(
+                    '📊 التقارير',
                     Icons.analytics_rounded,
-                    'التقارير والتحليلات',
-                    AdminReportsScreen(repository: repository),
+                    const Color(0xFF6D28D9),
+                    [
+                      _routeItem(
+                        context,
+                        Icons.analytics_rounded,
+                        'التقارير والتحليلات',
+                        AdminReportsScreen(repository: repository),
+                      ),
+                    ],
                   ),
-                  _routeItem(
-                    context,
-                    Icons.confirmation_number_rounded,
-                    'العروض والكوبونات',
-                    AdminCouponsScreen(repository: repository),
-                  ),
-                  _group('النظام'),
-                  _routeItem(
-                    context,
-                    Icons.palette_rounded,
-                    'الهوية البصرية',
-                    AdminBrandingScreen(repository: repository),
-                  ),
-                  _routeItem(
-                    context,
+                  _desktopGroup(
+                    '⚙️ النظام',
                     Icons.settings_rounded,
-                    'إعدادات المنصة',
-                    AdminSettingsScreen(repository: repository),
-                  ),
-                  if (account.role == 'admin')
-                    _routeItem(
-                      context,
-                      Icons.backup_rounded,
-                      'النسخ الاحتياطي',
-                      AdminBackupScreen(repository: repository),
-                    ),
-                  _routeItem(
-                    context,
-                    Icons.notifications_rounded,
-                    'الإشعارات',
-                    BusinessNotificationsScreen(repository: repository),
+                    const Color(0xFF64748B),
+                    [
+                      _routeItem(
+                        context,
+                        Icons.palette_rounded,
+                        'الهوية البصرية',
+                        AdminBrandingScreen(repository: repository),
+                      ),
+                      _routeItem(
+                        context,
+                        Icons.settings_rounded,
+                        'إعدادات المنصة',
+                        AdminSettingsScreen(repository: repository),
+                      ),
+                      if (account.role == 'admin')
+                        _routeItem(
+                          context,
+                          Icons.backup_rounded,
+                          'النسخ الاحتياطي',
+                          AdminBackupScreen(repository: repository),
+                        ),
+                    ],
                   ),
                 ],
               ),
@@ -850,6 +929,50 @@ class AdminDesktopNavigationSidebar extends StatelessWidget {
       ],
     ),
   );
+
+  Widget _desktopGroup(
+    String title,
+    IconData icon,
+    Color accent,
+    List<Widget> children,
+  ) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 7),
+      decoration: BoxDecoration(
+        color: accent.withValues(alpha: .08),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: accent.withValues(alpha: .24)),
+      ),
+      child: Theme(
+        data: ThemeData(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          tilePadding: const EdgeInsets.symmetric(horizontal: 10),
+          childrenPadding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+          leading: Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: accent.withValues(alpha: .18),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, size: 19, color: accent),
+          ),
+          title: Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12.5,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          iconColor: accent,
+          collapsedIconColor: accent,
+          initiallyExpanded: title.contains('الطلبات'),
+          children: children,
+        ),
+      ),
+    );
+  }
 
   Widget _group(String text) => Padding(
     padding: const EdgeInsets.fromLTRB(11, 15, 11, 6),
