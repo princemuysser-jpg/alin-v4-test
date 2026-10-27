@@ -111,6 +111,10 @@ jobs:
             exit 0
           fi
           git commit -m 'deploy: ALIN Business Flutter Web'
+          # Discard generated build-time changes outside /business after the
+          # deploy bundle has been committed, so rebase sees a clean tree.
+          git reset --hard HEAD
+          git clean -fd
           git fetch origin main
           git rebase origin/main
           git push origin HEAD:main
