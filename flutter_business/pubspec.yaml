@@ -22,6 +22,9 @@ dependencies:
   pdf: ^3.11.3
   file_picker: ^10.3.3
 
+dependency_overrides:
+  image: 4.9.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
