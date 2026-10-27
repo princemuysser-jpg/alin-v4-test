@@ -301,67 +301,295 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       ListView(padding: const EdgeInsets.all(16), children: children);
 
   Widget _home() {
-    return _scroll([
-      _hero(),
-      const SizedBox(height: 14),
-      GridView.count(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        crossAxisCount: 2,
-        crossAxisSpacing: 10,
-        mainAxisSpacing: 10,
-        childAspectRatio: 1.45,
-        children: [
-          _metric(
-            'الطلبات',
-            '${summary['orders'] ?? orders.length}',
-            Icons.receipt_long_rounded,
+    final grouped = groupedOrders;
+    final newCount = grouped.where((o) => _groupHasStatus(o, const {
+      'new',
+      'pending_admin',
+      'assigned',
+    })).length;
+    final printingCount = grouped.where((o) => _groupHasStatus(o, const {
+      'accepted',
+      'processing',
+      'printing',
+      'picked_up',
+      'out_for_delivery',
+    })).length;
+    final readyCount = grouped.where((o) => _groupHasStatus(o, const {
+      'ready',
+    })).length;
+    final deliveredCount = grouped.where(_groupDelivered).length;
+    final cancelledCount = grouped.where(_groupCancelled).length;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final wide = constraints.maxWidth >= 700;
+        final metricColumns = constraints.maxWidth >= 1050
+            ? 4
+            : constraints.maxWidth >= 700
+            ? 3
+            : 2;
+        final sectionColumns = constraints.maxWidth >= 900 ? 3 : 2;
+
+        return ListView(
+          padding: EdgeInsets.fromLTRB(
+            wide ? 20 : 14,
+            16,
+            wide ? 20 : 14,
+            28,
           ),
-          _metric(
-            'طلبات تحتاج متابعة',
-            '${summary['new_orders'] ?? 0}',
-            Icons.notifications_active_rounded,
-          ),
-          _metric(
-            'إجمالي المبيعات',
-            money(summary['total_sales']),
-            Icons.payments_rounded,
-          ),
-          _metric(
-            'ربح المنصة',
-            money(summary['platform_profit']),
-            Icons.account_balance_wallet_rounded,
-          ),
-          _metric(
-            'المكتبات',
-            '${summary['libraries'] ?? 0}',
-            Icons.store_rounded,
-          ),
-          _metric(
-            'المندوبون',
-            '${summary['couriers'] ?? 0}',
-            Icons.delivery_dining_rounded,
-          ),
-          _metric(
-            'المطابع',
-            '${summary['printers'] ?? 0}',
-            Icons.print_rounded,
-          ),
-          _metric(
-            'المدرسون',
-            '${summary['teachers'] ?? 0}',
-            Icons.school_rounded,
-          ),
-        ],
-      ),
-      const SizedBox(height: 18),
-      const Text(
-        'آخر الطلبات',
-        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
-      ),
-      const SizedBox(height: 8),
-      ...groupedOrders.take(5).map(_orderCard),
-    ]);
+          children: [
+            _hero(),
+            const SizedBox(height: 14),
+            _sectionTitle('حالة الطلبات اليوم', 'نظرة سريعة على حركة الطلبات'),
+            const SizedBox(height: 10),
+            GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: metricColumns,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+              childAspectRatio: wide ? 1.9 : 1.35,
+              children: [
+                _metricCard(
+                  'طلب جديد',
+                  '${newCount}',
+                  Icons.shopping_cart_checkout_rounded,
+                  const Color(0xFF16A34A),
+                  const Color(0xFFE9F9EF),
+                ),
+                _metricCard(
+                  'قيد التنفيذ',
+                  '${printingCount}',
+                  Icons.print_rounded,
+                  const Color(0xFFE58B00),
+                  const Color(0xFFFFF4DB),
+                ),
+                _metricCard(
+                  'جاهز',
+                  '${readyCount}',
+                  Icons.inventory_2_rounded,
+                  const Color(0xFF1677FF),
+                  const Color(0xFFEAF3FF),
+                ),
+                _metricCard(
+                  'تم التسليم',
+                  '${deliveredCount}',
+                  Icons.check_circle_rounded,
+                  const Color(0xFF6D28D9),
+                  const Color(0xFFF1EBFF),
+                ),
+                _metricCard(
+                  'ملغي',
+                  '${cancelledCount}',
+                  Icons.cancel_rounded,
+                  const Color(0xFFE11D48),
+                  const Color(0xFFFFEAF0),
+                ),
+                _metricCard(
+                  'كل الطلبات',
+                  '${summary['orders'] ?? grouped.length}',
+                  Icons.receipt_long_rounded,
+                  const Color(0xFF143B68),
+                  const Color(0xFFEAF2FB),
+                ),
+              ],
+            ),
+            const SizedBox(height: 18),
+            _sectionTitle('الملخص المالي', 'أهم أرقام المنصة الحالية'),
+            const SizedBox(height: 10),
+            GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: metricColumns >= 3 ? 3 : 2,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+              childAspectRatio: wide ? 2.05 : 1.45,
+              children: [
+                _metricCard(
+                  'إجمالي المبيعات',
+                  money(summary['total_sales']),
+                  Icons.bar_chart_rounded,
+                  const Color(0xFF1677FF),
+                  const Color(0xFFEAF3FF),
+                ),
+                _metricCard(
+                  'ربح المنصة',
+                  money(summary['platform_profit']),
+                  Icons.savings_rounded,
+                  const Color(0xFF16A34A),
+                  const Color(0xFFE9F9EF),
+                ),
+                _metricCard(
+                  'مستحقات المدرسين',
+                  money(summary['teacher_remaining']),
+                  Icons.school_rounded,
+                  const Color(0xFF7C3AED),
+                  const Color(0xFFF1EBFF),
+                ),
+              ],
+            ),
+            const SizedBox(height: 18),
+            _sectionTitle('نشاط المنصة', 'الحسابات الفعالة المرتبطة بالمنصة'),
+            const SizedBox(height: 10),
+            GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: metricColumns,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+              childAspectRatio: wide ? 1.9 : 1.35,
+              children: [
+                _metricCard(
+                  'المكتبات',
+                  '${summary['libraries'] ?? 0}',
+                  Icons.store_rounded,
+                  const Color(0xFFDB2777),
+                  const Color(0xFFFFEAF5),
+                ),
+                _metricCard(
+                  'المندوبون',
+                  '${summary['couriers'] ?? 0}',
+                  Icons.delivery_dining_rounded,
+                  const Color(0xFF0284C7),
+                  const Color(0xFFE8F7FF),
+                ),
+                _metricCard(
+                  'المطابع',
+                  '${summary['printers'] ?? 0}',
+                  Icons.print_rounded,
+                  const Color(0xFF475569),
+                  const Color(0xFFF1F5F9),
+                ),
+                _metricCard(
+                  'المدرسون',
+                  '${summary['teachers'] ?? 0}',
+                  Icons.groups_rounded,
+                  const Color(0xFF9333EA),
+                  const Color(0xFFF5EBFF),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            _sectionTitle('الأقسام الرئيسية', 'وصول سريع لأكثر أدوات المدير استخداماً'),
+            const SizedBox(height: 10),
+            GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: sectionColumns,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+              childAspectRatio: wide ? 2.35 : 1.45,
+              children: [
+                _quickSection(
+                  'الطلبات',
+                  'إدارة جميع الطلبات',
+                  Icons.receipt_long_rounded,
+                  () => setState(() => index = 1),
+                ),
+                _quickSection(
+                  'الحسابات',
+                  'المدرسون والمكتبات والمندوبون',
+                  Icons.groups_rounded,
+                  () => setState(() => index = 2),
+                ),
+                _quickSection(
+                  'المالية',
+                  'الذمم والتسويات والأرباح',
+                  Icons.account_balance_wallet_rounded,
+                  () => setState(() => index = 3),
+                ),
+                _quickSection(
+                  'المحتوى',
+                  'الملازم والمنتجات',
+                  Icons.inventory_2_rounded,
+                  () => setState(() => index = 4),
+                ),
+                _quickSection(
+                  'الوصولات',
+                  'وصولات الطلبات المكتملة',
+                  Icons.receipt_rounded,
+                  () => setState(() => index = 5),
+                ),
+                Builder(
+                  builder: (drawerContext) => _quickSection(
+                    'كل الأقسام',
+                    'افتح القائمة الجانبية الكاملة',
+                    Icons.apps_rounded,
+                    () => Scaffold.of(drawerContext).openDrawer(),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    'آخر الطلبات',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF143B68),
+                    ),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => setState(() => index = 1),
+                  child: const Text('عرض الكل'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            if (grouped.isEmpty)
+              const Card(
+                child: Padding(
+                  padding: EdgeInsets.all(22),
+                  child: Center(child: Text('لا توجد طلبات بعد')),
+                ),
+              )
+            else
+              ...grouped.take(4).map(_orderCard),
+          ],
+        );
+      },
+    );
+  }
+
+  bool _groupHasStatus(Map<String, dynamic> order, Set<String> statuses) {
+    final raw = order['_items'];
+    final items = raw is List
+        ? raw.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList()
+        : <Map<String, dynamic>>[order];
+    return items.any((item) => statuses.contains('${item['status']}'));
+  }
+
+  bool _groupDelivered(Map<String, dynamic> order) {
+    final raw = order['_items'];
+    final items = raw is List
+        ? raw.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList()
+        : <Map<String, dynamic>>[order];
+    return items.isNotEmpty &&
+        items.every(
+          (item) => const {
+            'completed',
+            'delivered',
+            'done',
+          }.contains('${item['status']}'),
+        );
+  }
+
+  bool _groupCancelled(Map<String, dynamic> order) {
+    final raw = order['_items'];
+    final items = raw is List
+        ? raw.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList()
+        : <Map<String, dynamic>>[order];
+    return items.isNotEmpty &&
+        items.every(
+          (item) => const {
+            'cancelled',
+            'rejected',
+          }.contains('${item['status']}'),
+        );
   }
 
   Widget _hero() => Container(
@@ -369,50 +597,204 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     decoration: BoxDecoration(
       gradient: const LinearGradient(
         colors: [Color(0xFF143B68), Color(0xFF255B91)],
+        begin: Alignment.topRight,
+        end: Alignment.bottomLeft,
       ),
-      borderRadius: BorderRadius.circular(22),
+      borderRadius: BorderRadius.circular(24),
+      boxShadow: const [
+        BoxShadow(
+          color: Color(0x1A143B68),
+          blurRadius: 18,
+          offset: Offset(0, 8),
+        ),
+      ],
     ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    child: Row(
       children: [
-        Text(
-          'مرحباً ${widget.account.name}',
-          style: const TextStyle(
+        Container(
+          width: 54,
+          height: 54,
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: .14),
+            borderRadius: BorderRadius.circular(17),
+          ),
+          child: const Icon(
+            Icons.space_dashboard_rounded,
             color: Colors.white,
-            fontSize: 21,
-            fontWeight: FontWeight.w900,
+            size: 30,
           ),
         ),
-        const SizedBox(height: 5),
-        const Text(
-          'إدارة الطلبات والحسابات والمالية والمحتوى من مكان واحد',
-          style: TextStyle(color: Colors.white70),
+        const SizedBox(width: 13),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'مرحباً ${widget.account.name}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 21,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'كل ما تحتاجه لإدارة منصة آلين من مكان واحد',
+                style: TextStyle(color: Colors.white70, height: 1.35),
+              ),
+            ],
+          ),
         ),
       ],
     ),
   );
 
-  Widget _metric(String label, String value, IconData icon) => Container(
-    padding: const EdgeInsets.all(14),
+  Widget _sectionTitle(String title, String subtitle) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        title,
+        style: const TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w900,
+          color: Color(0xFF143B68),
+        ),
+      ),
+      const SizedBox(height: 2),
+      Text(
+        subtitle,
+        style: const TextStyle(
+          fontSize: 12.5,
+          color: Color(0xFF667085),
+        ),
+      ),
+    ],
+  );
+
+  Widget _metricCard(
+    String label,
+    String value,
+    IconData icon,
+    Color accent,
+    Color soft,
+  ) => Container(
+    padding: const EdgeInsets.all(13),
     decoration: BoxDecoration(
       color: Colors.white,
       borderRadius: BorderRadius.circular(18),
+      border: Border.all(color: const Color(0xFFE3EAF1)),
+      boxShadow: const [
+        BoxShadow(
+          color: Color(0x0A143B68),
+          blurRadius: 10,
+          offset: Offset(0, 4),
+        ),
+      ],
     ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, color: const Color(0xFF143B68)),
+        Container(
+          width: 39,
+          height: 39,
+          decoration: BoxDecoration(
+            color: soft,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(icon, color: accent, size: 21),
+        ),
         const Spacer(),
         Text(
           value,
-          style: const TextStyle(
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w900,
-            color: Color(0xFF143B68),
+            color: accent,
           ),
         ),
-        Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            fontSize: 12,
+            color: Color(0xFF475467),
+            fontWeight: FontWeight.w700,
+          ),
+        ),
       ],
+    ),
+  );
+
+  Widget _quickSection(
+    String title,
+    String subtitle,
+    IconData icon,
+    VoidCallback onTap,
+  ) => Material(
+    color: Colors.white,
+    borderRadius: BorderRadius.circular(18),
+    child: InkWell(
+      borderRadius: BorderRadius.circular(18),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(13),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: const Color(0xFFE3EAF1)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 43,
+              height: 43,
+              decoration: BoxDecoration(
+                color: const Color(0xFFEAF2FB),
+                borderRadius: BorderRadius.circular(13),
+              ),
+              child: Icon(icon, color: const Color(0xFF143B68)),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF143B68),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 10.5,
+                      height: 1.25,
+                      color: Color(0xFF667085),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(
+              Icons.chevron_left_rounded,
+              color: Color(0xFF98A2B3),
+            ),
+          ],
+        ),
+      ),
     ),
   );
 
