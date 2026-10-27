@@ -1,10 +1,7 @@
 name: Show courier assignment in admin orders
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/fix-orders-courier-visible.yml'
+  # Legacy one-off patch workflow. Keep available for manual recovery only.
   workflow_dispatch:
 
 permissions:
