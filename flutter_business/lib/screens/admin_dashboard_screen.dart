@@ -39,6 +39,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   String orderSearch = '';
   final TextEditingController orderSearchController = TextEditingController();
   String accountFilter = 'all';
+  String accountSearch = '';
+  final TextEditingController accountSearchController = TextEditingController();
   int unreadNotifications = 0;
 
   @override
@@ -51,6 +53,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   @override
   void dispose() {
     orderSearchController.dispose();
+    accountSearchController.dispose();
     super.dispose();
   }
 
@@ -284,13 +287,25 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 
   List<Map<String, dynamic>> get visibleAccounts {
-    if (accountFilter == 'all')
-      return accounts.where((e) => e['deleted_at'] == null).toList();
-    return accounts
-        .where(
-          (e) => e['deleted_at'] == null && '${e['role']}' == accountFilter,
-        )
-        .toList();
+    Iterable<Map<String, dynamic>> rows =
+        accounts.where((e) => e['deleted_at'] == null);
+    if (accountFilter != 'all') {
+      rows = rows.where((e) => '${e['role']}' == accountFilter);
+    }
+
+    final query = accountSearch.trim().toLowerCase();
+    if (query.isEmpty) return rows.toList();
+
+    return rows.where((e) {
+      final searchable = [
+        '${e['name'] ?? ''}',
+        '${e['username'] ?? ''}',
+        '${e['phone'] ?? ''}',
+        '${e['area'] ?? ''}',
+        _roleLabel('${e['role'] ?? ''}'),
+      ].join(' ').toLowerCase();
+      return searchable.contains(query);
+    }).toList();
   }
 
   @override
@@ -1472,61 +1487,318 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 
   Widget _accounts() {
-    return _scroll([
-      Row(
-        children: [
-          const Expanded(
-            child: Text(
-              'إدارة الحسابات',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
+    int roleCount(String role) => accounts
+        .where((e) => e['deleted_at'] == null && '${e['role']}' == role)
+        .length;
+    final active = accounts
+        .where(
+          (e) => e['deleted_at'] == null && '${e['status']}' == 'active',
+        )
+        .length;
+    final inactive = accounts
+        .where(
+          (e) => e['deleted_at'] == null && '${e['status']}' != 'active',
+        )
+        .length;
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(14, 16, 14, 28),
+      children: [
+        Row(
+          children: [
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'إدارة الحسابات',
+                    style: TextStyle(
+                      fontSize: 21,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF143B68),
+                    ),
+                  ),
+                  SizedBox(height: 3),
+                  Text(
+                    'المدرسون والمكتبات والمندوبون والمطابع والحسابات',
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      color: Color(0xFF667085),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          FilledButton.icon(
-            onPressed: _createAccount,
-            icon: const Icon(Icons.person_add_alt_1_rounded),
-            label: const Text('إضافة'),
-          ),
-        ],
-      ),
-      const SizedBox(height: 10),
-      SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: SegmentedButton<String>(
-          segments: const [
-            ButtonSegment(value: 'all', label: Text('الكل')),
-            ButtonSegment(value: 'teacher', label: Text('مدرس')),
-            ButtonSegment(value: 'library', label: Text('مكتبة')),
-            ButtonSegment(value: 'courier', label: Text('مندوب')),
-            ButtonSegment(value: 'printer', label: Text('مطبعة')),
-            ButtonSegment(value: 'accountant', label: Text('حسابات')),
+            FilledButton.icon(
+              onPressed: _createAccount,
+              icon: const Icon(Icons.person_add_alt_1_rounded),
+              label: const Text('إضافة'),
+            ),
           ],
-          selected: {accountFilter},
-          onSelectionChanged: (value) =>
-              setState(() => accountFilter = value.first),
+        ),
+        const SizedBox(height: 14),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final columns = constraints.maxWidth >= 900
+                ? 4
+                : constraints.maxWidth >= 600
+                ? 3
+                : 2;
+            return GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: columns,
+              crossAxisSpacing: 9,
+              mainAxisSpacing: 9,
+              childAspectRatio: constraints.maxWidth >= 700 ? 2.1 : 1.45,
+              children: [
+                _metricCard(
+                  'الحسابات الفعالة',
+                  '$active',
+                  Icons.verified_user_rounded,
+                  const Color(0xFF16A34A),
+                  const Color(0xFFE9F9EF),
+                ),
+                _metricCard(
+                  'غير الفعالة',
+                  '$inactive',
+                  Icons.person_off_rounded,
+                  const Color(0xFFE11D48),
+                  const Color(0xFFFFEAF0),
+                ),
+                _metricCard(
+                  'المدرسون',
+                  '${roleCount('teacher')}',
+                  Icons.school_rounded,
+                  const Color(0xFF7C3AED),
+                  const Color(0xFFF1EBFF),
+                ),
+                _metricCard(
+                  'المكتبات',
+                  '${roleCount('library')}',
+                  Icons.store_rounded,
+                  const Color(0xFF0284C7),
+                  const Color(0xFFE8F7FF),
+                ),
+              ],
+            );
+          },
+        ),
+        const SizedBox(height: 14),
+        TextField(
+          controller: accountSearchController,
+          onChanged: (value) => setState(() => accountSearch = value),
+          decoration: InputDecoration(
+            hintText: 'ابحث بالاسم، اسم الدخول، الهاتف أو المنطقة',
+            prefixIcon: const Icon(Icons.search_rounded),
+            suffixIcon: accountSearch.isEmpty
+                ? null
+                : IconButton(
+                    onPressed: () {
+                      accountSearchController.clear();
+                      setState(() => accountSearch = '');
+                    },
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(color: Color(0xFFE3EAF1)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(color: Color(0xFFE3EAF1)),
+            ),
+          ),
+        ),
+        const SizedBox(height: 11),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              _accountFilterChip('الكل', 'all'),
+              _accountFilterChip('مدرس', 'teacher'),
+              _accountFilterChip('مكتبة', 'library'),
+              _accountFilterChip('مندوب', 'courier'),
+              _accountFilterChip('مطبعة', 'printer'),
+              _accountFilterChip('حسابات', 'accountant'),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+        if (visibleAccounts.isEmpty)
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 18),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: const Color(0xFFE3EAF1)),
+            ),
+            child: const Column(
+              children: [
+                Icon(
+                  Icons.manage_accounts_outlined,
+                  size: 42,
+                  color: Color(0xFF98A2B3),
+                ),
+                SizedBox(height: 10),
+                Text(
+                  'لا توجد حسابات مطابقة',
+                  style: TextStyle(
+                    color: Color(0xFF143B68),
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
+            ),
+          )
+        else
+          ...visibleAccounts.map(_accountCard),
+      ],
+    );
+  }
+
+  Widget _accountFilterChip(String label, String value) {
+    final selected = accountFilter == value;
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(end: 8),
+      child: ChoiceChip(
+        selected: selected,
+        onSelected: (_) => setState(() => accountFilter = value),
+        label: Text(label),
+        selectedColor: const Color(0xFF143B68),
+        backgroundColor: Colors.white,
+        side: BorderSide(
+          color: selected
+              ? const Color(0xFF143B68)
+              : const Color(0xFFE3EAF1),
+        ),
+        labelStyle: TextStyle(
+          color: selected ? Colors.white : const Color(0xFF143B68),
+          fontWeight: FontWeight.w800,
         ),
       ),
-      const SizedBox(height: 12),
-      ...visibleAccounts.map(
-        (a) => Card(
-          margin: const EdgeInsets.only(bottom: 9),
-          child: ListTile(
-            leading: CircleAvatar(child: Icon(_roleIcon('${a['role']}'))),
-            title: Text(
-              '${a['name'] ?? 'بدون اسم'}',
-              style: const TextStyle(fontWeight: FontWeight.w900),
-            ),
-            subtitle: Text(
-              '${_roleLabel('${a['role']}')} • ${a['username'] ?? ''}\n${a['phone'] ?? ''} ${a['area'] ?? ''}',
-            ),
-            isThreeLine: true,
-            trailing: Chip(
-              label: Text('${a['status']}' == 'active' ? 'فعال' : 'غير فعال'),
-            ),
-            onTap: () => _editAccount(a),
+    );
+  }
+
+  Widget _accountCard(Map<String, dynamic> account) {
+    final active = '${account['status']}' == 'active';
+    final role = '${account['role'] ?? ''}';
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 9),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+        side: const BorderSide(color: Color(0xFFE3EAF1)),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: () => _editAccount(account),
+        child: Padding(
+          padding: const EdgeInsets.all(13),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEAF2FB),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(
+                  _roleIcon(role),
+                  color: const Color(0xFF143B68),
+                ),
+              ),
+              const SizedBox(width: 11),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            '${account['name'] ?? 'بدون اسم'}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Color(0xFF143B68),
+                              fontWeight: FontWeight.w900,
+                              fontSize: 15,
+                            ),
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: active
+                                ? const Color(0xFFE9F9EF)
+                                : const Color(0xFFFFEAF0),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            active ? 'فعال' : 'غير فعال',
+                            style: TextStyle(
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w900,
+                              color: active
+                                  ? const Color(0xFF15803D)
+                                  : const Color(0xFFBE123C),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${_roleLabel(role)} • ${account['username'] ?? ''}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF667085),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 6,
+                      children: [
+                        if ('${account['phone'] ?? ''}'.trim().isNotEmpty)
+                          _orderInfoPill(
+                            Icons.phone_rounded,
+                            '${account['phone']}',
+                          ),
+                        if ('${account['area'] ?? ''}'.trim().isNotEmpty)
+                          _orderInfoPill(
+                            Icons.location_on_rounded,
+                            '${account['area']}',
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 9),
+                    Align(
+                      alignment: AlignmentDirectional.centerEnd,
+                      child: OutlinedButton.icon(
+                        onPressed: () => _editAccount(account),
+                        icon: const Icon(Icons.edit_rounded, size: 17),
+                        label: const Text('تعديل الحساب'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),
-    ]);
+    );
   }
 
   Widget _finance() {
