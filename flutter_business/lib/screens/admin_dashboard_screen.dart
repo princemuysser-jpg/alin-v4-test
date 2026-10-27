@@ -834,57 +834,83 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     IconData icon,
     Color accent,
     Color soft,
-  ) => Container(
-    padding: const EdgeInsets.all(13),
-    decoration: BoxDecoration(
-      color: soft,
-      borderRadius: BorderRadius.circular(18),
-      border: Border.all(color: accent.withValues(alpha: .18)),
-      boxShadow: [
-        BoxShadow(
-          color: accent.withValues(alpha: .07),
-          blurRadius: 12,
-          offset: const Offset(0, 5),
+  ) {
+    final deep = Color.lerp(accent, Colors.black, .10)!;
+
+    return Container(
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topRight,
+          end: Alignment.bottomLeft,
+          colors: [accent, deep],
         ),
-      ],
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 39,
-          height: 39,
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: .88),
-            borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: accent.withValues(alpha: .20),
+            blurRadius: 16,
+            offset: const Offset(0, 7),
           ),
-          child: Icon(icon, color: accent, size: 21),
-        ),
-        const Spacer(),
-        Text(
-          value,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w900,
-            color: accent,
+        ],
+      ),
+      child: Stack(
+        children: [
+          PositionedDirectional(
+            end: -8,
+            top: 24,
+            child: Icon(
+              icon,
+              size: 82,
+              color: Colors.white.withValues(alpha: .16),
+            ),
           ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            fontSize: 12,
-            color: Color(0xFF475467),
-            fontWeight: FontWeight.w700,
+          Positioned(
+            left: 0,
+            right: 0,
+            top: 62,
+            child: Container(
+              height: 1,
+              color: Colors.black.withValues(alpha: .10),
+            ),
           ),
-        ),
-      ],
-    ),
-  );
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 13.5,
+                    height: 1.15,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 28,
+                    height: 1,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: .2,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
 
   Widget _quickSection(
     String title,
