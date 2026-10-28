@@ -3811,7 +3811,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       TextField(
                         controller: amount,
                         enabled: remaining > 0,
-                        keyboardType: const TextInputType.numberWithOptions(
+                        keyboardType: TextInputType.numberWithOptions(
                           decimal: true,
                         ),
                         onChanged: (_) => setLocal(() {}),
