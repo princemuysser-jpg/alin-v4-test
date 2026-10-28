@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 
 num receiptNumberValue(dynamic value) => num.tryParse('$value') ?? 0;
 
@@ -107,6 +110,232 @@ class GroupedOrderReceiptCard extends StatelessWidget {
         fulfillment == 'courier' ||
         fulfillment == 'delivery' ||
         deliveryType == 'courier';
+  }
+
+  Future<void> _printReceipt(BuildContext context) async {
+    try {
+      final items = _items;
+      final delivery = _n(order['_delivery_fee']) > 0
+          ? _n(order['_delivery_fee'])
+          : items.fold<num>(0, (s, r) => s + _rowDelivery(r));
+      final discount = _n(order['_discount']) > 0
+          ? _n(order['_discount'])
+          : items.fold<num>(0, (s, r) => s + _rowDiscount(r));
+      final total = _n(order['_group_total']) > 0
+          ? _n(order['_group_total'])
+          : items.fold<num>(0, (s, r) => s + _rowTotal(r));
+      final subtotal = items.fold<num>(0, (s, r) => s + _rowSubtotal(r));
+
+      final regular = await PdfGoogleFonts.notoKufiArabicRegular();
+      final bold = await PdfGoogleFonts.notoKufiArabicBold();
+      final pdf = pw.Document(
+        theme: pw.ThemeData.withFont(base: regular, bold: bold),
+      );
+
+      pw.Widget line(String label, String value, {bool strong = false}) {
+        return pw.Padding(
+          padding: const pw.EdgeInsets.symmetric(vertical: 3),
+          child: pw.Row(
+            children: [
+              pw.Expanded(
+                child: pw.Text(
+                  label,
+                  textAlign: pw.TextAlign.right,
+                  style: pw.TextStyle(
+                    fontWeight: strong ? pw.FontWeight.bold : pw.FontWeight.normal,
+                    fontSize: strong ? 11 : 9.5,
+                    color: PdfColors.grey700,
+                  ),
+                ),
+              ),
+              pw.SizedBox(width: 10),
+              pw.Text(
+                value,
+                textAlign: pw.TextAlign.left,
+                style: pw.TextStyle(
+                  fontWeight: strong ? pw.FontWeight.bold : pw.FontWeight.normal,
+                  fontSize: strong ? 12 : 9.5,
+                  color: strong ? PdfColors.blueGrey900 : PdfColors.grey900,
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+
+      pdf.addPage(
+        pw.MultiPage(
+          pageFormat: PdfPageFormat.a4,
+          margin: const pw.EdgeInsets.all(28),
+          build: (pdfContext) => [
+            pw.Directionality(
+              textDirection: pw.TextDirection.rtl,
+              child: pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+                children: [
+                  pw.Container(
+                    padding: const pw.EdgeInsets.all(14),
+                    decoration: pw.BoxDecoration(
+                      color: PdfColors.blueGrey900,
+                      borderRadius: pw.BorderRadius.circular(8),
+                    ),
+                    child: pw.Column(
+                      children: [
+                        pw.Text(
+                          'منصة آلين',
+                          style: pw.TextStyle(
+                            color: PdfColors.white,
+                            fontSize: 20,
+                            fontWeight: pw.FontWeight.bold,
+                          ),
+                        ),
+                        pw.SizedBox(height: 4),
+                        pw.Text(
+                          'وصل طلب',
+                          style: const pw.TextStyle(
+                            color: PdfColors.white,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  pw.SizedBox(height: 14),
+                  pw.Row(
+                    children: [
+                      pw.Expanded(
+                        child: pw.Text(
+                          'رقم الطلب: ${order['order_number'] ?? order['id'] ?? '—'}',
+                          style: pw.TextStyle(
+                            fontSize: 11,
+                            fontWeight: pw.FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      pw.Text(
+                        _dateText(),
+                        style: const pw.TextStyle(
+                          fontSize: 9,
+                          color: PdfColors.grey700,
+                        ),
+                      ),
+                    ],
+                  ),
+                  pw.Divider(height: 18),
+                  line('الطالب', '${order['student_name'] ?? '—'}'),
+                  line('الهاتف', '${order['student_phone'] ?? '—'}'),
+                  if ('${order['delivery_area'] ?? ''}'.trim().isNotEmpty)
+                    line('المنطقة', '${order['delivery_area']}'),
+                  line(
+                    'طريقة الاستلام',
+                    _isDelivery ? 'توصيل مندوب' : 'استلام من مكتبة',
+                  ),
+                  if (courierName != null && courierName!.trim().isNotEmpty)
+                    line('المندوب', courierName!),
+                  pw.SizedBox(height: 12),
+                  pw.Container(
+                    padding: const pw.EdgeInsets.all(10),
+                    decoration: pw.BoxDecoration(
+                      color: PdfColors.grey100,
+                      borderRadius: pw.BorderRadius.circular(7),
+                      border: pw.Border.all(color: PdfColors.grey300),
+                    ),
+                    child: pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+                      children: [
+                        pw.Text(
+                          'مواد الطلب',
+                          style: pw.TextStyle(
+                            fontSize: 11,
+                            fontWeight: pw.FontWeight.bold,
+                          ),
+                        ),
+                        pw.SizedBox(height: 7),
+                        ...items.asMap().entries.map((entry) {
+                          final row = entry.value;
+                          final qty = _rowQty(row).round();
+                          return pw.Container(
+                            padding: const pw.EdgeInsets.symmetric(vertical: 5),
+                            decoration: entry.key == items.length - 1
+                                ? null
+                                : const pw.BoxDecoration(
+                                    border: pw.Border(
+                                      bottom: pw.BorderSide(
+                                        color: PdfColors.grey300,
+                                      ),
+                                    ),
+                                  ),
+                            child: pw.Row(
+                              children: [
+                                pw.Expanded(
+                                  child: pw.Text(
+                                    '${entry.key + 1}. ${row['title'] ?? row['product_name'] ?? row['item_name'] ?? 'مادة'}',
+                                    style: pw.TextStyle(
+                                      fontSize: 9.5,
+                                      fontWeight: pw.FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                                pw.SizedBox(width: 8),
+                                pw.Text(
+                                  '$qty × ${_money(_rowUnit(row))}',
+                                  style: const pw.TextStyle(
+                                    fontSize: 8.5,
+                                    color: PdfColors.grey700,
+                                  ),
+                                ),
+                                pw.SizedBox(width: 12),
+                                pw.Text(
+                                  _money(_rowSubtotal(row)),
+                                  style: pw.TextStyle(
+                                    fontSize: 9.5,
+                                    fontWeight: pw.FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }),
+                      ],
+                    ),
+                  ),
+                  pw.SizedBox(height: 12),
+                  line('مجموع المواد', _money(subtotal)),
+                  if (delivery > 0) line('أجرة التوصيل', _money(delivery)),
+                  if (discount > 0) line('الخصم', '- ${_money(discount)}'),
+                  pw.Divider(height: 18),
+                  line('الإجمالي الكلي', _money(total), strong: true),
+                  pw.SizedBox(height: 18),
+                  pw.Center(
+                    child: pw.Text(
+                      'شكراً لاستخدام منصة آلين',
+                      style: const pw.TextStyle(
+                        fontSize: 9,
+                        color: PdfColors.grey600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+
+      await Printing.layoutPdf(
+        name: 'alin-receipt-${order['order_number'] ?? order['id'] ?? 'order'}',
+        onLayout: (_) => pdf.save(),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'تعذر تجهيز الوصل للطباعة: ${e.toString().replaceFirst('Exception: ', '')}',
+          ),
+        ),
+      );
+    }
   }
 
   @override
@@ -431,6 +660,15 @@ class GroupedOrderReceiptCard extends StatelessWidget {
                         ),
                       ),
                     ],
+                  ),
+                ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: () => _printReceipt(context),
+                    icon: const Icon(Icons.print_rounded),
+                    label: const Text('طباعة / PDF'),
                   ),
                 ),
               ],
