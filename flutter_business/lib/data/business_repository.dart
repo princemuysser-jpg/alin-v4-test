@@ -257,8 +257,30 @@ class BusinessRepository {
     return map;
   }
 
-  Future<Map<String, dynamic>> adminRecordSettlement({required String role, required String partyId, required num amount, required String method, String note = ''}) async {
-    final raw = await client.rpc('alin_finance_record_settlement', params: {
+  Future<Map<String, dynamic>> adminFinancePartySummary(
+    String role,
+    String partyId,
+  ) async {
+    final raw = await client.rpc('alin_finance_party_summary_v2', params: {
+      'p_role': role,
+      'p_party_id': partyId,
+    });
+    if (raw is! Map) throw Exception('تعذر تحميل الرصيد المالي');
+    final map = Map<String, dynamic>.from(raw);
+    if (map['ok'] != true) {
+      throw Exception('${map['error'] ?? 'تعذر تحميل الرصيد المالي'}');
+    }
+    return map;
+  }
+
+  Future<Map<String, dynamic>> adminRecordSettlement({
+    required String role,
+    required String partyId,
+    required num amount,
+    required String method,
+    String note = '',
+  }) async {
+    final raw = await client.rpc('alin_finance_record_settlement_v2', params: {
       'p_role': role,
       'p_party_id': partyId,
       'p_amount': amount,
@@ -267,7 +289,9 @@ class BusinessRepository {
     });
     if (raw is! Map) throw Exception('تعذر تثبيت التسوية');
     final map = Map<String, dynamic>.from(raw);
-    if (map['ok'] != true) throw Exception('${map['error'] ?? 'تعذر تثبيت التسوية'}');
+    if (map['ok'] != true) {
+      throw Exception('${map['error'] ?? 'تعذر تثبيت التسوية'}');
+    }
     return map;
   }
 
