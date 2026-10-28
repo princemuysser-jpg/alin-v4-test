@@ -1436,166 +1436,288 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
     final itemCount = number(order['_item_count']).toInt();
     final qtyCount = number(order['_qty_count']).toInt();
     final mixedStatus = order['_mixed_status'] == true;
+    final accent = _courierStatusColor(status);
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
+      elevation: 0,
+      color: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+        side: BorderSide(color: accent.withValues(alpha: .22)),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Container(
+                  width: 46,
+                  height: 46,
+                  decoration: BoxDecoration(
+                    color: accent.withValues(alpha: .10),
+                    borderRadius: BorderRadius.circular(13),
+                  ),
+                  child: Icon(
+                    Icons.delivery_dining_rounded,
+                    color: accent,
+                    size: 25,
+                  ),
+                ),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '${order['order_number'] ?? id}',
+                        'طلب #${order['order_number'] ?? id}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                          fontWeight: FontWeight.w900,
-                          fontSize: 16,
                           color: BusinessBrand.navy,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w900,
                         ),
                       ),
-                      const SizedBox(height: 3),
+                      const SizedBox(height: 4),
                       Text(
                         itemCount > 1
-                            ? 'طلب توصيل واحد • $itemCount مواد'
+                            ? '$itemCount مواد • $qtyCount قطعة/نسخة'
                             : '${order['title'] ?? 'طلب توصيل'}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w900,
+                          color: BusinessBrand.muted,
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
-                      if (itemCount > 1)
-                        Text(
-                          'إجمالي القطع/النسخ: $qtyCount',
-                          style: TextStyle(
-                            color: Colors.grey.shade600,
-                            fontSize: 12,
-                          ),
-                        ),
                     ],
                   ),
                 ),
-                if (preferred)
-                  const Padding(
-                    padding: EdgeInsets.only(left: 6),
-                    child: Chip(label: Text('ضمن منطقتك')),
-                  ),
-                Chip(
-                  backgroundColor: _courierStatusColor(status).withValues(alpha: .10),
-                  side: BorderSide(
-                    color: _courierStatusColor(status).withValues(alpha: .22),
-                  ),
-                  label: Text(
-                    mixedStatus ? 'حالة غير موحدة' : statusLabel(status),
-                    style: TextStyle(
-                      color: _courierStatusColor(status),
-                      fontWeight: FontWeight.w900,
+                const SizedBox(width: 8),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 9,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: accent.withValues(alpha: .10),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: accent.withValues(alpha: .22),
+                        ),
+                      ),
+                      child: Text(
+                        mixedStatus ? 'حالة غير موحدة' : statusLabel(status),
+                        style: TextStyle(
+                          color: accent,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
                     ),
-                  ),
+                    if (preferred) ...[
+                      const SizedBox(height: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: BusinessBrand.teal.withValues(alpha: .09),
+                          borderRadius: BorderRadius.circular(9),
+                        ),
+                        child: const Text(
+                          'ضمن منطقتك',
+                          style: TextStyle(
+                            color: BusinessBrand.teal,
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ],
             ),
-            const Divider(),
-            _line(
-              Icons.person_outline,
-              'الطالب',
-              '${order['student_name'] ?? '—'}',
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(11),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(13),
+              ),
+              child: Column(
+                children: [
+                  _courierInfoLine(
+                    Icons.person_rounded,
+                    'الطالب',
+                    '${order['student_name'] ?? '—'}',
+                  ),
+                  const SizedBox(height: 7),
+                  _courierInfoLine(
+                    Icons.phone_rounded,
+                    'الهاتف',
+                    phone.isEmpty ? '—' : phone,
+                  ),
+                  const SizedBox(height: 7),
+                  _courierInfoLine(
+                    Icons.location_on_rounded,
+                    'المنطقة',
+                    '${order['delivery_area'] ?? '—'}',
+                  ),
+                  const SizedBox(height: 7),
+                  _courierInfoLine(
+                    Icons.flag_rounded,
+                    'نقطة دالة',
+                    '${order['delivery_landmark'] ?? '—'}',
+                  ),
+                  if (pickup.isNotEmpty) ...[
+                    const SizedBox(height: 7),
+                    _courierInfoLine(
+                      Icons.inventory_2_rounded,
+                      'الاستلام من',
+                      pickup,
+                    ),
+                  ],
+                ],
+              ),
             ),
-            _line(Icons.phone_outlined, 'الهاتف', phone.isEmpty ? '—' : phone),
-            _line(
-              Icons.location_on_outlined,
-              'المنطقة',
-              '${order['delivery_area'] ?? '—'}',
-            ),
-            _line(
-              Icons.flag_outlined,
-              'أقرب نقطة دالة',
-              '${order['delivery_landmark'] ?? '—'}',
-            ),
-            if (pickup.isNotEmpty)
-              _line(Icons.inventory_2_outlined, 'الاستلام من', pickup),
             if (items.isNotEmpty) ...[
               const SizedBox(height: 10),
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(11),
                 decoration: BoxDecoration(
-                  color: Colors.grey.withValues(alpha: .07),
-                  borderRadius: BorderRadius.circular(14),
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(13),
+                  border: Border.all(color: const Color(0xFFEEF2F6)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
                       'مواد الطلب',
-                      style: TextStyle(fontWeight: FontWeight.w900),
+                      style: TextStyle(
+                        color: BusinessBrand.navy,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
-                    const SizedBox(height: 8),
-                    ...items.asMap().entries.map((entry) {
-                      final item = entry.value;
+                    const SizedBox(height: 7),
+                    ...items.take(4).map((item) {
                       final qty = number(item['qty'] ?? 1).toInt();
                       return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        padding: const EdgeInsets.only(bottom: 5),
                         child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              '${entry.key + 1}. ',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
                             Expanded(
                               child: Text(
-                                '${item['title'] ?? 'مادة'} × $qty',
+                                '• ${item['title'] ?? 'مادة'} × $qty',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
+                                  color: Color(0xFF475467),
+                                  fontSize: 11.5,
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
                             ),
+                            const SizedBox(width: 8),
                             Text(
                               money(item['total']),
                               style: const TextStyle(
-                                fontWeight: FontWeight.w800,
+                                color: BusinessBrand.navy,
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w900,
                               ),
                             ),
                           ],
                         ),
                       );
                     }),
+                    if (items.length > 4)
+                      Text(
+                        '+ ${items.length - 4} مواد أخرى',
+                        style: TextStyle(
+                          color: accent,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
                   ],
                 ),
               ),
             ],
-            const SizedBox(height: 8),
-            _line(
-              Icons.payments_outlined,
-              'المبلغ المطلوب',
-              money(order['_group_total']),
-            ),
-            _line(
-              Icons.local_shipping_outlined,
-              'توصيل الطالب',
-              money(order['_delivery_fee']),
-            ),
-            _line(
-              Icons.account_balance_wallet_outlined,
-              'أجرة التوصيل',
-              money(order['_courier_fee']),
+            const SizedBox(height: 10),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final columns = constraints.maxWidth >= 650 ? 3 : 1;
+                final gap = 8.0;
+                final width = columns == 1
+                    ? constraints.maxWidth
+                    : (constraints.maxWidth - gap * (columns - 1)) / columns;
+                return Wrap(
+                  spacing: gap,
+                  runSpacing: gap,
+                  children: [
+                    SizedBox(
+                      width: width,
+                      child: _courierAmountCard(
+                        'المبلغ المطلوب',
+                        money(order['_group_total']),
+                        Icons.payments_rounded,
+                        const Color(0xFFFF7A00),
+                      ),
+                    ),
+                    SizedBox(
+                      width: width,
+                      child: _courierAmountCard(
+                        'توصيل الطالب',
+                        money(order['_delivery_fee']),
+                        Icons.local_shipping_rounded,
+                        const Color(0xFF0088FF),
+                      ),
+                    ),
+                    SizedBox(
+                      width: width,
+                      child: _courierAmountCard(
+                        'أجرة المندوب',
+                        money(order['_courier_fee']),
+                        Icons.account_balance_wallet_rounded,
+                        const Color(0xFF16A34A),
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
             if ('${order['delivery_note'] ?? ''}'.trim().isNotEmpty) ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: 10),
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(11),
                 decoration: BoxDecoration(
-                  color: Colors.orange.withValues(alpha: .08),
-                  borderRadius: BorderRadius.circular(12),
+                  color: const Color(0xFFFFF4E5),
+                  borderRadius: BorderRadius.circular(13),
+                  border: Border.all(color: const Color(0xFFFFD9A3)),
                 ),
-                child: Text('ملاحظتك: ${order['delivery_note']}'),
+                child: Text(
+                  'ملاحظتك: ${order['delivery_note']}',
+                  style: const TextStyle(
+                    color: Color(0xFF8A4B08),
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
               ),
             ],
             const SizedBox(height: 10),
@@ -1606,13 +1728,13 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
                 if (phone.isNotEmpty)
                   OutlinedButton.icon(
                     onPressed: () => openPhone(phone),
-                    icon: const Icon(Icons.call),
+                    icon: const Icon(Icons.call_rounded),
                     label: const Text('اتصال'),
                   ),
                 if (phone.isNotEmpty)
                   OutlinedButton.icon(
                     onPressed: () => openWhatsApp(phone),
-                    icon: const Icon(Icons.chat_outlined),
+                    icon: const Icon(Icons.chat_rounded),
                     label: const Text('واتساب'),
                   ),
                 OutlinedButton.icon(
@@ -1623,26 +1745,126 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
                 if (!isClosed(order))
                   OutlinedButton.icon(
                     onPressed: () => sendNote(order),
-                    icon: const Icon(Icons.note_alt_outlined),
+                    icon: const Icon(Icons.note_alt_rounded),
                     label: const Text('ملاحظة'),
                   ),
               ],
             ),
-            const SizedBox(height: 10),
-            if (mixedStatus)
-              const Text(
-                'هذا طلب قديم بحالات مواد مختلفة؛ وحّد حالاته من الإدارة قبل متابعة التوصيل.',
-                style: TextStyle(
-                  color: Colors.red,
-                  fontWeight: FontWeight.w700,
-                ),
-              )
-            else if (busy)
-              const LinearProgressIndicator()
-            else
-              _actions(order, status),
+            const SizedBox(height: 11),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: accent.withValues(alpha: .05),
+                borderRadius: BorderRadius.circular(13),
+                border: Border.all(color: accent.withValues(alpha: .12)),
+              ),
+              child: mixedStatus
+                  ? const Text(
+                      'هذا طلب قديم بحالات مواد مختلفة؛ وحّد حالاته من الإدارة قبل متابعة التوصيل.',
+                      style: TextStyle(
+                        color: Color(0xFFE11D48),
+                        fontWeight: FontWeight.w800,
+                      ),
+                    )
+                  : busy
+                  ? LinearProgressIndicator(color: accent)
+                  : _actions(order, status),
+            ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _courierInfoLine(
+    IconData icon,
+    String label,
+    String value, {
+    Color? valueColor,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 18, color: const Color(0xFF667085)),
+        const SizedBox(width: 8),
+        SizedBox(
+          width: 92,
+          child: Text(
+            label,
+            style: const TextStyle(
+              color: Color(0xFF667085),
+              fontSize: 11.5,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: TextStyle(
+              color: valueColor ?? const Color(0xFF143B68),
+              fontSize: 12.5,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _courierAmountCard(
+    String label,
+    String value,
+    IconData icon,
+    Color accent,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(13),
+        border: Border.all(color: accent.withValues(alpha: .18)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: accent.withValues(alpha: .09),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: accent, size: 18),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: Color(0xFF667085),
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Color(0xFF143B68),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1736,6 +1958,7 @@ class _Metric extends StatelessWidget {
   final String value;
   final IconData icon;
   final Color accent;
+
   const _Metric({
     required this.label,
     required this.value,
@@ -1746,68 +1969,56 @@ class _Metric extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      constraints: const BoxConstraints(minHeight: 128),
+      constraints: const BoxConstraints(minHeight: 82),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: BusinessBrand.border),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: accent.withValues(alpha: .18)),
         boxShadow: [
           BoxShadow(
-            color: BusinessBrand.navy.withValues(alpha: .05),
-            blurRadius: 18,
-            offset: const Offset(0, 7),
+            color: accent.withValues(alpha: .06),
+            blurRadius: 12,
+            offset: const Offset(0, 5),
           ),
         ],
       ),
-      child: Stack(
-        clipBehavior: Clip.antiAlias,
+      child: Row(
         children: [
-          Positioned(
-            left: -20,
-            top: -25,
-            child: Container(
-              width: 74,
-              height: 74,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: accent.withValues(alpha: .08),
-              ),
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: accent.withValues(alpha: .10),
+              borderRadius: BorderRadius.circular(12),
             ),
+            child: Icon(icon, color: accent, size: 21),
           ),
-          Padding(
-            padding: const EdgeInsets.all(13),
+          const SizedBox(width: 10),
+          Expanded(
             child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: accent.withValues(alpha: .12),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(icon, color: accent, size: 26),
-                ),
-                const SizedBox(height: 9),
-                Text(
-                  value,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w900,
-                    fontSize: 22,
-                    color: BusinessBrand.ink,
-                  ),
-                ),
-                const SizedBox(height: 2),
                 Text(
                   label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    color: BusinessBrand.muted,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF667085),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Color(0xFF143B68),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
                   ),
                 ),
               ],
