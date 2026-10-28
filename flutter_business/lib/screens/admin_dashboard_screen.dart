@@ -3566,106 +3566,425 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 'teacher',
                 'library',
                 'courier',
+                'delegate',
                 'printer',
               ].contains('${e['role']}') &&
               e['deleted_at'] == null,
         )
         .toList();
-    if (parties.isEmpty) return;
+
+    if (parties.isEmpty) {
+      _snack('لا توجد حسابات مالية متاحة للتسوية');
+      return;
+    }
+
     String partyId = '${parties.first['id']}';
     String role = '${parties.first['role']}';
     final amount = TextEditingController();
     final note = TextEditingController();
     String method = 'cash';
-    final ok = await showDialog<bool>(
+    Map<String, dynamic>? balance;
+    String? balanceError;
+    bool balanceLoading = true;
+
+    Future<void> loadBalance(StateSetter setLocal) async {
+      setLocal(() {
+        balanceLoading = true;
+        balanceError = null;
+        balance = null;
+      });
+      try {
+        final value = await widget.repository.adminFinancePartySummary(
+          role,
+          partyId,
+        );
+        setLocal(() {
+          balance = value;
+          balanceLoading = false;
+        });
+      } catch (e) {
+        setLocal(() {
+          balanceError = '$e'.replaceFirst('Exception: ', '');
+          balanceLoading = false;
+        });
+      }
+    }
+
+    final result = await showDialog<Map<String, dynamic>>(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setLocal) => AlertDialog(
-          title: const Text('تثبيت تسوية'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
+      barrierDismissible: false,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setLocal) {
+          if (balanceLoading && balance == null && balanceError == null) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              loadBalance(setLocal);
+            });
+          }
+
+          final remaining = number(balance?['remaining']);
+          final earned = number(balance?['earned']);
+          final settled = number(balance?['settled']);
+          final debtTotal = number(balance?['debt_total']);
+          final ordersCount = number(balance?['orders_count']).round();
+          final entered = num.tryParse(amount.text.trim()) ?? 0;
+          final validAmount =
+              !balanceLoading &&
+              balanceError == null &&
+              remaining > 0 &&
+              entered > 0 &&
+              entered <= remaining;
+
+          return AlertDialog(
+            title: const Row(
               children: [
-                DropdownButtonFormField<String>(
-                  initialValue: partyId,
-                  decoration: const InputDecoration(labelText: 'الحساب'),
-                  items: parties
-                      .map(
-                        (e) => DropdownMenuItem(
-                          value: '${e['id']}',
-                          child: Text(
-                            '${e['name']} — ${_roleLabel('${e['role']}')}',
+                Icon(Icons.account_balance_wallet_rounded),
+                SizedBox(width: 8),
+                Text('تسوية مالية جديدة'),
+              ],
+            ),
+            content: SingleChildScrollView(
+              child: SizedBox(
+                width: 500,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    DropdownButtonFormField<String>(
+                      initialValue: partyId,
+                      isExpanded: true,
+                      decoration: const InputDecoration(
+                        labelText: 'الحساب',
+                        prefixIcon: Icon(Icons.person_rounded),
+                      ),
+                      items: parties
+                          .map(
+                            (e) => DropdownMenuItem(
+                              value: '${e['id']}',
+                              child: Text(
+                                '${e['name']} — ${_roleLabel('${e['role']}')}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: balanceLoading
+                          ? null
+                          : (v) {
+                              if (v == null) return;
+                              final selected = parties.firstWhere(
+                                (e) => '${e['id']}' == v,
+                              );
+                              setLocal(() {
+                                partyId = v;
+                                role = '${selected['role']}';
+                                amount.clear();
+                                balance = null;
+                                balanceError = null;
+                                balanceLoading = true;
+                              });
+                              loadBalance(setLocal);
+                            },
+                    ),
+                    const SizedBox(height: 12),
+                    if (balanceLoading)
+                      const Container(
+                        padding: EdgeInsets.all(18),
+                        alignment: Alignment.center,
+                        child: Column(
+                          children: [
+                            CircularProgressIndicator(),
+                            SizedBox(height: 8),
+                            Text('جاري تحميل الرصيد المالي...'),
+                          ],
+                        ),
+                      )
+                    else if (balanceError != null)
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFE9EE),
+                          borderRadius: BorderRadius.circular(13),
+                          border: Border.all(
+                            color: const Color(0xFFFFC2D0),
+                          ),
+                        ),
+                        child: Text(
+                          balanceError!,
+                          style: const TextStyle(
+                            color: Color(0xFF9F1239),
+                            fontWeight: FontWeight.w800,
                           ),
                         ),
                       )
-                      .toList(),
-                  onChanged: (v) {
-                    if (v != null)
-                      setLocal(() {
-                        partyId = v;
-                        role =
-                            '${parties.firstWhere((e) => '${e['id']}' == v)['role']}';
-                      });
-                  },
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: amount,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'المبلغ'),
-                ),
-                const SizedBox(height: 8),
-                DropdownButtonFormField<String>(
-                  initialValue: method,
-                  decoration: const InputDecoration(labelText: 'طريقة الدفع'),
-                  items: const [
-                    DropdownMenuItem(value: 'cash', child: Text('نقدي')),
-                    DropdownMenuItem(value: 'transfer', child: Text('تحويل')),
+                    else ...[
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: const Color(0xFFE3EAF1),
+                          ),
+                        ),
+                        child: Column(
+                          children: [
+                            _settlementBalanceLine(
+                              'المكتسب',
+                              money(earned),
+                              const Color(0xFF7C3AED),
+                            ),
+                            const SizedBox(height: 7),
+                            if (debtTotal > 0) ...[
+                              _settlementBalanceLine(
+                                'إجمالي الذمة',
+                                money(debtTotal),
+                                const Color(0xFFE11D48),
+                              ),
+                              const SizedBox(height: 7),
+                            ],
+                            _settlementBalanceLine(
+                              'المسدد سابقاً',
+                              money(settled),
+                              const Color(0xFF0088FF),
+                            ),
+                            const Divider(height: 18),
+                            _settlementBalanceLine(
+                              'المتبقي للتسوية',
+                              money(remaining),
+                              remaining > 0
+                                  ? const Color(0xFF16A34A)
+                                  : const Color(0xFF667085),
+                              strong: true,
+                            ),
+                            const SizedBox(height: 5),
+                            Align(
+                              alignment: AlignmentDirectional.centerStart,
+                              child: Text(
+                                '$ordersCount حركة مالية محسوبة',
+                                style: const TextStyle(
+                                  color: Color(0xFF667085),
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: amount,
+                        enabled: remaining > 0,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        onChanged: (_) => setLocal(() {}),
+                        decoration: InputDecoration(
+                          labelText: 'مبلغ التسوية',
+                          prefixIcon: const Icon(Icons.payments_rounded),
+                          helperText: remaining > 0
+                              ? 'الحد الأعلى: ${money(remaining)}'
+                              : 'لا يوجد رصيد قابل للتسوية',
+                          errorText: entered > remaining && remaining > 0
+                              ? 'المبلغ أكبر من الرصيد المتبقي'
+                              : null,
+                          suffixIcon: remaining > 0
+                              ? TextButton(
+                                  onPressed: () {
+                                    amount.text = remaining
+                                        .toStringAsFixed(
+                                          remaining % 1 == 0 ? 0 : 2,
+                                        );
+                                    setLocal(() {});
+                                  },
+                                  child: const Text('كامل'),
+                                )
+                              : null,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      DropdownButtonFormField<String>(
+                        initialValue: method,
+                        decoration: const InputDecoration(
+                          labelText: 'طريقة الدفع',
+                          prefixIcon: Icon(Icons.credit_card_rounded),
+                        ),
+                        items: const [
+                          DropdownMenuItem(
+                            value: 'cash',
+                            child: Text('نقدي'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'transfer',
+                            child: Text('تحويل'),
+                          ),
+                        ],
+                        onChanged: (v) {
+                          if (v != null) setLocal(() => method = v);
+                        },
+                      ),
+                      const SizedBox(height: 10),
+                      TextField(
+                        controller: note,
+                        minLines: 1,
+                        maxLines: 3,
+                        decoration: const InputDecoration(
+                          labelText: 'ملاحظة',
+                          prefixIcon: Icon(Icons.edit_note_rounded),
+                        ),
+                      ),
+                    ],
                   ],
-                  onChanged: (v) {
-                    if (v != null) setLocal(() => method = v);
-                  },
                 ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: note,
-                  decoration: const InputDecoration(labelText: 'ملاحظة'),
-                ),
-              ],
+              ),
             ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('إلغاء'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: const Text('إلغاء'),
+              ),
+              FilledButton.icon(
+                onPressed: validAmount
+                    ? () {
+                        Navigator.pop(dialogContext, {
+                          'party_id': partyId,
+                          'role': role,
+                          'amount': entered,
+                          'method': method,
+                          'note': note.text.trim(),
+                          'remaining': remaining,
+                          'party_name':
+                              '${balance?['party_name'] ?? _financePartyName(role, partyId)}',
+                        });
+                      }
+                    : null,
+                icon: const Icon(Icons.check_circle_rounded),
+                label: const Text('متابعة'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+
+    amount.dispose();
+    note.dispose();
+    if (result == null) return;
+
+    final value = number(result['amount']);
+    final remainingBefore = number(result['remaining']);
+    final partyName = '${result['party_name'] ?? 'الحساب'}';
+    final remainingAfter = (remainingBefore - value).clamp(
+      0,
+      double.infinity,
+    );
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (confirmContext) => AlertDialog(
+        title: const Text('تأكيد التسوية'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              partyName,
+              style: const TextStyle(
+                color: Color(0xFF143B68),
+                fontSize: 16,
+                fontWeight: FontWeight.w900,
+              ),
             ),
-            FilledButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('تثبيت'),
+            const SizedBox(height: 12),
+            _settlementBalanceLine(
+              'الرصيد قبل',
+              money(remainingBefore),
+              const Color(0xFFE11D48),
+            ),
+            const SizedBox(height: 7),
+            _settlementBalanceLine(
+              'مبلغ التسوية',
+              money(value),
+              const Color(0xFF0088FF),
+              strong: true,
+            ),
+            const SizedBox(height: 7),
+            _settlementBalanceLine(
+              'المتبقي بعد',
+              money(remainingAfter),
+              const Color(0xFF16A34A),
+              strong: true,
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'بعد التأكيد سيتم إنشاء سند تسوية مالي رسمي.',
+              style: TextStyle(
+                color: Color(0xFF667085),
+                fontSize: 12,
+              ),
             ),
           ],
         ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(confirmContext, false),
+            child: const Text('رجوع'),
+          ),
+          FilledButton.icon(
+            onPressed: () => Navigator.pop(confirmContext, true),
+            icon: const Icon(Icons.verified_rounded),
+            label: const Text('تأكيد التسوية'),
+          ),
+        ],
       ),
     );
-    if (ok == true) {
-      try {
-        final value = num.tryParse(amount.text.trim()) ?? 0;
-        if (value <= 0) throw Exception('أدخل مبلغ صحيح');
-        await widget.repository.adminRecordSettlement(
-          role: role,
-          partyId: partyId,
-          amount: value,
-          method: method,
-          note: note.text,
-        );
-        await load();
-        _snack('تم تثبيت التسوية');
-      } catch (e) {
-        _snack('$e'.replaceFirst('Exception: ', ''));
-      }
+
+    if (confirmed != true) return;
+
+    try {
+      final response = await widget.repository.adminRecordSettlement(
+        role: '${result['role']}',
+        partyId: '${result['party_id']}',
+        amount: value,
+        method: '${result['method']}',
+        note: '${result['note'] ?? ''}',
+      );
+      await load();
+      _snack(
+        'تم تثبيت التسوية • المتبقي: ${money(response['remaining_after'] ?? remainingAfter)}',
+      );
+    } catch (e) {
+      _snack('$e'.replaceFirst('Exception: ', ''));
     }
-    amount.dispose();
-    note.dispose();
+  }
+
+  Widget _settlementBalanceLine(
+    String label,
+    String value,
+    Color valueColor, {
+    bool strong = false,
+  }) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            label,
+            style: TextStyle(
+              color: const Color(0xFF667085),
+              fontWeight: strong ? FontWeight.w900 : FontWeight.w700,
+            ),
+          ),
+        ),
+        Text(
+          value,
+          style: TextStyle(
+            color: valueColor,
+            fontSize: strong ? 15 : 13,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+      ],
+    );
   }
 
   void _snack(String text) {
