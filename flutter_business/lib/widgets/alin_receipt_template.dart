@@ -1,6 +1,9 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 
 import 'business_brand.dart';
 
@@ -893,10 +896,175 @@ Future<void> showAlinSettlementReceipt(
       partyName: partyName,
       partyRole: partyRole,
     ),
+    onPrint: () => printAlinSettlementReceiptPdf(
+      settlement,
+      partyName: partyName,
+      partyRole: partyRole,
+    ),
   );
 }
 
-Future<void> _showReceiptDialog(BuildContext context, Widget receipt) async {
+Future<void> printAlinSettlementReceiptPdf(
+  Map<String, dynamic> settlement, {
+  String? partyName,
+  String? partyRole,
+}) async {
+  final role =
+      (partyRole ?? '${settlement['party_role'] ?? settlement['role'] ?? ''}')
+          .trim();
+  final name =
+      (partyName ??
+              '${settlement['party_name'] ?? settlement['name'] ?? settlement['teacher_name'] ?? settlement['library_name'] ?? settlement['courier_name'] ?? ''}')
+          .trim();
+  final receipt =
+      '${settlement['receipt_number'] ?? settlement['voucher_number'] ?? settlement['id'] ?? '—'}';
+  final amount = _receiptNum(settlement['amount'] ?? settlement['total']);
+  final note = '${settlement['note'] ?? settlement['notes'] ?? ''}'.trim();
+  final status = _statusLabel(settlement['status']);
+  final method = _paymentMethodLabel(
+    settlement['payment_method'] ?? settlement['method'],
+  );
+
+  final regular = await PdfGoogleFonts.notoKufiArabicRegular();
+  final bold = await PdfGoogleFonts.notoKufiArabicBold();
+  final pdf = pw.Document(
+    theme: pw.ThemeData.withFont(base: regular, bold: bold),
+  );
+
+  pw.Widget line(String label, String value, {bool strong = false}) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.symmetric(vertical: 4),
+      child: pw.Row(
+        children: [
+          pw.Expanded(
+            child: pw.Text(
+              label,
+              textAlign: pw.TextAlign.right,
+              style: const pw.TextStyle(
+                fontSize: 9,
+                color: PdfColors.grey700,
+              ),
+            ),
+          ),
+          pw.Text(
+            value,
+            style: pw.TextStyle(
+              fontSize: strong ? 12 : 9.5,
+              fontWeight:
+                  strong ? pw.FontWeight.bold : pw.FontWeight.normal,
+              color: strong ? PdfColors.blueGrey900 : PdfColors.grey900,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  pdf.addPage(
+    pw.Page(
+      pageFormat: PdfPageFormat.a4,
+      margin: const pw.EdgeInsets.all(34),
+      build: (pdfContext) => pw.Directionality(
+        textDirection: pw.TextDirection.rtl,
+        child: pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+          children: [
+            pw.Container(
+              padding: const pw.EdgeInsets.all(15),
+              decoration: pw.BoxDecoration(
+                color: PdfColors.blueGrey900,
+                borderRadius: pw.BorderRadius.circular(8),
+              ),
+              child: pw.Column(
+                children: [
+                  pw.Text(
+                    'منصة آلين',
+                    style: pw.TextStyle(
+                      color: PdfColors.white,
+                      fontSize: 20,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
+                  ),
+                  pw.SizedBox(height: 3),
+                  pw.Text(
+                    'وصل تسوية مالية',
+                    style: const pw.TextStyle(
+                      color: PdfColors.white,
+                      fontSize: 10.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            pw.SizedBox(height: 15),
+            line('رقم الوصل', receipt, strong: true),
+            line(
+              'التاريخ',
+              _receiptDate(
+                settlement['created_at'] ?? settlement['updated_at'],
+              ),
+            ),
+            line('الجهة', name.isEmpty ? '—' : name),
+            line('الصفة', _roleLabel(role)),
+            line('طريقة الدفع', method),
+            line('الحالة', status),
+            pw.Divider(height: 22),
+            pw.Container(
+              padding: const pw.EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 11,
+              ),
+              decoration: pw.BoxDecoration(
+                color: PdfColors.grey100,
+                borderRadius: pw.BorderRadius.circular(7),
+                border: pw.Border.all(color: PdfColors.grey300),
+              ),
+              child: line(
+                'مبلغ التسوية',
+                _receiptMoney(amount),
+                strong: true,
+              ),
+            ),
+            if (note.isNotEmpty) ...[
+              pw.SizedBox(height: 14),
+              pw.Text(
+                'ملاحظة',
+                style: pw.TextStyle(
+                  fontSize: 9,
+                  fontWeight: pw.FontWeight.bold,
+                  color: PdfColors.grey700,
+                ),
+              ),
+              pw.SizedBox(height: 4),
+              pw.Text(note, style: const pw.TextStyle(fontSize: 9.5)),
+            ],
+            pw.Spacer(),
+            pw.Center(
+              child: pw.Text(
+                'تم إصدار هذا الوصل من منصة آلين',
+                style: const pw.TextStyle(
+                  fontSize: 8.5,
+                  color: PdfColors.grey600,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+
+  await Printing.layoutPdf(
+    name: 'alin-settlement-$receipt',
+    onLayout: (_) => pdf.save(),
+  );
+}
+
+Future<void> _showReceiptDialog(
+  BuildContext context,
+  Widget receipt, {
+  Future<void> Function()? onPrint,
+}) async {
   final width = MediaQuery.sizeOf(context).width;
   await showDialog<void>(
     context: context,
@@ -919,13 +1087,26 @@ Future<void> _showReceiptDialog(BuildContext context, Widget receipt) async {
               ),
             ),
             const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                onPressed: () => Navigator.pop(dialogContext),
-                icon: const Icon(Icons.close_rounded),
-                label: const Text('إغلاق الوصل'),
-              ),
+            Row(
+              children: [
+                if (onPrint != null) ...[
+                  Expanded(
+                    child: FilledButton.icon(
+                      onPressed: onPrint,
+                      icon: const Icon(Icons.print_rounded),
+                      label: const Text('طباعة / PDF'),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => Navigator.pop(dialogContext),
+                    icon: const Icon(Icons.close_rounded),
+                    label: const Text('إغلاق الوصل'),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
