@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../data/business_finance_repository.dart';
 import '../data/business_repository.dart';
 import '../widgets/alin_receipt_template.dart';
+import 'admin_party_statement_screen.dart';
 
 class AdminFinanceV2Screen extends StatefulWidget {
   final BusinessRepository repository;
@@ -247,81 +248,15 @@ class _AdminFinanceV2ScreenState extends State<AdminFinanceV2Screen> {
   }
 
   Future<void> _openParty(Map<String, dynamic> account) async {
-    final role = '${account['role']}';
-    final normalized = role == 'courier' ? 'delegate' : role;
-    try {
-      final summary = await widget.repository.financePartySummaryV2(
-        role: normalized,
-        partyId: '${account['id']}',
-      );
-      if (!mounted) return;
-      await showModalBottomSheet<void>(
-        context: context,
-        isScrollControlled: true,
-        showDragHandle: true,
-        builder: (context) => DraggableScrollableSheet(
-          expand: false,
-          initialChildSize: .72,
-          maxChildSize: .92,
-          builder: (context, controller) => ListView(
-            controller: controller,
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-            children: [
-              Text(
-                '${summary['party_name'] ?? account['name']}',
-                style: const TextStyle(
-                  fontSize: 21,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              Text(_roleLabel(normalized)),
-              const SizedBox(height: 14),
-              _line(
-                normalized == 'teacher' ? 'الأرباح المستحقة' : 'إجمالي الذمة',
-                money(
-                  normalized == 'teacher'
-                      ? summary['earned']
-                      : summary['debt_total'],
-                ),
-              ),
-              _line('المسدد', money(summary['settled'])),
-              _line('المتبقي', money(summary['remaining']), strong: true),
-              _line('عدد الطلبات', '${summary['orders_count'] ?? 0}'),
-              if (normalized == 'printer') ...[
-                const Divider(height: 28),
-                _line('توريد كتب مستحق', money(summary['book_supply_pending'])),
-                _line('توريد كتب مسدد', money(summary['book_supply_settled'])),
-              ],
-              const SizedBox(height: 16),
-              if (n(summary['remaining']) > 0)
-                FilledButton.icon(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    _recordSettlement(account, summary);
-                  },
-                  icon: const Icon(Icons.add_card_rounded),
-                  label: Text(
-                    normalized == 'teacher'
-                        ? 'دفع مستحق للمدرس'
-                        : 'استلام تسوية',
-                  ),
-                ),
-              const SizedBox(height: 14),
-              const Text(
-                'السندات',
-                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900),
-              ),
-              const SizedBox(height: 6),
-              ...((summary['settlements'] as List? ?? const []).map(
-                (e) => _settlementCard(Map<String, dynamic>.from(e as Map)),
-              )),
-            ],
-          ),
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => AdminPartyStatementScreen(
+          repository: widget.repository,
+          account: account,
         ),
-      );
-    } catch (e) {
-      _snack('$e'.replaceFirst('Exception: ', ''));
-    }
+      ),
+    );
+    if (mounted) await load();
   }
 
   Future<void> _recordSettlement(
