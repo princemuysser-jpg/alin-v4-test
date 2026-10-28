@@ -2492,10 +2492,20 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       (sum, e) => sum + number(e['courier'] ?? e['delegate']),
     );
     final partnerDue = teacherDue + libraryDue + courierDue;
-    final receivables = pendingLedger.fold<num>(
-      0,
-      (sum, e) => sum + number(e['collector_debt']),
-    );
+
+    final settledCollectorAmounts = <String, num>{};
+    for (final settlement in settlements) {
+      final status = '${settlement['status'] ?? ''}';
+      if (!const {'paid', 'received'}.contains(status)) continue;
+      var role = '${settlement['party_role'] ?? ''}'.trim();
+      if (role == 'courier') role = 'delegate';
+      if (role != 'library' && role != 'delegate') continue;
+      final id = '${settlement['party_id'] ?? ''}'.trim();
+      if (id.isEmpty) continue;
+      final key = '$role:$id';
+      settledCollectorAmounts[key] =
+          (settledCollectorAmounts[key] ?? 0) + number(settlement['amount']);
+    }
 
     Iterable<Map<String, dynamic>> filteredSettlements = settlements;
     if (financeFilter != 'all') {
@@ -2532,25 +2542,43 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     for (final row in pendingLedger) {
       final amount = number(row['collector_debt']);
       if (amount <= 0) continue;
-      final role = '${row['collector_role'] ?? ''}'.trim();
+      var role = '${row['collector_role'] ?? ''}'.trim();
+      if (role == 'courier') role = 'delegate';
       final id = '${row['collector_id'] ?? ''}'.trim();
+      if (role.isEmpty || id.isEmpty) continue;
       final key = '$role:$id';
       final current = openDebts.putIfAbsent(
         key,
         () => {
           'role': role,
           'id': id,
+          'gross_amount': 0,
           'amount': 0,
+          'settled': 0,
           'orders': 0,
         },
       );
-      current['amount'] = number(current['amount']) + amount;
+      current['gross_amount'] = number(current['gross_amount']) + amount;
       current['orders'] = number(current['orders']) + 1;
     }
-    final debtRows = openDebts.values.toList()
-      ..sort(
-        (a, b) => number(b['amount']).compareTo(number(a['amount'])),
-      );
+
+    final debtRows = <Map<String, dynamic>>[];
+    for (final entry in openDebts.entries) {
+      final row = entry.value;
+      final gross = number(row['gross_amount']);
+      final paid = settledCollectorAmounts[entry.key] ?? 0;
+      final remaining = (gross - paid).clamp(0, double.infinity);
+      row['settled'] = paid;
+      row['amount'] = remaining;
+      if (remaining > 0) debtRows.add(row);
+    }
+    debtRows.sort(
+      (a, b) => number(b['amount']).compareTo(number(a['amount'])),
+    );
+    final receivables = debtRows.fold<num>(
+      0,
+      (sum, row) => sum + number(row['amount']),
+    );
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(14, 16, 14, 28),
@@ -2699,7 +2727,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          '${_roleLabel(role)} • ${number(row['orders']).round()} حركة',
+                          '${_roleLabel(role)} • ${number(row['orders']).round()} حركة'
+                          '${number(row['settled']) > 0 ? ' • مسدد ${money(row['settled'])}' : ''}',
                           style: const TextStyle(
                             color: Color(0xFF667085),
                             fontSize: 11.5,
@@ -3082,6 +3111,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   };
 
   String _settlementStatusLabel(String status) => switch (status) {
+    'paid' => 'مدفوع',
     'received' => 'مستلم',
     'settled' => 'مسدد',
     'pending' => 'معلق',
