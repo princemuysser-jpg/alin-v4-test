@@ -45,6 +45,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   String receiptFilter = 'all';
   String receiptSearch = '';
   final TextEditingController receiptSearchController = TextEditingController();
+  String financeFilter = 'all';
+  String financeSearch = '';
+  final TextEditingController financeSearchController = TextEditingController();
   int unreadNotifications = 0;
 
   @override
@@ -59,6 +62,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     orderSearchController.dispose();
     accountSearchController.dispose();
     receiptSearchController.dispose();
+    financeSearchController.dispose();
     super.dispose();
   }
 
@@ -2467,93 +2471,623 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 
   Widget _finance() {
-    final platform = ledger.fold<num>(
+    final pendingLedger = ledger
+        .where((e) => '${e['settlement_status'] ?? 'pending'}' != 'settled')
+        .toList();
+
+    final platform = pendingLedger.fold<num>(
       0,
       (sum, e) => sum + number(e['alin'] ?? e['admin']),
     );
-    final receivables = ledger.fold<num>(
+    final teacherDue = pendingLedger.fold<num>(
+      0,
+      (sum, e) => sum + number(e['teacher']),
+    );
+    final libraryDue = pendingLedger.fold<num>(
+      0,
+      (sum, e) => sum + number(e['library']),
+    );
+    final courierDue = pendingLedger.fold<num>(
+      0,
+      (sum, e) => sum + number(e['courier'] ?? e['delegate']),
+    );
+    final partnerDue = teacherDue + libraryDue + courierDue;
+    final receivables = pendingLedger.fold<num>(
       0,
       (sum, e) => sum + number(e['collector_debt']),
     );
-    return _scroll([
-      const Text(
-        'المالية والتسويات',
-        style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
-      ),
-      const SizedBox(height: 10),
-      Row(
-        children: [
-          Expanded(
-            child: _metric(
-              'ربح المنصة',
-              money(platform),
-              Icons.trending_up_rounded,
+
+    Iterable<Map<String, dynamic>> filteredSettlements = settlements;
+    if (financeFilter != 'all') {
+      filteredSettlements = filteredSettlements.where((s) {
+        final role = '${s['party_role'] ?? ''}';
+        if (financeFilter == 'courier') {
+          return role == 'courier' || role == 'delegate';
+        }
+        return role == financeFilter;
+      });
+    }
+
+    final financeQuery = financeSearch.trim().toLowerCase();
+    if (financeQuery.isNotEmpty) {
+      filteredSettlements = filteredSettlements.where((s) {
+        final role = '${s['party_role'] ?? ''}';
+        final partyId = '${s['party_id'] ?? ''}';
+        final partyName = _financePartyName(role, partyId);
+        final searchable = [
+          '${s['receipt_number'] ?? ''}',
+          '${s['id'] ?? ''}',
+          partyName,
+          _roleLabel(role),
+          '${s['payment_method'] ?? ''}',
+          '${s['status'] ?? ''}',
+          '${s['note'] ?? ''}',
+        ].join(' ').toLowerCase();
+        return searchable.contains(financeQuery);
+      });
+    }
+    final visibleSettlements = filteredSettlements.toList();
+
+    final openDebts = <String, Map<String, dynamic>>{};
+    for (final row in pendingLedger) {
+      final amount = number(row['collector_debt']);
+      if (amount <= 0) continue;
+      final role = '${row['collector_role'] ?? ''}'.trim();
+      final id = '${row['collector_id'] ?? ''}'.trim();
+      final key = '$role:$id';
+      final current = openDebts.putIfAbsent(
+        key,
+        () => {
+          'role': role,
+          'id': id,
+          'amount': 0,
+          'orders': 0,
+        },
+      );
+      current['amount'] = number(current['amount']) + amount;
+      current['orders'] = number(current['orders']) + 1;
+    }
+    final debtRows = openDebts.values.toList()
+      ..sort(
+        (a, b) => number(b['amount']).compareTo(number(a['amount'])),
+      );
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(14, 16, 14, 28),
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'المالية والتسويات',
+                    style: TextStyle(
+                      fontSize: 21,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF143B68),
+                    ),
+                  ),
+                  SizedBox(height: 3),
+                  Text(
+                    'ملخص الأرباح والمستحقات والذمم والتسويات المالية',
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      color: Color(0xFF667085),
+                    ),
+                  ),
+                ],
+              ),
             ),
+            FilledButton.icon(
+              onPressed: _recordSettlement,
+              icon: const Icon(Icons.add_card_rounded),
+              label: const Text('تسوية جديدة'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final columns = constraints.maxWidth >= 1050
+                ? 3
+                : constraints.maxWidth >= 650
+                    ? 2
+                    : 1;
+            return GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: columns,
+              crossAxisSpacing: 9,
+              mainAxisSpacing: 9,
+              childAspectRatio: columns == 1 ? 3.05 : 2.15,
+              children: [
+                _financeMetricCard(
+                  'ربح المنصة',
+                  money(platform),
+                  Icons.trending_up_rounded,
+                  const Color(0xFF16A34A),
+                ),
+                _financeMetricCard(
+                  'إجمالي الذمم',
+                  money(receivables),
+                  Icons.account_balance_wallet_rounded,
+                  const Color(0xFFE11D48),
+                ),
+                _financeMetricCard(
+                  'مستحقات المدرسين',
+                  money(teacherDue),
+                  Icons.school_rounded,
+                  const Color(0xFF7C3AED),
+                ),
+                _financeMetricCard(
+                  'مستحقات المكتبات',
+                  money(libraryDue),
+                  Icons.storefront_rounded,
+                  const Color(0xFF0088FF),
+                ),
+                _financeMetricCard(
+                  'مستحقات المندوبين',
+                  money(courierDue),
+                  Icons.delivery_dining_rounded,
+                  const Color(0xFFFF7A00),
+                ),
+                _financeMetricCard(
+                  'مستحقات الشركاء',
+                  money(partnerDue),
+                  Icons.groups_rounded,
+                  const Color(0xFF14B8A6),
+                ),
+              ],
+            );
+          },
+        ),
+        const SizedBox(height: 16),
+        _financeSectionHeader(
+          'الذمم المفتوحة للتحصيل',
+          debtRows.isEmpty
+              ? 'لا توجد ذمم مفتوحة حالياً'
+              : '${debtRows.length} حساب عليه ذمة',
+          Icons.account_balance_wallet_outlined,
+        ),
+        const SizedBox(height: 8),
+        if (debtRows.isEmpty)
+          _financeEmptyCard('لا توجد ذمم مفتوحة')
+        else
+          ...debtRows.take(12).map((row) {
+            final role = '${row['role'] ?? ''}';
+            final id = '${row['id'] ?? ''}';
+            final name = _financePartyName(role, id);
+            return Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(15),
+                border: Border.all(color: const Color(0xFFF1D6DB)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFEFF2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.account_balance_wallet_rounded,
+                      color: Color(0xFFE11D48),
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Color(0xFF143B68),
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${_roleLabel(role)} • ${number(row['orders']).round()} حركة',
+                          style: const TextStyle(
+                            color: Color(0xFF667085),
+                            fontSize: 11.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    money(row['amount']),
+                    style: const TextStyle(
+                      color: Color(0xFFE11D48),
+                      fontWeight: FontWeight.w900,
+                      fontSize: 15,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        const SizedBox(height: 16),
+        _financeSectionHeader(
+          'سجل التسويات',
+          '${visibleSettlements.length} تسوية ظاهرة',
+          Icons.receipt_long_rounded,
+        ),
+        const SizedBox(height: 10),
+        TextField(
+          controller: financeSearchController,
+          onChanged: (value) => setState(() => financeSearch = value),
+          decoration: InputDecoration(
+            hintText: 'ابحث برقم الوصل، اسم الحساب، طريقة الدفع أو الملاحظة',
+            prefixIcon: const Icon(Icons.search_rounded),
+            suffixIcon: financeSearch.isEmpty
+                ? null
+                : IconButton(
+                    onPressed: () {
+                      financeSearchController.clear();
+                      setState(() => financeSearch = '');
+                    },
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(color: Color(0xFFE3EAF1)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(color: Color(0xFFE3EAF1)),
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              _financeFilterChip(
+                'الكل',
+                'all',
+                settlements.length,
+                const Color(0xFF143B68),
+              ),
+              _financeFilterChip(
+                'مدرسين',
+                'teacher',
+                settlements
+                    .where((s) => '${s['party_role']}' == 'teacher')
+                    .length,
+                const Color(0xFF7C3AED),
+              ),
+              _financeFilterChip(
+                'مكتبات',
+                'library',
+                settlements
+                    .where((s) => '${s['party_role']}' == 'library')
+                    .length,
+                const Color(0xFF0088FF),
+              ),
+              _financeFilterChip(
+                'مندوبين',
+                'courier',
+                settlements.where((s) {
+                  final role = '${s['party_role']}';
+                  return role == 'courier' || role == 'delegate';
+                }).length,
+                const Color(0xFFFF7A00),
+              ),
+              _financeFilterChip(
+                'مطابع',
+                'printer',
+                settlements
+                    .where((s) => '${s['party_role']}' == 'printer')
+                    .length,
+                const Color(0xFFEC4899),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        if (visibleSettlements.isEmpty)
+          _financeEmptyCard('لا توجد تسويات مطابقة')
+        else
+          ...visibleSettlements.take(80).map(_settlementCard),
+      ],
+    );
+  }
+
+  Widget _financeMetricCard(
+    String label,
+    String value,
+    IconData icon,
+    Color accent,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(13),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: accent.withValues(alpha: .18)),
+        boxShadow: [
+          BoxShadow(
+            color: accent.withValues(alpha: .06),
+            blurRadius: 12,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: accent.withValues(alpha: .10),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: accent, size: 21),
           ),
           const SizedBox(width: 10),
           Expanded(
-            child: _metric(
-              'إجمالي الذمم',
-              money(receivables),
-              Icons.account_balance_wallet_rounded,
-            ),
-          ),
-        ],
-      ),
-      const SizedBox(height: 14),
-      Row(
-        children: [
-          const Expanded(
-            child: Text(
-              'آخر التسويات',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
-            ),
-          ),
-          FilledButton.icon(
-            onPressed: _recordSettlement,
-            icon: const Icon(Icons.add_card_rounded),
-            label: const Text('تسوية'),
-          ),
-        ],
-      ),
-      const SizedBox(height: 8),
-      if (settlements.isEmpty)
-        const Card(
-          child: Padding(
-            padding: EdgeInsets.all(22),
-            child: Center(child: Text('لا توجد تسويات')),
-          ),
-        )
-      else
-        ...settlements
-            .take(60)
-            .map(
-              (s) => Card(
-                child: ListTile(
-                  leading: const Icon(
-                    Icons.receipt_long_rounded,
-                    color: Color(0xFF143B68),
-                  ),
-                  title: Text(
-                    '${s['receipt_number'] ?? s['id']}',
-                    style: const TextStyle(fontWeight: FontWeight.w800),
-                  ),
-                  subtitle: Text(
-                    '${_roleLabel('${s['party_role']}')} • ${s['party_id']}\n${_date(s['created_at'])} • ${s['payment_method'] ?? ''}',
-                  ),
-                  isThreeLine: true,
-                  trailing: Text(
-                    money(s['amount']),
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w900,
-                      color: Colors.green,
-                    ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: Color(0xFF667085),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-              ),
+                const SizedBox(height: 3),
+                Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Color(0xFF143B68),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
             ),
-    ]);
+          ),
+        ],
+      ),
+    );
   }
+
+  Widget _financeSectionHeader(
+    String title,
+    String subtitle,
+    IconData icon,
+  ) {
+    return Row(
+      children: [
+        Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: const Color(0xFFEAF2FB),
+            borderRadius: BorderRadius.circular(11),
+          ),
+          child: Icon(icon, size: 19, color: const Color(0xFF143B68)),
+        ),
+        const SizedBox(width: 9),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  color: Color(0xFF143B68),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              Text(
+                subtitle,
+                style: const TextStyle(
+                  color: Color(0xFF667085),
+                  fontSize: 11.5,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _financeFilterChip(
+    String label,
+    String value,
+    int count,
+    Color accent,
+  ) {
+    final selected = financeFilter == value;
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(end: 8),
+      child: ChoiceChip(
+        selected: selected,
+        onSelected: (_) => setState(() => financeFilter = value),
+        label: Text('$label  $count'),
+        labelStyle: TextStyle(
+          color: selected ? Colors.white : accent,
+          fontWeight: FontWeight.w900,
+        ),
+        selectedColor: accent,
+        backgroundColor: accent.withValues(alpha: .07),
+        side: BorderSide(color: accent.withValues(alpha: selected ? 1 : .20)),
+      ),
+    );
+  }
+
+  Widget _settlementCard(Map<String, dynamic> s) {
+    final role = '${s['party_role'] ?? ''}';
+    final partyId = '${s['party_id'] ?? ''}';
+    final partyName = _financePartyName(role, partyId);
+    final status = '${s['status'] ?? ''}';
+    final note = '${s['note'] ?? ''}'.trim();
+    final accent = switch (role) {
+      'teacher' => const Color(0xFF7C3AED),
+      'library' => const Color(0xFF0088FF),
+      'courier' || 'delegate' => const Color(0xFFFF7A00),
+      'printer' => const Color(0xFFEC4899),
+      _ => const Color(0xFF14B8A6),
+    };
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 9),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: accent.withValues(alpha: .16)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: accent.withValues(alpha: .09),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(Icons.receipt_long_rounded, color: accent, size: 21),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        partyName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Color(0xFF143B68),
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      money(s['amount']),
+                      style: const TextStyle(
+                        color: Color(0xFF16A34A),
+                        fontWeight: FontWeight.w900,
+                        fontSize: 14.5,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  '${s['receipt_number'] ?? s['id']} • ${_roleLabel(role)}',
+                  style: const TextStyle(
+                    color: Color(0xFF667085),
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  '${_date(s['created_at'])} • ${_paymentMethodLabel('${s['payment_method'] ?? ''}')}'
+                  '${status.isEmpty ? '' : ' • ${_settlementStatusLabel(status)}'}',
+                  style: const TextStyle(
+                    color: Color(0xFF667085),
+                    fontSize: 11,
+                  ),
+                ),
+                if (note.isNotEmpty) ...[
+                  const SizedBox(height: 5),
+                  Text(
+                    note,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Color(0xFF475467),
+                      fontSize: 11.5,
+                      height: 1.3,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _financeEmptyCard(String text) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE3EAF1)),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        text,
+        style: const TextStyle(
+          color: Color(0xFF667085),
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+    );
+  }
+
+  String _financePartyName(String role, String id) {
+    final accountName = _accountName(id);
+    if (accountName != id && accountName.trim().isNotEmpty) return accountName;
+    if (role == 'courier' || role == 'delegate') {
+      final courier = _courierName(id);
+      if (courier != id && courier.trim().isNotEmpty) return courier;
+    }
+    return id.isEmpty ? 'حساب غير محدد' : id;
+  }
+
+  String _paymentMethodLabel(String method) => switch (method) {
+    'cash' => 'نقدي',
+    'transfer' => 'تحويل',
+    'bank' => 'تحويل مصرفي',
+    _ => method.isEmpty ? '—' : method,
+  };
+
+  String _settlementStatusLabel(String status) => switch (status) {
+    'received' => 'مستلم',
+    'settled' => 'مسدد',
+    'pending' => 'معلق',
+    'reversed' => 'معكوس',
+    _ => status,
+  };
 
   Widget _catalog() {
     return _scroll([
