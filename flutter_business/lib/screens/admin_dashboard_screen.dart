@@ -1455,7 +1455,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         );
                       }
                       return Row(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Expanded(child: customer),
                           const SizedBox(width: 8),
