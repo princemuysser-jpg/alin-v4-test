@@ -30,6 +30,8 @@ class BusinessRoleNavigationDrawer extends StatefulWidget {
   final Future<void> Function() onLogout;
   final ValueChanged<int>? onAdminSectionChanged;
   final int? adminSection;
+  final ValueChanged<String>? onRoleSectionChanged;
+  final String? roleSection;
 
   const BusinessRoleNavigationDrawer({
     super.key,
@@ -38,6 +40,8 @@ class BusinessRoleNavigationDrawer extends StatefulWidget {
     required this.onLogout,
     this.onAdminSectionChanged,
     this.adminSection,
+    this.onRoleSectionChanged,
+    this.roleSection,
   });
 
   @override
@@ -55,6 +59,9 @@ class _BusinessRoleNavigationDrawerState
   ValueChanged<int>? get onAdminSectionChanged =>
       widget.onAdminSectionChanged;
   int? get adminSection => widget.adminSection;
+  ValueChanged<String>? get onRoleSectionChanged =>
+      widget.onRoleSectionChanged;
+  String? get roleSection => widget.roleSection;
 
   bool get _isAdmin => account.role == 'admin' || account.role == 'accountant';
 
@@ -442,6 +449,10 @@ class _BusinessRoleNavigationDrawerState
   }
 
   List<Widget> _roleMenu(BuildContext context) {
+    if (account.role == 'courier' || account.role == 'delegate') {
+      return _courierRoleMenu(context);
+    }
+
     final widgets = <Widget>[
       _section('القائمة الرئيسية'),
       _closeTile(
@@ -471,19 +482,6 @@ class _BusinessRoleNavigationDrawerState
           title: 'الملف الشخصي',
           subtitle: 'بيانات الحساب والصورة والاختصاص',
           page: TeacherProfileScreen(repository: repository, account: account),
-        ),
-      ]);
-    }
-
-    if (account.role == 'courier' || account.role == 'delegate') {
-      widgets.addAll([
-        _section('المندوب'),
-        _routeTile(
-          context,
-          icon: Icons.account_circle_rounded,
-          title: 'حسابي',
-          subtitle: 'البيانات والمناطق وحالة العمل',
-          page: CourierProfileScreen(repository: repository, account: account),
         ),
       ]);
     }
@@ -548,6 +546,84 @@ class _BusinessRoleNavigationDrawerState
       ),
     ]);
     return widgets;
+  }
+
+  List<Widget> _courierRoleMenu(BuildContext context) {
+    return [
+      _section('العمل اليومي'),
+      _roleSectionTile(
+        context,
+        value: 'home',
+        icon: Icons.home_rounded,
+        title: 'الرئيسية',
+        subtitle: 'الملخص وحالة العمل',
+      ),
+      _roleSectionTile(
+        context,
+        value: 'active',
+        icon: Icons.local_shipping_rounded,
+        title: 'طلبات التوصيل',
+        subtitle: 'الجديدة والمقبولة وبالطريق',
+      ),
+      _roleSectionTile(
+        context,
+        value: 'completed',
+        icon: Icons.task_alt_rounded,
+        title: 'الطلبات المكتملة',
+        subtitle: 'الطلبات التي تم تسليمها',
+      ),
+      _section('المالية'),
+      _roleSectionTile(
+        context,
+        value: 'receipts',
+        icon: Icons.receipt_long_rounded,
+        title: 'الوصولات',
+        subtitle: 'وصولات الطلبات المكتملة',
+      ),
+      _roleSectionTile(
+        context,
+        value: 'finance',
+        icon: Icons.account_balance_wallet_rounded,
+        title: 'الحساب المالي',
+        subtitle: 'الأجرة والذمة والتسويات',
+      ),
+      _section('الحساب'),
+      _roleSectionTile(
+        context,
+        value: 'notifications',
+        icon: Icons.notifications_rounded,
+        title: 'الإشعارات',
+        subtitle: 'التنبيهات والطلبات الجديدة',
+      ),
+      _roleSectionTile(
+        context,
+        value: 'profile',
+        icon: Icons.account_circle_rounded,
+        title: 'حسابي',
+        subtitle: 'البيانات والمناطق وحالة العمل',
+      ),
+    ];
+  }
+
+  Widget _roleSectionTile(
+    BuildContext context, {
+    required String value,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+  }) {
+    final selected = roleSection == value;
+    return _menuTile(
+      icon: icon,
+      title: title,
+      subtitle: subtitle,
+      selected: selected,
+      onTap: () {
+        Navigator.of(context).pop();
+        final callback = onRoleSectionChanged;
+        if (callback != null) callback(value);
+      },
+    );
   }
 
   Widget _section(String text) => Padding(
