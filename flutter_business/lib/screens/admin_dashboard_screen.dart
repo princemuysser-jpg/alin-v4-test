@@ -3724,10 +3724,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     ),
                     const SizedBox(height: 12),
                     if (balanceLoading)
-                      const Container(
-                        padding: EdgeInsets.all(18),
+                      Container(
+                        padding: const EdgeInsets.all(18),
                         alignment: Alignment.center,
-                        child: Column(
+                        child: const Column(
                           children: [
                             CircularProgressIndicator(),
                             SizedBox(height: 8),
