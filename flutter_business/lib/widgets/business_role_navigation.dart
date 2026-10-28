@@ -590,13 +590,6 @@ class _BusinessRoleNavigationDrawerState
       _section('الحساب'),
       _roleSectionTile(
         context,
-        value: 'notifications',
-        icon: Icons.notifications_rounded,
-        title: 'الإشعارات',
-        subtitle: 'التنبيهات والطلبات الجديدة',
-      ),
-      _roleSectionTile(
-        context,
         value: 'profile',
         icon: Icons.account_circle_rounded,
         title: 'حسابي',
