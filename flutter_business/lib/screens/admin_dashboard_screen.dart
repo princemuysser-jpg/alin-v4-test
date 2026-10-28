@@ -42,6 +42,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   String accountFilter = 'all';
   String accountSearch = '';
   final TextEditingController accountSearchController = TextEditingController();
+  String receiptFilter = 'all';
+  String receiptSearch = '';
+  final TextEditingController receiptSearchController = TextEditingController();
   int unreadNotifications = 0;
 
   @override
@@ -55,6 +58,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   void dispose() {
     orderSearchController.dispose();
     accountSearchController.dispose();
+    receiptSearchController.dispose();
     super.dispose();
   }
 
@@ -1800,40 +1804,331 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   Widget _receipts() {
     final completed = groupedOrders.where((order) {
-      final items = (order['_items'] as List).cast<Map<String, dynamic>>();
-      return items.every(
-        (row) => const {
-          'completed',
-          'delivered',
-          'done',
-        }.contains('${row['status']}'),
-      );
+      final items =
+          ((order['_items'] as List?) ?? const <dynamic>[])
+              .whereType<Map>()
+              .map((e) => Map<String, dynamic>.from(e))
+              .toList();
+      final source = items.isEmpty ? <Map<String, dynamic>>[order] : items;
+      return source.isNotEmpty &&
+          source.every(
+            (row) => const {
+              'completed',
+              'delivered',
+              'done',
+            }.contains('${row['status']}'),
+          );
     }).toList();
-    return _scroll([
-      const Text(
-        'الوصولات',
-        style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
-      ),
-      const SizedBox(height: 4),
-      const Text('وصل واحد لكل طلب كامل ويعرض جميع المواد.'),
-      const SizedBox(height: 12),
-      if (completed.isEmpty)
-        const Card(
-          child: Padding(
-            padding: EdgeInsets.all(22),
-            child: Center(child: Text('لا توجد وصولات مكتملة')),
-          ),
-        )
-      else
-        ...completed.map(
-          (order) => GroupedOrderReceiptCard(
-            order: order,
-            courierName: _courierName(
-              '${order['courier_id'] ?? order['delegate_id'] ?? ''}',
+
+    bool isDelivery(Map<String, dynamic> order) => isDeliveryOrder(order);
+
+    Iterable<Map<String, dynamic>> filtered = completed;
+    if (receiptFilter == 'delivery') {
+      filtered = filtered.where(isDelivery);
+    } else if (receiptFilter == 'pickup') {
+      filtered = filtered.where((order) => !isDelivery(order));
+    }
+
+    final query = receiptSearch.trim().toLowerCase();
+    if (query.isNotEmpty) {
+      filtered = filtered.where((order) {
+        final items =
+            ((order['_items'] as List?) ?? const <dynamic>[])
+                .whereType<Map>()
+                .map((e) => Map<String, dynamic>.from(e))
+                .toList();
+        final searchable = <String>[
+          '${order['order_number'] ?? ''}',
+          '${order['id'] ?? ''}',
+          '${order['student_name'] ?? ''}',
+          '${order['student_phone'] ?? ''}',
+          '${order['delivery_area'] ?? ''}',
+          '${order['delivery_landmark'] ?? ''}',
+          ...items.map((e) => '${e['title'] ?? ''}'),
+        ].join(' ').toLowerCase();
+        return searchable.contains(query);
+      });
+    }
+
+    final visibleReceipts = filtered.toList();
+    final totalSales = visibleReceipts.fold<num>(
+      0,
+      (sum, order) => sum + number(order['total']),
+    );
+    final totalDelivery = visibleReceipts.fold<num>(
+      0,
+      (sum, order) => sum + number(order['delivery_fee']),
+    );
+    final deliveryCount = completed.where(isDelivery).length;
+    final pickupCount = completed.length - deliveryCount;
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(14, 16, 14, 28),
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'الوصولات',
+                    style: TextStyle(
+                      fontSize: 21,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF143B68),
+                    ),
+                  ),
+                  SizedBox(height: 3),
+                  Text(
+                    'وصولات الطلبات المكتملة مع البحث والتصفية والإجماليات',
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      color: Color(0xFF667085),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEAF2FB),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Text(
+                '${visibleReceipts.length} وصل',
+                style: const TextStyle(
+                  color: Color(0xFF143B68),
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final columns = constraints.maxWidth >= 900
+                ? 3
+                : constraints.maxWidth >= 560
+                    ? 2
+                    : 1;
+            return GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: columns,
+              crossAxisSpacing: 9,
+              mainAxisSpacing: 9,
+              childAspectRatio: columns == 1 ? 3.15 : 2.25,
+              children: [
+                _receiptMetricCard(
+                  'عدد الوصولات',
+                  '${visibleReceipts.length}',
+                  Icons.receipt_long_rounded,
+                  const Color(0xFF7C3AED),
+                ),
+                _receiptMetricCard(
+                  'إجمالي المبيعات',
+                  money(totalSales),
+                  Icons.payments_rounded,
+                  const Color(0xFF16A34A),
+                ),
+                _receiptMetricCard(
+                  'أجور التوصيل',
+                  money(totalDelivery),
+                  Icons.delivery_dining_rounded,
+                  const Color(0xFFFF7A00),
+                ),
+              ],
+            );
+          },
+        ),
+        const SizedBox(height: 13),
+        TextField(
+          controller: receiptSearchController,
+          onChanged: (value) => setState(() => receiptSearch = value),
+          decoration: InputDecoration(
+            hintText: 'ابحث برقم الطلب، الطالب، الهاتف، المنطقة أو المادة',
+            prefixIcon: const Icon(Icons.search_rounded),
+            suffixIcon: receiptSearch.isEmpty
+                ? null
+                : IconButton(
+                    onPressed: () {
+                      receiptSearchController.clear();
+                      setState(() => receiptSearch = '');
+                    },
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(color: Color(0xFFE3EAF1)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(color: Color(0xFFE3EAF1)),
             ),
           ),
         ),
-    ]);
+        const SizedBox(height: 11),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              _receiptFilterChip(
+                'الكل',
+                'all',
+                completed.length,
+                const Color(0xFF143B68),
+                '🧾',
+              ),
+              _receiptFilterChip(
+                'توصيل مندوب',
+                'delivery',
+                deliveryCount,
+                const Color(0xFF0088FF),
+                '🚚',
+              ),
+              _receiptFilterChip(
+                'استلام مكتبة',
+                'pickup',
+                pickupCount,
+                const Color(0xFF16A34A),
+                '🏪',
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+        if (visibleReceipts.isEmpty)
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: const Color(0xFFE3EAF1)),
+            ),
+            child: const Column(
+              children: [
+                Icon(
+                  Icons.receipt_long_outlined,
+                  size: 42,
+                  color: Color(0xFF98A2B3),
+                ),
+                SizedBox(height: 10),
+                Text(
+                  'لا توجد وصولات مطابقة',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w900,
+                    color: Color(0xFF143B68),
+                  ),
+                ),
+              ],
+            ),
+          )
+        else
+          ...visibleReceipts.map(
+            (order) => GroupedOrderReceiptCard(
+              order: order,
+              courierName: _courierName(
+                '${order['courier_id'] ?? order['delegate_id'] ?? ''}',
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _receiptMetricCard(
+    String label,
+    String value,
+    IconData icon,
+    Color accent,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(13),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: accent.withValues(alpha: .18)),
+        boxShadow: [
+          BoxShadow(
+            color: accent.withValues(alpha: .07),
+            blurRadius: 12,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: accent.withValues(alpha: .10),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: accent, size: 21),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: Color(0xFF667085),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Color(0xFF143B68),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _receiptFilterChip(
+    String label,
+    String value,
+    int count,
+    Color accent,
+    String emoji,
+  ) {
+    final selected = receiptFilter == value;
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(end: 8),
+      child: ChoiceChip(
+        selected: selected,
+        onSelected: (_) => setState(() => receiptFilter = value),
+        label: Text('$emoji $label  $count'),
+        labelStyle: TextStyle(
+          color: selected ? Colors.white : accent,
+          fontWeight: FontWeight.w900,
+        ),
+        selectedColor: accent,
+        backgroundColor: accent.withValues(alpha: .07),
+        side: BorderSide(color: accent.withValues(alpha: selected ? 1 : .20)),
+      ),
+    );
   }
 
   String _courierName(String id) {
