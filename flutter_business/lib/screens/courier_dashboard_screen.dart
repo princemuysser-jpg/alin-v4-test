@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../data/business_courier_repository.dart';
 import '../data/business_finance_repository.dart';
+import '../data/business_notification_repository.dart';
 import '../data/business_repository.dart';
 import '../models/business_account.dart';
 import '../widgets/business_role_navigation.dart';
@@ -35,7 +36,10 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
   String? error;
   String filter = 'home';
   String receiptSearch = '';
+  String orderSearch = '';
+  String orderStageFilter = 'all';
   String availability = 'available';
+  int unreadNotifications = 0;
   Map<String, dynamic> financeSummary = {};
   String courierArea = '';
   List<String> courierAreas = [];
@@ -135,6 +139,12 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
       } catch (_) {
         // Orders must remain usable even if the finance summary is unavailable.
       }
+      var unread = unreadNotifications;
+      try {
+        unread = await widget.repository.businessNotificationUnreadCount();
+      } catch (_) {
+        // Notifications must not block the courier dashboard.
+      }
       if (!mounted) return;
       final profile = Map<String, dynamic>.from(values[1] as Map);
       final rawAreas = profile['areas'];
@@ -147,6 +157,7 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
         courierArea = '${profile['area'] ?? ''}'.trim();
         courierAreas = areas;
         financeSummary = finance;
+        unreadNotifications = unread;
       });
     } catch (e) {
       if (!mounted) return;
@@ -180,7 +191,32 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
       rows = grouped;
     } else {
       rows = grouped.where((o) => !isClosed(o));
+      if (orderStageFilter != 'all') {
+        rows = rows.where((o) => _matchesOrderStage(o, orderStageFilter));
+      }
     }
+
+    final query = orderSearch.trim().toLowerCase();
+    if (query.isNotEmpty) {
+      rows = rows.where((order) {
+        final items = ((order['_items'] as List?) ?? const <dynamic>[])
+            .whereType<Map>()
+            .map((e) => Map<String, dynamic>.from(e))
+            .toList();
+        final searchable = <String>[
+          '${order['order_number'] ?? ''}',
+          '${order['id'] ?? ''}',
+          '${order['student_name'] ?? ''}',
+          '${order['student_phone'] ?? ''}',
+          '${order['delivery_area'] ?? ''}',
+          '${order['delivery_landmark'] ?? ''}',
+          '${order['pickup_source_label'] ?? ''}',
+          ...items.map((e) => '${e['title'] ?? ''}'),
+        ].join(' ').toLowerCase();
+        return searchable.contains(query);
+      });
+    }
+
     final list = rows.toList();
     list.sort((a, b) {
       final p = areaPriority(a).compareTo(areaPriority(b));
@@ -193,7 +229,38 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
     return list;
   }
 
+  bool _matchesOrderStage(Map<String, dynamic> order, String stage) {
+    final statuses = ((order['_items'] as List?) ?? const <dynamic>[])
+        .whereType<Map>()
+        .map((e) => '${e['status'] ?? ''}')
+        .where((e) => e.isNotEmpty)
+        .toSet();
+    if (statuses.isEmpty) statuses.add('${order['status'] ?? ''}');
+
+    return switch (stage) {
+      'new' => statuses.any(
+          (s) => const {'assigned', 'new', 'pending', 'pending_admin'}.contains(s),
+        ),
+      'accepted' => statuses.any((s) => s == 'accepted'),
+      'picked_up' => statuses.any((s) => s == 'picked_up'),
+      'delivery' => statuses.any(
+          (s) => const {'out_for_delivery', 'out_delivery'}.contains(s),
+        ),
+      _ => true,
+    };
+  }
+
+  int _stageCount(List<Map<String, dynamic>> grouped, String stage) {
+    return grouped
+        .where((o) => !isClosed(o))
+        .where((o) => _matchesOrderStage(o, stage))
+        .length;
+  }
+
   String statusLabel(String status) => switch (status) {
+    'available' => 'متاح',
+    'busy' => 'مشغول',
+    'offline' => 'خارج الخدمة',
     'new' => 'جديد',
     'pending' || 'pending_admin' => 'بانتظار التعيين',
     'assigned' => 'بانتظار القبول',
@@ -413,6 +480,48 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
         ),
         actions: [
           IconButton(onPressed: load, icon: const Icon(Icons.refresh_rounded)),
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              IconButton(
+                tooltip: 'الإشعارات',
+                onPressed: () async {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => BusinessNotificationsScreen(
+                        repository: widget.repository,
+                      ),
+                    ),
+                  );
+                  if (mounted) await load();
+                },
+                icon: const Icon(Icons.notifications_rounded),
+              ),
+              if (unreadNotifications > 0)
+                PositionedDirectional(
+                  top: 5,
+                  end: 4,
+                  child: Container(
+                    constraints: const BoxConstraints(minWidth: 17, minHeight: 17),
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE11D48),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.white, width: 1.5),
+                    ),
+                    child: Text(
+                      unreadNotifications > 99 ? '99+' : '$unreadNotifications',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
           PopupMenuButton<String>(
             onSelected: (value) {
               if (value == 'logout') widget.onLogout();
@@ -731,15 +840,26 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
               _homeCenter(grouped)
             else if (filter == 'receipts')
               _receiptCenter(grouped)
-            else if (visibleOrders.isEmpty)
-              const Card(
-                child: Padding(
-                  padding: EdgeInsets.all(24),
-                  child: Center(child: Text('لا توجد طلبات حالياً')),
-                ),
-              )
-            else
-              ...visibleOrders.map(orderCard),
+            else ...[
+              if (filter == 'active') _activeOrdersToolbar(grouped),
+              if (filter == 'completed') _completedOrdersToolbar(),
+              if (filter == 'active' || filter == 'completed')
+                const SizedBox(height: 12),
+              if (visibleOrders.isEmpty)
+                const Card(
+                  child: Padding(
+                    padding: EdgeInsets.all(24),
+                    child: Center(
+                      child: Text(
+                        'لا توجد طلبات مطابقة حالياً',
+                        style: TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                    ),
+                  ),
+                )
+              else
+                ...visibleOrders.map(orderCard),
+            ],
           ],
         ),
       ),
@@ -1211,6 +1331,98 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
     );
   }
 
+  Widget _activeOrdersToolbar(List<Map<String, dynamic>> grouped) {
+    final filters = <(String, String, String, Color)>[
+      ('all', 'الكل', '🚚', BusinessBrand.navy),
+      ('new', 'جديد', '🆕', BusinessBrand.orange),
+      ('accepted', 'مقبول', '✅', const Color(0xFF7C3AED)),
+      ('picked_up', 'مستلم', '📦', const Color(0xFF0088FF)),
+      ('delivery', 'بالطريق', '🛵', BusinessBrand.teal),
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: BusinessBrand.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TextField(
+            onChanged: (value) => setState(() => orderSearch = value),
+            decoration: const InputDecoration(
+              prefixIcon: Icon(Icons.search_rounded),
+              labelText: 'بحث في طلبات التوصيل',
+              hintText: 'رقم الطلب، الطالب، الهاتف، المنطقة أو المادة',
+            ),
+          ),
+          const SizedBox(height: 10),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: filters.map((item) {
+                final selected = orderStageFilter == item.$1;
+                final count = item.$1 == 'all'
+                    ? grouped.where((o) => !isClosed(o)).length
+                    : _stageCount(grouped, item.$1);
+                return Padding(
+                  padding: const EdgeInsetsDirectional.only(end: 7),
+                  child: ChoiceChip(
+                    selected: selected,
+                    onSelected: (_) =>
+                        setState(() => orderStageFilter = item.$1),
+                    label: Text('${item.$3} ${item.$2}  $count'),
+                    selectedColor: item.$4,
+                    backgroundColor: item.$4.withValues(alpha: .07),
+                    labelStyle: TextStyle(
+                      color: selected ? Colors.white : item.$4,
+                      fontWeight: FontWeight.w900,
+                    ),
+                    side: BorderSide(
+                      color: item.$4.withValues(alpha: selected ? 1 : .18),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _completedOrdersToolbar() {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: BusinessBrand.border),
+      ),
+      child: TextField(
+        onChanged: (value) => setState(() => orderSearch = value),
+        decoration: const InputDecoration(
+          prefixIcon: Icon(Icons.search_rounded),
+          labelText: 'بحث في الطلبات المكتملة',
+          hintText: 'رقم الطلب، الطالب، الهاتف، المنطقة أو المادة',
+        ),
+      ),
+    );
+  }
+
+  Color _courierStatusColor(String status) => switch (status) {
+    'assigned' || 'new' || 'pending' || 'pending_admin' =>
+      BusinessBrand.orange,
+    'accepted' => const Color(0xFF7C3AED),
+    'picked_up' => const Color(0xFF0088FF),
+    'out_for_delivery' || 'out_delivery' => BusinessBrand.teal,
+    'completed' || 'delivered' => const Color(0xFF16A34A),
+    'cancelled' || 'rejected' => const Color(0xFFE11D48),
+    _ => BusinessBrand.navy,
+  };
+
   Widget orderCard(Map<String, dynamic> order) {
     final status = '${order['status'] ?? 'assigned'}';
     final id = '${order['id']}';
@@ -1272,8 +1484,16 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
                     child: Chip(label: Text('ضمن منطقتك')),
                   ),
                 Chip(
+                  backgroundColor: _courierStatusColor(status).withValues(alpha: .10),
+                  side: BorderSide(
+                    color: _courierStatusColor(status).withValues(alpha: .22),
+                  ),
                   label: Text(
                     mixedStatus ? 'حالة غير موحدة' : statusLabel(status),
+                    style: TextStyle(
+                      color: _courierStatusColor(status),
+                      fontWeight: FontWeight.w900,
+                    ),
                   ),
                 ),
               ],
