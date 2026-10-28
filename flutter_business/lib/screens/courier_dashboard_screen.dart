@@ -763,61 +763,6 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
               },
             ),
             const SizedBox(height: 14),
-            if (MediaQuery.sizeOf(context).width >= 760)
-              LayoutBuilder(
-                builder: (context, tabConstraints) {
-                  final wideTabs = tabConstraints.maxWidth >= 760;
-                  final tabs = SegmentedButton<String>(
-                    segments: const [
-                      ButtonSegment(
-                        value: 'home',
-                        label: Text('الرئيسية'),
-                        icon: Icon(Icons.home_rounded),
-                      ),
-                      ButtonSegment(
-                        value: 'active',
-                        label: Text('طلبات التوصيل'),
-                        icon: Icon(Icons.local_shipping_rounded),
-                      ),
-                      ButtonSegment(
-                        value: 'completed',
-                        label: Text('المكتملة'),
-                        icon: Icon(Icons.check_circle_outline),
-                      ),
-                      ButtonSegment(
-                        value: 'finance',
-                        label: Text('الحسابات'),
-                        icon: Icon(Icons.account_balance_wallet_rounded),
-                      ),
-                      ButtonSegment(
-                        value: 'receipts',
-                        label: Text('الوصولات'),
-                        icon: Icon(Icons.receipt_long_rounded),
-                      ),
-                      ButtonSegment(
-                        value: 'notifications',
-                        label: Text('الإشعارات'),
-                        icon: Icon(Icons.notifications_rounded),
-                      ),
-                      ButtonSegment(
-                        value: 'profile',
-                        label: Text('حسابي'),
-                        icon: Icon(Icons.account_circle_rounded),
-                      ),
-                    ],
-                    selected: {filter},
-                    onSelectionChanged: (value) => _selectCourierTab(value.first),
-                  );
-                  if (wideTabs) {
-                    return Align(alignment: Alignment.centerRight, child: tabs);
-                  }
-                  return SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: tabs,
-                  );
-                },
-              ),
-  
             const SizedBox(height: 14),
             if (loading)
               const Padding(
@@ -914,8 +859,8 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final desktop = constraints.maxWidth >= 850;
-        final shortcutColumns = constraints.maxWidth >= 980
-            ? 4
+        final shortcutColumns = constraints.maxWidth >= 900
+            ? 3
             : constraints.maxWidth >= 620
             ? 2
             : 1;
@@ -951,16 +896,6 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
               icon: Icons.account_balance_wallet_rounded,
               accent: const Color(0xFF00A86B),
               onTap: () => _selectCourierTab('finance'),
-            ),
-            _courierQuickCard(
-              title: 'الإشعارات',
-              subtitle: unreadNotifications > 0
-                  ? '$unreadNotifications إشعار غير مقروء'
-                  : 'لا توجد إشعارات جديدة',
-              emoji: '🔔',
-              icon: Icons.notifications_rounded,
-              accent: const Color(0xFF7C3AED),
-              onTap: () => _selectCourierTab('notifications'),
             ),
           ],
         );
