@@ -906,146 +906,354 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
 
   Widget _homeCenter(List<Map<String, dynamic>> grouped) {
     final current = grouped.where((o) => !isClosed(o)).take(5).toList();
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final desktop = constraints.maxWidth >= 850;
-        final statusCard = Card(
-          child: Padding(
-            padding: const EdgeInsets.all(18),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Row(
-                  children: [
-                    Icon(Icons.work_history_rounded, color: BusinessBrand.navy),
-                    SizedBox(width: 8),
-                    Text(
-                      'حالة العمل',
+        final shortcutColumns = constraints.maxWidth >= 980
+            ? 4
+            : constraints.maxWidth >= 620
+            ? 2
+            : 1;
+
+        final shortcuts = GridView.count(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisCount: shortcutColumns,
+          crossAxisSpacing: 10,
+          mainAxisSpacing: 10,
+          childAspectRatio: shortcutColumns == 1 ? 3.2 : 2.2,
+          children: [
+            _courierQuickCard(
+              title: 'طلبات التوصيل',
+              subtitle: 'الجديدة، المقبولة، المستلمة وبالطريق',
+              emoji: '🛵',
+              icon: Icons.local_shipping_rounded,
+              accent: const Color(0xFFFF7A00),
+              onTap: () => setState(() => filter = 'active'),
+            ),
+            _courierQuickCard(
+              title: 'الوصولات',
+              subtitle: 'الطلبات المكتملة ووصولات التسليم',
+              emoji: '🧾',
+              icon: Icons.receipt_long_rounded,
+              accent: const Color(0xFFE11D8A),
+              onTap: () => setState(() => filter = 'receipts'),
+            ),
+            _courierQuickCard(
+              title: 'الحساب المالي',
+              subtitle: 'الأجرة، الذمة، التسويات والوصولات',
+              emoji: '💰',
+              icon: Icons.account_balance_wallet_rounded,
+              accent: const Color(0xFF00A86B),
+              onTap: () => _selectCourierTab('finance'),
+            ),
+            _courierQuickCard(
+              title: 'الإشعارات',
+              subtitle: unreadNotifications > 0
+                  ? '$unreadNotifications إشعار غير مقروء'
+                  : 'لا توجد إشعارات جديدة',
+              emoji: '🔔',
+              icon: Icons.notifications_rounded,
+              accent: const Color(0xFF7C3AED),
+              onTap: () => _selectCourierTab('notifications'),
+            ),
+          ],
+        );
+
+        final statusCard = Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: const Color(0xFF14B8A6).withValues(alpha: .18),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF14B8A6).withValues(alpha: .06),
+                blurRadius: 14,
+                offset: const Offset(0, 5),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Row(
+                children: [
+                  Icon(
+                    Icons.work_history_rounded,
+                    color: Color(0xFF14B8A6),
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    'حالة العمل',
+                    style: TextStyle(
+                      color: BusinessBrand.navy,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                statusLabel(availability),
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                  color: BusinessBrand.navy,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'مناطق العمل: ${[courierArea, ...courierAreas].where((e) => e.isNotEmpty).toSet().join('، ').isEmpty ? 'غير محددة' : [courierArea, ...courierAreas].where((e) => e.isNotEmpty).toSet().join('، ')}',
+                style: const TextStyle(color: BusinessBrand.muted),
+              ),
+              const SizedBox(height: 14),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  ChoiceChip(
+                    label: const Text('متاح'),
+                    selected: availability == 'available',
+                    onSelected: (_) => setAvailability('available'),
+                  ),
+                  ChoiceChip(
+                    label: const Text('مشغول'),
+                    selected: availability == 'busy',
+                    onSelected: (_) => setAvailability('busy'),
+                  ),
+                  ChoiceChip(
+                    label: const Text('خارج الخدمة'),
+                    selected: availability == 'offline',
+                    onSelected: (_) => setAvailability('offline'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+
+        final ordersCard = Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: BusinessBrand.border),
+            boxShadow: [
+              BoxShadow(
+                color: BusinessBrand.navy.withValues(alpha: .05),
+                blurRadius: 14,
+                offset: const Offset(0, 5),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'طلبات تحتاج متابعة',
                       style: TextStyle(
+                        color: BusinessBrand.navy,
                         fontSize: 18,
                         fontWeight: FontWeight.w900,
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  statusLabel(availability),
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w900,
-                    color: BusinessBrand.navy,
                   ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'مناطق العمل: ${[courierArea, ...courierAreas].where((e) => e.isNotEmpty).toSet().join('، ').isEmpty ? 'غير محددة' : [courierArea, ...courierAreas].where((e) => e.isNotEmpty).toSet().join('، ')}',
-                  style: const TextStyle(color: BusinessBrand.muted),
-                ),
-                const SizedBox(height: 14),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    ChoiceChip(
-                      label: const Text('متاح'),
-                      selected: availability == 'available',
-                      onSelected: (_) => setAvailability('available'),
+                  TextButton.icon(
+                    onPressed: () => setState(() => filter = 'active'),
+                    icon: const Icon(Icons.arrow_back_rounded, size: 17),
+                    label: const Text('عرض الكل'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              if (current.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 18),
+                  child: Text('لا توجد طلبات حالياً'),
+                )
+              else
+                ...current.map((order) {
+                  final accent = _courierStatusColor(
+                    '${order['status'] ?? ''}',
+                  );
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 7),
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: accent.withValues(alpha: .045),
+                      borderRadius: BorderRadius.circular(13),
+                      border: Border.all(
+                        color: accent.withValues(alpha: .13),
+                      ),
                     ),
-                    ChoiceChip(
-                      label: const Text('مشغول'),
-                      selected: availability == 'busy',
-                      onSelected: (_) => setAvailability('busy'),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 38,
+                          height: 38,
+                          decoration: BoxDecoration(
+                            color: accent.withValues(alpha: .10),
+                            borderRadius: BorderRadius.circular(11),
+                          ),
+                          child: Icon(
+                            Icons.delivery_dining_rounded,
+                            color: accent,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 9),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'طلب #${order['order_number'] ?? order['id'] ?? '—'}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: BusinessBrand.navy,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                '${order['delivery_area'] ?? '—'} • ${order['_item_count'] ?? 1} مادة',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: BusinessBrand.muted,
+                                  fontSize: 11.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 7),
+                        Text(
+                          statusLabel('${order['status'] ?? ''}'),
+                          style: TextStyle(
+                            color: accent,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ],
                     ),
-                    ChoiceChip(
-                      label: const Text('خارج الخدمة'),
-                      selected: availability == 'offline',
-                      onSelected: (_) => setAvailability('offline'),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+                  );
+                }),
+            ],
           ),
         );
 
-        final ordersCard = Card(
-          child: Padding(
-            padding: const EdgeInsets.all(18),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  children: [
-                    const Expanded(
-                      child: Text(
-                        'طلبات تحتاج متابعة',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () => setState(() => filter = 'active'),
-                      child: const Text('عرض الكل'),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                if (current.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 18),
-                    child: Text('لا توجد طلبات حالياً'),
-                  )
-                else
-                  ...current.map(
-                    (order) => ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: const CircleAvatar(
-                        backgroundColor: BusinessBrand.softBlue,
-                        child: Icon(
-                          Icons.delivery_dining_rounded,
-                          color: BusinessBrand.navy,
-                        ),
-                      ),
-                      title: Text(
-                        '${order['order_number'] ?? order['id'] ?? 'طلب'}',
-                        style: const TextStyle(fontWeight: FontWeight.w900),
-                      ),
-                      subtitle: Text(
-                        '${order['delivery_area'] ?? '—'} • ${order['_item_count'] ?? 1} مادة',
-                      ),
-                      trailing: Text(
-                        statusLabel('${order['status'] ?? ''}'),
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w800,
-                          color: BusinessBrand.navy,
-                        ),
-                      ),
-                      onTap: () => setState(() => filter = 'active'),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        );
-
-        if (!desktop) {
-          return Column(
-            children: [statusCard, const SizedBox(height: 10), ordersCard],
-          );
-        }
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Expanded(child: statusCard),
-            const SizedBox(width: 10),
-            Expanded(flex: 2, child: ordersCard),
+            const Align(
+              alignment: Alignment.centerRight,
+              child: Text(
+                'الوصول السريع',
+                style: TextStyle(
+                  color: BusinessBrand.navy,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            shortcuts,
+            const SizedBox(height: 12),
+            if (!desktop) ...[
+              statusCard,
+              const SizedBox(height: 10),
+              ordersCard,
+            ] else
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: statusCard),
+                  const SizedBox(width: 10),
+                  Expanded(flex: 2, child: ordersCard),
+                ],
+              ),
           ],
         );
       },
+    );
+  }
+
+  Widget _courierQuickCard({
+    required String title,
+    required String subtitle,
+    required String emoji,
+    required IconData icon,
+    required Color accent,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: accent.withValues(alpha: .08),
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(13),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: accent.withValues(alpha: .20)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 45,
+                height: 45,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: .94),
+                  borderRadius: BorderRadius.circular(13),
+                ),
+                child: Icon(icon, color: accent),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      '$emoji $title',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: accent,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Color(0xFF667085),
+                        fontSize: 10.5,
+                        height: 1.25,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_left_rounded, color: accent),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -1968,57 +2176,73 @@ class _Metric extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final deep = Color.lerp(accent, Colors.black, .10)!;
+
     return Container(
-      constraints: const BoxConstraints(minHeight: 82),
-      padding: const EdgeInsets.all(12),
+      constraints: const BoxConstraints(minHeight: 118),
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: accent.withValues(alpha: .18)),
+        gradient: LinearGradient(
+          begin: Alignment.topRight,
+          end: Alignment.bottomLeft,
+          colors: [accent, deep],
+        ),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: accent.withValues(alpha: .06),
-            blurRadius: 12,
-            offset: const Offset(0, 5),
+            color: accent.withValues(alpha: .20),
+            blurRadius: 16,
+            offset: const Offset(0, 7),
           ),
         ],
       ),
-      child: Row(
+      child: Stack(
         children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: accent.withValues(alpha: .10),
-              borderRadius: BorderRadius.circular(12),
+          PositionedDirectional(
+            end: -8,
+            top: 24,
+            child: Icon(
+              icon,
+              size: 82,
+              color: Colors.white.withValues(alpha: .16),
             ),
-            child: Icon(icon, color: accent, size: 21),
           ),
-          const SizedBox(width: 10),
-          Expanded(
+          Positioned(
+            left: 0,
+            right: 0,
+            top: 58,
+            child: Container(
+              height: 1,
+              color: Colors.black.withValues(alpha: .10),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   label,
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    color: Color(0xFF667085),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                    fontSize: 13.5,
+                    height: 1.15,
+                    fontWeight: FontWeight.w900,
                   ),
                 ),
-                const SizedBox(height: 3),
+                const Spacer(),
                 Text(
                   value,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    color: Color(0xFF143B68),
-                    fontSize: 16,
-                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                    fontSize: 27,
+                    height: 1,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: .2,
                   ),
                 ),
               ],
