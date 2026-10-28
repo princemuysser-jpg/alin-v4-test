@@ -3586,6 +3586,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     Map<String, dynamic>? balance;
     String? balanceError;
     bool balanceLoading = true;
+    bool balanceRequested = false;
 
     Future<void> loadBalance(StateSetter setLocal) async {
       setLocal(() {
@@ -3615,7 +3616,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       barrierDismissible: false,
       builder: (dialogContext) => StatefulBuilder(
         builder: (dialogContext, setLocal) {
-          if (balanceLoading && balance == null && balanceError == null) {
+          if (!balanceRequested &&
+              balanceLoading &&
+              balance == null &&
+              balanceError == null) {
+            balanceRequested = true;
             WidgetsBinding.instance.addPostFrameCallback((_) {
               loadBalance(setLocal);
             });
@@ -3682,6 +3687,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                 balance = null;
                                 balanceError = null;
                                 balanceLoading = true;
+                                balanceRequested = true;
                               });
                               loadBalance(setLocal);
                             },
