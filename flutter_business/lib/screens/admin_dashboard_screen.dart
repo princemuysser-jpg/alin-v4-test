@@ -1294,373 +1294,283 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     final courierId = '${o['courier_id'] ?? o['delegate_id'] ?? ''}'.trim();
     final libraryId =
         '${o['library_id'] ?? o['pickup_library_id'] ?? ''}'.trim();
-    final mixedStatus = o['_mixed_status'] == true;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 0,
-      clipBehavior: Clip.antiAlias,
       color: Colors.white,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: accent.withValues(alpha: .22), width: 1.2),
+        borderRadius: BorderRadius.circular(18),
+        side: BorderSide(color: accent.withValues(alpha: .22)),
       ),
       child: InkWell(
+        borderRadius: BorderRadius.circular(18),
         onTap: () => _openOrderDetails(o),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-              decoration: BoxDecoration(
-                color: accent.withValues(alpha: .08),
-                border: Border(
-                  right: BorderSide(color: accent, width: 4),
-                ),
-              ),
-              child: Row(
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
-                    width: 46,
-                    height: 46,
+                    width: 44,
+                    height: 44,
                     decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(14),
-                      boxShadow: [
-                        BoxShadow(
-                          color: accent.withValues(alpha: .10),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
+                      color: accent.withValues(alpha: .10),
+                      borderRadius: BorderRadius.circular(13),
                     ),
                     child: Icon(
                       deliveryOrder
                           ? Icons.delivery_dining_rounded
                           : Icons.storefront_rounded,
                       color: accent,
-                      size: 24,
                     ),
                   ),
-                  const SizedBox(width: 11),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                'طلب #${o['order_number'] ?? o['id']}',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w900,
-                                  color: Color(0xFF143B68),
-                                  fontSize: 15,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            _orderStatusChip(status),
-                          ],
+                        Text(
+                          'طلب #${o['order_number'] ?? o['id']}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Color(0xFF143B68),
+                            fontSize: 15,
+                            fontWeight: FontWeight.w900,
+                          ),
                         ),
-                        const SizedBox(height: 5),
-                        Wrap(
-                          spacing: 7,
-                          runSpacing: 5,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          children: [
-                            Text(
-                              itemCount > 1
-                                  ? '$itemCount مواد • $qtyCount قطعة'
-                                  : '${o['title'] ?? 'طلب'}',
-                              style: const TextStyle(
-                                fontSize: 12.5,
-                                color: Color(0xFF667085),
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            if (mixedStatus)
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 7,
-                                  vertical: 3,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFFFF4DB),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Text(
-                                  'حالات متعددة',
-                                  style: TextStyle(
-                                    color: Color(0xFFA15C00),
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w900,
-                                  ),
-                                ),
-                              ),
-                          ],
+                        const SizedBox(height: 4),
+                        Text(
+                          itemCount > 1
+                              ? '$itemCount مواد • $qtyCount قطعة'
+                              : '${o['title'] ?? 'طلب'}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Color(0xFF667085),
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ],
                     ),
                   ),
+                  const SizedBox(width: 8),
+                  _orderStatusChip(status),
                 ],
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(11),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(13),
+                ),
+                child: Column(
+                  children: [
+                    _orderSafeLine(
+                      Icons.person_rounded,
+                      'الطالب',
+                      '${o['student_name'] ?? '—'}',
+                    ),
+                    const SizedBox(height: 7),
+                    _orderSafeLine(
+                      Icons.phone_rounded,
+                      'الهاتف',
+                      '${o['student_phone'] ?? '—'}',
+                    ),
+                    const SizedBox(height: 7),
+                    _orderSafeLine(
+                      deliveryOrder
+                          ? Icons.local_shipping_rounded
+                          : Icons.store_rounded,
+                      'الاستلام',
+                      deliveryOrder ? 'توصيل مندوب' : 'استلام من مكتبة',
+                    ),
+                    const SizedBox(height: 7),
+                    _orderSafeLine(
+                      Icons.location_on_rounded,
+                      'المنطقة',
+                      '${o['delivery_area'] ?? o['delivery_landmark'] ?? '—'}',
+                    ),
+                    const SizedBox(height: 7),
+                    _orderSafeLine(
+                      Icons.payments_rounded,
+                      'الإجمالي',
+                      money(o['total']),
+                      valueColor: const Color(0xFFFF7A00),
+                    ),
+                  ],
+                ),
+              ),
+              if (items.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(11),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(13),
+                    border: Border.all(color: const Color(0xFFEEF2F6)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'مواد الطلب',
+                        style: TextStyle(
+                          color: Color(0xFF143B68),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      ...items.take(4).map(
+                        (item) => Padding(
+                          padding: const EdgeInsets.only(bottom: 4),
+                          child: Text(
+                            '• ${item['title'] ?? 'مادة'} × ${(number(item['qty']) <= 0 ? 1 : number(item['qty'])).round()}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Color(0xFF475467),
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ),
+                      if (items.length > 4)
+                        Text(
+                          '+ ${items.length - 4} مواد أخرى',
+                          style: TextStyle(
+                            color: accent,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+              if (courierId.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                _orderSafeLine(
+                  Icons.delivery_dining_rounded,
+                  'المندوب',
+                  _courierName(courierId),
+                ),
+              ],
+              if (libraryId.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                _orderSafeLine(
+                  Icons.storefront_rounded,
+                  'المكتبة',
+                  _accountName(libraryId),
+                ),
+              ],
+              if (cancelReason.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(11),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFE9EE),
+                    borderRadius: BorderRadius.circular(13),
+                    border: Border.all(color: const Color(0xFFFFC2D0)),
+                  ),
+                  child: Text(
+                    'سبب الإلغاء: $cancelReason',
+                    style: const TextStyle(
+                      color: Color(0xFF9F1239),
+                      fontSize: 12,
+                      height: 1.35,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 7,
+                runSpacing: 7,
                 children: [
-                  LayoutBuilder(
-                    builder: (context, constraints) {
-                      final wide = constraints.maxWidth >= 620;
-                      final customer = _orderMiniPanel(
-                        icon: Icons.person_rounded,
-                        title: 'الطالب',
-                        value: '${o['student_name'] ?? '—'}',
-                        subtitle: '${o['student_phone'] ?? '—'}',
-                        accent: const Color(0xFF7C3AED),
-                      );
-                      final fulfillment = _orderMiniPanel(
-                        icon: deliveryOrder
-                            ? Icons.local_shipping_rounded
-                            : Icons.store_rounded,
-                        title: 'الاستلام',
-                        value: deliveryOrder ? 'توصيل مندوب' : 'استلام مكتبة',
-                        subtitle:
-                            '${o['delivery_area'] ?? o['delivery_landmark'] ?? '—'}',
-                        accent: deliveryOrder
-                            ? const Color(0xFF0088FF)
-                            : const Color(0xFF16A34A),
-                      );
-                      final total = _orderMiniPanel(
-                        icon: Icons.payments_rounded,
-                        title: 'الإجمالي',
-                        value: money(o['total']),
-                        subtitle: _date(o['created_at']),
-                        accent: const Color(0xFFFF7A00),
-                      );
-                      if (!wide) {
-                        return Column(
-                          children: [
-                            customer,
-                            const SizedBox(height: 8),
-                            fulfillment,
-                            const SizedBox(height: 8),
-                            total,
-                          ],
-                        );
-                      }
-                      return Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(child: customer),
-                          const SizedBox(width: 8),
-                          Expanded(child: fulfillment),
-                          const SizedBox(width: 8),
-                          Expanded(child: total),
-                        ],
-                      );
-                    },
+                  OutlinedButton.icon(
+                    onPressed: () => _openOrderDetails(o),
+                    icon: const Icon(Icons.visibility_rounded, size: 18),
+                    label: const Text('التفاصيل'),
                   ),
-                  if (items.isNotEmpty) ...[
-                    const SizedBox(height: 11),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(11),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF8FAFC),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: const Color(0xFFEEF2F6)),
+                  if (deliveryOrder && !isClosed(o))
+                    OutlinedButton.icon(
+                      onPressed: () => _assignCourier(o),
+                      icon: const Icon(Icons.delivery_dining_rounded, size: 18),
+                      label: const Text('تعيين مندوب'),
+                    ),
+                  if (!isClosed(o))
+                    OutlinedButton.icon(
+                      onPressed: () => _cancelOrder(o),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFFC1123F),
+                        side: const BorderSide(color: Color(0xFFFFB7C7)),
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.inventory_2_outlined,
-                                size: 17,
-                                color: Color(0xFF143B68),
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                itemCount > 1 ? 'مواد الطلب' : 'المادة المطلوبة',
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w900,
-                                  color: Color(0xFF143B68),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 7),
-                          ...items.take(3).map(
-                            (item) => Padding(
-                              padding: const EdgeInsets.only(bottom: 5),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: 6,
-                                    height: 6,
-                                    decoration: BoxDecoration(
-                                      color: accent,
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 7),
-                                  Expanded(
-                                    child: Text(
-                                      '${item['title'] ?? 'مادة'}',
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        fontSize: 11.8,
-                                        color: Color(0xFF344054),
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    '× ${(number(item['qty']) <= 0 ? 1 : number(item['qty'])).round()}',
-                                    style: TextStyle(
-                                      fontSize: 11.5,
-                                      color: accent,
-                                      fontWeight: FontWeight.w900,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          if (items.length > 3)
-                            Text(
-                              '+ ${items.length - 3} مواد أخرى',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w900,
-                                color: accent,
-                              ),
-                            ),
-                        ],
-                      ),
+                      icon: const Icon(Icons.cancel_rounded, size: 18),
+                      label: const Text('إلغاء الطلب'),
                     ),
-                  ],
-                  if (courierId.isNotEmpty || libraryId.isNotEmpty) ...[
-                    const SizedBox(height: 10),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        if (courierId.isNotEmpty)
-                          _orderAssignmentPill(
-                            Icons.delivery_dining_rounded,
-                            'المندوب',
-                            _courierName(courierId),
-                            const Color(0xFF7C3AED),
-                          ),
-                        if (libraryId.isNotEmpty)
-                          _orderAssignmentPill(
-                            Icons.storefront_rounded,
-                            'المكتبة',
-                            _accountName(libraryId),
-                            const Color(0xFF16A34A),
-                          ),
-                      ],
+                  if (!isClosed(o))
+                    FilledButton.icon(
+                      onPressed: () => _changeOrderStatus(o),
+                      icon: const Icon(Icons.sync_alt_rounded, size: 18),
+                      label: const Text('تغيير الحالة'),
                     ),
-                  ],
-                  if (cancelReason.isNotEmpty) ...[
-                    const SizedBox(height: 10),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(11),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFE9EE),
-                        borderRadius: BorderRadius.circular(13),
-                        border: Border.all(color: const Color(0xFFFFC2D0)),
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Icon(
-                            Icons.cancel_rounded,
-                            size: 19,
-                            color: Color(0xFFC1123F),
-                          ),
-                          const SizedBox(width: 7),
-                          Expanded(
-                            child: Text(
-                              'سبب الإلغاء: $cancelReason',
-                              style: const TextStyle(
-                                color: Color(0xFF9F1239),
-                                fontSize: 12,
-                                height: 1.35,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 12),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF8FAFC),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Wrap(
-                      spacing: 7,
-                      runSpacing: 7,
-                      alignment: WrapAlignment.end,
-                      children: [
-                        OutlinedButton.icon(
-                          onPressed: () => _openOrderDetails(o),
-                          icon: const Icon(Icons.visibility_rounded, size: 18),
-                          label: const Text('التفاصيل'),
-                        ),
-                        if (deliveryOrder && !isClosed(o))
-                          OutlinedButton.icon(
-                            onPressed: () => _assignCourier(o),
-                            icon: const Icon(
-                              Icons.delivery_dining_rounded,
-                              size: 18,
-                            ),
-                            label: const Text('تعيين مندوب'),
-                          ),
-                        if (!isClosed(o))
-                          OutlinedButton.icon(
-                            onPressed: () => _cancelOrder(o),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: const Color(0xFFC1123F),
-                              side: const BorderSide(
-                                color: Color(0xFFFFB7C7),
-                              ),
-                            ),
-                            icon: const Icon(Icons.cancel_rounded, size: 18),
-                            label: const Text('إلغاء الطلب'),
-                          ),
-                        if (!isClosed(o))
-                          FilledButton.icon(
-                            onPressed: () => _changeOrderStatus(o),
-                            icon: const Icon(Icons.sync_alt_rounded, size: 18),
-                            label: const Text('تغيير الحالة'),
-                          ),
-                      ],
-                    ),
-                  ),
                 ],
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
+    );
+  }
+
+  Widget _orderSafeLine(
+    IconData icon,
+    String label,
+    String value, {
+    Color valueColor = const Color(0xFF143B68),
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 17, color: const Color(0xFF667085)),
+        const SizedBox(width: 7),
+        SizedBox(
+          width: 72,
+          child: Text(
+            label,
+            style: const TextStyle(
+              color: Color(0xFF667085),
+              fontSize: 11.5,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: valueColor,
+              fontSize: 12,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ),
+      ],
     );
   }
 
