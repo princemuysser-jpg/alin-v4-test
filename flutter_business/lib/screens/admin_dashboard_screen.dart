@@ -36,6 +36,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   List<Map<String, dynamic>> settlements = [];
   List<Map<String, dynamic>> ledger = [];
   String orderFilter = 'active';
+  String cancelReasonFilter = 'all';
   String orderSearch = '';
   final TextEditingController orderSearchController = TextEditingController();
   String accountFilter = 'all';
@@ -180,6 +181,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               ),
         ),
         '_mixed_status': statuses.length > 1,
+        '_cancellation_reason': items
+            .map((row) => '${row['cancellation_reason'] ?? ''}'.trim())
+            .firstWhere((reason) => reason.isNotEmpty, orElse: () => ''),
       });
     }
     result.sort(
@@ -200,6 +204,22 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 
   List<Map<String, dynamic>> get groupedOrders => groupOrders(orders);
+
+  String _cancellationReason(Map<String, dynamic> order) {
+    final grouped = '${order['_cancellation_reason'] ?? ''}'.trim();
+    if (grouped.isNotEmpty) return grouped;
+    final direct = '${order['cancellation_reason'] ?? ''}'.trim();
+    if (direct.isNotEmpty) return direct;
+    final items =
+        ((order['_items'] as List?) ?? const <dynamic>[])
+            .whereType<Map>()
+            .map((e) => Map<String, dynamic>.from(e));
+    for (final item in items) {
+      final reason = '${item['cancellation_reason'] ?? ''}'.trim();
+      if (reason.isNotEmpty) return reason;
+    }
+    return '';
+  }
 
   List<Map<String, dynamic>> get visibleOrders {
     Iterable<Map<String, dynamic>> rows = groupedOrders;
@@ -264,6 +284,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         break;
     }
 
+    if (orderFilter == 'cancelled' && cancelReasonFilter != 'all') {
+      rows = rows.where((order) {
+        final reason = _cancellationReason(order);
+        if (cancelReasonFilter == '__without_reason__') return reason.isEmpty;
+        return reason == cancelReasonFilter;
+      });
+    }
+
     final query = orderSearch.trim().toLowerCase();
     if (query.isEmpty) return rows.toList();
 
@@ -280,7 +308,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         '${order['student_phone'] ?? ''}',
         '${order['delivery_area'] ?? ''}',
         '${order['title'] ?? ''}',
+        _cancellationReason(order),
         ...items.map((e) => '${e['title'] ?? ''}'),
+        ...items.map((e) => '${e['cancellation_reason'] ?? ''}'),
       ].join(' ').toLowerCase();
       return searchable.contains(query);
     }).toList();
@@ -1021,6 +1051,20 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     final readyCount = countFor('ready');
     final doneCount = countFor('done');
     final cancelledCount = countFor('cancelled');
+    final cancellationReasons =
+        groupedOrders
+            .where(_groupCancelled)
+            .map(_cancellationReason)
+            .where((reason) => reason.isNotEmpty)
+            .toSet()
+            .toList()
+          ..sort();
+    final selectedCancellationReason =
+        cancelReasonFilter == 'all' ||
+            cancelReasonFilter == '__without_reason__' ||
+            cancellationReasons.contains(cancelReasonFilter)
+        ? cancelReasonFilter
+        : 'all';
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(14, 16, 14, 28),
@@ -1110,6 +1154,51 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             ],
           ),
         ),
+        if (orderFilter == 'cancelled') ...[
+          const SizedBox(height: 11),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF1F4),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFFFC9D5)),
+            ),
+            child: DropdownButtonFormField<String>(
+              initialValue: selectedCancellationReason,
+              decoration: const InputDecoration(
+                labelText: 'فلتر سبب الإلغاء',
+                prefixIcon: Icon(Icons.report_gmailerrorred_rounded),
+                filled: true,
+                fillColor: Colors.white,
+              ),
+              items: [
+                const DropdownMenuItem(
+                  value: 'all',
+                  child: Text('كل أسباب الإلغاء'),
+                ),
+                const DropdownMenuItem(
+                  value: '__without_reason__',
+                  child: Text('طلبات قديمة بدون سبب'),
+                ),
+                ...cancellationReasons.map(
+                  (reason) => DropdownMenuItem(
+                    value: reason,
+                    child: Text(
+                      reason,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+              ],
+              onChanged: (value) {
+                if (value != null) {
+                  setState(() => cancelReasonFilter = value);
+                }
+              },
+            ),
+          ),
+        ],
         const SizedBox(height: 14),
         if (visibleOrders.isEmpty)
           Container(
@@ -1185,6 +1274,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   Widget _orderCard(Map<String, dynamic> o) {
     final deliveryOrder = isDeliveryOrder(o);
     final status = '${o['status'] ?? ''}';
+    final cancelReason = _cancellationReason(o);
+    final accent = switch (status) {
+      'cancelled' || 'canceled' || 'rejected' => const Color(0xFFE11D48),
+      'completed' || 'delivered' || 'done' => const Color(0xFF16A34A),
+      'ready' => const Color(0xFF0088FF),
+      'processing' || 'printing' || 'assigned' || 'accepted' =>
+        const Color(0xFFFF8A00),
+      'out_for_delivery' || 'picked_up' => const Color(0xFF7C3AED),
+      _ => const Color(0xFF14B8A6),
+    };
     final itemCount = number(o['_item_count']).round();
     final items =
         ((o['_items'] as List?) ?? const <dynamic>[])
@@ -1195,9 +1294,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
       elevation: 0,
+      color: accent.withValues(alpha: .025),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(18),
-        side: const BorderSide(color: Color(0xFFE3EAF1)),
+        side: BorderSide(color: accent.withValues(alpha: .22), width: 1.2),
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(18),
@@ -1375,6 +1475,40 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     '${o['library_id'] ?? o['pickup_library_id']}',
                   ),
               ],
+              if (cancelReason.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(11),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFE9EE),
+                    borderRadius: BorderRadius.circular(13),
+                    border: Border.all(color: const Color(0xFFFFC2D0)),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(
+                        Icons.cancel_rounded,
+                        size: 19,
+                        color: Color(0xFFC1123F),
+                      ),
+                      const SizedBox(width: 7),
+                      Expanded(
+                        child: Text(
+                          'سبب الإلغاء: $cancelReason',
+                          style: const TextStyle(
+                            color: Color(0xFF9F1239),
+                            fontSize: 12,
+                            height: 1.35,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               const SizedBox(height: 11),
               Wrap(
                 spacing: 8,
@@ -1390,6 +1524,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       onPressed: () => _assignCourier(o),
                       icon: const Icon(Icons.delivery_dining_rounded),
                       label: const Text('تعيين مندوب'),
+                    ),
+                  if (!isClosed(o))
+                    OutlinedButton.icon(
+                      onPressed: () => _cancelOrder(o),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFFC1123F),
+                        side: const BorderSide(color: Color(0xFFFFB7C7)),
+                      ),
+                      icon: const Icon(Icons.cancel_rounded),
+                      label: const Text('إلغاء الطلب'),
                     ),
                   if (!isClosed(o))
                     FilledButton.icon(
@@ -2123,13 +2267,133 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     }
   }
 
+  Future<String?> _askCancellationReason() async {
+    final controller = TextEditingController();
+    String reason = '';
+    const suggestions = [
+      'طلب الطالب الإلغاء',
+      'تعذر التواصل مع الطالب',
+      'العنوان أو البيانات غير مكتملة',
+      'المادة غير متوفرة',
+      'خطأ في الطلب',
+    ];
+
+    final result = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setLocal) => AlertDialog(
+          title: const Row(
+            children: [
+              Icon(Icons.cancel_rounded, color: Color(0xFFC1123F)),
+              SizedBox(width: 8),
+              Text('سبب إلغاء الطلب'),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: SizedBox(
+              width: 440,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'لا يمكن إلغاء الطلب بدون تسجيل السبب. سيظهر السبب في الطلب وسجل الحركة.',
+                    style: TextStyle(
+                      color: Color(0xFF667085),
+                      fontSize: 12.5,
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 7,
+                    runSpacing: 7,
+                    children: suggestions
+                        .map(
+                          (item) => ActionChip(
+                            label: Text(item),
+                            onPressed: () {
+                              controller.text = item;
+                              controller.selection = TextSelection.collapsed(
+                                offset: controller.text.length,
+                              );
+                              setLocal(() => reason = item);
+                            },
+                          ),
+                        )
+                        .toList(),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: controller,
+                    autofocus: true,
+                    minLines: 2,
+                    maxLines: 4,
+                    maxLength: 250,
+                    onChanged: (value) =>
+                        setLocal(() => reason = value.trim()),
+                    decoration: const InputDecoration(
+                      labelText: 'سبب الإلغاء *',
+                      hintText: 'اكتب سبب واضح لإلغاء الطلب',
+                      prefixIcon: Icon(Icons.edit_note_rounded),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('رجوع'),
+            ),
+            FilledButton.icon(
+              onPressed: reason.trim().isEmpty
+                  ? null
+                  : () => Navigator.pop(dialogContext, reason.trim()),
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFC1123F),
+              ),
+              icon: const Icon(Icons.cancel_rounded),
+              label: const Text('تأكيد الإلغاء'),
+            ),
+          ],
+        ),
+      ),
+    );
+    controller.dispose();
+    return result;
+  }
+
+  Future<void> _cancelOrder(Map<String, dynamic> order) async {
+    final reason = await _askCancellationReason();
+    if (reason == null || reason.trim().isEmpty) return;
+    try {
+      await widget.repository.adminTransitionOrder(
+        '${order['id']}',
+        'cancelled',
+        reason: reason.trim(),
+      );
+      await load();
+      if (mounted) {
+        setState(() {
+          orderFilter = 'cancelled';
+          cancelReasonFilter = reason.trim();
+        });
+      }
+      _snack('تم إلغاء الطلب وتسجيل السبب');
+    } catch (e) {
+      _snack('$e'.replaceFirst('Exception: ', ''));
+    }
+  }
+
   Future<void> _changeOrderStatus(Map<String, dynamic> order) async {
     const statuses = [
       'processing',
       'ready',
       'completed',
       'delivered',
-      'cancelled',
     ];
     String value = '${order['status']}';
     if (!statuses.contains(value)) value = 'processing';
