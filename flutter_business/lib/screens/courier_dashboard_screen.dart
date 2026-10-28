@@ -1959,6 +1959,8 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
               ],
             ),
             const SizedBox(height: 11),
+            _courierProgressBar(status),
+            const SizedBox(height: 10),
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(10),
@@ -2079,22 +2081,26 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
 
   Widget _actions(Map<String, dynamic> order, String status) {
     if (['assigned', 'new', 'pending', 'pending_admin'].contains(status)) {
-      return Row(
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Expanded(
-            child: FilledButton.icon(
-              onPressed: () => transition(order, 'accepted'),
-              icon: const Icon(Icons.check),
-              label: const Text('قبول الطلب'),
+          FilledButton.icon(
+            style: FilledButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              textStyle: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w900,
+              ),
             ),
+            onPressed: () => transition(order, 'accepted'),
+            icon: const Icon(Icons.check_circle_rounded),
+            label: const Text('قبول الطلب والبدء'),
           ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: OutlinedButton.icon(
-              onPressed: () => reject(order),
-              icon: const Icon(Icons.close),
-              label: const Text('رفض'),
-            ),
+          const SizedBox(height: 7),
+          OutlinedButton.icon(
+            onPressed: () => reject(order),
+            icon: const Icon(Icons.close_rounded),
+            label: const Text('رفض الطلب'),
           ),
         ],
       );
@@ -2103,8 +2109,15 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
       return SizedBox(
         width: double.infinity,
         child: FilledButton.icon(
+          style: FilledButton.styleFrom(
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            textStyle: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
           onPressed: () => transition(order, 'picked_up'),
-          icon: const Icon(Icons.inventory_2),
+          icon: const Icon(Icons.inventory_2_rounded),
           label: const Text('استلمت الطلب بالكامل'),
         ),
       );
@@ -2113,9 +2126,16 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
       return SizedBox(
         width: double.infinity,
         child: FilledButton.icon(
+          style: FilledButton.styleFrom(
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            textStyle: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
           onPressed: () => transition(order, 'out_for_delivery'),
-          icon: const Icon(Icons.local_shipping),
-          label: const Text('بدء التوصيل'),
+          icon: const Icon(Icons.delivery_dining_rounded),
+          label: const Text('بدء التوصيل للطالب'),
         ),
       );
     }
@@ -2123,13 +2143,99 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
       return SizedBox(
         width: double.infinity,
         child: FilledButton.icon(
+          style: FilledButton.styleFrom(
+            backgroundColor: const Color(0xFF16A34A),
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            textStyle: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
           onPressed: () => transition(order, 'completed'),
-          icon: const Icon(Icons.done_all),
-          label: const Text('تم تسليم الطلب بالكامل واستلام المبلغ'),
+          icon: const Icon(Icons.done_all_rounded),
+          label: const Text('تم التسليم واستلام المبلغ'),
         ),
       );
     }
     return const SizedBox.shrink();
+  }
+
+  Widget _courierProgressBar(String status) {
+    final steps = <(String, String, IconData)>[
+      ('accepted', 'مقبول', Icons.check_circle_rounded),
+      ('picked_up', 'مستلم', Icons.inventory_2_rounded),
+      ('out_for_delivery', 'بالطريق', Icons.delivery_dining_rounded),
+      ('completed', 'تم التسليم', Icons.done_all_rounded),
+    ];
+
+    int currentIndex = switch (status) {
+      'assigned' || 'new' || 'pending' || 'pending_admin' => -1,
+      'accepted' => 0,
+      'picked_up' => 1,
+      'out_for_delivery' || 'out_delivery' => 2,
+      'completed' || 'delivered' => 3,
+      _ => -1,
+    };
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(13),
+        border: Border.all(color: const Color(0xFFEEF2F6)),
+      ),
+      child: Row(
+        children: [
+          for (var i = 0; i < steps.length; i++) ...[
+            Expanded(
+              child: Column(
+                children: [
+                  Container(
+                    width: 31,
+                    height: 31,
+                    decoration: BoxDecoration(
+                      color: i <= currentIndex
+                          ? const Color(0xFF143B68)
+                          : const Color(0xFFE8EEF5),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      steps[i].$3,
+                      size: 16,
+                      color: i <= currentIndex
+                          ? Colors.white
+                          : const Color(0xFF98A2B3),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    steps[i].$2,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: i <= currentIndex
+                          ? const Color(0xFF143B68)
+                          : const Color(0xFF98A2B3),
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (i != steps.length - 1)
+              Container(
+                width: 18,
+                height: 2,
+                color: i < currentIndex
+                    ? const Color(0xFF143B68)
+                    : const Color(0xFFD6DFE9),
+              ),
+          ],
+        ],
+      ),
+    );
   }
 
   Widget _line(IconData icon, String label, String value) => Padding(
