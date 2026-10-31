@@ -488,7 +488,7 @@ class _ShelfCard extends StatelessWidget {
                       child: Container(
                         color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF102F4D) : const Color(0xFFF9FBFD),
                         padding: const EdgeInsets.all(10),
-                        child: AlinNetworkImage(path: item.imagePath, fit: BoxFit.contain),
+                        child: AlinNetworkImage(path: item.imagePath, fit: BoxFit.contain, thumbnail: true),
                       ),
                     ),
                     Positioned(

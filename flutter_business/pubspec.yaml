@@ -21,6 +21,7 @@ dependencies:
   printing: ^5.14.3
   pdf: ^3.11.3
   file_picker: ^10.3.3
+  image: 4.9.2
 
 dependency_overrides:
   image: 4.9.2

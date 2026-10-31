@@ -5,6 +5,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../core/optimized_store_media.dart';
 import '../data/business_repository.dart';
 import '../widgets/business_brand.dart';
 
@@ -124,21 +125,37 @@ class _AdminStoreManagementScreenState
     if (bytes.length > 5 * 1024 * 1024) {
       throw Exception('حجم الصورة يجب أن يكون أقل من 5MB');
     }
-    final ext = (file.extension ?? 'png').toLowerCase();
-    final mime = switch (ext) {
-      'jpg' || 'jpeg' => 'image/jpeg',
-      'webp' => 'image/webp',
-      _ => 'image/png',
-    };
-    final path =
-        '$folder/${DateTime.now().millisecondsSinceEpoch}-${Random().nextInt(99999)}.$ext';
-    await client.storage
-        .from(_bucket)
-        .uploadBinary(
-          path,
-          Uint8List.fromList(bytes),
-          fileOptions: FileOptions(contentType: mime, upsert: false),
-        );
+    final prepared = OptimizedStoreMedia.fromBytes(
+      Uint8List.fromList(bytes),
+      sourceExtension: (file.extension ?? 'png').toLowerCase(),
+    );
+    final stem =
+        '$folder/${DateTime.now().millisecondsSinceEpoch}-${Random().nextInt(99999)}';
+    final path = '$stem.full.${prepared.fullExtension}';
+    final thumbPath = '$stem.thumb.webp';
+    await client.storage.from(_bucket).uploadBinary(
+      path,
+      prepared.fullBytes,
+      fileOptions: FileOptions(
+        contentType: prepared.fullContentType,
+        upsert: false,
+        cacheControl: '604800',
+      ),
+    );
+    // Thumbnails are optional; a failed secondary upload cannot break product creation.
+    try {
+      await client.storage.from(_bucket).uploadBinary(
+        thumbPath,
+        prepared.thumbnailBytes,
+        fileOptions: const FileOptions(
+          contentType: 'image/webp',
+          upsert: false,
+          cacheControl: '604800',
+        ),
+      );
+    } catch (_) {
+      // Fall back to the full image for the storefront.
+    }
     return path;
   }
 
