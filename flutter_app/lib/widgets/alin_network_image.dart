@@ -24,7 +24,7 @@ class AlinNetworkImage extends StatelessWidget {
     final url = media.mediaUrl(path);
     final thumbnailPath = thumbnail
         ? path.replaceFirst(
-            RegExp(r'\\.full\\.(webp|png|jpe?g)(?=$|\\?)', caseSensitive: false),
+            RegExp(r'\.full\.(webp|png|jpe?g)(?=$|\?)', caseSensitive: false),
             '.thumb.webp',
           )
         : path;
