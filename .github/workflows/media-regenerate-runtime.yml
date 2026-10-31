@@ -5,7 +5,7 @@ on:
     branches:
       - fix/optimize-media-egress-20261031
     paths:
-      - core/storage.js
+      - modules/core/storage.js
       - .github/workflows/media-regenerate-runtime.yml
   workflow_dispatch:
 
@@ -24,7 +24,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 scripts/build-runtime.py
-          node --check core/storage.js
+          node --check modules/core/storage.js
           node --check dist/alin-core.v4.js
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
