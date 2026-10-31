@@ -2,6 +2,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../core/optimized_store_media.dart';
 import '../data/business_repository.dart';
 import '../widgets/business_brand.dart';
 
@@ -123,19 +124,34 @@ class _AdminBooksScreenState extends State<AdminBooksScreen> {
     if (bytes.length > 5 * 1024 * 1024) {
       throw Exception('حجم صورة الكتاب يجب أن يكون أقل من 5MB');
     }
-    final extension = (file.extension ?? 'png').toLowerCase();
-    final mime = switch (extension) {
-      'jpg' || 'jpeg' => 'image/jpeg',
-      'webp' => 'image/webp',
-      _ => 'image/png',
-    };
-    final path =
-        'products/books/${DateTime.now().millisecondsSinceEpoch}.$extension';
+    final prepared = OptimizedStoreMedia.fromBytes(
+      bytes,
+      sourceExtension: (file.extension ?? 'png').toLowerCase(),
+    );
+    final stem = 'products/books/${DateTime.now().millisecondsSinceEpoch}';
+    final path = '$stem.full.${prepared.fullExtension}';
     await widget.repository.client.storage.from(_bucket).uploadBinary(
-          path,
-          bytes,
-          fileOptions: FileOptions(contentType: mime, upsert: false),
-        );
+      path,
+      prepared.fullBytes,
+      fileOptions: FileOptions(
+        contentType: prepared.fullContentType,
+        upsert: false,
+        cacheControl: '604800',
+      ),
+    );
+    try {
+      await widget.repository.client.storage.from(_bucket).uploadBinary(
+        '$stem.thumb.webp',
+        prepared.thumbnailBytes,
+        fileOptions: const FileOptions(
+          contentType: 'image/webp',
+          upsert: false,
+          cacheControl: '604800',
+        ),
+      );
+    } catch (_) {
+      // Keep the book editable if thumbnail creation/upload fails.
+    }
     return widget.repository.client.storage.from(_bucket).getPublicUrl(path);
   }
 
