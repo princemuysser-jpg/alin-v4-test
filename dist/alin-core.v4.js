@@ -1519,12 +1519,41 @@ window.Alin.helpers={
   }
   const checkPublicFile=checkFileUrl;
 
+  // Resize public images in the browser before uploading; never touches PDF/DOCX.
+  // If WebP is unsupported or compression is larger, safely keep original bytes.
+  async function optimizePublicImage(file){
+    if(!file||!String(file.type||'').startsWith('image/')||file.size<100*1024)return file;
+    if(typeof createImageBitmap!=='function'||typeof document==='undefined')return file;
+    let bitmap=null;
+    try{
+      bitmap=await createImageBitmap(file);
+      if(bitmap.width*bitmap.height>40000000)return file;
+      const maxSide=1600;
+      const ratio=Math.min(1,maxSide/Math.max(bitmap.width,bitmap.height));
+      const canvas=document.createElement('canvas');
+      canvas.width=Math.max(1,Math.round(bitmap.width*ratio));
+      canvas.height=Math.max(1,Math.round(bitmap.height*ratio));
+      const ctx=canvas.getContext('2d');
+      if(!ctx)return file;
+      ctx.drawImage(bitmap,0,0,canvas.width,canvas.height);
+      const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/webp',0.8));
+      if(!blob||blob.type!=='image/webp'||blob.size<100||blob.size>=file.size)return file;
+      const stem=String(file.name||'image').replace(/\.[^.]+$/,'');
+      return new File([blob],stem+'.webp',{type:'image/webp',lastModified:Date.now()});
+    }catch(_){return file;}
+    finally{if(bitmap&&typeof bitmap.close==='function')bitmap.close();}
+  }
+
   async function uploadFile(folder,file,options={}){
     folder=normalizedFolder(folder);
     const root=rootFolder(folder);
     const normalizedType=String(options.type||'any').toLowerCase();
-    const info=await validateFile(file,{...options,type:normalizedType});
+    let info=await validateFile(file,{...options,type:normalizedType});
     if(!info)return null;
+    if(info.type==='image'&&!isPrivateRoot(folder)){
+      file=await optimizePublicImage(file);
+      info=await validateFile(file,{...options,type:normalizedType});
+    }
     await ensureStorageReady(folder);
 
     const privateDocument=PRIVATE_ROOTS.has(root);
@@ -1550,7 +1579,7 @@ window.Alin.helpers={
     const {data,error}=await requireClient().storage.from(bucket).upload(path,payload,{
       upsert:false,
       contentType:info.mime,
-      cacheControl:privateDocument?'0':'3600'
+      cacheControl:privateDocument?'0':'604800'
     });
     if(error){
       const message=String(error.message||'');
