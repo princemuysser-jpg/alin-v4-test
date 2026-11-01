@@ -22,7 +22,7 @@ jobs:
           source=pathlib.Path('flutter_app/lib/core/alin_config.dart').read_text()
           url=re.search(r"supabaseUrl\s*=\s*'([^']+)'",source).group(1)
           key=re.search(r"supabasePublishableKey\s*=\s*'([^']+)'",source).group(1)
-          health=urllib.request.Request(url+'/auth/v1/health')
+          health=urllib.request.Request(url+'/auth/v1/health',headers={'apikey':key})
           try:
               with urllib.request.urlopen(health,timeout=20) as response:
                   print('AUTH_HEALTH_HTTP',response.status)
