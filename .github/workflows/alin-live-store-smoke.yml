@@ -1,0 +1,47 @@
+name: ALIN live Supabase storefront smoke test
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/alin-live-store-smoke.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Confirm Supabase public storefront HTTP API
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import pathlib, re, json, urllib.request, urllib.error
+          source=pathlib.Path('flutter_app/lib/core/alin_config.dart').read_text()
+          url=re.search(r"supabaseUrl\s*=\s*'([^']+)'",source).group(1)
+          key=re.search(r"supabasePublishableKey\s*=\s*'([^']+)'",source).group(1)
+          health=urllib.request.Request(url+'/auth/v1/health')
+          try:
+              with urllib.request.urlopen(health,timeout=20) as response:
+                  print('AUTH_HEALTH_HTTP',response.status)
+                  assert response.status == 200
+          except urllib.error.HTTPError as error:
+              print('AUTH_HEALTH_HTTP',error.code)
+              raise
+          req=urllib.request.Request(url+'/rest/v1/rpc/alin_public_store_bootstrap',data=b'{}',
+              method='POST',headers={'apikey':key,'Content-Type':'application/json'})
+          try:
+              with urllib.request.urlopen(req,timeout=30) as response:
+                  body=response.read()
+                  print('STOREFRONT_RPC_HTTP',response.status,'BYTES',len(body))
+                  assert response.status==200
+                  obj=json.loads(body)
+                  assert isinstance(obj,dict),'bootstrap result must be a JSON object'
+                  print('STOREFRONT_BOOTSTRAP_OK')
+          except urllib.error.HTTPError as error:
+              print('STOREFRONT_RPC_HTTP',error.code)
+              print(error.read(400).decode('utf-8','replace'))
+              raise
+          PY
