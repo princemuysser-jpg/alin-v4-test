@@ -1,4 +1,4 @@
-name: Build Alin Flutter Android 5.6.4 Build 41 Signed
+name: Build Alin Flutter Android 5.6.5 Build 42 Signed
 
 on:
   push:
@@ -11,8 +11,8 @@ permissions:
   contents: read
 
 env:
-  APP_VERSION: '5.6.4'
-  BUILD_NUMBER: '41'
+  APP_VERSION: '5.6.5'
+  BUILD_NUMBER: '42'
 
 jobs:
   build-android:
@@ -126,7 +126,7 @@ jobs:
       - name: Upload Google Play AAB
         uses: actions/upload-artifact@v4
         with:
-          name: alin-v5.6.4-build41-GOOGLE-PLAY-AAB
+          name: alin-v5.6.5-build42-GOOGLE-PLAY-AAB
           if-no-files-found: error
           path: flutter_app/build/app/outputs/bundle/release/*.aab
           retention-days: 7
@@ -134,7 +134,7 @@ jobs:
       - name: Upload APK for manual testing
         uses: actions/upload-artifact@v4
         with:
-          name: alin-v5.6.4-build41-APK-TEST
+          name: alin-v5.6.5-build42-APK-TEST
           if-no-files-found: error
           path: flutter_app/build/app/outputs/flutter-apk/*.apk
           retention-days: 7
