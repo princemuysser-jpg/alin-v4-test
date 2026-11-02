@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter/services.dart';
+import '../core/courier_navigation.dart';
 import '../data/business_courier_repository.dart';
 import '../data/business_finance_repository.dart';
 import '../data/business_notification_repository.dart';
@@ -415,30 +417,50 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
   }
 
   Future<void> openMap(Map<String, dynamic> order) async {
-    final lat = num.tryParse('${order['delivery_latitude']}');
-    final lng = num.tryParse('${order['delivery_longitude']}');
-    Uri? uri;
-    if (lat != null && lng != null) {
-      uri = Uri.parse(
-        'https://www.google.com/maps/dir/?api=1&destination=$lat,$lng',
+    final target = CourierNavigationTarget.fromOrder(order);
+    final uri = target.navigationUrl;
+    if (uri == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('لا يوجد موقع لهذا الطلب؛ اتصل بالطالب لتأكيد العنوان.')),
       );
-    } else {
-      final stored = '${order['delivery_location_url'] ?? ''}'.trim();
-      if (stored.startsWith('https://')) uri = Uri.tryParse(stored);
-      if (uri == null) {
-        final q = [
-          order['delivery_landmark'],
-          order['delivery_area'],
-          'كركوك',
-          'العراق',
-        ].where((v) => '${v ?? ''}'.trim().isNotEmpty).join('، ');
-        if (q.isNotEmpty)
-          uri = Uri.parse(
-            'https://www.google.com/maps/dir/?api=1&destination=${Uri.encodeComponent(q)}',
-          );
-      }
+      return;
     }
-    if (uri != null) await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (target.needsConfirmation && mounted) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('تأكد من موقع التوصيل'),
+          content: Text(target.hasCoordinates
+              ? 'دقة الموقع ${target.qualityLabel}. تأكد من الطالب قبل الانطلاق.'
+              : 'الطلب بلا GPS دقيق. راح نفتح موقع أو عنوان تقريبي؛ تأكد من الطالب.'),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('إلغاء')),
+            FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: const Text('فتح الخريطة')),
+          ],
+        ),
+      );
+      if (confirmed != true) return;
+    }
+    try {
+      if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+        throw StateError('تعذر فتح تطبيق الخرائط');
+      }
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('تعذر فتح الخرائط؛ انسخ الإحداثيات وجرب مجدداً.')),
+      );
+    }
+  }
+
+  Future<void> copyDeliveryCoordinates(Map<String, dynamic> order) async {
+    final coordinates = CourierNavigationTarget.fromOrder(order).coordinatesForCopy;
+    if (coordinates == null) return;
+    await Clipboard.setData(ClipboardData(text: coordinates));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('تم نسخ إحداثيات موقع الطالب')),
+    );
   }
 
   @override
@@ -1677,6 +1699,7 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
     final qtyCount = number(order['_qty_count']).toInt();
     final mixedStatus = order['_mixed_status'] == true;
     final accent = _courierStatusColor(status);
+    final gps = CourierNavigationTarget.fromOrder(order);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
