@@ -58,6 +58,30 @@ class CourierNavigationTarget {
     });
   }
 
+  /// Waze Universal Link: opens the installed app on mobile, or its website.
+  /// Keep the pin from the customer's order; do not collect courier GPS here.
+  Uri? get wazeUrl {
+    if (hasCoordinates) {
+      return Uri.https('waze.com', '/ul', {
+        'll': '$latitude,$longitude',
+        'navigate': 'yes',
+        'utm_source': 'alin_business',
+      });
+    }
+    // A saved Google Maps short-link cannot safely be translated to Waze.
+    // Search the human-readable destination only when it exists.
+    if (area.isEmpty && landmark.isEmpty) return null;
+    return Uri.https('waze.com', '/ul', {
+      'q': [
+        if (landmark.isNotEmpty) landmark,
+        if (area.isNotEmpty) area,
+        'كركوك',
+        'العراق',
+      ].join('، '),
+      'utm_source': 'alin_business',
+    });
+  }
+
   String? get coordinatesForCopy =>
       hasCoordinates ? '$latitude,$longitude' : null;
 
