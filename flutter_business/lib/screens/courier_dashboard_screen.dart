@@ -1844,6 +1844,12 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
                     'نقطة دالة',
                     '${order['delivery_landmark'] ?? '—'}',
                   ),
+                  const SizedBox(height: 7),
+                  _courierInfoLine(
+                    Icons.gps_fixed_rounded,
+                    'دقة الموقع',
+                    gps.qualityLabel,
+                  ),
                   if (pickup.isNotEmpty) ...[
                     const SizedBox(height: 7),
                     _courierInfoLine(
@@ -2003,8 +2009,14 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
                 OutlinedButton.icon(
                   onPressed: () => openMap(order),
                   icon: const Icon(Icons.navigation_rounded),
-                  label: const Text('المسار'),
+                  label: Text(gps.hasCoordinates ? 'ملاحة GPS' : 'العنوان على الخريطة'),
                 ),
+                if (gps.hasCoordinates)
+                  OutlinedButton.icon(
+                    onPressed: () => copyDeliveryCoordinates(order),
+                    icon: const Icon(Icons.copy_rounded),
+                    label: const Text('نسخ الإحداثيات'),
+                  ),
                 if (!isClosed(order))
                   OutlinedButton.icon(
                     onPressed: () => sendNote(order),
