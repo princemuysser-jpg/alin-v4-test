@@ -416,9 +416,9 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
     );
   }
 
-  Future<void> openMap(Map<String, dynamic> order) async {
+  Future<void> openMap(Map<String, dynamic> order, {bool useWaze = false}) async {
     final target = CourierNavigationTarget.fromOrder(order);
-    final uri = target.navigationUrl;
+    final uri = useWaze ? target.wazeUrl : target.navigationUrl;
     if (uri == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('لا يوجد موقع لهذا الطلب؛ اتصل بالطالب لتأكيد العنوان.')),
@@ -2008,9 +2008,15 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
                   ),
                 OutlinedButton.icon(
                   onPressed: () => openMap(order),
-                  icon: const Icon(Icons.navigation_rounded),
-                  label: Text(gps.hasCoordinates ? 'ملاحة GPS' : 'العنوان على الخريطة'),
+                  icon: const Icon(Icons.map_rounded),
+                  label: const Text('Google Maps'),
                 ),
+                if (gps.wazeUrl != null)
+                  OutlinedButton.icon(
+                    onPressed: () => openMap(order, useWaze: true),
+                    icon: const Icon(Icons.directions_car_filled_rounded),
+                    label: const Text('Waze'),
+                  ),
                 if (gps.hasCoordinates)
                   OutlinedButton.icon(
                     onPressed: () => copyDeliveryCoordinates(order),
