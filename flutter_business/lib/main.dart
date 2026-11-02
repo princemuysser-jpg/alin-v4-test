@@ -139,6 +139,7 @@ class _BusinessGateState extends State<BusinessGate> {
   void initState() {
     super.initState();
     repository = BusinessRepository(Supabase.instance.client);
+    if (kIsWeb) pendingOrderId = Uri.base.queryParameters['order'];
     notifications = BusinessNotificationService(
       client: Supabase.instance.client,
       onReceived: _notificationReceived,
