@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../data/business_courier_repository.dart';
@@ -40,6 +41,8 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
   String orderStageFilter = 'all';
   String availability = 'available';
   int unreadNotifications = 0;
+  Timer? _notificationRefreshTimer;
+  bool _notificationRefreshBusy = false;
   Map<String, dynamic> financeSummary = {};
   String courierArea = '';
   List<String> courierAreas = [];
@@ -57,6 +60,31 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
   void initState() {
     super.initState();
     load();
+    _notificationRefreshTimer = Timer.periodic(const Duration(seconds: 20), (_) {
+      _refreshCourierInbox();
+    });
+  }
+
+  Future<void> _refreshCourierInbox() async {
+    if (_notificationRefreshBusy || !mounted) return;
+    _notificationRefreshBusy = true;
+    try {
+      final unread = await widget.repository.businessNotificationUnreadCount();
+      if (mounted && unread != unreadNotifications) {
+        setState(() => unreadNotifications = unread);
+        await load();
+      }
+    } catch (_) {
+      // Keep courier orders functional if the notifications endpoint is offline.
+    } finally {
+      _notificationRefreshBusy = false;
+    }
+  }
+
+  @override
+  void dispose() {
+    _notificationRefreshTimer?.cancel();
+    super.dispose();
   }
 
   num number(dynamic value) => num.tryParse('$value') ?? 0;
