@@ -114,6 +114,26 @@ class _BusinessGateState extends State<BusinessGate> {
   bool loading = true;
   int notificationTick = 0;
   String? pendingOrderId;
+  bool webPushEnabled = false;
+  bool webPushBusy = false;
+
+  Future<void> _enableBusinessWebPush() async {
+    if (webPushBusy) return;
+    setState(() => webPushBusy = true);
+    try {
+      final ok = await notifications.requestPermissionAndRegister();
+      if (!mounted) return;
+      setState(() => webPushEnabled = ok);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ok
+          ? '🔔 تم تفعيل إشعارات الطلبات'
+          : 'تأكد من السماح بإشعارات الموقع')));
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('تعذر تفعيل الإشعارات: $e')));
+    } finally {
+      if (mounted) setState(() => webPushBusy = false);
+    }
+  }
 
   @override
   void initState() {
@@ -206,7 +226,22 @@ class _BusinessGateState extends State<BusinessGate> {
     super.dispose();
   }
 
-  Widget _withBusinessOverlays(Widget child) => child;
+  Widget _withBusinessOverlays(Widget child) {
+    if (!kIsWeb || webPushEnabled) return child;
+    return Stack(children: [
+      child,
+      Positioned(
+        bottom: 18, right: 18,
+        child: SafeArea(
+          child: FilledButton.icon(
+            onPressed: webPushBusy ? null : _enableBusinessWebPush,
+            icon: const Icon(Icons.notifications_active_rounded),
+            label: Text(webPushBusy ? 'جارٍ التفعيل...' : '🔔 تفعيل تنبيهات الطلبات'),
+          ),
+        ),
+      ),
+    ]);
+  }
 
   @override
   Widget build(BuildContext context) {
