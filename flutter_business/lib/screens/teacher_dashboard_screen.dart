@@ -55,7 +55,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
         client
             .from('alin_teacher_orders')
             .select(
-              'id,order_number,title,kind,qty,unit_price,total,status,teacher_profit,created_at,updated_at,teacher_id',
+              'id,order_number,title,kind,qty,unit_price,total,status,teacher_profit,created_at,updated_at,teacher_id,student_name',
             )
             .eq('teacher_id', widget.account.id)
             .order('created_at', ascending: false)
@@ -444,6 +444,60 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     );
   }
 
+  String _studentName(Map<String, dynamic> order) {
+    final name = '${order['student_name'] ?? ''}'.trim();
+    return name.isEmpty ? 'غير مسجل' : name;
+  }
+
+  Widget _teacherProfitDetails() {
+    final completed = orders.where(isDone).toList();
+    if (completed.isEmpty) {
+      return const _TeacherEmpty(text: 'لا توجد أرباح مكتملة بعد');
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Padding(
+          padding: EdgeInsets.symmetric(vertical: 8),
+          child: Text(
+            'تفاصيل أرباح الطلبات المكتملة',
+            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900),
+          ),
+        ),
+        ...completed.map((o) => Card(
+          margin: const EdgeInsets.only(bottom: 9),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(_studentName(o),
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
+                const SizedBox(height: 5),
+                Text('${o['title'] ?? 'ملزمة'} • ${o['qty'] ?? 1} نسخة',
+                    style: const TextStyle(fontWeight: FontWeight.w700)),
+                const SizedBox(height: 5),
+                Text('طلب: ${o['order_number'] ?? o['id']} • ${_date(o['created_at'])}',
+                    style: const TextStyle(fontSize: 12)),
+                const Divider(height: 20),
+                Row(
+                  children: [
+                    Expanded(child: Text('قيمة الطلب: ${money(o['total'])}')),
+                    Text('ربح المدرس: ${money(o['teacher_profit'])}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w900,
+                          color: Color(0xFF168450),
+                        )),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        )),
+      ],
+    );
+  }
+
   Widget _orders() {
     if (orders.isEmpty) {
       return const _TeacherEmpty(text: 'لا توجد طلبات مرتبطة بملازمك حالياً');
@@ -466,7 +520,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                   style: const TextStyle(fontWeight: FontWeight.w900),
                 ),
                 subtitle: Text(
-                  'النسخ: ${o['qty'] ?? 1} • ${_date(o['created_at'])} • الحالة: ${o['status'] ?? '-'}',
+                  'الطالب: ${_studentName(o)}\nالنسخ: ${o['qty'] ?? 1} • ${_date(o['created_at'])} • الحالة: ${o['status'] ?? '-'}',
                 ),
                 trailing: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -507,6 +561,8 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
           ),
         ),
         const SizedBox(height: 12),
+        _teacherProfitDetails(),
+        const SizedBox(height: 16),
         const Text(
           'التسويات السابقة',
           style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900),
