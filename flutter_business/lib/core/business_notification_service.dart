@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'business_config.dart';
+import 'business_web_push_stub.dart' if (dart.library.js_interop) 'business_web_push_web.dart' as browserPush;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -86,6 +88,11 @@ class BusinessNotificationService {
   }
 
   Future<bool> requestPermissionAndRegister() async {
+    if (kIsWeb) {
+      final jwt = client.auth.currentSession?.accessToken;
+      if (jwt == null || jwt.isEmpty) return false;
+      return browserPush.enableWebPush(jwt, BusinessConfig.supabasePublishableKey, BusinessConfig.supabaseUrl);
+    }
     if (!_isAndroid && !_isIOS) return false;
     try {
       final settings = await FirebaseMessaging.instance.requestPermission(
@@ -115,6 +122,13 @@ class BusinessNotificationService {
   }
 
   Future<void> registerCurrentDevice() async {
+    if (kIsWeb) {
+      final jwt = client.auth.currentSession?.accessToken;
+      if (jwt != null && jwt.isNotEmpty) {
+        await browserPush.syncWebPush(jwt, BusinessConfig.supabasePublishableKey, BusinessConfig.supabaseUrl);
+      }
+      return;
+    }
     if (!_started) return;
     try {
       final token = await FirebaseMessaging.instance.getToken();
@@ -123,6 +137,13 @@ class BusinessNotificationService {
   }
 
   Future<void> unregisterCurrentDevice() async {
+    if (kIsWeb) {
+      final jwt = client.auth.currentSession?.accessToken;
+      if (jwt != null && jwt.isNotEmpty) {
+        await browserPush.disableWebPush(jwt, BusinessConfig.supabasePublishableKey, BusinessConfig.supabaseUrl);
+      }
+      return;
+    }
     if (!_started || client.auth.currentSession == null) return;
     try {
       final token = await FirebaseMessaging.instance.getToken();
