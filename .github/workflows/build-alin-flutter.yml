@@ -1,4 +1,5 @@
 name: Build Alin Flutter Android 5.6.5 Build 42 Signed
+# Rebuild identical version 5.6.5+42 to renew expired Google Play AAB artifact.
 
 on:
   push:
