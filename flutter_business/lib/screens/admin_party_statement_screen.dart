@@ -3,6 +3,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
+import '../core/statement_date_filter.dart';
 import '../data/business_finance_repository.dart';
 import '../data/business_repository.dart';
 import '../widgets/alin_receipt_template.dart';
@@ -106,20 +107,11 @@ class _AdminPartyStatementScreenState
     return rows;
   }
 
-  bool _insideDate(dynamic raw) {
-    final parsed = DateTime.tryParse('${raw ?? ''}')?.toLocal();
-    if (parsed == null) return true;
-    final day = DateTime(parsed.year, parsed.month, parsed.day);
-    if (fromDate != null) {
-      final from = DateTime(fromDate!.year, fromDate!.month, fromDate!.day);
-      if (day.isBefore(from)) return false;
-    }
-    if (toDate != null) {
-      final to = DateTime(toDate!.year, toDate!.month, toDate!.day);
-      if (day.isAfter(to)) return false;
-    }
-    return true;
-  }
+  bool _insideDate(dynamic raw) => statementDateWithinRange(
+    raw,
+    fromDate: fromDate,
+    toDate: toDate,
+  );
 
   bool _belongsToParty(Map<String, dynamic> row) {
     final collectorRole = _normalizedRole('${row['collector_role'] ?? ''}');
@@ -326,6 +318,17 @@ class _AdminPartyStatementScreenState
             '${_roleLabel(role)} • ${summary['orders_count'] ?? 0} طلب',
             style: const TextStyle(color: Colors.white70),
           ),
+          if (fromDate != null || toDate != null) ...[
+            const SizedBox(height: 6),
+            const Text(
+              'الأرصدة أعلاه إجمالية لكل الفترات؛ فلتر التاريخ يخص حركات الطلبات وسندات التسوية فقط.',
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
           const SizedBox(height: 13),
           LayoutBuilder(
             builder: (context, constraints) {
@@ -918,6 +921,16 @@ class _AdminPartyStatementScreenState
                     ),
                   ),
                   pw.SizedBox(height: 10),
+                  if (fromDate != null || toDate != null) ...[
+                    pw.Text(
+                      'ملاحظة: الأرصدة التالية إجمالية لكل الفترات، بينما الحركات والسندات أدناه مفلترة حسب التاريخ المختار.',
+                      style: const pw.TextStyle(
+                        fontSize: 8,
+                        color: PdfColors.grey700,
+                      ),
+                    ),
+                    pw.SizedBox(height: 6),
+                  ],
                   labelValue('المكتسب', money(summary['earned'])),
                   if (role != 'teacher')
                     labelValue('إجمالي الذمة', money(summary['debt_total'])),
