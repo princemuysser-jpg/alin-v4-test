@@ -631,6 +631,13 @@ class _LibraryDashboardScreenState extends State<LibraryDashboardScreen> {
                 '${order['library_note']}',
               ),
             const SizedBox(height: 10),
+            OutlinedButton.icon(
+              onPressed: () => showAlinOrderReceipt(
+                context, order, viewerRole: isPrinter ? 'printer' : 'library'),
+              icon: const Icon(Icons.receipt_long_rounded),
+              label: const Text('وصل تأكيد الطلب'),
+            ),
+            const SizedBox(height: 10),
             if (!isClosed(order))
               Wrap(
                 spacing: 8,
