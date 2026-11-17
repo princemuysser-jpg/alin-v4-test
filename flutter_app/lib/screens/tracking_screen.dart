@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/app_scope.dart';
 import '../core/alin_theme.dart';
+import 'account_screen.dart';
 
 class TrackingScreen extends StatefulWidget {
   final String? initialOrderCode;
@@ -94,6 +95,13 @@ class _TrackingScreenState extends State<TrackingScreen> {
                       ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                       : const Icon(Icons.search),
                   label: Text(busy ? 'جارٍ البحث...' : 'تتبع الآن'),
+                ),
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const StudentOrdersScreen())),
+                  icon: const Icon(Icons.receipt_long_outlined),
+                  label: const Text('طلباتي ووصولاتي المحفوظة'),
                 ),
                 if (error != null) ...[
                   const SizedBox(height: 18),
