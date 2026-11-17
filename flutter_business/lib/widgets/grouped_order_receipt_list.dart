@@ -526,9 +526,9 @@ class _GroupedOrderReceiptListTileState
                   color: BusinessBrand.softTeal,
                   borderRadius: BorderRadius.circular(99),
                 ),
-                child: const Text(
-                  'مكتمل',
-                  style: TextStyle(
+                child: Text(
+                  const {'completed','delivered','done'}.contains('${widget.order['status']}'.toLowerCase()) ? 'مكتمل' : const {'cancelled','canceled','rejected'}.contains('${widget.order['status']}'.toLowerCase()) ? 'ملغي' : 'قيد المعالجة',
+                  style: const TextStyle(
                     color: BusinessBrand.teal,
                     fontWeight: FontWeight.w900,
                     fontSize: 12,
