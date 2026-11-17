@@ -221,6 +221,8 @@ class AlinReceiptTemplate extends StatelessWidget {
       AlinReceiptField('اسم الطالب', '${order['student_name'] ?? '—'}'),
       AlinReceiptField('رقم الهاتف', '${order['student_phone'] ?? '—'}'),
       AlinReceiptField('طريقة الاستلام', deliveryText),
+      AlinReceiptField('حالة الطلب', _statusLabel(order['status'])),
+      AlinReceiptField('حالة الدفع', '${order['payment_status'] ?? ''}'.toLowerCase() == 'paid' ? 'مدفوع' : 'غير مؤكد الدفع'),
       if ('${order['delivery_area'] ?? ''}'.trim().isNotEmpty)
         AlinReceiptField('المنطقة', '${order['delivery_area']}'),
       if ('${order['delivery_landmark'] ?? ''}'.trim().isNotEmpty)
@@ -279,16 +281,13 @@ class AlinReceiptTemplate extends StatelessWidget {
     return AlinReceiptTemplate(
       key: key,
       receiptNumber: receiptNumber,
-      documentLabel: 'وصل طلب كامل',
+      documentLabel: 'وصل تأكيد طلب',
       metrics: [
         AlinReceiptMetric('رقم الطلب', orderNumber),
         AlinReceiptMetric(
           'التاريخ',
           _receiptDate(
-            order['completed_at'] ??
-                order['delivered_at'] ??
-                order['updated_at'] ??
-                order['created_at'],
+            order['created_at'],
           ),
         ),
         AlinReceiptMetric(
@@ -301,6 +300,7 @@ class AlinReceiptTemplate extends StatelessWidget {
       items: items,
       totals: totals,
       notes: notes,
+      footerText: 'وصل تأكيد طلب، وليس إثبات دفع أو تسليم',
     );
   }
 
