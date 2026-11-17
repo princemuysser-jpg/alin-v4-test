@@ -95,7 +95,7 @@ class GroupedOrderReceiptCard extends StatelessWidget {
 
   String _dateText() {
     final raw =
-        '${order['completed_at'] ?? order['delivered_at'] ?? order['updated_at'] ?? order['created_at'] ?? ''}';
+        '${order['created_at'] ?? ''}';
     final parsed = DateTime.tryParse(raw)?.toLocal();
     if (parsed == null) return '—';
     String two(int v) => v.toString().padLeft(2, '0');
@@ -191,7 +191,7 @@ class GroupedOrderReceiptCard extends StatelessWidget {
                         ),
                         pw.SizedBox(height: 4),
                         pw.Text(
-                          'وصل طلب',
+                          'وصل تأكيد طلب',
                           style: const pw.TextStyle(
                             color: PdfColors.white,
                             fontSize: 11,
@@ -223,6 +223,8 @@ class GroupedOrderReceiptCard extends StatelessWidget {
                   ),
                   pw.Divider(height: 18),
                   line('الطالب', '${order['student_name'] ?? '—'}'),
+                   line('حالة الطلب', '${order['status'] ?? 'جديد'}'),
+                   line('حالة الدفع', '${order['payment_status'] ?? ''}'.toLowerCase() == 'paid' ? 'مدفوع' : 'غير مؤكد الدفع'),
                   line('الهاتف', '${order['student_phone'] ?? '—'}'),
                   if ('${order['delivery_area'] ?? ''}'.trim().isNotEmpty)
                     line('المنطقة', '${order['delivery_area']}'),
@@ -308,7 +310,7 @@ class GroupedOrderReceiptCard extends StatelessWidget {
                   pw.SizedBox(height: 18),
                   pw.Center(
                     child: pw.Text(
-                      'شكراً لاستخدام منصة آلين',
+                      'وصل تأكيد طلب — ليس إثبات دفع أو تسليم',
                       style: const pw.TextStyle(
                         fontSize: 9,
                         color: PdfColors.grey600,
@@ -408,7 +410,7 @@ class GroupedOrderReceiptCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'وصل طلب',
+                        'وصل تأكيد طلب',
                         style: TextStyle(
                           fontWeight: FontWeight.w900,
                           fontSize: 16,
