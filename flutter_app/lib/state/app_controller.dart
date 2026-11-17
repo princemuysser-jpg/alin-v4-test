@@ -469,12 +469,18 @@ class AppController extends ChangeNotifier {
 
   Future<dynamic> trackOrder(String code) => repository.trackOrder(code);
 
+  List<Map<String, dynamic>> savedOrderReceipts() =>
+      store.readOrderReceipts(studentId: student?.id);
+
   Future<Map<String, dynamic>> placeOrder({
     required String name,
     required String phone,
     required String notes,
     required Map<String, dynamic> fulfillment,
     String? couponCode,
+    num? receiptTotal,
+    num receiptDeliveryFee = 0,
+    num receiptDiscount = 0,
   }) async {
     if (cart.isEmpty) throw Exception('السلة فارغة');
     final requestKey = _requestKey();
@@ -490,6 +496,39 @@ class AppController extends ChangeNotifier {
       studentToken: studentToken,
       studentDevice: studentToken == null ? null : store.deviceId(),
     );
+    // Save as soon as Supabase accepts the checkout, before any UI is closed.
+    // Failed local caching must never turn a successful purchase into an error.
+    final orderNumber = '${result['order_number'] ?? result['order_id'] ?? ''}'.trim();
+    if (orderNumber.isNotEmpty) {
+      final lines = cart.map((line) => <String, dynamic>{
+        'title': line.item.title,
+        'qty': line.qty,
+        'unit_price': line.unitPrice,
+        'total': line.total,
+      }).toList();
+      final subtotal = lines.fold<num>(0, (sum, row) => sum + (row['total'] as num));
+      try {
+        await store.writeOrderReceipt({
+          'order_number': orderNumber,
+          'student_id': student?.id,
+          'student_name': student?.name ?? name.trim(),
+          'created_at': result['created_at'] ?? DateTime.now().toUtc().toIso8601String(),
+          'status': result['status'] ?? 'new',
+          'fulfillment_type': fulfillment['fulfillment_type'],
+          'delivery_area': fulfillment['delivery_area'],
+          'library_name': fulfillment['library_name'],
+          'items': lines,
+          'subtotal': subtotal,
+          'discount': receiptDiscount,
+          'delivery_fee': receiptDeliveryFee,
+          'total': receiptTotal ?? (subtotal - receiptDiscount + receiptDeliveryFee),
+          'payment_status': 'pending',
+        });
+        notifyListeners();
+      } catch (_) {
+        // The server order is authoritative; the customer still sees its number.
+      }
+    }
     await touchStudent();
     return result;
   }
