@@ -3,6 +3,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../core/app_scope.dart';
 import '../core/alin_theme.dart';
 import '../core/alin_config.dart';
+import '../widgets/student_order_receipt.dart';
 
 class AccountScreen extends StatefulWidget {
   const AccountScreen({super.key});
@@ -527,27 +528,73 @@ class StudentOrdersScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = AppScope.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('طلباتي')),
+      appBar: AppBar(title: const Text('طلباتي ووصولاتي')),
       body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: c.loadStudentOrders(),
+        future: c.studentToken == null
+            ? Future.value(<Map<String, dynamic>>[])
+            : c.loadStudentOrders(),
         builder: (context, snapshot) {
-          if (snapshot.connectionState != ConnectionState.done) return const Center(child: CircularProgressIndicator());
-          if (snapshot.hasError) return Center(child: Padding(padding: const EdgeInsets.all(20), child: Text('${snapshot.error}'.replaceFirst('Exception: ', ''))));
-          final rows = snapshot.data ?? [];
-          if (rows.isEmpty) return const Center(child: Text('ما عندك طلبات سابقة حالياً'));
+          if (snapshot.connectionState != ConnectionState.done) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          final saved = c.savedOrderReceipts();
+          // Database history supplies the latest status, while the local receipt
+          // preserves checkout-time line items and totals on this installation.
+          final rowsByNumber = <String, Map<String, dynamic>>{};
+          for (final row in saved) {
+            final code = '${row['order_number'] ?? ''}'.trim();
+            if (code.isNotEmpty) rowsByNumber[code] = row;
+          }
+          if (!snapshot.hasError) {
+            for (final row in snapshot.data ?? <Map<String, dynamic>>[]) {
+              final code = '${row['order_number'] ?? ''}'.trim();
+              if (code.isEmpty) continue;
+              rowsByNumber[code] = {
+                ...?rowsByNumber[code],
+                ...row,
+                'student_name': c.student?.name ?? rowsByNumber[code]?['student_name'],
+              };
+            }
+          }
+          final receipts = rowsByNumber.values.toList()..sort((a, b) =>
+              '${b['created_at'] ?? ''}'.compareTo('${a['created_at'] ?? ''}'));
+          if (receipts.isEmpty) {
+            return Center(child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Text(snapshot.hasError
+                  ? 'تعذر تحديث الطلبات من الخادم. جرّب مرة ثانية.'
+                  : 'ما عندك وصولات محفوظة حالياً'),
+            ));
+          }
           return ListView.separated(
             padding: const EdgeInsets.all(16),
-            itemCount: rows.length,
+            itemCount: receipts.length + (snapshot.hasError ? 1 : 0),
             separatorBuilder: (_, __) => const SizedBox(height: 10),
             itemBuilder: (_, index) {
-              final row = rows[index];
+              if (index == receipts.length) {
+                return const Padding(
+                  padding: EdgeInsets.all(12),
+                  child: Text('وصلاتك المحفوظة متاحة، لكن تعذّر تحديث حالة الطلبات الآن.'),
+                );
+              }
+              final row = receipts[index];
               return Card(
                 child: ListTile(
-                  leading: const CircleAvatar(child: Icon(Icons.shopping_bag_outlined)),
-                  title: Text('${row['order_number'] ?? row['id'] ?? 'طلب'}', style: const TextStyle(fontWeight: FontWeight.w900)),
-                  subtitle: Text('${row['item_name'] ?? 'طلب'}\n${row['status'] ?? ''}'),
+                  leading: const CircleAvatar(child: Icon(Icons.receipt_long_outlined)),
+                  title: Text('${row['order_number'] ?? 'طلب'}',
+                    style: const TextStyle(fontWeight: FontWeight.w900)),
+                  subtitle: Text('${row['item_name'] ?? (row['items'] is List ? 'وصل تأكيد الطلب' : 'طلب')}\n${orderReceiptStatus(row['status'])}'),
                   isThreeLine: true,
-                  trailing: Text('${row['total'] ?? ''} د.ع', style: const TextStyle(fontWeight: FontWeight.w800, color: AlinTheme.navy)),
+                  trailing: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text('${row['total'] ?? 0} د.ع',
+                        style: const TextStyle(fontWeight: FontWeight.w800, color: AlinTheme.navy)),
+                      const Icon(Icons.visibility_outlined, size: 18),
+                    ],
+                  ),
+                  onTap: () => showStudentOrderReceipt(context, row),
                 ),
               );
             },
