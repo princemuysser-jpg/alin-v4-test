@@ -46,6 +46,17 @@ String _statusLabel(dynamic value) => switch ('${value ?? ''}'.toLowerCase()) {
   final value => value,
 };
 
+String _orderStatusLabel(dynamic value) => switch ('${value ?? ''}'.toLowerCase()) {
+  'new' || 'pending' || 'pending_admin' => 'تم تسجيل الطلب',
+  'assigned' || 'accepted' => 'تم تعيين الجهة',
+  'processing' || 'printing' => 'قيد التجهيز',
+  'ready' => 'جاهز للاستلام',
+  'picked_up' || 'out_for_delivery' => 'قيد التوصيل',
+  'completed' || 'delivered' || 'done' => 'مكتمل',
+  'cancelled' || 'canceled' || 'rejected' => 'ملغي',
+  _ => 'قيد المعالجة',
+};
+
 class AlinReceiptMetric {
   final String label;
   final String value;
@@ -204,9 +215,11 @@ class AlinReceiptTemplate extends StatelessWidget {
         .fold<num>(0, (sum, row) => sum + rowQty(row))
         .round();
     final deliveryMethod =
-        '${order['delivery_method'] ?? order['fulfillment_method'] ?? ''}'
+        '${order['delivery_method'] ?? order['fulfillment_method'] ?? order['fulfillment_type'] ?? order['delivery_type'] ?? ''}'
             .toLowerCase();
     final deliveryText =
+        deliveryMethod.contains('home_delivery') ||
+        deliveryMethod.contains('delivery') ||
         deliveryMethod.contains('courier') ||
             deliveryMethod.contains('delegate')
         ? 'توصيل بواسطة المندوب'
@@ -221,6 +234,8 @@ class AlinReceiptTemplate extends StatelessWidget {
       AlinReceiptField('اسم الطالب', '${order['student_name'] ?? '—'}'),
       AlinReceiptField('رقم الهاتف', '${order['student_phone'] ?? '—'}'),
       AlinReceiptField('طريقة الاستلام', deliveryText),
+      AlinReceiptField('حالة الطلب', _orderStatusLabel(order['status'])),
+      AlinReceiptField('حالة الدفع', '${order['payment_status'] ?? ''}'.toLowerCase() == 'paid' ? 'مدفوع' : 'غير مؤكد الدفع'),
       if ('${order['delivery_area'] ?? ''}'.trim().isNotEmpty)
         AlinReceiptField('المنطقة', '${order['delivery_area']}'),
       if ('${order['delivery_landmark'] ?? ''}'.trim().isNotEmpty)
@@ -279,16 +294,13 @@ class AlinReceiptTemplate extends StatelessWidget {
     return AlinReceiptTemplate(
       key: key,
       receiptNumber: receiptNumber,
-      documentLabel: 'وصل طلب كامل',
+      documentLabel: 'وصل تأكيد طلب',
       metrics: [
         AlinReceiptMetric('رقم الطلب', orderNumber),
         AlinReceiptMetric(
           'التاريخ',
           _receiptDate(
-            order['completed_at'] ??
-                order['delivered_at'] ??
-                order['updated_at'] ??
-                order['created_at'],
+            order['created_at'],
           ),
         ),
         AlinReceiptMetric(
@@ -301,6 +313,7 @@ class AlinReceiptTemplate extends StatelessWidget {
       items: items,
       totals: totals,
       notes: notes,
+      footerText: 'وصل تأكيد طلب، وليس إثبات دفع أو تسليم',
     );
   }
 

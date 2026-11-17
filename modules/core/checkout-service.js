@@ -185,7 +185,9 @@
           row.append(code,copy);codes.append(row);
         });
         const close=document.createElement('button');close.type='button';close.className='alin-order-success__close';close.textContent='إغلاق';close.addEventListener('click',()=>window.closeCheckout?.());
-        success.append(icon,h,note);if(pickup.textContent)success.append(pickup);success.append(codes,close);box.append(success);
+        const receipt=document.createElement('button');receipt.type='button';receipt.className='alin-order-success__receipt';receipt.textContent='🧾 عرض وصل الطلب المحفوظ';
+        receipt.addEventListener('click',()=>window.AlinStudentReceipts?.open(numbers[0]));
+        success.append(icon,h,note);if(pickup.textContent)success.append(pickup);success.append(codes,receipt,close);box.append(success);
         document.dispatchEvent(new CustomEvent('alin:order-created',{detail:{numbers,fulfillment:fulfillment.fulfillment_type||fulfillment.delivery_type||'',items:cartSnapshot}}));
       }
     }catch(e){throw e}

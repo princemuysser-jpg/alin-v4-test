@@ -1312,9 +1312,10 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
   }
 
   Widget _receiptCenter(List<Map<String, dynamic>> grouped) {
+    final receipts = grouped;
     final completed = grouped.where(isDone).toList();
     final query = receiptSearch.trim().toLowerCase();
-    final visible = completed.where((order) {
+    final visible = receipts.where((order) {
       if (query.isEmpty) return true;
       final items = (order['_items'] as List? ?? const <dynamic>[])
           .cast<Map<String, dynamic>>();
@@ -1329,11 +1330,11 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
       ].map((value) => '${value ?? ''}'.toLowerCase()).join(' ');
       return haystack.contains(query);
     }).toList();
-    final totalAmounts = completed.fold<num>(
+    final totalAmounts = receipts.fold<num>(
       0,
       (sum, order) => sum + number(order['_group_total']),
     );
-    final totalDelivery = completed.fold<num>(
+    final totalDelivery = receipts.fold<num>(
       0,
       (sum, order) => sum + number(order['_courier_fee']),
     );
@@ -1381,7 +1382,7 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
                         ),
                         SizedBox(height: 3),
                         Text(
-                          'وصولات الطلبات المكتملة بصورة مرتبة مثل صفحة الويب القديمة.',
+                          'وصولات تأكيد الطلب من وقت إنشائه، وليست إثبات دفع أو تسليم.',
                           style: TextStyle(
                             fontSize: 13,
                             color: BusinessBrand.muted,
@@ -1401,7 +1402,7 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
                       borderRadius: BorderRadius.circular(99),
                     ),
                     child: Text(
-                      '${completed.length}',
+                      '${receipts.length}',
                       style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w900,
@@ -1423,7 +1424,7 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
                       : (constraints.maxWidth - 10) / 2,
                   child: _Metric(
                     label: 'جميع الوصولات',
-                    value: '${completed.length}',
+                    value: '${receipts.length}',
                     icon: Icons.receipt_long_rounded,
                     accent: BusinessBrand.navy,
                   ),
@@ -1549,13 +1550,13 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
                 ),
               ),
             if (desktop) const SizedBox(height: 8),
-            if (completed.isEmpty)
+            if (receipts.isEmpty)
               const Card(
                 child: Padding(
                   padding: EdgeInsets.all(28),
                   child: Center(
                     child: Text(
-                      'لا توجد وصولات مكتملة بعد',
+                      'لا توجد وصولات للطلبات بعد',
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,

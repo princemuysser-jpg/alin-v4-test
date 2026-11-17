@@ -599,7 +599,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               childAspectRatio: wide ? 2.05 : 1.45,
               children: [
                 _metricCard(
-                  'إجمالي المبيعات',
+                  'قيمة الطلبات',
                   money(summary['total_sales']),
                   Icons.bar_chart_rounded,
                   const Color(0xFF1677FF),
@@ -1807,26 +1807,19 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 
   Widget _receipts() {
-    final completed = groupedOrders.where((order) {
+    final receipts = groupedOrders.where((order) {
       final items =
           ((order['_items'] as List?) ?? const <dynamic>[])
               .whereType<Map>()
               .map((e) => Map<String, dynamic>.from(e))
               .toList();
       final source = items.isEmpty ? <Map<String, dynamic>>[order] : items;
-      return source.isNotEmpty &&
-          source.every(
-            (row) => const {
-              'completed',
-              'delivered',
-              'done',
-            }.contains('${row['status']}'),
-          );
+      return source.isNotEmpty;
     }).toList();
 
     bool isDelivery(Map<String, dynamic> order) => isDeliveryOrder(order);
 
-    Iterable<Map<String, dynamic>> filtered = completed;
+    Iterable<Map<String, dynamic>> filtered = receipts;
     if (receiptFilter == 'delivery') {
       filtered = filtered.where(isDelivery);
     } else if (receiptFilter == 'pickup') {
@@ -1863,8 +1856,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       0,
       (sum, order) => sum + number(order['delivery_fee']),
     );
-    final deliveryCount = completed.where(isDelivery).length;
-    final pickupCount = completed.length - deliveryCount;
+    final deliveryCount = receipts.where(isDelivery).length;
+    final pickupCount = receipts.length - deliveryCount;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(14, 16, 14, 28),
@@ -1886,7 +1879,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   ),
                   SizedBox(height: 3),
                   Text(
-                    'وصولات الطلبات المكتملة مع البحث والتصفية والإجماليات',
+                    'وصولات محفوظة من وقت إنشاء الطلب؛ ليست إثبات دفع أو تسليم',
                     style: TextStyle(
                       fontSize: 12.5,
                       color: Color(0xFF667085),
@@ -1934,7 +1927,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   const Color(0xFF7C3AED),
                 ),
                 _receiptMetricCard(
-                  'إجمالي المبيعات',
+                  'قيمة الطلبات',
                   money(totalSales),
                   Icons.payments_rounded,
                   const Color(0xFF16A34A),
@@ -1985,7 +1978,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               _receiptFilterChip(
                 'الكل',
                 'all',
-                completed.length,
+                receipts.length,
                 const Color(0xFF143B68),
                 '🧾',
               ),

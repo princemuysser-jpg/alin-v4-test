@@ -8,6 +8,7 @@ import '../core/alin_config.dart';
 import '../core/alin_theme.dart';
 import '../models/catalog.dart';
 import '../state/app_controller.dart';
+import '../widgets/student_order_receipt.dart';
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key});
@@ -297,6 +298,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         notes: notes.text,
         fulfillment: fulfillment,
         couponCode: coupon.text,
+        receiptTotal: submittedFinalTotal,
+        receiptDeliveryFee: submittedDeliveryFee,
+        receiptDiscount: c.cartTotal > submittedCartTotal ? c.cartTotal - submittedCartTotal : 0,
       );
       if (!mounted) return;
       final number = '${result['order_number'] ?? result['order_id'] ?? 'تم إنشاء الطلب'}';
@@ -355,7 +359,27 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 ),
               ],
             ),
-            actions: [FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: const Text('تم'))],
+            actions: [
+              OutlinedButton.icon(
+                onPressed: () async {
+                  final saved = c.savedOrderReceipts();
+                  final receipt = saved.where((row) =>
+                    '${row['order_number'] ?? ''}' == number).firstOrNull ??
+                    <String, dynamic>{
+                      'order_number': number,
+                      'created_at': DateTime.now().toIso8601String(),
+                      'status': 'new',
+                      'total': submittedFinalTotal,
+                      'payment_status': 'pending',
+                    };
+                  await showStudentOrderReceipt(dialogContext, receipt);
+                },
+                icon: const Icon(Icons.receipt_long_outlined),
+                label: const Text('عرض الوصل'),
+              ),
+              FilledButton(onPressed: () => Navigator.pop(dialogContext, true),
+                  child: const Text('تم')),
+            ],
           ),
         ),
       );

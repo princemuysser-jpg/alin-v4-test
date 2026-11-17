@@ -64,7 +64,7 @@ class _GroupedOrderReceiptListTileState
 
   String _dateText() {
     final raw =
-        '${widget.order['completed_at'] ?? widget.order['delivered_at'] ?? widget.order['updated_at'] ?? widget.order['created_at'] ?? ''}';
+        '${widget.order['created_at'] ?? ''}';
     final parsed = DateTime.tryParse(raw)?.toLocal();
     if (parsed == null) return '—';
     String two(int value) => value.toString().padLeft(2, '0');
@@ -302,7 +302,7 @@ class _GroupedOrderReceiptListTileState
                               ),
                             ),
                             pw.Text(
-                              'وصل توصيل الطلب',
+                              'وصل تأكيد طلب',
                               style: pw.TextStyle(
                                 font: regular,
                                 fontSize: 10,
@@ -331,6 +331,8 @@ class _GroupedOrderReceiptListTileState
                 pw.SizedBox(height: 6),
                 info('الطالب', '${widget.order['student_name'] ?? '—'}'),
                 info('الهاتف', '${widget.order['student_phone'] ?? '—'}'),
+                info('حالة الطلب', '${widget.order['status'] ?? 'جديد'}'),
+                info('حالة الدفع', '${widget.order['payment_status'] ?? ''}'.toLowerCase() == 'paid' ? 'مدفوع' : 'غير مؤكد الدفع'),
                 if ('${widget.order['delivery_area'] ?? ''}'.trim().isNotEmpty)
                   info('المنطقة', '${widget.order['delivery_area']}'),
                 if ('${widget.order['delivery_landmark'] ?? ''}'
@@ -524,9 +526,9 @@ class _GroupedOrderReceiptListTileState
                   color: BusinessBrand.softTeal,
                   borderRadius: BorderRadius.circular(99),
                 ),
-                child: const Text(
-                  'مكتمل',
-                  style: TextStyle(
+                child: Text(
+                  const {'completed','delivered','done'}.contains('${widget.order['status']}'.toLowerCase()) ? 'مكتمل' : const {'cancelled','canceled','rejected'}.contains('${widget.order['status']}'.toLowerCase()) ? 'ملغي' : 'قيد المعالجة',
+                  style: const TextStyle(
                     color: BusinessBrand.teal,
                     fontWeight: FontWeight.w900,
                     fontSize: 12,

@@ -9,6 +9,7 @@ class DeviceStore {
   static const _studentTokenKey = 'alin_flutter_student_token_v2';
   static const _legacyStudentKey = 'alin_flutter_student_session_v1';
   static const _cartKey = 'alin_flutter_cart_v1';
+  static const _orderReceiptsKey = 'alin_flutter_order_receipts_v1';
   static const _favoritesKey = 'alin_flutter_favorites_v1';
   static const _readNotificationsKey = 'alin_flutter_read_notifications_v1';
   static const _themeKey = 'alin_flutter_theme_v1';
@@ -74,6 +75,26 @@ class DeviceStore {
     if (token.isEmpty || student is! Map) return;
     await secure.write(key: _studentTokenKey, value: token);
     await prefs.setString(_studentProfileKey, jsonEncode(Map<String, dynamic>.from(student)));
+  }
+
+  /// Persistent order acknowledgements for this installation, including guests.
+  /// These are not proof of payment and must not be used to calculate earnings.
+  List<Map<String, dynamic>> readOrderReceipts({String? studentId}) {
+    final owner = (studentId ?? '').trim();
+    return _readList(_orderReceiptsKey).where((row) {
+      final savedOwner = '${row['student_id'] ?? ''}'.trim();
+      return owner.isEmpty ? savedOwner.isEmpty : savedOwner == owner;
+    }).toList();
+  }
+
+  Future<void> writeOrderReceipt(Map<String, dynamic> receipt) async {
+    final number = '${receipt['order_number'] ?? ''}'.trim();
+    if (number.isEmpty) return;
+    final all = _readList(_orderReceiptsKey);
+    all.removeWhere((row) => '${row['order_number'] ?? ''}' == number);
+    all.insert(0, receipt);
+    // Bound the cache size; saved authenticated orders also exist on the server.
+    await prefs.setString(_orderReceiptsKey, jsonEncode(all.take(100).toList()));
   }
 
   List<Map<String, dynamic>> readCart() => _readList(_cartKey);

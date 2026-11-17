@@ -21,7 +21,7 @@
   const statusKey=row=>String(row?.status||row?.order_status||'').trim().toLowerCase();
   const delivered=row=>['completed','delivered','done'].includes(statusKey(row));
   const cancelled=row=>['cancelled','canceled','rejected','reversed'].includes(statusKey(row));
-  const statusLabel=row=>cancelled(row)?'ملغي':delivered(row)?'مكتمل':'مثبت';
+  const statusLabel=row=>cancelled(row)?'ملغي':delivered(row)?'مكتمل':'قيد المعالجة';
 
   function unique(rows,keyFn){
     const seen=new Set();
@@ -56,7 +56,7 @@
   }
 
   function scopedOrders(role){
-    const rows=arr(db().orders).filter(delivered);
+    const rows=arr(db().orders);
     if(role==='admin'||role==='accountant')return rows;
     const id=roleId(role);
     if(role==='teacher'){
@@ -176,7 +176,7 @@
 
   function receiptStatus(row,type){
     if(type==='settlement')return cancelled(row)?'ملغي':'مثبت';
-    return delivered(row)?'مكتمل':'ملغي';
+    return statusLabel(row);
   }
 
   function orderRow(row,role){
@@ -185,9 +185,9 @@
     return `<article class="alin415r-row" data-alin415r-kind="order" data-alin415r-status="${esc(receiptStatus(row,'order'))}" data-alin415r-search="${esc(search)}">
       <div class="alin415r-code"><b dir="ltr">${esc(receiptNumber(row))}</b><small dir="ltr">${esc(orderNumber(row))}</small></div>
       <span class="alin415r-type">وصل طلب • ${items.length} مواد</span>
-      <time>${esc(dateTime(row.completed_at||row.delivered_at||row.updated_at||row.created_at))}</time>
+      <time>${esc(dateTime(row.created_at))}</time>
       <strong>${money(orderAmounts(row).total)} د.ع</strong>
-      <span class="alin415r-status is-complete">مكتمل</span>
+      <span class="alin415r-status ${cancelled(row)?'is-cancelled':delivered(row)?'is-complete':'is-pending'}">${esc(receiptStatus(row,'order'))}</span>
       <div class="alin415r-actions"><button class="secondary" type="button" data-alin415r-preview="order" data-alin415r-key="${esc(key)}">معاينة</button><button type="button" data-alin415r-print="order" data-alin415r-key="${esc(key)}">طباعة / حفظ PDF</button></div>
     </article>`;
   }
@@ -210,13 +210,13 @@
     const itemLines=items.map((item,index)=>{const a=rowAmounts(item);return `<tr><td>${index+1}</td><td>${esc(title(item))}</td><td>${a.quantity}</td><td>${money(a.unit)} د.ع</td><td>${money(a.subtotal)} د.ع</td></tr>`}).join('');
     const note=items.map(item=>item.notes||item.note||item.delivery_note||'').filter(Boolean).join(' • ')||'لا توجد ملاحظات';
     return `<article class="alin415r-paper" dir="rtl" data-alin415r-printable>
-      <header class="alin415r-paper-head"><div class="alin415r-paper-brand"><span>آ</span><div><h2>منصة آلين</h2><p>ملازم • قرطاسية • هدايا</p></div></div><div class="alin415r-paper-title"><small>وصل طلب كامل</small><b dir="ltr">${esc(number)}</b></div></header>
-      <div class="alin415r-paper-meta"><div><small>رقم الطلب</small><b dir="ltr">${esc(orderNumber(row))}</b></div><div><small>التاريخ</small><b>${esc(dateTime(row.completed_at||row.delivered_at||row.updated_at||row.created_at))}</b></div><div><small>عدد المواد</small><b>${items.length} مواد • ${amount.quantity} قطعة/نسخة</b></div></div>
+      <header class="alin415r-paper-head"><div class="alin415r-paper-brand"><span>آ</span><div><h2>منصة آلين</h2><p>ملازم • قرطاسية • هدايا</p></div></div><div class="alin415r-paper-title"><small>وصل تأكيد طلب</small><b dir="ltr">${esc(number)}</b></div></header>
+      <div class="alin415r-paper-meta"><div><small>رقم الطلب</small><b dir="ltr">${esc(orderNumber(row))}</b></div><div><small>التاريخ</small><b>${esc(dateTime(row.created_at))}</b></div><div><small>الحالة</small><b>${esc(receiptStatus(row,'order'))} • ${items.length} مواد • ${amount.quantity} نسخة</b></div></div>
       <section class="alin415r-paper-section"><h3>بيانات الطالب</h3><div class="alin415r-student"><div><small>اسم الطالب</small><b>${esc(studentName(row))}</b></div><div><small>رقم الهاتف</small><b dir="ltr">${esc(studentPhone(row))}</b></div><div><small>طريقة الاستلام</small><b>${esc(fulfillment(row))}</b></div></div></section>
       <section class="alin415r-paper-section"><h3>مواد الطلب</h3><table><thead><tr><th>#</th><th>الصنف</th><th>الكمية</th><th>سعر الوحدة</th><th>الإجمالي</th></tr></thead><tbody>${itemLines}</tbody></table>
       <div class="alin415r-totals"><div><span>مجموع المواد</span><b>${money(amount.subtotal)} د.ع</b></div>${amount.delivery?`<div><span>أجرة التوصيل</span><b>${money(amount.delivery)} د.ع</b></div>`:''}${amount.discount?`<div><span>الخصم</span><b>${money(amount.discount)} د.ع</b></div>`:''}<div class="final"><span>الإجمالي الكلي</span><strong>${money(amount.total)} د.ع</strong></div></div></section>
       <section class="alin415r-paper-note"><small>ملاحظات</small><p>${esc(note)}</p></section>
-      <footer><b>منصة آلين</b><small>شكراً لاستخدام منصة آلين</small></footer>
+      <footer><b>منصة آلين</b><small>وصل تأكيد طلب، وليس إثبات دفع أو تسليم</small></footer>
     </article>`;
   }
 
@@ -228,7 +228,7 @@
       <section class="alin415r-paper-section"><h3>معلومات التسوية</h3><div class="alin415r-student"><div><small>اسم الحساب</small><b>${esc(settlementPartyName(row,role))}</b></div><div><small>طريقة التسوية</small><b>${esc(row.payment_method||row.method||'نقداً')}</b></div><div><small>رقم الوصل</small><b dir="ltr">${esc(number)}</b></div></div></section>
       <section class="alin415r-settlement-amount"><small>المبلغ المسدد</small><strong>${money(row.amount||row.paid_amount||row.settled_amount||row.value||row.total)} د.ع</strong></section>
       <section class="alin415r-paper-note"><small>ملاحظات</small><p>${esc(row.note||row.notes||'تسوية مالية مثبتة في منصة آلين')}</p></section>
-      <footer><b>منصة آلين</b><small>شكراً لاستخدام منصة آلين</small></footer>
+      <footer><b>منصة آلين</b><small>تم إصدار وصل التسوية من منصة آلين</small></footer>
     </article>`;
   }
 
@@ -239,11 +239,11 @@
     const orderTotal=orders.reduce((sum,row)=>sum+orderAmounts(row).total,0);
     const settlementTotal=settlements.filter(row=>!cancelled(row)).reduce((sum,row)=>sum+Math.max(0,num(row.amount)),0);
     return `<section class="alin415r-center" data-alin415r-role="${esc(role)}">
-      <header class="alin415r-heading"><div><small>منصة آلين</small><h2>الوصولات</h2><p>وصولات الطلبات المكتملة والتسويات المثبتة بصورة مرتبة.</p></div><span>${orders.length+settlements.length}</span></header>
-      <section class="alin415r-metrics"><article><i>1</i><div><small>جميع الوصولات</small><strong>${orders.length+settlements.length}</strong></div></article><article><i>2</i><div><small>وصولات الطلبات</small><strong>${orders.length}</strong></div></article><article><i>3</i><div><small>وصولات التسويات</small><strong>${settlements.length}</strong></div></article><article><i>د.ع</i><div><small>إجمالي المبالغ</small><strong>${money(orderTotal+settlementTotal)} د.ع</strong></div></article></section>
+      <header class="alin415r-heading"><div><small>منصة آلين</small><h2>الوصولات</h2><p>وصولات الطلبات من لحظة إنشائها والتسويات المالية بصورة مرتبة.</p></div><span>${orders.length+settlements.length}</span></header>
+      <section class="alin415r-metrics"><article><i>1</i><div><small>جميع الوصولات</small><strong>${orders.length+settlements.length}</strong></div></article><article><i>2</i><div><small>وصولات الطلبات</small><strong>${orders.length}</strong></div></article><article><i>3</i><div><small>وصولات التسويات</small><strong>${settlements.length}</strong></div></article><article><i>د.ع</i><div><small>قيمة الطلبات والتسويات</small><strong>${money(orderTotal+settlementTotal)} د.ع</strong></div></article></section>
       <section class="alin415r-workspace">
         <div class="alin415r-browser">
-          <div class="alin415r-filters"><div class="alin415r-tabs"><button class="active" type="button" data-alin415r-filter="all">الكل</button><button type="button" data-alin415r-filter="order">وصولات الطلبات</button><button type="button" data-alin415r-filter="settlement">وصولات التسويات</button></div><label><span>بحث</span><input type="search" placeholder="ابحث برقم الوصول أو الطلب أو اسم الطالب..." data-alin415r-search></label><select data-alin415r-status><option value="all">كل الحالات</option><option value="مكتمل">مكتمل</option><option value="مثبت">مثبت</option><option value="ملغي">ملغي</option></select></div>
+          <div class="alin415r-filters"><div class="alin415r-tabs"><button class="active" type="button" data-alin415r-filter="all">الكل</button><button type="button" data-alin415r-filter="order">وصولات الطلبات</button><button type="button" data-alin415r-filter="settlement">وصولات التسويات</button></div><label><span>بحث</span><input type="search" placeholder="ابحث برقم الوصول أو الطلب أو اسم الطالب..." data-alin415r-search></label><select data-alin415r-status><option value="all">كل الحالات</option><option value="مكتمل">مكتمل</option><option value="قيد المعالجة">قيد المعالجة</option><option value="مثبت">مثبت</option><option value="ملغي">ملغي</option></select></div>
           <div class="alin415r-table-head"><span>رقم الوصول / الطلب</span><span>النوع</span><span>التاريخ</span><span>المبلغ</span><span>الحالة</span><span>الإجراءات</span></div>
           <div class="alin415r-list">${all||'<div class="alin415r-empty">لا توجد وصولات لهذا الحساب.</div>'}</div><div class="alin415r-no-results" hidden>لا توجد نتائج مطابقة.</div>
         </div>
