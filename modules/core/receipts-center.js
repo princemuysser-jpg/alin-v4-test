@@ -228,7 +228,7 @@
       <section class="alin415r-paper-section"><h3>معلومات التسوية</h3><div class="alin415r-student"><div><small>اسم الحساب</small><b>${esc(settlementPartyName(row,role))}</b></div><div><small>طريقة التسوية</small><b>${esc(row.payment_method||row.method||'نقداً')}</b></div><div><small>رقم الوصل</small><b dir="ltr">${esc(number)}</b></div></div></section>
       <section class="alin415r-settlement-amount"><small>المبلغ المسدد</small><strong>${money(row.amount||row.paid_amount||row.settled_amount||row.value||row.total)} د.ع</strong></section>
       <section class="alin415r-paper-note"><small>ملاحظات</small><p>${esc(row.note||row.notes||'تسوية مالية مثبتة في منصة آلين')}</p></section>
-      <footer><b>منصة آلين</b><small>وصل تأكيد طلب، وليس إثبات دفع أو تسليم</small></footer>
+      <footer><b>منصة آلين</b><small>تم إصدار وصل التسوية من منصة آلين</small></footer>
     </article>`;
   }
 
