@@ -149,7 +149,7 @@
       '<p>طريقة الاستلام: '+clean(fulfilled)+'</p>'+
       '<table style="width:100%;border-collapse:collapse;text-align:right"><thead><tr><th>ت</th><th>المادة</th><th>الكمية</th><th>القيمة</th></tr></thead><tbody>'+
       receiptItemsHtml(receipt)+'</tbody></table>'+
-      '<p style="font-size:20px;font-weight:bold">القيمة المسجلة: '+totalText+'</p>'+
+      '<p style="font-size:20px;font-weight:bold">'+(receipt.total_is_cart_estimate?'قيمة مواد السلة قبل أجرة التوصيل (تقديرية): ':'الإجمالي: ')+totalText+'</p>'+
       '<p style="color:#a65b1c;font-weight:bold">وصل تأكيد طلب، وليس إثبات دفع أو تسليم. قد تتغير الحالة لاحقاً.</p>'+
       '</article>';
   }
@@ -222,6 +222,7 @@
     });
   });
   window.AlinStudentReceipts=Object.freeze({read:readStudentReceipts,save:writeStudentReceipt,open:openStudentReceipt});
+  window.addEventListener('alin:student-session',renderStudentReceiptLinks);
 
   function bindTrackingInput(){
     const input=document.getElementById('trackOrderInput');
