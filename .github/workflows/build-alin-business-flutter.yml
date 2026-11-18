@@ -128,8 +128,9 @@ jobs:
 
       - name: Generate ALIN Business Android icon
         run: |
-          python3 -m pip install --user Pillow
-          python3 tool/generate_business_icons.py android
+          python3 -m venv .alin-icon-venv
+          .alin-icon-venv/bin/python -m pip install Pillow
+          .alin-icon-venv/bin/python tool/generate_business_icons.py android
 
       - name: Flutter checks
         run: |
@@ -204,8 +205,9 @@ jobs:
 
       - name: Generate ALIN Business iOS icon
         run: |
-          python3 -m pip install --user Pillow
-          python3 tool/generate_business_icons.py ios
+          python3 -m venv .alin-icon-venv
+          .alin-icon-venv/bin/python -m pip install Pillow
+          .alin-icon-venv/bin/python tool/generate_business_icons.py ios
 
       - name: Flutter checks
         run: |
