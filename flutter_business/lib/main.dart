@@ -20,6 +20,7 @@ import 'screens/library_dashboard_screen.dart';
 import 'screens/printer_dual_dashboard_screen.dart';
 import 'screens/teacher_dashboard_screen.dart';
 import 'widgets/business_brand.dart';
+import 'widgets/business_app_mark.dart';
 
 final GlobalKey<NavigatorState> businessNavigatorKey =
     GlobalKey<NavigatorState>();
@@ -427,7 +428,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const AlinBrandMark(size: 100),
+                            const BusinessAppMark(size: 100),
                             const SizedBox(height: 26),
                             const Text(
                               'آلين للأعمال',
@@ -475,7 +476,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               if (!wide) ...[
-                                const Center(child: AlinBrandMark(size: 76)),
+                                const Center(child: BusinessAppMark(size: 76)),
                                 const SizedBox(height: 18),
                               ],
                               Text(
