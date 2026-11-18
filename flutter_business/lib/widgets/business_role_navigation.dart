@@ -23,6 +23,7 @@ import '../screens/printer_settings_screen.dart';
 import '../screens/printer_booklet_finance_screen.dart';
 import '../screens/printer_dashboard_screen.dart';
 import 'business_brand.dart';
+import 'business_app_mark.dart';
 
 class BusinessRoleNavigationDrawer extends StatefulWidget {
   final BusinessRepository repository;
@@ -100,7 +101,7 @@ class _BusinessRoleNavigationDrawerState
       ),
       child: Row(
         children: [
-          const AlinBrandMark(size: 52),
+          const BusinessAppMark(size: 52),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
