@@ -126,6 +126,12 @@ jobs:
           yes | "$SDKMANAGER" --licenses >/dev/null || true
           "$SDKMANAGER" "platforms;android-36" "build-tools;36.0.0"
 
+      - name: Generate ALIN Business Android icon
+        run: |
+          python3 -m venv .alin-icon-venv
+          .alin-icon-venv/bin/python -m pip install Pillow
+          .alin-icon-venv/bin/python tool/generate_business_icons.py android
+
       - name: Flutter checks
         run: |
           flutter pub get
@@ -196,6 +202,12 @@ jobs:
           if 'IPHONEOS_DEPLOYMENT_TARGET = 15.0;' not in p.read_text():
               raise SystemExit('iOS deployment target was not raised to 15.0')
           PY
+
+      - name: Generate ALIN Business iOS icon
+        run: |
+          python3 -m venv .alin-icon-venv
+          .alin-icon-venv/bin/python -m pip install Pillow
+          .alin-icon-venv/bin/python tool/generate_business_icons.py ios
 
       - name: Flutter checks
         run: |

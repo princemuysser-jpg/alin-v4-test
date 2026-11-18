@@ -27,6 +27,13 @@ jobs:
           channel: stable
           cache: true
 
+      - name: Generate ALIN Business PWA icons
+        working-directory: flutter_business
+        run: |
+          python3 -m venv .alin-icon-venv
+          .alin-icon-venv/bin/python -m pip install Pillow
+          .alin-icon-venv/bin/python tool/generate_business_icons.py web
+
       - name: Flutter checks
         run: |
           flutter pub get

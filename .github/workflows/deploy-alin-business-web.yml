@@ -2,6 +2,8 @@ name: Deploy ALIN Business Web
 
 on:
   push:
+    branches:
+      - main
     paths:
       - 'flutter_business/**'
       - '.github/workflows/deploy-alin-business-web.yml'
@@ -30,6 +32,13 @@ jobs:
           flutter-version: '3.44.9'
           channel: stable
           cache: true
+
+      - name: Generate ALIN Business PWA icons
+        working-directory: flutter_business
+        run: |
+          python3 -m venv .alin-icon-venv
+          .alin-icon-venv/bin/python -m pip install Pillow
+          .alin-icon-venv/bin/python tool/generate_business_icons.py web
 
       - name: Build ALIN Business Web
         working-directory: flutter_business
