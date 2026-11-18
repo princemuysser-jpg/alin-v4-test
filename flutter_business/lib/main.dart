@@ -4,10 +4,12 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'core/business_config.dart';
+import 'core/business_login_memory.dart';
 import 'core/business_notification_service.dart';
 import 'data/business_repository.dart';
 import 'models/business_account.dart';
@@ -321,7 +323,31 @@ class _LoginScreenState extends State<LoginScreen> {
   final password = TextEditingController();
   bool busy = false;
   bool obscure = true;
+  bool remember = false;
+  bool loadingRecall = true;
   String? error;
+
+  @override
+  void initState() {
+    super.initState();
+    _restoreRememberedLogin();
+  }
+
+  Future<void> _restoreRememberedLogin() async {
+    try {
+      final previous = await BusinessLoginMemory.load();
+      if (!mounted) return;
+      setState(() {
+        remember = previous.remember;
+        username.text = previous.username;
+        password.text = previous.password;
+      });
+    } catch (_) {
+      // Password manager / session login remain available if device storage fails.
+    } finally {
+      if (mounted) setState(() => loadingRecall = false);
+    }
+  }
 
   @override
   void dispose() {
@@ -331,8 +357,10 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> submit() async {
-    if (busy) return;
-    if (username.text.trim().isEmpty || password.text.isEmpty) {
+    if (busy || loadingRecall) return;
+    final name = username.text.trim();
+    final secret = password.text;
+    if (name.isEmpty || secret.isEmpty) {
       setState(() => error = 'اكتب اسم الدخول وكلمة المرور');
       return;
     }
@@ -342,9 +370,25 @@ class _LoginScreenState extends State<LoginScreen> {
     });
     try {
       final loggedAccount = await widget.repository.login(
-        username: username.text.trim(),
-        password: password.text,
+        username: name,
+        password: secret,
       );
+      if (!mounted) return;
+      try {
+        await BusinessLoginMemory.save(
+          username: name,
+          password: secret,
+          remember: remember,
+        );
+      } catch (_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('تم الدخول، لكن تعذر حفظ بيانات الدخول على هذا الجهاز')),
+          );
+        }
+      }
+      if (!mounted) return;
+      TextInput.finishAutofillContext(shouldSave: remember);
       widget.onLoggedIn(loggedAccount);
     } catch (e) {
       if (!mounted) return;
@@ -356,101 +400,202 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final wide = MediaQuery.sizeOf(context).width >= 850;
+    final primary = BusinessBrand.runtimePrimary;
     return Scaffold(
+      backgroundColor: const Color(0xFFF2F6FB),
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 430),
-              child: Column(
-                children: [
-                  const AlinBrandMark(size: 94),
-                  const SizedBox(height: 22),
-                  Text(
-                    BusinessConfig.appName,
-                    style: const TextStyle(
-                      fontSize: 30,
-                      fontWeight: FontWeight.w900,
-                      color: BusinessBrand.navy,
+        child: Row(
+          children: [
+            if (wide)
+              Expanded(
+                child: Container(
+                  height: double.infinity,
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topRight,
+                      end: Alignment.bottomLeft,
+                      colors: [Color(0xFF102B4E), Color(0xFF174F78), Color(0xFF0F777B)],
                     ),
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    BusinessConfig.appSubtitle,
-                    style: TextStyle(color: Colors.grey.shade600),
-                  ),
-                  const SizedBox(height: 32),
-                  TextField(
-                    controller: username,
-                    textInputAction: TextInputAction.next,
-                    decoration: const InputDecoration(
-                      labelText: 'اسم الدخول',
-                      prefixIcon: Icon(Icons.person_outline),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  TextField(
-                    controller: password,
-                    obscureText: obscure,
-                    onSubmitted: (_) => submit(),
-                    decoration: InputDecoration(
-                      labelText: 'كلمة المرور',
-                      prefixIcon: const Icon(Icons.lock_outline),
-                      suffixIcon: IconButton(
-                        onPressed: () => setState(() => obscure = !obscure),
-                        icon: Icon(
-                          obscure
-                              ? Icons.visibility_outlined
-                              : Icons.visibility_off_outlined,
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(56),
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 420),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const AlinBrandMark(size: 100),
+                            const SizedBox(height: 26),
+                            const Text(
+                              'آلين للأعمال',
+                              style: TextStyle(fontSize: 42, fontWeight: FontWeight.w900, color: Colors.white),
+                            ),
+                            const SizedBox(height: 12),
+                            const Text(
+                              'مساحة عمل واحدة لإدارة الطلبات والمبيعات والتسويات بكل ثقة.',
+                              style: TextStyle(fontSize: 18, height: 1.7, color: Color(0xFFE0EDF5)),
+                            ),
+                            const SizedBox(height: 32),
+                            const Wrap(
+                              spacing: 10,
+                              runSpacing: 10,
+                              children: [
+                                _LoginFeature('إدارة الطلبات', Icons.inventory_2_outlined),
+                                _LoginFeature('تقارير مالية', Icons.insights_outlined),
+                                _LoginFeature('طباعة وفواتير', Icons.receipt_long_outlined),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
                     ),
                   ),
-                  if (error != null) ...[
-                    const SizedBox(height: 12),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFEEEE),
-                        borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            Expanded(
+              child: Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 32),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 440),
+                    child: Card(
+                      elevation: 0,
+                      color: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(25),
+                        side: const BorderSide(color: Color(0xFFE4EBF3)),
                       ),
-                      child: Text(
-                        error!,
-                        style: const TextStyle(color: Color(0xFFB42318)),
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 18),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 54,
-                    child: FilledButton.icon(
-                      onPressed: busy ? null : submit,
-                      icon: busy
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.login_rounded),
-                      label: Text(
-                        busy ? 'جارٍ تسجيل الدخول...' : 'تسجيل الدخول',
+                      child: Padding(
+                        padding: const EdgeInsets.all(26),
+                        child: AutofillGroup(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              if (!wide) ...[
+                                const Center(child: AlinBrandMark(size: 76)),
+                                const SizedBox(height: 18),
+                              ],
+                              Text(
+                                'أهلاً بعودتك',
+                                style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: primary),
+                              ),
+                              const SizedBox(height: 8),
+                              const Text(
+                                'سجّل الدخول لحساب آلين للأعمال',
+                                style: TextStyle(color: Color(0xFF667085)),
+                              ),
+                              const SizedBox(height: 26),
+                              TextField(
+                                controller: username,
+                                enabled: !busy && !loadingRecall,
+                                autofillHints: const [AutofillHints.username],
+                                textInputAction: TextInputAction.next,
+                                decoration: const InputDecoration(
+                                  labelText: 'اسم المستخدم',
+                                  prefixIcon: Icon(Icons.person_outline_rounded),
+                                ),
+                              ),
+                              const SizedBox(height: 14),
+                              TextField(
+                                controller: password,
+                                enabled: !busy && !loadingRecall,
+                                autofillHints: const [AutofillHints.password],
+                                textInputAction: TextInputAction.done,
+                                obscureText: obscure,
+                                onSubmitted: (_) => submit(),
+                                decoration: InputDecoration(
+                                  labelText: 'كلمة المرور',
+                                  prefixIcon: const Icon(Icons.lock_outline_rounded),
+                                  suffixIcon: IconButton(
+                                    tooltip: obscure ? 'إظهار كلمة المرور' : 'إخفاء كلمة المرور',
+                                    onPressed: () => setState(() => obscure = !obscure),
+                                    icon: Icon(obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              CheckboxListTile(
+                                contentPadding: EdgeInsets.zero,
+                                controlAffinity: ListTileControlAffinity.leading,
+                                value: remember,
+                                onChanged: busy || loadingRecall ? null : (v) => setState(() => remember = v ?? false),
+                                title: const Text('تذكّر بيانات الدخول', style: TextStyle(fontWeight: FontWeight.w700)),
+                                subtitle: Text(
+                                  kIsWeb
+                                      ? 'يحفظ اسم المستخدم، ولحفظ كلمة المرور استخدم مدير كلمات المرور بالمتصفح.'
+                                      : 'يحفظ اسم المستخدم وكلمة المرور في التخزين الآمن لهذا الجهاز فقط.',
+                                  style: const TextStyle(fontSize: 11),
+                                ),
+                              ),
+                              if (error != null) ...[
+                                const SizedBox(height: 10),
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFFEEEE),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(error!, style: const TextStyle(color: Color(0xFFB42318))),
+                                ),
+                              ],
+                              const SizedBox(height: 18),
+                              SizedBox(
+                                height: 54,
+                                child: FilledButton.icon(
+                                  onPressed: busy || loadingRecall ? null : submit,
+                                  icon: busy || loadingRecall
+                                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                                      : const Icon(Icons.arrow_forward_rounded),
+                                  label: Text(busy ? 'جارٍ تسجيل الدخول...' : loadingRecall ? 'جارٍ تحميل الحساب...' : 'دخول إلى لوحة الأعمال'),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              const Center(
+                                child: Text(
+                                  'حسابات المدير • المدرس • المكتبة • المطبعة • المندوب',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(fontSize: 11, color: Color(0xFF667085)),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'يتم تحديد نوع الحساب تلقائياً من السيرفر',
-                    style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
-                  ),
-                ],
+                ),
               ),
             ),
-          ),
+          ],
         ),
       ),
     );
   }
+}
+
+class _LoginFeature extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  const _LoginFeature(this.title, this.icon);
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+    decoration: BoxDecoration(
+      color: Colors.white.withValues(alpha: .10),
+      border: Border.all(color: Colors.white.withValues(alpha: .23)),
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, color: Colors.white, size: 17),
+        const SizedBox(width: 7),
+        Text(title, style: const TextStyle(color: Colors.white, fontSize: 12)),
+      ],
+    ),
+  );
 }
