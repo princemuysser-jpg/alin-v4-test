@@ -1,8 +1,8 @@
 name: alin_business
-description: تطبيق آلين للأعمال للإدارة والمدرس والمكتبة والمطبعة والمندوب
+description: لوحة تحكم منصة الين للإدارة والمدرس والمكتبة والمطبعة والمندوب
 publish_to: 'none'
-version: 1.0.14+22
-# Build 22: ALIN Business premium login and unique launcher icons.
+version: 1.0.15+23
+# Build 23: rename the visible ALIN Business app to لوحة تحكم منصة الين.
 environment:
   sdk: '>=3.10.0 <4.0.0'
 
