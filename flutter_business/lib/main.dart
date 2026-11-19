@@ -11,6 +11,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/business_config.dart';
 import 'core/business_login_memory.dart';
 import 'core/business_notification_service.dart';
+import 'core/business_notification_signal.dart';
 import 'data/business_repository.dart';
 import 'models/business_account.dart';
 import 'screens/admin_dashboard_screen.dart';
@@ -115,7 +116,6 @@ class _BusinessGateState extends State<BusinessGate> {
   late final BusinessNotificationService notifications;
   BusinessAccount? account;
   bool loading = true;
-  int notificationTick = 0;
   String? pendingOrderId;
   bool webPushEnabled = false;
   bool webPushBusy = false;
@@ -154,7 +154,7 @@ class _BusinessGateState extends State<BusinessGate> {
 
   Future<void> _notificationReceived() async {
     if (!mounted) return;
-    setState(() => notificationTick++);
+    BusinessNotificationSignal.received();
   }
 
   String? _orderIdFromPayload(Map<String, dynamic> payload) {
@@ -172,9 +172,9 @@ class _BusinessGateState extends State<BusinessGate> {
     final orderId = _orderIdFromPayload(payload);
     if (!mounted) return;
     setState(() {
-      notificationTick++;
       if (orderId != null) pendingOrderId = orderId;
     });
+    BusinessNotificationSignal.received();
     _openPendingOrderAfterFrame();
   }
 
@@ -256,7 +256,8 @@ class _BusinessGateState extends State<BusinessGate> {
       return LoginScreen(repository: repository, onLoggedIn: _loggedIn);
     }
 
-    final pageKey = ValueKey('${account!.role}-$notificationTick');
+    // Keep the dashboard state (active tab, search, filters) across push events.
+    final pageKey = ValueKey('${account!.role}-${account!.id}');
     Widget page;
     switch (account!.role) {
       case 'admin':
