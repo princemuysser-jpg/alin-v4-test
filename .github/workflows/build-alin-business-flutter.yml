@@ -65,7 +65,7 @@ jobs:
 
           manifest = Path('android/app/src/main/AndroidManifest.xml')
           xml = manifest.read_text()
-          xml = xml.replace('android:label="alin_business"', 'android:label="آلين للأعمال"')
+          xml = xml.replace('android:label="alin_business"', 'android:label="لوحة تحكم منصة الين"')
           if 'android.permission.INTERNET' not in xml:
               xml = xml.replace('<manifest xmlns:android="http://schemas.android.com/apk/res/android">', '<manifest xmlns:android="http://schemas.android.com/apk/res/android">\n    <uses-permission android:name="android.permission.INTERNET" />')
           if 'android.permission.POST_NOTIFICATIONS' not in xml:
@@ -191,7 +191,7 @@ jobs:
           p.write_text(s)
 
           info=Path('ios/Runner/Info.plist')
-          x=info.read_text().replace('<string>alin_business</string>','<string>آلين للأعمال</string>')
+          x=info.read_text().replace('<string>alin_business</string>','<string>لوحة تحكم منصة الين</string>')
           info.write_text(x)
 
           framework=Path('ios/Flutter/AppFrameworkInfo.plist')
