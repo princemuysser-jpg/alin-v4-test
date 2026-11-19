@@ -239,7 +239,7 @@ class _BusinessOrderDetailsScreenState extends State<BusinessOrderDetailsScreen>
               style: const TextStyle(fontWeight: FontWeight.w900,
                 fontSize: 20, color: Colors.white))),
             const SizedBox(width: 8),
-            _statusBadge(status),
+            _heroStatusBadge(status),
           ]),
           const SizedBox(height: 12),
           Text(_field(o, 'title') == '—' ? 'تفاصيل الطلب' : _field(o, 'title'),
@@ -433,21 +433,25 @@ class _BusinessOrderDetailsScreenState extends State<BusinessOrderDetailsScreen>
       width: double.infinity,
       padding: const EdgeInsets.all(13),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFEEF2F6)),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(17),
+        border: Border.all(color: BusinessBrand.border),
+        boxShadow: const [BoxShadow(
+          color: BusinessBrand.panelShadow,
+          blurRadius: 14, offset: Offset(0, 5),
+        )],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(icon, size: 18, color: const Color(0xFF143B68)),
+              Icon(icon, size: 18, color: BusinessBrand.teal),
               const SizedBox(width: 6),
               Text(
                 title,
                 style: const TextStyle(
-                  color: Color(0xFF143B68),
+                  color: BusinessBrand.ink,
                   fontWeight: FontWeight.w900,
                 ),
               ),
@@ -459,6 +463,23 @@ class _BusinessOrderDetailsScreenState extends State<BusinessOrderDetailsScreen>
       ),
     );
   }
+
+  Widget _heroStatusBadge(String status) => Container(
+    constraints: const BoxConstraints(maxWidth: 132),
+    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
+    decoration: BoxDecoration(
+      color: Colors.white.withValues(alpha: .16),
+      borderRadius: BorderRadius.circular(11),
+      border: Border.all(color: Colors.white24),
+    ),
+    child: Text(
+      statusLabel(status),
+      maxLines: 2,
+      overflow: TextOverflow.ellipsis,
+      style: const TextStyle(color: Colors.white,
+        fontWeight: FontWeight.w900, fontSize: 11),
+    ),
+  );
 
   Widget _statusBadge(String status) {
     final accent = _statusColor(status);
