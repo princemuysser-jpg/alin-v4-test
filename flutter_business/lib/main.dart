@@ -297,7 +297,7 @@ class _BusinessGateState extends State<BusinessGate> {
         );
       default:
         page = Scaffold(
-          appBar: AppBar(title: const Text('آلين للأعمال')),
+          appBar: AppBar(title: const Text('لوحة تحكم منصة الين')),
           body: Center(child: Text('نوع الحساب غير مدعوم: ${account!.role}')),
         );
     }
@@ -431,8 +431,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             const BusinessAppMark(size: 100),
                             const SizedBox(height: 26),
                             const Text(
-                              'آلين للأعمال',
-                              style: TextStyle(fontSize: 42, fontWeight: FontWeight.w900, color: Colors.white),
+                              'لوحة تحكم منصة الين',
+                              style: TextStyle(fontSize: 34, fontWeight: FontWeight.w900, color: Colors.white),
                             ),
                             const SizedBox(height: 12),
                             const Text(
@@ -485,7 +485,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                               const SizedBox(height: 8),
                               const Text(
-                                'سجّل الدخول لحساب آلين للأعمال',
+                                'سجّل الدخول إلى لوحة تحكم منصة الين',
                                 style: TextStyle(color: Color(0xFF667085)),
                               ),
                               const SizedBox(height: 26),
