@@ -6,9 +6,9 @@ class BusinessBrand {
   static Color runtimeSecondary = teal;
   static Color runtimeBackground = background;
   static Color runtimeCard = Colors.white;
-  static Color runtimeSuccess = const Color(0xFF2F7D62);
-  static Color runtimeWarning = const Color(0xFFB98532);
-  static Color runtimeDanger = const Color(0xFFB44B4B);
+  static Color runtimeSuccess = success;
+  static Color runtimeWarning = warning;
+  static Color runtimeDanger = danger;
   static double runtimeRadius = 20;
   static String runtimeLogoUrl = '';
   static String runtimeLogoDarkUrl = '';
@@ -25,9 +25,9 @@ class BusinessBrand {
     runtimeSecondary = _hex(settings['visual_secondary'], teal);
     runtimeBackground = _hex(settings['visual_background'], background);
     runtimeCard = _hex(settings['visual_card'], Colors.white);
-    runtimeSuccess = _hex(settings['visual_success'], const Color(0xFF2F7D62));
-    runtimeWarning = _hex(settings['visual_warning'], const Color(0xFFB98532));
-    runtimeDanger = _hex(settings['visual_danger'], const Color(0xFFB44B4B));
+    runtimeSuccess = _hex(settings['visual_success'], success);
+    runtimeWarning = _hex(settings['visual_warning'], warning);
+    runtimeDanger = _hex(settings['visual_danger'], danger);
     runtimeRadius = (double.tryParse(settings['visual_radius'] ?? '') ?? 20)
         .clamp(8.0, 28.0)
         .toDouble();
@@ -40,22 +40,42 @@ class BusinessBrand {
             .trim();
   }
 
-  static const navy = Color(0xFF143B68);
-  static const navy2 = Color(0xFF255B91);
-  static const teal = Color(0xFF19B8A8);
-  static const orange = Color(0xFFFF9F43);
-  static const ink = Color(0xFF172B4D);
+  // ALIN Business visual system: restrained enterprise surfaces with
+  // accessible, semantic highlights. Runtime admin overrides remain supported.
+  static const navy = Color(0xFF102B4E);
+  static const navy2 = Color(0xFF174F78);
+  static const teal = Color(0xFF17B6AD);
+  static const gold = Color(0xFFD5AE65);
+  static const orange = Color(0xFFF79009);
+  static const success = Color(0xFF12805C);
+  static const warning = Color(0xFFB45F07);
+  static const danger = Color(0xFFC43D45);
+  static const ink = Color(0xFF172B42);
   static const muted = Color(0xFF667085);
-  static const background = Color(0xFFF4F7FB);
-  static const softBlue = Color(0xFFF0F6FC);
-  static const softTeal = Color(0xFFE9F9F6);
+  static const background = Color(0xFFF3F6FA);
+  static const softBlue = Color(0xFFEAF2FB);
+  static const softTeal = Color(0xFFDDF5F2);
   static const border = Color(0xFFE3EAF2);
+  static const panelShadow = Color(0x0D102B4E);
+  static const double cardRadius = 20;
 
   static const heroGradient = LinearGradient(
     begin: Alignment.topRight,
     end: Alignment.bottomLeft,
     colors: [navy, navy2],
   );
+
+  static BoxDecoration panelDecoration({double radius = cardRadius}) =>
+      BoxDecoration(
+        color: runtimeCard,
+        borderRadius: BorderRadius.circular(radius),
+        border: Border.all(color: border),
+        boxShadow: const [BoxShadow(
+          color: panelShadow,
+          blurRadius: 20,
+          offset: Offset(0, 7),
+        )],
+      );
 
   static ThemeData theme() {
     final scheme =

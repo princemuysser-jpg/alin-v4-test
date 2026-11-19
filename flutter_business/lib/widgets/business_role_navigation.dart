@@ -70,7 +70,7 @@ class _BusinessRoleNavigationDrawerState
   Widget build(BuildContext context) {
     return Drawer(
       width: 310,
-      backgroundColor: const Color(0xFFF7F9FC),
+      backgroundColor: BusinessBrand.background,
       child: SafeArea(
         child: Column(
           children: [
@@ -94,7 +94,7 @@ class _BusinessRoleNavigationDrawerState
       padding: const EdgeInsets.fromLTRB(18, 20, 18, 18),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [BusinessBrand.navy, Color(0xFF255B91)],
+          colors: [BusinessBrand.navy, BusinessBrand.navy2],
           begin: Alignment.topRight,
           end: Alignment.bottomLeft,
         ),
@@ -381,12 +381,12 @@ class _BusinessRoleNavigationDrawerState
     return Container(
       margin: const EdgeInsets.only(bottom: 7),
       decoration: BoxDecoration(
-        color: expanded ? soft : accent.withValues(alpha: .035),
+        color: expanded ? Colors.white : BusinessBrand.background,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: expanded
-              ? accent.withValues(alpha: .28)
-              : accent.withValues(alpha: .08),
+              ? BusinessBrand.border
+              : BusinessBrand.border,
         ),
       ),
       child: Column(
@@ -405,9 +405,9 @@ class _BusinessRoleNavigationDrawerState
               child: Icon(icon, size: 20, color: accent),
             ),
             title: Text(
-              '$emoji $title',
+              title,
               style: TextStyle(
-                color: accent,
+                color: BusinessBrand.ink,
                 fontWeight: FontWeight.w900,
                 fontSize: 13.5,
               ),
@@ -700,7 +700,7 @@ class _BusinessRoleNavigationDrawerState
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
       child: Material(
-        color: selected ? BusinessBrand.softBlue : Colors.transparent,
+        color: selected ? BusinessBrand.softTeal : Colors.transparent,
         borderRadius: BorderRadius.circular(14),
         child: ListTile(
           shape: RoundedRectangleBorder(
@@ -711,7 +711,7 @@ class _BusinessRoleNavigationDrawerState
             width: 38,
             height: 38,
             decoration: BoxDecoration(
-              color: selected ? Colors.white : const Color(0xFFEFF4F9),
+              color: selected ? Colors.white : BusinessBrand.softBlue,
               borderRadius: BorderRadius.circular(11),
             ),
             child: Icon(icon, size: 20, color: BusinessBrand.navy),
@@ -797,8 +797,8 @@ class AdminDesktopNavigationSidebar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 270,
-      color: BusinessBrand.navy,
+      width: 282,
+      decoration: const BoxDecoration(gradient: BusinessBrand.heroGradient),
       child: SafeArea(
         child: Column(
           children: [
@@ -807,10 +807,10 @@ class AdminDesktopNavigationSidebar extends StatelessWidget {
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
                 children: [
-                  _sectionItem(Icons.dashboard_rounded, '🏠 الرئيسية', 0),
+                  _sectionItem(Icons.dashboard_rounded, 'الرئيسية', 0),
                   const SizedBox(height: 8),
                   _desktopGroup(
-                    '🛒 الطلبات',
+                    'الطلبات',
                     Icons.receipt_long_rounded,
                     const Color(0xFFFF7A00),
                     [
@@ -819,7 +819,7 @@ class AdminDesktopNavigationSidebar extends StatelessWidget {
                     ],
                   ),
                   _desktopGroup(
-                    '👥 الحسابات',
+                    'الحسابات',
                     Icons.groups_rounded,
                     const Color(0xFF7C3AED),
                     [
@@ -833,7 +833,7 @@ class AdminDesktopNavigationSidebar extends StatelessWidget {
                     ],
                   ),
                   _desktopGroup(
-                    '📚 المتجر والمحتوى',
+                    'المتجر والمحتوى',
                     Icons.inventory_2_rounded,
                     const Color(0xFF0088FF),
                     [
@@ -871,7 +871,7 @@ class AdminDesktopNavigationSidebar extends StatelessWidget {
                     ],
                   ),
                   _desktopGroup(
-                    '🚚 التوصيل والعملاء',
+                    'التوصيل والعملاء',
                     Icons.local_shipping_rounded,
                     const Color(0xFF14B8A6),
                     [
@@ -890,7 +890,7 @@ class AdminDesktopNavigationSidebar extends StatelessWidget {
                     ],
                   ),
                   _desktopGroup(
-                    '💰 المالية',
+                    'المالية',
                     Icons.account_balance_wallet_rounded,
                     const Color(0xFF00A86B),
                     [
@@ -908,7 +908,7 @@ class AdminDesktopNavigationSidebar extends StatelessWidget {
                     ],
                   ),
                   _desktopGroup(
-                    '📣 التسويق',
+                    'التسويق',
                     Icons.campaign_rounded,
                     const Color(0xFFE11D8A),
                     [
@@ -930,7 +930,7 @@ class AdminDesktopNavigationSidebar extends StatelessWidget {
                     ],
                   ),
                   _desktopGroup(
-                    '📊 التقارير',
+                    'التقارير',
                     Icons.analytics_rounded,
                     const Color(0xFF6D28D9),
                     [
@@ -943,7 +943,7 @@ class AdminDesktopNavigationSidebar extends StatelessWidget {
                     ],
                   ),
                   _desktopGroup(
-                    '⚙️ النظام',
+                    'النظام',
                     Icons.settings_rounded,
                     const Color(0xFF64748B),
                     [
@@ -982,7 +982,7 @@ class AdminDesktopNavigationSidebar extends StatelessWidget {
     padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
     child: Row(
       children: [
-        const AlinBrandMark(size: 48),
+        const BusinessAppMark(size: 48),
         const SizedBox(width: 11),
         Expanded(
           child: Column(
@@ -1016,9 +1016,9 @@ class AdminDesktopNavigationSidebar extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 7),
       decoration: BoxDecoration(
-        color: accent.withValues(alpha: .08),
+        color: Colors.white.withValues(alpha: .045),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: accent.withValues(alpha: .24)),
+        border: Border.all(color: Colors.white.withValues(alpha: .10)),
       ),
       child: Theme(
         data: ThemeData(dividerColor: Colors.transparent),
@@ -1029,10 +1029,10 @@ class AdminDesktopNavigationSidebar extends StatelessWidget {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: accent.withValues(alpha: .18),
+              color: Colors.white.withValues(alpha: .10),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, size: 19, color: accent),
+            child: Icon(icon, size: 19, color: BusinessBrand.teal),
           ),
           title: Text(
             title,
@@ -1042,8 +1042,8 @@ class AdminDesktopNavigationSidebar extends StatelessWidget {
               fontWeight: FontWeight.w900,
             ),
           ),
-          iconColor: accent,
-          collapsedIconColor: accent,
+          iconColor: Colors.white70,
+          collapsedIconColor: Colors.white70,
           initiallyExpanded: title.contains('الطلبات'),
           children: children,
         ),
@@ -1095,7 +1095,7 @@ class AdminDesktopNavigationSidebar extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 3),
       child: Material(
         color: selected
-            ? Colors.white.withValues(alpha: .14)
+            ? BusinessBrand.teal.withValues(alpha: .18)
             : Colors.transparent,
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
@@ -1107,7 +1107,7 @@ class AdminDesktopNavigationSidebar extends StatelessWidget {
               children: [
                 Icon(
                   icon,
-                  color: selected ? Colors.white : Colors.white70,
+                  color: selected ? const Color(0xFF8EF4E5) : Colors.white70,
                   size: 19,
                 ),
                 const SizedBox(width: 10),

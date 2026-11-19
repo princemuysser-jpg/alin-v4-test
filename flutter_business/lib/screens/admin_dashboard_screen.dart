@@ -3,6 +3,8 @@ import '../data/business_repository.dart';
 import '../data/business_notification_repository.dart';
 import '../models/business_account.dart';
 import '../widgets/business_role_navigation.dart';
+import '../widgets/business_brand.dart';
+import '../widgets/business_app_mark.dart';
 import '../widgets/grouped_order_receipt_card.dart';
 import 'business_order_details_screen.dart';
 import 'business_notifications_screen.dart';
@@ -374,23 +376,46 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             ),
       appBar: AppBar(
         automaticallyImplyLeading: !desktop,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        toolbarHeight: 72,
+        backgroundColor: Colors.white,
+        foregroundColor: BusinessBrand.ink,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        surfaceTintColor: Colors.transparent,
+        titleSpacing: 16,
+        shape: const Border(bottom: BorderSide(color: BusinessBrand.border)),
+        title: Row(
           children: [
-            Text(
-              widget.account.role == 'accountant'
-                  ? 'لوحة الحسابات'
-                  : 'لوحة إدارة آلين',
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-            Text(
-              widget.account.name,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w400,
+            if (desktop) ...[
+              const BusinessAppMark(size: 36),
+              const SizedBox(width: 12),
+            ],
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.account.role == 'accountant'
+                        ? 'مركز الحسابات'
+                        : 'مركز قيادة آلين',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w900,
+                      color: BusinessBrand.ink,
+                    ),
+                  ),
+                  Text(
+                    widget.account.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 11.5,
+                      color: BusinessBrand.muted,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -402,7 +427,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             icon: Stack(
               clipBehavior: Clip.none,
               children: [
-                const Icon(Icons.notifications_rounded),
+                const Icon(Icons.notifications_none_rounded),
                 if (unreadNotifications > 0)
                   PositionedDirectional(
                     top: -7,
@@ -411,7 +436,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
                       padding: const EdgeInsets.symmetric(horizontal: 4),
                       decoration: BoxDecoration(
-                        color: Colors.red.shade600,
+                        color: BusinessBrand.danger,
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(color: Colors.white, width: 1.5),
                       ),
@@ -419,10 +444,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       child: Text(
                         unreadNotifications > 99 ? '99+' : '$unreadNotifications',
                         style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 9,
-                          fontWeight: FontWeight.w900,
-                          height: 1,
+                          color: Colors.white, fontSize: 9,
+                          fontWeight: FontWeight.w900, height: 1,
                         ),
                       ),
                     ),
@@ -431,12 +454,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             ),
           ),
           IconButton(
-            tooltip: 'تحديث',
+            tooltip: 'تحديث البيانات',
             onPressed: _refreshAll,
             icon: const Icon(Icons.refresh_rounded),
           ),
           if (!desktop)
             PopupMenuButton<String>(
+              tooltip: 'خيارات الحساب',
               onSelected: (value) {
                 if (value == 'logout') widget.onLogout();
               },
@@ -444,6 +468,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 PopupMenuItem(value: 'logout', child: Text('تسجيل الخروج')),
               ],
             ),
+          const SizedBox(width: 8),
         ],
       ),
       body: loading
@@ -786,38 +811,18 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 
   Widget _hero() => Container(
-    padding: const EdgeInsets.all(18),
+    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 23),
     decoration: BoxDecoration(
-      gradient: const LinearGradient(
-        colors: [Color(0xFF143B68), Color(0xFF255B91)],
-        begin: Alignment.topRight,
-        end: Alignment.bottomLeft,
-      ),
+      gradient: BusinessBrand.heroGradient,
       borderRadius: BorderRadius.circular(24),
       boxShadow: const [
-        BoxShadow(
-          color: Color(0x1A143B68),
-          blurRadius: 18,
-          offset: Offset(0, 8),
-        ),
+        BoxShadow(color: BusinessBrand.panelShadow, blurRadius: 24, offset: Offset(0, 9)),
       ],
     ),
     child: Row(
       children: [
-        Container(
-          width: 54,
-          height: 54,
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: .14),
-            borderRadius: BorderRadius.circular(17),
-          ),
-          child: const Icon(
-            Icons.space_dashboard_rounded,
-            color: Colors.white,
-            size: 30,
-          ),
-        ),
-        const SizedBox(width: 13),
+        const BusinessAppMark(size: 54),
+        const SizedBox(width: 14),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -832,10 +837,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   fontWeight: FontWeight.w900,
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 6),
               const Text(
-                'كل ما تحتاجه لإدارة منصة آلين من مكان واحد',
-                style: TextStyle(color: Colors.white70, height: 1.35),
+                'مركز قيادة آلين • راقب الطلبات والمبيعات والشركاء من مكان واحد',
+                style: TextStyle(color: Color(0xFFE5EFF7), height: 1.4, fontSize: 12.5),
               ),
             ],
           ),
@@ -873,82 +878,68 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     Color accent,
     Color soft,
   ) {
-    final deep = Color.lerp(accent, Colors.black, .10)!;
-
     return Container(
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topRight,
-          end: Alignment.bottomLeft,
-          colors: [accent, deep],
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: accent.withValues(alpha: .20),
-            blurRadius: 16,
-            offset: const Offset(0, 7),
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          PositionedDirectional(
-            end: -8,
-            top: 24,
-            child: Icon(
-              icon,
-              size: 82,
-              color: Colors.white.withValues(alpha: .16),
-            ),
-          ),
-          Positioned(
-            left: 0,
-            right: 0,
-            top: 62,
-            child: Container(
-              height: 1,
-              color: Colors.black.withValues(alpha: .10),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 13.5,
-                    height: 1.15,
-                    fontWeight: FontWeight.w900,
+      decoration: BusinessBrand.panelDecoration(),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final compact = constraints.maxHeight < 105;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: compact ? 31 : 37,
+                    height: compact ? 31 : 37,
+                    decoration: BoxDecoration(
+                      color: soft,
+                      borderRadius: BorderRadius.circular(11),
+                    ),
+                    child: Icon(icon, color: accent, size: compact ? 17 : 20),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      label,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: BusinessBrand.muted,
+                        fontSize: 11.8,
+                        height: 1.15,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              Flexible(
+                child: Align(
+                  alignment: AlignmentDirectional.bottomStart,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: AlignmentDirectional.centerStart,
+                    child: Text(
+                      value,
+                      maxLines: 1,
+                      style: const TextStyle(
+                        color: BusinessBrand.ink,
+                        fontSize: 25,
+                        fontWeight: FontWeight.w900,
+                        height: 1.1,
+                      ),
+                    ),
                   ),
                 ),
-                const Spacer(),
-                Text(
-                  value,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 28,
-                    height: 1,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: .2,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+              ),
+            ],
+          );
+        },
       ),
     );
   }
-
 
   Widget _quickSection(
     String title,
@@ -1003,7 +994,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      '$emoji $title',
+                      title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
