@@ -199,7 +199,7 @@ class _AdminDesktopDashboardScreenState
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'آلين للأعمال',
+                      'لوحة تحكم منصة الين',
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w900,

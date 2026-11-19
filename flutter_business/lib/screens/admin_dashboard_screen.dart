@@ -316,7 +316,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   Text(
                     widget.account.role == 'accountant'
                         ? 'مركز الحسابات'
-                        : 'مركز قيادة آلين',
+                        : 'لوحة تحكم منصة الين',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
@@ -779,7 +779,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               ),
               const SizedBox(height: 6),
               const Text(
-                'مركز قيادة آلين • راقب الطلبات والمبيعات والشركاء من مكان واحد',
+                'مركز المتابعة • راقب الطلبات والمبيعات والشركاء من مكان واحد',
                 style: TextStyle(color: Color(0xFFE5EFF7), height: 1.4, fontSize: 12.5),
               ),
             ],
