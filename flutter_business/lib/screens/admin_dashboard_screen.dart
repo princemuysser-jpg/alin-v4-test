@@ -376,23 +376,46 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             ),
       appBar: AppBar(
         automaticallyImplyLeading: !desktop,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        toolbarHeight: 72,
+        backgroundColor: Colors.white,
+        foregroundColor: BusinessBrand.ink,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        surfaceTintColor: Colors.transparent,
+        titleSpacing: 16,
+        shape: const Border(bottom: BorderSide(color: BusinessBrand.border)),
+        title: Row(
           children: [
-            Text(
-              widget.account.role == 'accountant'
-                  ? 'لوحة الحسابات'
-                  : 'لوحة إدارة آلين',
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-            Text(
-              widget.account.name,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w400,
+            if (desktop) ...[
+              const BusinessAppMark(size: 36),
+              const SizedBox(width: 12),
+            ],
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.account.role == 'accountant'
+                        ? 'مركز الحسابات'
+                        : 'مركز قيادة آلين',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w900,
+                      color: BusinessBrand.ink,
+                    ),
+                  ),
+                  Text(
+                    widget.account.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 11.5,
+                      color: BusinessBrand.muted,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -404,7 +427,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             icon: Stack(
               clipBehavior: Clip.none,
               children: [
-                const Icon(Icons.notifications_rounded),
+                const Icon(Icons.notifications_none_rounded),
                 if (unreadNotifications > 0)
                   PositionedDirectional(
                     top: -7,
@@ -413,7 +436,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
                       padding: const EdgeInsets.symmetric(horizontal: 4),
                       decoration: BoxDecoration(
-                        color: Colors.red.shade600,
+                        color: BusinessBrand.danger,
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(color: Colors.white, width: 1.5),
                       ),
@@ -421,10 +444,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       child: Text(
                         unreadNotifications > 99 ? '99+' : '$unreadNotifications',
                         style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 9,
-                          fontWeight: FontWeight.w900,
-                          height: 1,
+                          color: Colors.white, fontSize: 9,
+                          fontWeight: FontWeight.w900, height: 1,
                         ),
                       ),
                     ),
@@ -433,12 +454,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             ),
           ),
           IconButton(
-            tooltip: 'تحديث',
+            tooltip: 'تحديث البيانات',
             onPressed: _refreshAll,
             icon: const Icon(Icons.refresh_rounded),
           ),
           if (!desktop)
             PopupMenuButton<String>(
+              tooltip: 'خيارات الحساب',
               onSelected: (value) {
                 if (value == 'logout') widget.onLogout();
               },
@@ -446,6 +468,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 PopupMenuItem(value: 'logout', child: Text('تسجيل الخروج')),
               ],
             ),
+          const SizedBox(width: 8),
         ],
       ),
       body: loading
