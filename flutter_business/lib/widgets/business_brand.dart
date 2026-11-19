@@ -77,6 +77,28 @@ class BusinessBrand {
         )],
       );
 
+  /// Calm category colors used on dashboard and order cards.
+  /// Text remains dark and semantic icons retain a stronger contrast.
+  static Color pastel(Color accent, {double strength = .12}) =>
+      Color.lerp(Colors.white, accent, strength)!;
+
+  static BoxDecoration pastelCard(
+    Color accent, {
+    double radius = 18,
+    double strength = .12,
+  }) => BoxDecoration(
+    color: pastel(accent, strength: strength),
+    borderRadius: BorderRadius.circular(radius),
+    border: Border.all(color: accent.withValues(alpha: .20)),
+    boxShadow: [
+      BoxShadow(
+        color: accent.withValues(alpha: .065),
+        blurRadius: 14,
+        offset: const Offset(0, 5),
+      ),
+    ],
+  );
+
   static ThemeData theme() {
     final scheme =
         ColorScheme.fromSeed(
