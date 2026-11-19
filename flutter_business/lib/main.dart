@@ -119,6 +119,7 @@ class _BusinessGateState extends State<BusinessGate> {
   String? pendingOrderId;
   bool webPushEnabled = false;
   bool webPushBusy = false;
+  bool webPushChecked = false;
 
   Future<void> _enableBusinessWebPush() async {
     if (webPushBusy) return;
@@ -126,7 +127,10 @@ class _BusinessGateState extends State<BusinessGate> {
     try {
       final ok = await notifications.requestPermissionAndRegister();
       if (!mounted) return;
-      setState(() => webPushEnabled = ok);
+      setState(() {
+        webPushEnabled = ok;
+        webPushChecked = true;
+      });
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ok
           ? '🔔 تم تفعيل إشعارات الطلبات'
           : 'تأكد من السماح بإشعارات الموقع')));
@@ -198,19 +202,37 @@ class _BusinessGateState extends State<BusinessGate> {
 
   Future<void> _restore() async {
     final restored = await repository.restoreAccount();
-    if (restored != null) await notifications.registerCurrentDevice();
+    var restoredPush = false;
+    if (restored != null) {
+      if (kIsWeb) {
+        restoredPush = await notifications.syncCurrentWebPush();
+      } else {
+        await notifications.registerCurrentDevice();
+      }
+    }
     if (!mounted) return;
     setState(() {
       account = restored;
+      webPushEnabled = restoredPush;
+      webPushChecked = true;
       loading = false;
     });
     _openPendingOrderAfterFrame();
   }
 
   Future<void> _loggedIn(BusinessAccount value) async {
-    await notifications.registerCurrentDevice();
+    var restoredPush = false;
+    if (kIsWeb) {
+      restoredPush = await notifications.syncCurrentWebPush();
+    } else {
+      await notifications.registerCurrentDevice();
+    }
     if (!mounted) return;
-    setState(() => account = value);
+    setState(() {
+      account = value;
+      webPushEnabled = restoredPush;
+      webPushChecked = true;
+    });
     _openPendingOrderAfterFrame();
   }
 
@@ -221,6 +243,8 @@ class _BusinessGateState extends State<BusinessGate> {
     setState(() {
       account = null;
       pendingOrderId = null;
+      webPushEnabled = false;
+      webPushChecked = false;
     });
   }
 
@@ -231,7 +255,7 @@ class _BusinessGateState extends State<BusinessGate> {
   }
 
   Widget _withBusinessOverlays(Widget child) {
-    if (!kIsWeb || webPushEnabled) return child;
+    if (!kIsWeb || webPushEnabled || !webPushChecked) return child;
     return Stack(children: [
       child,
       Positioned(
