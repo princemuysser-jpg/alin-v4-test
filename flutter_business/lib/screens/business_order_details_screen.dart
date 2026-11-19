@@ -429,24 +429,31 @@ class _BusinessOrderDetailsScreenState extends State<BusinessOrderDetailsScreen>
     required IconData icon,
     required List<Widget> children,
   }) {
+    final accent = switch (title) {
+      'بيانات الطالب' => const Color(0xFF6D5DB8),
+      'التوصيل والاستلام' => const Color(0xFF168B98),
+      'محتوى الطلب ومواعيده' => const Color(0xFF397ACA),
+      'المبالغ والدفع' => BusinessBrand.success,
+      'الملاحظات' => BusinessBrand.warning,
+      'سجل حركة الطلب' => const Color(0xFF5975AE),
+      _ => BusinessBrand.navy,
+    };
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(13),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(17),
-        border: Border.all(color: BusinessBrand.border),
-        boxShadow: const [BoxShadow(
-          color: BusinessBrand.panelShadow,
-          blurRadius: 14, offset: Offset(0, 5),
-        )],
-      ),
+      decoration: BusinessBrand.pastelCard(accent, strength: .065),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(icon, size: 18, color: BusinessBrand.teal),
+              Container(
+                width: 33, height: 33,
+                decoration: BoxDecoration(
+                  color: BusinessBrand.pastel(accent, strength: .18),
+                  borderRadius: BorderRadius.circular(10)),
+                child: Icon(icon, size: 19, color: accent),
+              ),
               const SizedBox(width: 6),
               Text(
                 title,
