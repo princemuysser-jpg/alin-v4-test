@@ -523,10 +523,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     final grouped = groupedOrders;
     final newCount = grouped.where((o) => _groupHasStatus(o, const {
       'new',
+      'pending',
       'pending_admin',
-      'assigned',
     })).length;
     final printingCount = grouped.where((o) => _groupHasStatus(o, const {
+      'assigned',
       'accepted',
       'processing',
       'printing',
