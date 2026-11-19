@@ -1,7 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
+import '../core/business_notification_helpers.dart';
+import '../core/business_notification_signal.dart';
 import '../data/business_notification_repository.dart';
 import '../data/business_repository.dart';
+import '../widgets/business_brand.dart';
 import 'business_order_details_screen.dart';
 
 class BusinessNotificationsScreen extends StatefulWidget {
@@ -10,61 +15,116 @@ class BusinessNotificationsScreen extends StatefulWidget {
   const BusinessNotificationsScreen({super.key, required this.repository});
 
   @override
-  State<BusinessNotificationsScreen> createState() => _BusinessNotificationsScreenState();
+  State<BusinessNotificationsScreen> createState() =>
+      _BusinessNotificationsScreenState();
+
+  static String? orderIdFromNotification(Map<String, dynamic> item) =>
+      BusinessNotificationHelpers.orderId(item);
 }
 
-class _BusinessNotificationsScreenState extends State<BusinessNotificationsScreen> {
+class _BusinessNotificationsScreenState extends State<BusinessNotificationsScreen>
+    with WidgetsBindingObserver {
   List<Map<String, dynamic>> items = [];
+  Timer? _refreshTimer;
   bool loading = true;
+  bool busy = false;
+  bool _refreshing = false;
+  bool unreadOnly = false;
   String? error;
 
   @override
   void initState() {
     super.initState();
-    load();
+    WidgetsBinding.instance.addObserver(this);
+    BusinessNotificationSignal.revision.addListener(_onPush);
+    _refreshTimer = Timer.periodic(
+      const Duration(seconds: 20),
+      (_) => unawaited(load(silent: true)),
+    );
+    unawaited(load());
   }
 
-  Future<void> load() async {
-    setState(() {
-      loading = true;
-      error = null;
-    });
+  void _onPush() => unawaited(load(silent: true));
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(load(silent: true));
+    }
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    BusinessNotificationSignal.revision.removeListener(_onPush);
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  Future<void> load({bool silent = false}) async {
+    if (_refreshing || !mounted) return;
+    _refreshing = true;
+    if (!silent) setState(() { loading = true; error = null; });
     try {
-      final value = await widget.repository.businessNotifications(limit: 150);
+      final result = await widget.repository.businessNotifications(limit: 150);
       if (!mounted) return;
-      setState(() => items = value);
+      setState(() {
+        items = BusinessNotificationHelpers.distinctById(result);
+        error = null;
+      });
     } catch (e) {
       if (!mounted) return;
-      setState(() => error = '$e'.replaceFirst('Exception: ', ''));
+      if (!silent) {
+        setState(() => error = '$e'.replaceFirst('Exception: ', ''));
+      }
     } finally {
-      if (mounted) setState(() => loading = false);
+      _refreshing = false;
+      if (mounted && !silent) setState(() => loading = false);
     }
   }
 
   int get unread => items.where((e) => e['is_read'] != true).length;
 
   Future<void> markAll() async {
-    if (unread == 0) return;
+    if (unread == 0 || busy) return;
+    setState(() => busy = true);
     try {
       await widget.repository.businessNotificationsMarkAll();
-      await load();
+      if (!mounted) return;
+      setState(() {
+        items = items.map((e) => {...e, 'is_read': true}).toList();
+      });
+      BusinessNotificationSignal.received();
+      await load(silent: true);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('$e'.replaceFirst('Exception: ', ''))),
       );
+    } finally {
+      if (mounted) setState(() => busy = false);
     }
   }
 
   Future<void> openItem(Map<String, dynamic> item) async {
-    final id = '${item['id'] ?? ''}';
+    if (busy) return;
+    final id = '${item['id'] ?? ''}'.trim();
     if (id.isNotEmpty && item['is_read'] != true) {
       try {
-        await widget.repository.businessNotificationMarkRead(id);
-      } catch (_) {}
+        final marked = await widget.repository.businessNotificationMarkRead(id);
+        if (marked && mounted) {
+          setState(() {
+            items = items.map((e) =>
+              '${e['id'] ?? ''}' == id ? {...e, 'is_read': true} : e).toList();
+          });
+          BusinessNotificationSignal.received();
+        }
+      } catch (_) {
+        // Opening a notification should still work if marking it read fails.
+      }
     }
 
-    final orderId = orderIdFromNotification(item);
+    final orderId = BusinessNotificationHelpers.orderId(item);
     if (!mounted) return;
     if (orderId != null) {
       await Navigator.of(context).push(
@@ -76,97 +136,174 @@ class _BusinessNotificationsScreenState extends State<BusinessNotificationsScree
         ),
       );
     }
-    await load();
-  }
-
-  static String? orderIdFromNotification(Map<String, dynamic> item) {
-    final link = '${item['link'] ?? ''}'.trim();
-    if (link.isNotEmpty) {
-      final uri = Uri.tryParse(link);
-      final q = uri?.queryParameters['order'] ?? uri?.queryParameters['order_id'];
-      if (q != null && q.trim().isNotEmpty) return q.trim();
-    }
-    final message = '${item['message'] ?? ''}';
-    final match = RegExp(r'\b(O[0-9A-Za-z]+)\b').firstMatch(message);
-    return match?.group(1);
+    if (mounted) await load(silent: true);
   }
 
   @override
   Widget build(BuildContext context) {
+    final visible = unreadOnly
+        ? items.where((item) => item['is_read'] != true).toList()
+        : items;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('الإشعارات'),
+        title: const Text('مركز الإشعارات',
+          style: TextStyle(fontWeight: FontWeight.w900)),
         actions: [
+          IconButton(
+            tooltip: 'تحديث الإشعارات',
+            onPressed: () => unawaited(load(silent: true)),
+            icon: const Icon(Icons.refresh_rounded),
+          ),
           if (!loading && unread > 0)
             TextButton(
-              onPressed: markAll,
-              child: const Text('تحديد الكل كمقروء', style: TextStyle(color: Colors.white)),
+              onPressed: busy ? null : markAll,
+              child: const Text('قراءة الكل',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
             ),
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: load,
+        onRefresh: () => load(silent: true),
         child: loading
-            ? ListView(children: const [SizedBox(height: 260), Center(child: CircularProgressIndicator())])
+            ? ListView(children: const [
+                SizedBox(height: 240),
+                Center(child: CircularProgressIndicator()),
+              ])
             : error != null
                 ? ListView(children: [
-                    const SizedBox(height: 180),
+                    const SizedBox(height: 160),
                     Padding(
                       padding: const EdgeInsets.all(24),
                       child: Column(children: [
                         Text(error!, textAlign: TextAlign.center),
                         const SizedBox(height: 10),
-                        FilledButton.icon(onPressed: load, icon: const Icon(Icons.refresh), label: const Text('إعادة المحاولة')),
+                        FilledButton.icon(
+                          onPressed: load,
+                          icon: const Icon(Icons.refresh_rounded),
+                          label: const Text('إعادة المحاولة')),
                       ]),
                     ),
                   ])
-                : items.isEmpty
-                    ? ListView(children: const [SizedBox(height: 220), Center(child: Text('لا توجد إشعارات حالياً'))])
-                    : ListView.separated(
-                        padding: const EdgeInsets.all(12),
-                        itemCount: items.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 6),
-                        itemBuilder: (_, index) {
-                          final item = items[index];
-                          final read = item['is_read'] == true;
-                          return Card(
-                            color: read ? Colors.white : const Color(0xFFF0F7FF),
-                            child: ListTile(
-                              onTap: () => openItem(item),
-                              leading: Stack(
-                                clipBehavior: Clip.none,
+                : ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
+                    itemCount: visible.length + 1,
+                    itemBuilder: (context, index) {
+                      if (index == 0) {
+                        return Column(children: [
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(14),
+                            decoration: BusinessBrand.pastelCard(
+                              BusinessBrand.teal, strength: .10),
+                            child: Row(children: [
+                              const Icon(Icons.notifications_active_rounded,
+                                color: BusinessBrand.navy, size: 29),
+                              const SizedBox(width: 11),
+                              Expanded(child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  CircleAvatar(
-                                    backgroundColor: const Color(0xFFE5EEF8),
-                                    child: Icon(_icon('${item['type'] ?? ''}'), color: const Color(0xFF143B68)),
-                                  ),
-                                  if (!read)
-                                    const Positioned(
-                                      top: -2,
-                                      right: -2,
-                                      child: CircleAvatar(radius: 5, backgroundColor: Colors.red),
-                                    ),
+                                  Text('$unread غير مقروء',
+                                    style: const TextStyle(
+                                      color: BusinessBrand.ink,
+                                      fontWeight: FontWeight.w900, fontSize: 17)),
+                                  Text('${items.length} إشعار ضمن آخر التنبيهات',
+                                    style: const TextStyle(
+                                      color: BusinessBrand.muted, fontSize: 11.5)),
                                 ],
-                              ),
-                              title: Text('${item['title'] ?? 'آلين للأعمال'}', style: const TextStyle(fontWeight: FontWeight.w900)),
-                              subtitle: Text('${item['message'] ?? ''}\n${_dateTime(item['created_at'])}'),
-                              isThreeLine: true,
-                              trailing: orderIdFromNotification(item) != null ? const Icon(Icons.chevron_left_rounded) : null,
+                              )),
+                            ]),
+                          ),
+                          const SizedBox(height: 12),
+                          Row(children: [
+                            ChoiceChip(
+                              label: Text('الكل (${items.length})'),
+                              selected: !unreadOnly,
+                              onSelected: (_) => setState(() => unreadOnly = false),
                             ),
-                          );
-                        },
-                      ),
+                            const SizedBox(width: 8),
+                            ChoiceChip(
+                              label: Text('غير مقروء ($unread)'),
+                              selected: unreadOnly,
+                              onSelected: (_) => setState(() => unreadOnly = true),
+                            ),
+                          ]),
+                          const SizedBox(height: 12),
+                          if (visible.isEmpty)
+                            const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 60),
+                              child: Column(children: [
+                                Icon(Icons.notifications_none_rounded, size: 43,
+                                  color: BusinessBrand.muted),
+                                SizedBox(height: 10),
+                                Text('ماكو إشعارات بهالقسم',
+                                  style: TextStyle(
+                                    color: BusinessBrand.muted,
+                                    fontWeight: FontWeight.w700)),
+                              ]),
+                            ),
+                        ]);
+                      }
+                      final item = visible[index - 1];
+                      final read = item['is_read'] == true;
+                      final type = '${item['type'] ?? ''}';
+                      final accent = _accent(type);
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 9),
+                        decoration: BusinessBrand.pastelCard(
+                          accent, strength: read ? .025 : .13),
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 13, vertical: 5),
+                          onTap: () => unawaited(openItem(item)),
+                          leading: Stack(clipBehavior: Clip.none, children: [
+                            Container(
+                              width: 43, height: 43,
+                              decoration: BoxDecoration(
+                                color: BusinessBrand.pastel(accent, strength: .23),
+                                borderRadius: BorderRadius.circular(13)),
+                              child: Icon(_icon(type), color: accent),
+                            ),
+                            if (!read) const Positioned(
+                              top: -2, right: -2,
+                              child: CircleAvatar(radius: 5,
+                                backgroundColor: BusinessBrand.danger),
+                            ),
+                          ]),
+                          title: Text('${item['title'] ?? 'لوحة تحكم منصة الين'}',
+                            maxLines: 2,
+                            style: const TextStyle(fontWeight: FontWeight.w900,
+                              color: BusinessBrand.ink)),
+                          subtitle: Text(
+                            '${item['message'] ?? ''}\n${_dateTime(item['created_at'])}',
+                            maxLines: 5, overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(color: BusinessBrand.muted)),
+                          trailing: BusinessNotificationHelpers.orderId(item) != null
+                              ? Icon(Icons.chevron_left_rounded, color: accent)
+                              : null,
+                        ),
+                      );
+                    },
+                  ),
       ),
     );
   }
 
+  static Color _accent(String type) => switch (type) {
+    'new_order' || 'order_new' => BusinessBrand.success,
+    'courier_assigned' || 'order_assigned' => const Color(0xFF397ACA),
+    'library_order' || 'library_assigned' => const Color(0xFF8057B4),
+    'order_update' => BusinessBrand.warning,
+    _ => BusinessBrand.teal,
+  };
+
   static IconData _icon(String type) => switch (type) {
-        'new_order' || 'order_new' => Icons.receipt_long_rounded,
-        'courier_assigned' || 'order_assigned' => Icons.delivery_dining_rounded,
-        'library_order' || 'library_assigned' => Icons.store_rounded,
-        'order_update' => Icons.sync_alt_rounded,
-        _ => Icons.notifications_rounded,
-      };
+    'new_order' || 'order_new' => Icons.shopping_bag_rounded,
+    'courier_assigned' || 'order_assigned' => Icons.delivery_dining_rounded,
+    'library_order' || 'library_assigned' => Icons.storefront_rounded,
+    'order_update' => Icons.sync_alt_rounded,
+    _ => Icons.notifications_rounded,
+  };
 
   static String _dateTime(dynamic value) {
     final parsed = DateTime.tryParse('${value ?? ''}');
