@@ -819,7 +819,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     Color soft,
   ) {
     return Container(
-      decoration: BusinessBrand.panelDecoration(),
+      decoration: BusinessBrand.pastelCard(accent, strength: .13),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
       child: LayoutBuilder(
         builder: (context, constraints) {
@@ -846,7 +846,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        color: BusinessBrand.muted,
+                        color: BusinessBrand.ink,
                         fontSize: 11.8,
                         height: 1.15,
                         fontWeight: FontWeight.w700,
@@ -905,7 +905,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     };
 
     return Material(
-      color: accent.withValues(alpha: .08),
+      color: BusinessBrand.pastel(accent, strength: .16),
       borderRadius: BorderRadius.circular(18),
       child: InkWell(
         borderRadius: BorderRadius.circular(18),
@@ -914,7 +914,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           padding: const EdgeInsets.all(13),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: accent.withValues(alpha: .20)),
+            border: Border.all(color: accent.withValues(alpha: .24)),
           ),
           child: Row(
             children: [
@@ -922,7 +922,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 width: 45,
                 height: 45,
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: .92),
+                  color: Colors.white.withValues(alpha: .80),
                   borderRadius: BorderRadius.circular(13),
                 ),
                 child: Icon(icon, color: accent),
@@ -1223,7 +1223,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   Widget _ordersPulse(
     String label, int count, IconData icon, Color accent, VoidCallback action,
   ) => Material(
-    color: Colors.white,
+    color: BusinessBrand.pastel(accent, strength: .14),
     borderRadius: BorderRadius.circular(15),
     child: InkWell(
       borderRadius: BorderRadius.circular(15),
@@ -1232,10 +1232,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(15),
-          border: Border.all(color: BusinessBrand.border),
+          border: Border.all(color: accent.withValues(alpha: .22)),
         ),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Icon(icon, color: accent, size: 19),
+          Container(
+            width: 34, height: 34,
+            decoration: BoxDecoration(color: Colors.white.withValues(alpha: .80),
+              borderRadius: BorderRadius.circular(11)),
+            child: Icon(icon, color: accent, size: 19),
+          ),
           const SizedBox(width: 8),
           Text('$count', style: const TextStyle(fontSize: 17,
             color: BusinessBrand.ink, fontWeight: FontWeight.w900)),
@@ -1267,6 +1272,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     },
   );
 
+  Color _orderAccent(String status) => switch (status) {
+    'cancelled' || 'canceled' || 'rejected' => BusinessBrand.danger,
+    'completed' || 'delivered' || 'done' => BusinessBrand.success,
+    'ready' => const Color(0xFF397ACA),
+    'processing' || 'printing' || 'assigned' || 'accepted' => BusinessBrand.warning,
+    'out_for_delivery' || 'picked_up' => const Color(0xFF7454A9),
+    _ => BusinessBrand.teal,
+  };
+
   Widget _compactOrderCard(Map<String, dynamic> order) {
     final rawStatus = '${order['status'] ?? ''}';
     final lines = BusinessOrderList.items(order);
@@ -1274,7 +1288,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     final id = '${order['order_number'] ?? order['id'] ?? '—'}';
     final amount = money(order['total']);
     final delivery = isDeliveryOrder(order);
+    final accent = _orderAccent(rawStatus);
     return Card(
+      color: BusinessBrand.pastel(accent, strength: .13),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+        side: BorderSide(color: accent.withValues(alpha: .22)),
+      ),
       margin: const EdgeInsets.only(bottom: 9),
       child: InkWell(
         borderRadius: BorderRadius.circular(18),
@@ -1285,10 +1305,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             Container(
               width: 41, height: 41,
               decoration: BoxDecoration(
-                color: BusinessBrand.softBlue,
+                color: Colors.white.withValues(alpha: .8),
                 borderRadius: BorderRadius.circular(12)),
               child: Icon(delivery ? Icons.local_shipping_outlined :
-                Icons.storefront_outlined, color: BusinessBrand.navy),
+                Icons.storefront_outlined, color: accent),
             ),
             const SizedBox(width: 11),
             Expanded(
@@ -1394,7 +1414,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 0,
-      color: Colors.white,
+      color: BusinessBrand.pastel(accent, strength: .085),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(18),
         side: BorderSide(color: accent.withValues(alpha: .22)),
@@ -1464,7 +1484,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(11),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
+                  color: Colors.white.withValues(alpha: .72),
                   borderRadius: BorderRadius.circular(13),
                 ),
                 child: Column(
@@ -1510,7 +1530,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(11),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
+                    color: Colors.white.withValues(alpha: .72),
                     borderRadius: BorderRadius.circular(13),
                     border: Border.all(color: const Color(0xFFEEF2F6)),
                   ),
@@ -2143,7 +2163,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     return Container(
       padding: const EdgeInsets.all(13),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: BusinessBrand.pastel(accent, strength: .12),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: accent.withValues(alpha: .18)),
         boxShadow: [
@@ -2937,7 +2957,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     return Container(
       padding: const EdgeInsets.all(13),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: BusinessBrand.pastel(accent, strength: .12),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: accent.withValues(alpha: .18)),
         boxShadow: [
