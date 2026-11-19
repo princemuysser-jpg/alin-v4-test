@@ -92,7 +92,7 @@ class BusinessCommandCenter extends StatelessWidget {
   Widget _activityCard(DateTime now, List<int> values, int total, int maximum) {
     return Container(
       padding: const EdgeInsets.all(18),
-      decoration: BusinessBrand.panelDecoration(),
+      decoration: BusinessBrand.pastelCard(BusinessBrand.teal, strength: .055),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -175,7 +175,7 @@ class BusinessCommandCenter extends StatelessWidget {
 
   Widget _followUpCard() => Container(
     padding: const EdgeInsets.all(18),
-    decoration: BusinessBrand.panelDecoration(),
+    decoration: BusinessBrand.pastelCard(const Color(0xFF5975AE), strength: .06),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -208,7 +208,7 @@ class BusinessCommandCenter extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 7),
       child: Material(
-        color: const Color(0xFFF7F9FC),
+        color: BusinessBrand.pastel(accent, strength: .13),
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
           onTap: onPressed,
@@ -217,7 +217,12 @@ class BusinessCommandCenter extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 10),
             child: Row(
               children: [
-                Icon(icon, size: 19, color: accent),
+                Container(
+                  width: 31, height: 31,
+                  decoration: BoxDecoration(color: Colors.white.withValues(alpha: .8),
+                    borderRadius: BorderRadius.circular(10)),
+                  child: Icon(icon, size: 18, color: accent),
+                ),
                 const SizedBox(width: 10),
                 Expanded(child: Text(label, maxLines: 1,
                   overflow: TextOverflow.ellipsis,
