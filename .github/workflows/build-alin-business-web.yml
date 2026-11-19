@@ -38,6 +38,7 @@ jobs:
         run: |
           flutter pub get
           flutter analyze lib --no-fatal-warnings --no-fatal-infos
+          flutter test test/business_dashboard_insights_test.dart
 
       - name: Build Flutter Web
         run: |
