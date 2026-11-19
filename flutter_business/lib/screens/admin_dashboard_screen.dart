@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../data/business_repository.dart';
+import '../core/business_order_list.dart';
 import '../data/business_notification_repository.dart';
 import '../models/business_account.dart';
 import '../widgets/business_role_navigation.dart';
@@ -41,6 +42,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   String orderFilter = 'active';
   String cancelReasonFilter = 'all';
   String orderSearch = '';
+  String orderDateFilter = 'all';
+  String orderSort = 'newest';
+  bool compactOrderView = false;
   final TextEditingController orderSearchController = TextEditingController();
   String accountFilter = 'all';
   String accountSearch = '';
@@ -232,100 +236,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     return '';
   }
 
-  List<Map<String, dynamic>> get visibleOrders {
-    Iterable<Map<String, dynamic>> rows = groupedOrders;
-
-    bool hasAnyStatus(Map<String, dynamic> order, Set<String> statuses) {
-      final items =
-          ((order['_items'] as List?) ?? const <dynamic>[])
-              .whereType<Map>()
-              .map((e) => Map<String, dynamic>.from(e))
-              .toList();
-      final source = items.isEmpty ? <Map<String, dynamic>>[order] : items;
-      return source.any((row) => statuses.contains('${row['status']}'));
-    }
-
-    bool allStatuses(Map<String, dynamic> order, Set<String> statuses) {
-      final items =
-          ((order['_items'] as List?) ?? const <dynamic>[])
-              .whereType<Map>()
-              .map((e) => Map<String, dynamic>.from(e))
-              .toList();
-      final source = items.isEmpty ? <Map<String, dynamic>>[order] : items;
-      return source.isNotEmpty &&
-          source.every((row) => statuses.contains('${row['status']}'));
-    }
-
-    switch (orderFilter) {
-      case 'new':
-        rows = rows.where(
-          (e) => hasAnyStatus(e, const {'new', 'pending', 'pending_admin'}),
-        );
-        break;
-      case 'processing':
-        rows = rows.where(
-          (e) => hasAnyStatus(e, const {
-            'assigned',
-            'accepted',
-            'processing',
-            'printing',
-            'picked_up',
-            'out_for_delivery',
-          }),
-        );
-        break;
-      case 'ready':
-        rows = rows.where((e) => hasAnyStatus(e, const {'ready'}));
-        break;
-      case 'done':
-        rows = rows.where(
-          (e) => allStatuses(e, const {'completed', 'delivered', 'done'}),
-        );
-        break;
-      case 'cancelled':
-        rows = rows.where(
-          (e) => allStatuses(e, const {'cancelled', 'rejected', 'canceled'}),
-        );
-        break;
-      case 'active':
-        rows = rows.where((e) => !isClosed(e));
-        break;
-      case 'all':
-      default:
-        break;
-    }
-
-    if (orderFilter == 'cancelled' && cancelReasonFilter != 'all') {
-      rows = rows.where((order) {
-        final reason = _cancellationReason(order);
-        if (cancelReasonFilter == '__without_reason__') return reason.isEmpty;
-        return reason == cancelReasonFilter;
-      });
-    }
-
-    final query = orderSearch.trim().toLowerCase();
-    if (query.isEmpty) return rows.toList();
-
-    return rows.where((order) {
-      final items =
-          ((order['_items'] as List?) ?? const <dynamic>[])
-              .whereType<Map>()
-              .map((e) => Map<String, dynamic>.from(e))
-              .toList();
-      final searchable = <String>[
-        '${order['order_number'] ?? ''}',
-        '${order['id'] ?? ''}',
-        '${order['student_name'] ?? ''}',
-        '${order['student_phone'] ?? ''}',
-        '${order['delivery_area'] ?? ''}',
-        '${order['title'] ?? ''}',
-        _cancellationReason(order),
-        ...items.map((e) => '${e['title'] ?? ''}'),
-        ...items.map((e) => '${e['cancellation_reason'] ?? ''}'),
-      ].join(' ').toLowerCase();
-      return searchable.contains(query);
-    }).toList();
-  }
+  List<Map<String, dynamic>> get visibleOrders => BusinessOrderList.select(
+    groupedOrders,
+    filter: orderFilter,
+    query: orderSearch,
+    cancellationReasonFilter: cancelReasonFilter,
+    dateFilter: orderDateFilter,
+    sort: orderSort,
+  );
 
   List<Map<String, dynamic>> get visibleAccounts {
     Iterable<Map<String, dynamic>> rows =
@@ -1057,199 +975,356 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
 
   Widget _orders() {
-    final all = groupedOrders;
-    int countFor(String filter) {
-      final previous = orderFilter;
-      orderFilter = filter;
-      final count = visibleOrders.length;
-      orderFilter = previous;
-      return count;
-    }
+    final grouped = groupedOrders;
+    final visible = BusinessOrderList.select(
+      grouped,
+      filter: orderFilter,
+      query: orderSearch,
+      cancellationReasonFilter: cancelReasonFilter,
+      dateFilter: orderDateFilter,
+      sort: orderSort,
+    );
+    int countFor(String filter) => BusinessOrderList.select(
+      grouped,
+      filter: filter,
+      query: orderSearch,
+      dateFilter: orderDateFilter,
+    ).length;
 
-    final activeCount = countFor('active');
-    final newCount = countFor('new');
-    final processingCount = countFor('processing');
-    final readyCount = countFor('ready');
-    final doneCount = countFor('done');
-    final cancelledCount = countFor('cancelled');
-    final cancellationReasons =
-        groupedOrders
-            .where(_groupCancelled)
-            .map(_cancellationReason)
-            .where((reason) => reason.isNotEmpty)
-            .toSet()
-            .toList()
-          ..sort();
-    final selectedCancellationReason =
-        cancelReasonFilter == 'all' ||
+    final cancellationReasons = grouped
+        .where((o) => BusinessOrderList.allStatus(
+          o, const {'cancelled', 'canceled', 'rejected'}))
+        .map(BusinessOrderList.cancellationReason)
+        .where((reason) => reason.isNotEmpty)
+        .toSet().toList()..sort();
+
+    final selectedReason = cancelReasonFilter == 'all' ||
             cancelReasonFilter == '__without_reason__' ||
             cancellationReasons.contains(cancelReasonFilter)
-        ? cancelReasonFilter
-        : 'all';
+        ? cancelReasonFilter : 'all';
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(14, 16, 14, 28),
-      children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    final hasFilters = orderSearch.trim().isNotEmpty ||
+        orderFilter != 'active' ||
+        orderDateFilter != 'all' ||
+        orderSort != 'newest' ||
+        cancelReasonFilter != 'all';
+    final wide = MediaQuery.sizeOf(context).width >= 700;
+
+    return ListView.builder(
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      padding: EdgeInsets.fromLTRB(wide ? 20 : 14, 16, wide ? 20 : 14, 28),
+      itemCount: visible.length + 1,
+      itemBuilder: (context, i) {
+        if (i > 0) {
+          final order = visible[i - 1];
+          return compactOrderView ? _compactOrderCard(order) : _orderCard(order);
+        }
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Expanded(
+            Row(
+              children: [
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('إدارة الطلبات', style: TextStyle(
+                        fontSize: 23, fontWeight: FontWeight.w900,
+                        color: BusinessBrand.ink)),
+                      SizedBox(height: 4),
+                      Text('مركز التحكم بالطلبات، الحالات والتوصيل',
+                        style: TextStyle(fontSize: 12.5,
+                          color: BusinessBrand.muted)),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'تحديث الطلبات',
+                  onPressed: _refreshAll,
+                  icon: const Icon(Icons.refresh_rounded,
+                    color: BusinessBrand.navy),
+                ),
+              ],
+            ),
+            const SizedBox(height: 15),
+            Wrap(
+              spacing: 9,
+              runSpacing: 9,
+              children: [
+                _ordersPulse('الكل', grouped.length, Icons.receipt_long_rounded,
+                  BusinessBrand.navy, () => setState(() => orderFilter = 'all')),
+                _ordersPulse('الجديدة', countFor('new'),
+                  Icons.fiber_new_rounded, BusinessBrand.teal,
+                  () => setState(() => orderFilter = 'new')),
+                _ordersPulse('قيد التنفيذ', countFor('processing'),
+                  Icons.print_rounded, BusinessBrand.warning,
+                  () => setState(() => orderFilter = 'processing')),
+                _ordersPulse('الجاهزة', countFor('ready'),
+                  Icons.inventory_2_rounded, const Color(0xFF397ACA),
+                  () => setState(() => orderFilter = 'ready')),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BusinessBrand.panelDecoration(),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'إدارة الطلبات',
-                    style: TextStyle(
-                      fontSize: 21,
-                      fontWeight: FontWeight.w900,
-                      color: Color(0xFF143B68),
+                  TextField(
+                    controller: orderSearchController,
+                    onChanged: (value) => setState(() => orderSearch = value),
+                    textInputAction: TextInputAction.search,
+                    decoration: InputDecoration(
+                      hintText: 'رقم الطلب، الطالب، الهاتف، المنطقة أو المادة',
+                      prefixIcon: const Icon(Icons.search_rounded),
+                      suffixIcon: orderSearch.isEmpty ? null : IconButton(
+                        tooltip: 'مسح البحث',
+                        onPressed: () {
+                          orderSearchController.clear();
+                          setState(() => orderSearch = '');
+                        },
+                        icon: const Icon(Icons.close_rounded),
+                      ),
                     ),
                   ),
-                  SizedBox(height: 3),
-                  Text(
-                    'بحث، فلترة، تعيين مندوب وتحديث حالة الطلب',
-                    style: TextStyle(
-                      fontSize: 12.5,
-                      color: Color(0xFF667085),
-                    ),
+                  const SizedBox(height: 12),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(children: [
+                      _orderFilterChip('الحالية', 'active', countFor('active')),
+                      _orderFilterChip('جديد', 'new', countFor('new')),
+                      _orderFilterChip('قيد التنفيذ', 'processing', countFor('processing')),
+                      _orderFilterChip('جاهز', 'ready', countFor('ready')),
+                      _orderFilterChip('مكتمل', 'done', countFor('done')),
+                      _orderFilterChip('ملغي', 'cancelled', countFor('cancelled')),
+                      _orderFilterChip('الكل', 'all', grouped.length),
+                    ]),
                   ),
+                  const SizedBox(height: 12),
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final stack = constraints.maxWidth < 520;
+                      final date = _orderDropdown(
+                        label: 'الفترة',
+                        icon: Icons.date_range_rounded,
+                        value: orderDateFilter,
+                        choices: const {
+                          'all': 'كل التواريخ', 'today': 'اليوم',
+                          'week': 'آخر 7 أيام', 'month': 'هذا الشهر',
+                        },
+                        onChanged: (value) => setState(() => orderDateFilter = value),
+                      );
+                      final sort = _orderDropdown(
+                        label: 'الترتيب',
+                        icon: Icons.sort_rounded,
+                        value: orderSort,
+                        choices: const {
+                          'newest': 'الأحدث أولاً', 'oldest': 'الأقدم أولاً',
+                          'highest': 'الأعلى مبلغاً',
+                        },
+                        onChanged: (value) => setState(() => orderSort = value),
+                      );
+                      return stack
+                          ? Column(children: [
+                              date, const SizedBox(height: 10), sort,
+                            ])
+                          : Row(children: [
+                              Expanded(child: date),
+                              const SizedBox(width: 10),
+                              Expanded(child: sort),
+                            ]);
+                    },
+                  ),
+                  if (orderFilter == 'cancelled') ...[
+                    const SizedBox(height: 10),
+                    DropdownButtonFormField<String>(
+                      key: ValueKey(selectedReason),
+                      initialValue: selectedReason,
+                      isExpanded: true,
+                      decoration: const InputDecoration(
+                        labelText: 'سبب الإلغاء',
+                        prefixIcon: Icon(Icons.report_gmailerrorred_rounded),
+                      ),
+                      items: [
+                        const DropdownMenuItem(value: 'all',
+                          child: Text('كل الأسباب')),
+                        const DropdownMenuItem(value: '__without_reason__',
+                          child: Text('بدون سبب مسجل')),
+                        ...cancellationReasons.map((reason) =>
+                          DropdownMenuItem(value: reason,
+                            child: Text(reason, overflow: TextOverflow.ellipsis))),
+                      ],
+                      onChanged: (value) {
+                        if (value != null) {
+                          setState(() => cancelReasonFilter = value);
+                        }
+                      },
+                    ),
+                  ],
                 ],
               ),
             ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
-              decoration: BoxDecoration(
-                color: const Color(0xFFEAF2FB),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Text(
-                '${visibleOrders.length} طلب',
-                style: const TextStyle(
-                  color: Color(0xFF143B68),
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 14),
-        TextField(
-          controller: orderSearchController,
-          onChanged: (value) => setState(() => orderSearch = value),
-          decoration: InputDecoration(
-            hintText: 'ابحث برقم الطلب، اسم الطالب، الهاتف أو المنطقة',
-            prefixIcon: const Icon(Icons.search_rounded),
-            suffixIcon: orderSearch.isEmpty
-                ? null
-                : IconButton(
+            const SizedBox(height: 13),
+            Row(
+              children: [
+                Expanded(child: Text(
+                  '${visible.length} طلب مطابق',
+                  style: const TextStyle(color: BusinessBrand.ink,
+                    fontSize: 14, fontWeight: FontWeight.w900),
+                )),
+                if (hasFilters)
+                  TextButton.icon(
                     onPressed: () {
                       orderSearchController.clear();
-                      setState(() => orderSearch = '');
+                      setState(() {
+                        orderSearch = '';
+                        orderFilter = 'active';
+                        orderDateFilter = 'all';
+                        orderSort = 'newest';
+                        cancelReasonFilter = 'all';
+                      });
                     },
-                    icon: const Icon(Icons.close_rounded),
+                    icon: const Icon(Icons.filter_alt_off_rounded, size: 17),
+                    label: const Text('مسح الفلاتر'),
                   ),
-            filled: true,
-            fillColor: Colors.white,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: const BorderSide(color: Color(0xFFE3EAF1)),
+                IconButton(
+                  tooltip: compactOrderView ? 'عرض التفاصيل' : 'العرض المختصر',
+                  onPressed: () => setState(() => compactOrderView = !compactOrderView),
+                  icon: Icon(compactOrderView ?
+                    Icons.view_agenda_rounded : Icons.view_list_rounded,
+                    color: BusinessBrand.navy),
+                ),
+              ],
             ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: const BorderSide(color: Color(0xFFE3EAF1)),
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              _orderFilterChip('الحالية', 'active', activeCount),
-              _orderFilterChip('جديد', 'new', newCount),
-              _orderFilterChip('قيد التنفيذ', 'processing', processingCount),
-              _orderFilterChip('جاهز', 'ready', readyCount),
-              _orderFilterChip('مكتمل', 'done', doneCount),
-              _orderFilterChip('ملغي', 'cancelled', cancelledCount),
-              _orderFilterChip('الكل', 'all', all.length),
-            ],
-          ),
-        ),
-        if (orderFilter == 'cancelled') ...[
-          const SizedBox(height: 11),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFF1F4),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFFFC9D5)),
-            ),
-            child: DropdownButtonFormField<String>(
-              initialValue: selectedCancellationReason,
-              decoration: const InputDecoration(
-                labelText: 'فلتر سبب الإلغاء',
-                prefixIcon: Icon(Icons.report_gmailerrorred_rounded),
-                filled: true,
-                fillColor: Colors.white,
+            if (visible.isEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 10, bottom: 24),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 35, horizontal: 18),
+                  decoration: BusinessBrand.panelDecoration(),
+                  child: const Column(children: [
+                    Icon(Icons.search_off_rounded, size: 42,
+                      color: BusinessBrand.muted),
+                    SizedBox(height: 10),
+                    Text('ماكو طلبات مطابقة للفلاتر الحالية',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: BusinessBrand.ink,
+                        fontWeight: FontWeight.w800)),
+                  ]),
+                ),
               ),
-              items: [
-                const DropdownMenuItem(
-                  value: 'all',
-                  child: Text('كل أسباب الإلغاء'),
-                ),
-                const DropdownMenuItem(
-                  value: '__without_reason__',
-                  child: Text('طلبات قديمة بدون سبب'),
-                ),
-                ...cancellationReasons.map(
-                  (reason) => DropdownMenuItem(
-                    value: reason,
-                    child: Text(
-                      reason,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ),
-              ],
-              onChanged: (value) {
-                if (value != null) {
-                  setState(() => cancelReasonFilter = value);
-                }
-              },
+            const SizedBox(height: 8),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _ordersPulse(
+    String label, int count, IconData icon, Color accent, VoidCallback action,
+  ) => Material(
+    color: Colors.white,
+    borderRadius: BorderRadius.circular(15),
+    child: InkWell(
+      borderRadius: BorderRadius.circular(15),
+      onTap: action,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(color: BusinessBrand.border),
+        ),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Icon(icon, color: accent, size: 19),
+          const SizedBox(width: 8),
+          Text('$count', style: const TextStyle(fontSize: 17,
+            color: BusinessBrand.ink, fontWeight: FontWeight.w900)),
+          const SizedBox(width: 6),
+          Text(label, style: const TextStyle(
+            color: BusinessBrand.muted, fontSize: 11.5)),
+        ]),
+      ),
+    ),
+  );
+
+  Widget _orderDropdown({
+    required String label,
+    required IconData icon,
+    required String value,
+    required Map<String, String> choices,
+    required ValueChanged<String> onChanged,
+  }) => DropdownButtonFormField<String>(
+    key: ValueKey('$label:$value'),
+    initialValue: value,
+    isExpanded: true,
+    decoration: InputDecoration(labelText: label, prefixIcon: Icon(icon)),
+    items: choices.entries.map((entry) => DropdownMenuItem<String>(
+      value: entry.key,
+      child: Text(entry.value, overflow: TextOverflow.ellipsis),
+    )).toList(),
+    onChanged: (next) {
+      if (next != null) onChanged(next);
+    },
+  );
+
+  Widget _compactOrderCard(Map<String, dynamic> order) {
+    final rawStatus = '${order['status'] ?? ''}';
+    final lines = BusinessOrderList.items(order);
+    final heading = '${order['student_name'] ?? 'طالب غير محدد'}';
+    final id = '${order['order_number'] ?? order['id'] ?? '—'}';
+    final amount = money(order['total']);
+    final delivery = isDeliveryOrder(order);
+    return Card(
+      margin: const EdgeInsets.only(bottom: 9),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: () => _openOrderDetails(order),
+        child: Padding(
+          padding: const EdgeInsets.all(13),
+          child: Row(children: [
+            Container(
+              width: 41, height: 41,
+              decoration: BoxDecoration(
+                color: BusinessBrand.softBlue,
+                borderRadius: BorderRadius.circular(12)),
+              child: Icon(delivery ? Icons.local_shipping_outlined :
+                Icons.storefront_outlined, color: BusinessBrand.navy),
             ),
-          ),
-        ],
-        const SizedBox(height: 14),
-        if (visibleOrders.isEmpty)
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 38, horizontal: 20),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: const Color(0xFFE3EAF1)),
+            const SizedBox(width: 11),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('طلب #$id', maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: BusinessBrand.ink,
+                      fontWeight: FontWeight.w900, fontSize: 13.5)),
+                  const SizedBox(height: 3),
+                  Text('$heading • ${lines.length} مادة',
+                    maxLines: 1, overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: BusinessBrand.muted,
+                      fontSize: 11.5)),
+                  const SizedBox(height: 3),
+                  Text(amount, style: const TextStyle(
+                    color: BusinessBrand.navy, fontWeight: FontWeight.w900)),
+                ],
+              ),
             ),
-            child: const Column(
-              children: [
-                Icon(
-                  Icons.search_off_rounded,
-                  size: 42,
-                  color: Color(0xFF98A2B3),
-                ),
-                SizedBox(height: 10),
-                Text(
-                  'لا توجد طلبات مطابقة',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w900,
-                    color: Color(0xFF143B68),
-                  ),
-                ),
-              ],
+            const SizedBox(width: 6),
+            Flexible(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  _orderStatusChip(rawStatus),
+                  const SizedBox(height: 6),
+                  const Text('التفاصيل', style: TextStyle(
+                    color: BusinessBrand.muted, fontSize: 10)),
+                ],
+              ),
             ),
-          )
-        else
-          ...visibleOrders.map(_orderCard),
-      ],
+          ]),
+        ),
+      ),
     );
   }
 
