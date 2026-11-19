@@ -53,5 +53,42 @@
     await sub.unsubscribe();
     return true;
   }
+  // A page cannot play sound until a user gesture unlocks Web Audio.
+  // This chime applies to push received in a focused browser tab;
+  // background notification sounds are controlled by the OS/browser.
+  let audioContext=null;
+  function unlockTone(){
+    try {
+      const Audio=window.AudioContext||window.webkitAudioContext;
+      if(!Audio)return;
+      audioContext ||= new Audio();
+      if(audioContext.state==='suspended')void audioContext.resume();
+    }catch(_){}
+  }
+  document.addEventListener('pointerdown',unlockTone,{passive:true});
+  function playTone(){
+    if(document.visibilityState!=='visible'||!document.hasFocus())return;
+    if(!audioContext||audioContext.state!=='running')return;
+    const notes=[659.25,830.61,1046.50];
+    const start=audioContext.currentTime+.01;
+    notes.forEach((hz,i)=>{
+      const t=start+i*.14;
+      const oscillator=audioContext.createOscillator();
+      const gain=audioContext.createGain();
+      oscillator.type='sine';
+      oscillator.frequency.value=hz;
+      gain.gain.setValueAtTime(.0001,t);
+      gain.gain.exponentialRampToValueAtTime(.11,t+.012);
+      gain.gain.exponentialRampToValueAtTime(.0001,t+.26);
+      oscillator.connect(gain).connect(audioContext.destination);
+      oscillator.start(t);
+      oscillator.stop(t+.28);
+    });
+  }
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.addEventListener('message',event=>{
+      if(event.data?.type==='alin-business-push-received')playTone();
+    });
+  }
   window.AlinBusinessPush=Object.freeze({enable,sync,disable,supported});
 })();
