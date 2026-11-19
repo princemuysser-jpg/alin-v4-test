@@ -108,7 +108,7 @@ class _BusinessRoleNavigationDrawerState
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'آلين للأعمال',
+                  'لوحة تحكم منصة الين',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 18,
@@ -989,7 +989,7 @@ class AdminDesktopNavigationSidebar extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'آلين للأعمال',
+                'لوحة تحكم منصة الين',
                 style: TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.w900,
