@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../data/business_repository.dart';
 import '../core/business_order_list.dart';
+import '../core/business_notification_signal.dart';
 import '../data/business_notification_repository.dart';
 import '../models/business_account.dart';
 import '../widgets/business_role_navigation.dart';
@@ -56,16 +59,39 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   String financeSearch = '';
   final TextEditingController financeSearchController = TextEditingController();
   int unreadNotifications = 0;
+  Timer? _notificationTimer;
+  bool _notificationBusy = false;
 
   @override
   void initState() {
     super.initState();
     load();
     refreshUnreadNotifications();
+    BusinessNotificationSignal.revision.addListener(_notificationReceived);
+    _notificationTimer = Timer.periodic(const Duration(seconds: 20), (_) {
+      unawaited(refreshUnreadNotifications());
+    });
+  }
+
+  void _notificationReceived() {
+    unawaited(refreshUnreadNotifications());
+    // Orders may change when a push arrives. Preserve the user's current
+    // tab, search and filters while updating the order snapshot.
+    unawaited(_refreshOrdersFromNotification());
+  }
+
+  Future<void> _refreshOrdersFromNotification() async {
+    if (!mounted || loading) return;
+    try {
+      final updated = await widget.repository.adminOrders();
+      if (mounted) setState(() => orders = updated);
+    } catch (_) {}
   }
 
   @override
   void dispose() {
+    _notificationTimer?.cancel();
+    BusinessNotificationSignal.revision.removeListener(_notificationReceived);
     orderSearchController.dispose();
     accountSearchController.dispose();
     receiptSearchController.dispose();
@@ -109,12 +135,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 
   Future<void> refreshUnreadNotifications() async {
+    if (!mounted || _notificationBusy) return;
+    _notificationBusy = true;
     try {
       final value = await widget.repository.businessNotificationUnreadCount();
       if (!mounted) return;
       setState(() => unreadNotifications = value);
     } catch (_) {
       // Keep the dashboard usable even if the unread-count RPC is unavailable.
+    } finally {
+      _notificationBusy = false;
     }
   }
 
