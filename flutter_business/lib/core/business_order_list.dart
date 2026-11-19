@@ -56,7 +56,7 @@ class BusinessOrderList {
 
   static DateTime? createdLocal(Map<String, dynamic> order) {
     final raw = order['created_at'];
-    return raw == null ? null : DateTime.tryParse('\${raw}')?.toLocal();
+    return raw == null ? null : DateTime.tryParse('${raw}')?.toLocal();
   }
 
   static bool _withinDate(Map<String, dynamic> order, String filter, DateTime today) {
