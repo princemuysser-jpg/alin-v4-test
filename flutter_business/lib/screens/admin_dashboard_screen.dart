@@ -5,6 +5,7 @@ import '../models/business_account.dart';
 import '../widgets/business_role_navigation.dart';
 import '../widgets/business_brand.dart';
 import '../widgets/business_app_mark.dart';
+import '../widgets/business_command_center.dart';
 import '../widgets/grouped_order_receipt_card.dart';
 import 'business_order_details_screen.dart';
 import 'business_notifications_screen.dart';
@@ -522,10 +523,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     final grouped = groupedOrders;
     final newCount = grouped.where((o) => _groupHasStatus(o, const {
       'new',
+      'pending',
       'pending_admin',
-      'assigned',
     })).length;
     final printingCount = grouped.where((o) => _groupHasStatus(o, const {
+      'assigned',
       'accepted',
       'processing',
       'printing',
@@ -557,8 +559,30 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           ),
           children: [
             _hero(),
-            const SizedBox(height: 14),
-            _sectionTitle('حالة الطلبات اليوم', 'نظرة سريعة على حركة الطلبات'),
+            const SizedBox(height: 18),
+            BusinessCommandCenter(
+              groupedOrders: grouped,
+              newOrders: newCount,
+              processingOrders: printingCount,
+              readyOrders: readyCount,
+              unreadNotifications: unreadNotifications,
+              onNewOrders: () => setState(() {
+                orderFilter = 'new';
+                index = 1;
+              }),
+              onProcessing: () => setState(() {
+                orderFilter = 'processing';
+                index = 1;
+              }),
+              onReadyOrders: () => setState(() {
+                orderFilter = 'ready';
+                index = 1;
+              }),
+              onNotifications: _openNotifications,
+              onRefresh: _refreshAll,
+            ),
+            const SizedBox(height: 22),
+            _sectionTitle('حالة الطلبات', 'ملخص من آخر الطلبات المحمّلة'),
             const SizedBox(height: 10),
             GridView.count(
               shrinkWrap: true,
@@ -728,13 +752,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   Icons.receipt_rounded,
                   () => setState(() => index = 5),
                 ),
-                Builder(
-                  builder: (drawerContext) => _quickSection(
-                    'كل الأقسام',
-                    'افتح القائمة الجانبية الكاملة',
-                    Icons.apps_rounded,
-                    () => Scaffold.of(drawerContext).openDrawer(),
-                  ),
+                _quickSection(
+                  'الإشعارات',
+                  'عرض آخر التنبيهات والمتابعة',
+                  Icons.notifications_outlined,
+                  _openNotifications,
                 ),
               ],
             ),
