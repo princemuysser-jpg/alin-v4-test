@@ -135,10 +135,13 @@ jobs:
           .alin-icon-venv/bin/python -m pip install Pillow
           .alin-icon-venv/bin/python tool/generate_business_icons.py android
 
-      - name: Flutter checks
+      - name: Flutter checks and shared regression tests
         run: |
           flutter pub get
           flutter analyze lib --no-fatal-warnings --no-fatal-infos
+          flutter test test/business_dashboard_insights_test.dart
+          flutter test test/business_order_list_test.dart
+          flutter test test/business_notification_helpers_test.dart
 
       - name: Build signed AAB and APK
         run: |
@@ -230,10 +233,13 @@ jobs:
           .alin-icon-venv/bin/python -m pip install Pillow
           .alin-icon-venv/bin/python tool/generate_business_icons.py ios
 
-      - name: Flutter checks
+      - name: Flutter checks and shared regression tests
         run: |
           flutter pub get
           flutter analyze lib --no-fatal-warnings --no-fatal-infos
+          flutter test test/business_dashboard_insights_test.dart
+          flutter test test/business_order_list_test.dart
+          flutter test test/business_notification_helpers_test.dart
 
       - name: Build iOS simulator compile check
         run: flutter build ios --simulator --debug --no-pub
