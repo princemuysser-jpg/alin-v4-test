@@ -41,6 +41,7 @@ jobs:
           flutter test test/business_dashboard_insights_test.dart
           flutter test test/business_order_list_test.dart
           flutter test test/business_notification_helpers_test.dart
+          flutter test test/courier_workspace_navigation_test.dart
 
       - name: Build Flutter Web
         run: |
