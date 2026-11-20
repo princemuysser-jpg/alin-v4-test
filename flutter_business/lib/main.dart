@@ -117,31 +117,6 @@ class _BusinessGateState extends State<BusinessGate> {
   BusinessAccount? account;
   bool loading = true;
   String? pendingOrderId;
-  bool webPushEnabled = false;
-  bool webPushBusy = false;
-  bool webPushChecked = false;
-
-  Future<void> _enableBusinessWebPush() async {
-    if (webPushBusy) return;
-    setState(() => webPushBusy = true);
-    try {
-      final ok = await notifications.requestPermissionAndRegister();
-      if (!mounted) return;
-      setState(() {
-        webPushEnabled = ok;
-        webPushChecked = true;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ok
-          ? '🔔 تم تفعيل إشعارات الطلبات'
-          : 'تأكد من السماح بإشعارات الموقع')));
-    } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('تعذر تفعيل الإشعارات: $e')));
-    } finally {
-      if (mounted) setState(() => webPushBusy = false);
-    }
-  }
-
   @override
   void initState() {
     super.initState();
@@ -202,10 +177,9 @@ class _BusinessGateState extends State<BusinessGate> {
 
   Future<void> _restore() async {
     final restored = await repository.restoreAccount();
-    var restoredPush = false;
     if (restored != null) {
       if (kIsWeb) {
-        restoredPush = await notifications.syncCurrentWebPush();
+        await notifications.syncCurrentWebPush();
       } else {
         await notifications.registerCurrentDevice();
       }
@@ -213,25 +187,20 @@ class _BusinessGateState extends State<BusinessGate> {
     if (!mounted) return;
     setState(() {
       account = restored;
-      webPushEnabled = restoredPush;
-      webPushChecked = true;
       loading = false;
     });
     _openPendingOrderAfterFrame();
   }
 
   Future<void> _loggedIn(BusinessAccount value) async {
-    var restoredPush = false;
     if (kIsWeb) {
-      restoredPush = await notifications.syncCurrentWebPush();
+      await notifications.syncCurrentWebPush();
     } else {
       await notifications.registerCurrentDevice();
     }
     if (!mounted) return;
     setState(() {
       account = value;
-      webPushEnabled = restoredPush;
-      webPushChecked = true;
     });
     _openPendingOrderAfterFrame();
   }
@@ -243,8 +212,6 @@ class _BusinessGateState extends State<BusinessGate> {
     setState(() {
       account = null;
       pendingOrderId = null;
-      webPushEnabled = false;
-      webPushChecked = false;
     });
   }
 
@@ -252,23 +219,6 @@ class _BusinessGateState extends State<BusinessGate> {
   void dispose() {
     unawaited(notifications.dispose());
     super.dispose();
-  }
-
-  Widget _withBusinessOverlays(Widget child) {
-    if (!kIsWeb || webPushEnabled || !webPushChecked) return child;
-    return Stack(children: [
-      child,
-      Positioned(
-        bottom: 18, right: 18,
-        child: SafeArea(
-          child: FilledButton.icon(
-            onPressed: webPushBusy ? null : _enableBusinessWebPush,
-            icon: const Icon(Icons.notifications_active_rounded),
-            label: Text(webPushBusy ? 'جارٍ التفعيل...' : '🔔 تفعيل تنبيهات الطلبات'),
-          ),
-        ),
-      ),
-    ]);
   }
 
   @override
@@ -326,7 +276,8 @@ class _BusinessGateState extends State<BusinessGate> {
           body: Center(child: Text('نوع الحساب غير مدعوم: ${account!.role}')),
         );
     }
-    return _withBusinessOverlays(page);
+    // Push permission is managed from the inbox without a floating overlay.
+    return page;
   }
 }
 
