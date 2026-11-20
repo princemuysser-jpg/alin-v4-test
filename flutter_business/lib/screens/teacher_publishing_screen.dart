@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../data/business_repository.dart';
 import '../data/teacher_publishing_repository.dart';
 import '../models/business_account.dart';
+import '../widgets/business_brand.dart';
 
 class TeacherPublishingScreen extends StatefulWidget {
   final BusinessRepository repository;
@@ -73,6 +74,25 @@ class _TeacherPublishingScreenState extends State<TeacherPublishingScreen> {
         'rejected' => 'مرفوضة',
         _ => '${value ?? 'قيد المراجعة'}',
       };
+
+  Color _statusAccent(String status) => switch (status) {
+    'published' || 'approved' || 'ready' => BusinessBrand.success,
+    'changes_requested' || 'rejected' => BusinessBrand.danger,
+    'designing' => const Color(0xFF8661BE),
+    'resubmitted' => const Color(0xFF4C83BD),
+    _ => BusinessBrand.warning,
+  };
+
+  Widget _statusChip(String label, Color accent) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+    decoration: BoxDecoration(
+      color: BusinessBrand.pastel(accent, strength: .17),
+      borderRadius: BorderRadius.circular(30),
+      border: Border.all(color: accent.withValues(alpha: .20)),
+    ),
+    child: Text(label, style: TextStyle(
+      color: accent, fontSize: 11.5, fontWeight: FontWeight.w900)),
+  );
 
   bool canResubmit(Map<String, dynamic> row) {
     final s = '${row['status'] ?? ''}'.toLowerCase();
@@ -278,7 +298,9 @@ class _TeacherPublishingScreenState extends State<TeacherPublishingScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('رفع ومتابعة الملازم'),
+        backgroundColor: Colors.white,
+        foregroundColor: BusinessBrand.navy,
+        title: const Text('رفع ومتابعة الملازم', style: TextStyle(fontWeight: FontWeight.w900)),
         actions: [IconButton(onPressed: loading || busy ? null : load, icon: const Icon(Icons.refresh_rounded))],
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -305,26 +327,28 @@ class _TeacherPublishingScreenState extends State<TeacherPublishingScreen> {
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(18),
-                        ),
+                        padding: const EdgeInsets.all(17),
+                        decoration: BusinessBrand.pastelCard(
+                          BusinessBrand.teal, strength: .10),
                         child: const Row(children: [
-                          Icon(Icons.lock_rounded),
-                          SizedBox(width: 10),
-                          Expanded(child: Text('المدرس يرفع ملف DOCX للمراجعة فقط. النسخة النهائية PDF ترفعها الإدارة وبعدها تظهر موافقة النشر.')),
+                          Icon(Icons.verified_user_rounded,
+                            color: BusinessBrand.teal, size: 27),
+                          SizedBox(width: 12),
+                          Expanded(child: Text(
+                            'ارفع ملزمتك بصيغة DOCX للمراجعة. الإدارة تجهز النسخة النهائية PDF، وبعدها تگدر توافق على النشر.',
+                            style: TextStyle(fontWeight: FontWeight.w700,
+                              color: BusinessBrand.ink))),
                         ]),
                       ),
                       const SizedBox(height: 18),
-                      const Text('طلبات الرفع والتعديل', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900)),
+                      const Text('طلبات الرفع والتعديل', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900, color: BusinessBrand.ink)),
                       const SizedBox(height: 8),
                       if (requests.isEmpty)
                         const _Empty(text: 'لا توجد طلبات رفع حتى الآن')
                       else
                         ...requests.map(_requestCard),
                       const SizedBox(height: 22),
-                      const Text('النسخ النهائية وموافقة النشر', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900)),
+                      const Text('النسخ النهائية وموافقة النشر', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900, color: BusinessBrand.ink)),
                       const SizedBox(height: 8),
                       if (booklets.isEmpty)
                         const _Empty(text: 'لا توجد ملازم نهائية مرتبطة بحسابك حالياً')
@@ -339,14 +363,20 @@ class _TeacherPublishingScreenState extends State<TeacherPublishingScreen> {
   Widget _requestCard(Map<String, dynamic> row) {
     final s = '${row['status'] ?? 'new'}'.toLowerCase();
     final adminNote = '${row['admin_note'] ?? ''}'.trim();
+    final accent = _statusAccent(s);
     return Card(
+      color: BusinessBrand.pastel(accent, strength: .075),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: accent.withValues(alpha: .22)),
+      ),
       margin: const EdgeInsets.only(bottom: 10),
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
             Expanded(child: Text('${row['title'] ?? 'طلب ملزمة'}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900))),
-            Chip(label: Text(statusLabel(s))),
+            _statusChip(statusLabel(s), accent),
           ]),
           const SizedBox(height: 5),
           Text([row['subject'], row['grade']].where((v) => '${v ?? ''}'.trim().isNotEmpty).join(' — ')),
@@ -383,14 +413,22 @@ class _TeacherPublishingScreenState extends State<TeacherPublishingScreen> {
     final approved = row['teacher_approved'] == true;
     final finalFile = hasFinalFile(row);
     final note = '${row['admin_note'] ?? ''}'.trim();
+    final accent = published ? BusinessBrand.success :
+      approved ? const Color(0xFF4C83BD) :
+      finalFile ? BusinessBrand.warning : const Color(0xFF8661BE);
     return Card(
+      color: BusinessBrand.pastel(accent, strength: .075),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: accent.withValues(alpha: .22)),
+      ),
       margin: const EdgeInsets.only(bottom: 10),
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
             Expanded(child: Text('${row['title'] ?? 'ملزمة'}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900))),
-            Chip(label: Text(published ? 'منشورة' : approved ? 'بانتظار الإدارة' : finalFile ? 'تحتاج موافقتك' : 'قيد التجهيز')),
+            _statusChip(published ? 'منشورة' : approved ? 'بانتظار الإدارة' : finalFile ? 'تحتاج موافقتك' : 'قيد التجهيز', accent),
           ]),
           const SizedBox(height: 6),
           Text([row['subject'], row['grade'], row['year']].where((v) => '${v ?? ''}'.trim().isNotEmpty).join(' — ')),
