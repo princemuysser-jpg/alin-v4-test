@@ -1,8 +1,8 @@
 name: alin_business
 description: لوحة تحكم منصة الين للإدارة والمدرس والمكتبة والمطبعة والمندوب
 publish_to: 'none'
-version: 1.0.15+23
-# Build 23: rename the visible ALIN Business app to لوحة تحكم منصة الين.
+version: 1.0.16+24
+# Build 24: persistent alerts and custom ALIN notification chime.
 environment:
   sdk: '>=3.10.0 <4.0.0'
 

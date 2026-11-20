@@ -56,7 +56,7 @@ Deno.serve(async (req: Request) => {
     const orderNumber = clean(body.order_number, 140);
     const checkoutGroupId = clean(body.checkout_group_id, 140);
     const eventType = clean(body.event_type, 60).toLowerCase() || 'order_update';
-    const title = clean(body.title, 160) || 'آلين للأعمال';
+    const title = clean(body.title, 160) || 'لوحة تحكم منصة الين';
     const message = clean(body.message, 700);
     const link = clean(body.url, 500) || `alinbusiness://orders?order=${encodeURIComponent(orderId || orderNumber)}`;
 
@@ -121,15 +121,15 @@ Deno.serve(async (req: Request) => {
           android: {
             priority: 'high',
             notification: {
-              channel_id: 'alin_business_orders',
-              sound: 'default',
+              channel_id: 'alin_business_orders_alin_tone_v2',
+              sound: 'alin_control_alert',
               default_vibrate_timings: true,
               notification_priority: 'PRIORITY_MAX',
             },
           },
           apns: {
             headers: { 'apns-priority': '10' },
-            payload: { aps: { sound: 'default', badge: 1, 'content-available': 1 } },
+            payload: { aps: { sound: 'alin_control_alert.caf', badge: 1, 'content-available': 1 } },
           },
         },
       };

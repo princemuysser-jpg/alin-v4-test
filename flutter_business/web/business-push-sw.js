@@ -2,14 +2,23 @@
 self.addEventListener('push',event=>{
   let data={};
   try{data=event.data?.json()||{}}catch(_){data={body:event.data?.text()||''}}
-  const title=String(data.title||'آلين للأعمال — طلب جديد').slice(0,160);
+  const title=String(data.title||'لوحة تحكم منصة الين — طلب جديد').slice(0,160);
   const target=new URL('./',self.registration.scope);
   const raw=String(data.url||'');
   const match=raw.match(/[?&](?:order|order_id)=([^&]+)/);
   if(match)target.searchParams.set('order',decodeURIComponent(match[1]));
   const options={body:String(data.body||data.message||'وصل طلب جديد').slice(0,500),tag:String(data.tag||data.notification_id||'alin-business-order'),renotify:true,requireInteraction:true,
     icon:'./favicon.svg',badge:'./favicon.svg',vibrate:[350,150,350,150,600],data:{url:target.href}};
-  event.waitUntil(self.registration.showNotification(title,options));
+  event.waitUntil(Promise.all([
+    self.registration.showNotification(title,options),
+    clients.matchAll({type:'window',includeUncontrolled:true}).then(windows=>{
+      windows.forEach(client=>{
+        if(client.visibilityState==='visible'){
+          client.postMessage({type:'alin-business-push-received'});
+        }
+      });
+    }),
+  ]));
 });
 self.addEventListener('notificationclick',event=>{
   event.notification.close();

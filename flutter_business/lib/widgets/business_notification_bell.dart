@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
+import '../core/business_notification_signal.dart';
 import '../data/business_notification_repository.dart';
 import '../data/business_repository.dart';
 import '../screens/business_notifications_screen.dart';
@@ -15,18 +18,39 @@ class BusinessNotificationBell extends StatefulWidget {
 
 class _BusinessNotificationBellState extends State<BusinessNotificationBell> {
   int unread = 0;
+  Timer? _refreshTimer;
+  bool _refreshBusy = false;
 
   @override
   void initState() {
     super.initState();
     refresh();
+    BusinessNotificationSignal.revision.addListener(_onPush);
+    _refreshTimer = Timer.periodic(const Duration(seconds: 20), (_) {
+      unawaited(refresh());
+    });
+  }
+
+  void _onPush() => unawaited(refresh());
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    BusinessNotificationSignal.revision.removeListener(_onPush);
+    super.dispose();
   }
 
   Future<void> refresh() async {
+    if (_refreshBusy || !mounted) return;
+    _refreshBusy = true;
     try {
       final value = await widget.repository.businessNotificationUnreadCount();
-      if (mounted) setState(() => unread = value);
-    } catch (_) {}
+      if (mounted && unread != value) setState(() => unread = value);
+    } catch (_) {
+      // Keep the bell visible during a temporary notification outage.
+    } finally {
+      _refreshBusy = false;
+    }
   }
 
   Future<void> open() async {

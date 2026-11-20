@@ -10,8 +10,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class BusinessNotificationService {
-  static const _channelId = 'alin_business_orders';
-  static const _channelName = 'طلبات آلين للأعمال';
+  // Versioned channel: Android never changes a channel's sound after creation.
+  static const _channelId = 'alin_business_orders_alin_tone_v2';
+  static const _channelName = 'تنبيهات لوحة تحكم منصة الين';
   static const _deviceKey = 'alin_business_device_id_v1';
 
   final SupabaseClient client;
@@ -53,6 +54,7 @@ class BusinessNotificationService {
         _channelName,
         description: 'تنبيهات الطلبات الجديدة وتحويلات المندوب والمكتبة',
         importance: Importance.max,
+        sound: RawResourceAndroidNotificationSound('alin_control_alert'),
         playSound: true,
         enableVibration: true,
       );
@@ -121,12 +123,18 @@ class BusinessNotificationService {
     }
   }
 
+  Future<bool> syncCurrentWebPush() async {
+    if (!kIsWeb) return false;
+    final jwt = client.auth.currentSession?.accessToken;
+    if (jwt == null || jwt.isEmpty) return false;
+    return browserPush.syncWebPush(
+      jwt, BusinessConfig.supabasePublishableKey, BusinessConfig.supabaseUrl,
+    );
+  }
+
   Future<void> registerCurrentDevice() async {
     if (kIsWeb) {
-      final jwt = client.auth.currentSession?.accessToken;
-      if (jwt != null && jwt.isNotEmpty) {
-        await browserPush.syncWebPush(jwt, BusinessConfig.supabasePublishableKey, BusinessConfig.supabaseUrl);
-      }
+      await syncCurrentWebPush();
       return;
     }
     if (!_started) return;
@@ -182,7 +190,7 @@ class BusinessNotificationService {
       };
 
   Future<void> _handleForeground(RemoteMessage message) async {
-    final title = (message.notification?.title ?? '${message.data['title'] ?? 'آلين للأعمال'}').trim();
+    final title = (message.notification?.title ?? '${message.data['title'] ?? 'لوحة تحكم منصة الين'}').trim();
     final body = (message.notification?.body ?? '${message.data['message'] ?? ''}').trim();
     final link = '${message.data['url'] ?? message.data['link'] ?? ''}'.trim();
 
@@ -195,6 +203,7 @@ class BusinessNotificationService {
           android: AndroidNotificationDetails(
             _channelId,
             _channelName,
+            sound: RawResourceAndroidNotificationSound('alin_control_alert'),
             channelDescription: 'تنبيهات الطلبات الجديدة وتحويلات المندوب والمكتبة',
             importance: Importance.max,
             priority: Priority.max,

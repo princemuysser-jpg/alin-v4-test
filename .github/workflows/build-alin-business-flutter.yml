@@ -82,6 +82,9 @@ jobs:
               raise SystemExit('core library desugaring missing')
           PY
 
+      - name: Generate ALIN custom Android notification chime
+        run: python3 tool/generate_business_alert.py android
+
       - name: Restore Android release signing key
         env:
           ALIN_KEYSTORE_BASE64: ${{ secrets.ALIN_KEYSTORE_BASE64 }}
@@ -202,6 +205,24 @@ jobs:
           if 'IPHONEOS_DEPLOYMENT_TARGET = 15.0;' not in p.read_text():
               raise SystemExit('iOS deployment target was not raised to 15.0')
           PY
+
+      - name: Generate and bundle ALIN custom iOS notification chime
+        run: |
+          python3 tool/generate_business_alert.py ios
+          ruby - <<'RUBY'
+          require 'xcodeproj'
+          project_path = 'ios/Runner.xcodeproj'
+          project = Xcodeproj::Project.open(project_path)
+          runner = project.targets.find { |target| target.name == 'Runner' }
+          raise 'Runner target not found' if runner.nil?
+          group = project.main_group.find_subpath('Runner', true)
+          ref = group.files.find { |file| file.path == 'alin_control_alert.caf' }
+          ref ||= group.new_file('alin_control_alert.caf')
+          unless runner.resources_build_phase.files_references.include?(ref)
+            runner.resources_build_phase.add_file_reference(ref)
+          end
+          project.save
+          RUBY
 
       - name: Generate ALIN Business iOS icon
         run: |
