@@ -404,7 +404,11 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
       ),
       const SizedBox(height: 20),
       LayoutBuilder(builder: (context, constraints) {
-        final columns = constraints.maxWidth >= 930 ? 4 : 2;
+        final columns = constraints.maxWidth >= 930
+            ? 4
+            : constraints.maxWidth >= 460
+                ? 2
+                : 1;
         final gap = 10.0;
         final width = (constraints.maxWidth - gap * (columns - 1)) / columns;
         return Wrap(spacing: gap, runSpacing: gap, children: [
