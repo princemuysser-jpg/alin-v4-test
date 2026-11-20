@@ -9,6 +9,7 @@ import '../data/business_notification_repository.dart';
 import '../data/business_repository.dart';
 import '../models/business_account.dart';
 import '../widgets/business_brand.dart';
+import '../widgets/business_app_mark.dart';
 import '../widgets/grouped_order_receipt_list.dart';
 import 'business_notifications_screen.dart';
 import 'business_party_finance_screen.dart';
@@ -603,7 +604,7 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
                 children: [
                   const Row(
                     children: [
-                      AlinBrandMark(size: 47, light: true),
+                      BusinessAppMark(size: 47),
                       SizedBox(width: 12),
                       Expanded(
                         child: Column(
@@ -794,7 +795,7 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
         automaticallyImplyLeading: false,
         title: Row(
           children: [
-            const AlinBrandMark(size: 36, light: false),
+            const BusinessAppMark(size: 37),
             const SizedBox(width: 10),
             Expanded(
               child: Column(
