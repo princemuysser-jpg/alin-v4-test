@@ -12,6 +12,7 @@ import '../widgets/business_app_mark.dart';
 import '../widgets/business_command_center.dart';
 import '../widgets/grouped_order_receipt_card.dart';
 import 'business_order_details_screen.dart';
+import 'admin_booklets_screen.dart';
 import 'business_notifications_screen.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
@@ -694,6 +695,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   Icons.inventory_2_rounded,
                   () => setState(() => index = 4),
                 ),
+                if (widget.account.role == 'admin')
+                  _quickSection(
+                    'إدارة الملازم',
+                    'إضافة وفلترة وتعديل الملازم',
+                    Icons.auto_stories_rounded,
+                    _openBooklets,
+                  ),
                 _quickSection(
                   'الوصولات',
                   'وصولات الطلبات المكتملة',
@@ -922,6 +930,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       'الحسابات' => const Color(0xFF7C3AED),
       'المالية' => const Color(0xFF00A86B),
       'المحتوى' => const Color(0xFF0088FF),
+      'إدارة الملازم' => const Color(0xFF30888D),
       'الوصولات' => const Color(0xFFE11D8A),
       _ => const Color(0xFF14B8A6),
     };
@@ -3257,12 +3266,48 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     _ => status,
   };
 
+  Future<void> _openBooklets({bool create = false}) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => AdminBookletsScreen(
+          repository: widget.repository, openCreate: create,
+        ),
+      ),
+    );
+    if (mounted) await _refreshBooklets();
+  }
+
+  Future<void> _refreshBooklets() async {
+    try {
+      final updated = await widget.repository.adminBooklets();
+      if (mounted) setState(() => booklets = updated);
+    } catch (_) {
+      // Other dashboard sections continue working if refresh is unavailable.
+    }
+  }
+
   Widget _catalog() {
     return _scroll([
       const Text(
         'الملازم والمنتجات',
         style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
       ),
+      if (widget.account.role == 'admin')
+        Padding(
+          padding: const EdgeInsets.only(bottom: 14),
+          child: Wrap(spacing: 9, runSpacing: 9, children: [
+            FilledButton.icon(
+              onPressed: () => _openBooklets(create: true),
+              icon: const Icon(Icons.add_rounded),
+              label: const Text('إضافة ملزمة'),
+            ),
+            OutlinedButton.icon(
+              onPressed: _openBooklets,
+              icon: const Icon(Icons.filter_alt_rounded),
+              label: const Text('إدارة الملازم والفلاتر'),
+            ),
+          ]),
+        ),
       const SizedBox(height: 12),
       Text(
         'الملازم (${booklets.where((e) => e['deleted_at'] == null).length})',

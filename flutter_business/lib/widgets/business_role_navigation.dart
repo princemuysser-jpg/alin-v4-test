@@ -4,6 +4,7 @@ import '../data/business_repository.dart';
 import '../models/business_account.dart';
 import '../screens/admin_backup_screen.dart';
 import '../screens/admin_books_screen.dart';
+import '../screens/admin_booklets_screen.dart';
 import '../screens/admin_branding_screen.dart';
 import '../screens/admin_coupons_screen.dart';
 import '../screens/admin_courier_hub_screen.dart';
@@ -220,6 +221,22 @@ class _BusinessRoleNavigationDrawerState
               initialTab: StoreManagementTab.categories,
             ),
           ),
+          if (account.role == 'admin')
+            _routeTile(
+              context,
+              icon: Icons.auto_stories_rounded,
+              title: 'إدارة الملازم',
+              subtitle: 'إضافة ملزمة وفلترة ونشر الملازم',
+              page: AdminBookletsScreen(repository: repository),
+            ),
+          if (account.role == 'admin')
+            _routeTile(
+              context,
+              icon: Icons.add_circle_outline_rounded,
+              title: 'إضافة ملزمة',
+              subtitle: 'رفع PDF والغلاف وتحديد المدرس والنسب',
+              page: AdminBookletsScreen(repository: repository, openCreate: true),
+            ),
           _routeTile(
             context,
             icon: Icons.menu_book_rounded,
@@ -856,6 +873,21 @@ class AdminDesktopNavigationSidebar extends StatelessWidget {
                           initialTab: StoreManagementTab.categories,
                         ),
                       ),
+                      if (account.role == 'admin')
+                        _routeItem(
+                          context,
+                          Icons.auto_stories_rounded,
+                          'إدارة الملازم',
+                          AdminBookletsScreen(repository: repository),
+                        ),
+                      if (account.role == 'admin')
+                        _routeItem(
+                          context,
+                          Icons.add_circle_outline_rounded,
+                          'إضافة ملزمة',
+                          AdminBookletsScreen(
+                            repository: repository, openCreate: true),
+                        ),
                       _routeItem(
                         context,
                         Icons.menu_book_rounded,
