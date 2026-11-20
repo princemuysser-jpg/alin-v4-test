@@ -200,6 +200,9 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     child: SafeArea(child: Padding(
       padding: const EdgeInsets.fromLTRB(15, 22, 15, 14),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Expanded(child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
         Row(children: [
           const BusinessAppMark(size: 47),
           const SizedBox(width: 12),
@@ -260,7 +263,9 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
             padding: const EdgeInsets.symmetric(vertical: 14),
           ),
         ),
-        const Spacer(),
+          ],
+        )),
+        const SizedBox(height: 7),
         Divider(color: Colors.white.withValues(alpha: .18)),
         _sideAction(Icons.notifications_none_rounded, 'الإشعارات', openNotifications),
         _sideAction(Icons.person_outline_rounded, 'الملف الشخصي', openProfile),
