@@ -789,7 +789,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 
   Widget _hero() => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 23),
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
     decoration: BoxDecoration(
       gradient: BusinessBrand.heroGradient,
       borderRadius: BorderRadius.circular(24),
@@ -799,25 +799,27 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     ),
     child: Row(
       children: [
-        const BusinessAppMark(size: 54),
-        const SizedBox(width: 14),
+        const BusinessAppMark(size: 42),
+        const SizedBox(width: 11),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 'مرحباً ${widget.account.name}',
-                maxLines: 1,
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 21,
+                  fontSize: 19,
                   fontWeight: FontWeight.w900,
                 ),
               ),
               const SizedBox(height: 6),
               const Text(
-                'مركز المتابعة • راقب الطلبات والمبيعات والشركاء من مكان واحد',
+                'مركز المتابعة • الطلبات والمبيعات والشركاء',
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(color: Color(0xFFE5EFF7), height: 1.4, fontSize: 12.5),
               ),
             ],
