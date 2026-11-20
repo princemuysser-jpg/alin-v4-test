@@ -8,7 +8,8 @@ import '../data/business_finance_repository.dart';
 import '../data/business_notification_repository.dart';
 import '../data/business_repository.dart';
 import '../models/business_account.dart';
-import '../widgets/business_role_navigation.dart';
+import '../widgets/business_app_mark.dart';
+import '../widgets/courier_workspace_navigation.dart';
 import '../widgets/business_brand.dart';
 import '../widgets/grouped_order_receipt_list.dart';
 import 'business_notifications_screen.dart';
@@ -497,25 +498,25 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
     final debt = number(
       financeSummary['remaining'] ?? financeSummary['debt_total'],
     );
-    return Scaffold(
-      drawer: BusinessRoleNavigationDrawer(
-        repository: widget.repository,
-        account: widget.account,
-        onLogout: widget.onLogout,
-        roleSection: filter,
-        onRoleSectionChanged: _selectCourierTab,
-      ),
-      appBar: AppBar(
+    return LayoutBuilder(builder: (context, shellConstraints) {
+      final desktop = shellConstraints.maxWidth >= 1020;
+      return Scaffold(
+      backgroundColor: BusinessBrand.background,
+      appBar: desktop ? null : AppBar(
+        backgroundColor: Colors.white,
+        foregroundColor: BusinessBrand.navy,
+        automaticallyImplyLeading: false,
+        titleSpacing: 13,
         title: Row(
           children: [
-            const AlinBrandMark(size: 36, light: true),
+            const BusinessAppMark(size: 37),
             const SizedBox(width: 10),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'آلين للمندوب',
+                    'لوحة المندوب',
                     style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20),
                   ),
                   Text(
@@ -531,7 +532,6 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
           ],
         ),
         actions: [
-          IconButton(onPressed: load, icon: const Icon(Icons.refresh_rounded)),
           Stack(
             clipBehavior: Clip.none,
             children: [
@@ -584,16 +584,31 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
           ),
         ],
       ),
-      body: RefreshIndicator(
+      bottomNavigationBar: desktop ? null : CourierWorkspaceBottomBar(
+        selected: filter,
+        onSelect: (value) => _selectCourierTab(value),
+      ),
+      body: Row(children: [
+        if (desktop) CourierWorkspaceSidebar(
+          name: widget.account.name,
+          selected: filter,
+          unread: unreadNotifications,
+          onSelect: (value) => _selectCourierTab(value),
+          onNotifications: () => _selectCourierTab('notifications'),
+          onProfile: () => _selectCourierTab('profile'),
+          onLogout: () => widget.onLogout(),
+        ),
+        Expanded(child: RefreshIndicator(
         onRefresh: load,
         child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
           padding: EdgeInsets.symmetric(
-            horizontal: MediaQuery.sizeOf(context).width > 1280
-                ? (MediaQuery.sizeOf(context).width - 1240) / 2
-                : 16,
-            vertical: 16,
+            horizontal: desktop ? 27 : 13,
+            vertical: desktop ? 26 : 17,
           ),
           children: [
+            _sectionHeading(),
+            if (filter == 'home') ...[
             Container(
               clipBehavior: Clip.antiAlias,
               decoration: BoxDecoration(
@@ -812,63 +827,8 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
                 );
               },
             ),
-            const SizedBox(height: 14),
-            if (MediaQuery.sizeOf(context).width >= 760)
-              LayoutBuilder(
-                builder: (context, tabConstraints) {
-                  final wideTabs = tabConstraints.maxWidth >= 760;
-                  final tabs = SegmentedButton<String>(
-                    segments: const [
-                      ButtonSegment(
-                        value: 'home',
-                        label: Text('الرئيسية'),
-                        icon: Icon(Icons.home_rounded),
-                      ),
-                      ButtonSegment(
-                        value: 'active',
-                        label: Text('طلبات التوصيل'),
-                        icon: Icon(Icons.local_shipping_rounded),
-                      ),
-                      ButtonSegment(
-                        value: 'completed',
-                        label: Text('المكتملة'),
-                        icon: Icon(Icons.check_circle_outline),
-                      ),
-                      ButtonSegment(
-                        value: 'finance',
-                        label: Text('الحسابات'),
-                        icon: Icon(Icons.account_balance_wallet_rounded),
-                      ),
-                      ButtonSegment(
-                        value: 'receipts',
-                        label: Text('الوصولات'),
-                        icon: Icon(Icons.receipt_long_rounded),
-                      ),
-                      ButtonSegment(
-                        value: 'notifications',
-                        label: Text('الإشعارات'),
-                        icon: Icon(Icons.notifications_rounded),
-                      ),
-                      ButtonSegment(
-                        value: 'profile',
-                        label: Text('حسابي'),
-                        icon: Icon(Icons.account_circle_rounded),
-                      ),
-                    ],
-                    selected: {filter},
-                    onSelectionChanged: (value) => _selectCourierTab(value.first),
-                  );
-                  if (wideTabs) {
-                    return Align(alignment: Alignment.centerRight, child: tabs);
-                  }
-                  return SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: tabs,
-                  );
-                },
-              ),
-  
-            const SizedBox(height: 14),
+            ],
+            const SizedBox(height: 12),
             if (loading)
               const Padding(
                 padding: EdgeInsets.all(36),
@@ -916,8 +876,10 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
             ],
           ],
         ),
-      ),
+        )),
+      ]),
     );
+    });
   }
 
   Future<void> _selectCourierTab(String value) async {
