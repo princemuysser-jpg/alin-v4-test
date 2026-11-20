@@ -433,9 +433,14 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
             Expanded(
-              child: Center(
+              child: Align(
+                alignment: wide ? Alignment.center : Alignment.topCenter,
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 32),
+                  keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: wide ? 22 : 12,
+                    vertical: wide ? 32 : 14,
+                  ),
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 440),
                     child: Card(
@@ -446,18 +451,18 @@ class _LoginScreenState extends State<LoginScreen> {
                         side: const BorderSide(color: Color(0xFFE4EBF3)),
                       ),
                       child: Padding(
-                        padding: const EdgeInsets.all(26),
+                        padding: EdgeInsets.all(wide ? 26 : 18),
                         child: AutofillGroup(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               if (!wide) ...[
-                                const Center(child: BusinessAppMark(size: 76)),
-                                const SizedBox(height: 18),
+                                const Center(child: BusinessAppMark(size: 64)),
+                                const SizedBox(height: 12),
                               ],
                               Text(
                                 'أهلاً بعودتك',
-                                style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: primary),
+                                style: TextStyle(fontSize: wide ? 28 : 23, fontWeight: FontWeight.w900, color: primary),
                               ),
                               const SizedBox(height: 8),
                               const Text(
@@ -493,7 +498,19 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                 ),
                               ),
-                              const SizedBox(height: 6),
+                              const SizedBox(height: 14),
+                              const SizedBox(height: 18),
+                              SizedBox(
+                                height: 54,
+                                child: FilledButton.icon(
+                                  onPressed: busy || loadingRecall ? null : submit,
+                                  icon: busy || loadingRecall
+                                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                                      : const Icon(Icons.arrow_forward_rounded),
+                                  label: Text(busy ? 'جارٍ تسجيل الدخول...' : loadingRecall ? 'جارٍ تحميل الحساب...' : 'دخول إلى لوحة الأعمال'),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
                               CheckboxListTile(
                                 contentPadding: EdgeInsets.zero,
                                 controlAffinity: ListTileControlAffinity.leading,
@@ -518,17 +535,6 @@ class _LoginScreenState extends State<LoginScreen> {
                                   child: Text(error!, style: const TextStyle(color: Color(0xFFB42318))),
                                 ),
                               ],
-                              const SizedBox(height: 18),
-                              SizedBox(
-                                height: 54,
-                                child: FilledButton.icon(
-                                  onPressed: busy || loadingRecall ? null : submit,
-                                  icon: busy || loadingRecall
-                                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                                      : const Icon(Icons.arrow_forward_rounded),
-                                  label: Text(busy ? 'جارٍ تسجيل الدخول...' : loadingRecall ? 'جارٍ تحميل الحساب...' : 'دخول إلى لوحة الأعمال'),
-                                ),
-                              ),
                               const SizedBox(height: 16),
                               const Center(
                                 child: Text(
