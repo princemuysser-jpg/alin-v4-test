@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import '../widgets/business_brand.dart';
 import '../data/business_repository.dart';
 import '../models/business_account.dart';
 import '../widgets/business_role_navigation.dart';
 import '../widgets/alin_receipt_template.dart';
 import 'teacher_publishing_screen.dart';
+import 'teacher_profile_screen.dart';
 
 class TeacherDashboardScreen extends StatefulWidget {
   final BusinessRepository repository;
@@ -28,11 +30,25 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
   bool loading = true;
   String? error;
   String tab = 'booklets';
+  String bookletFilter = 'all';
+  String orderFilter = 'all';
+  int bookletLimit = 36;
+  int orderLimit = 36;
+  int profitLimit = 24;
+  final bookletSearchController = TextEditingController();
+  final orderSearchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     load();
+  }
+
+  @override
+  void dispose() {
+    bookletSearchController.dispose();
+    orderSearchController.dispose();
+    super.dispose();
   }
 
   Future<void> load() async {
@@ -95,6 +111,18 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     if (mounted) await load();
   }
 
+  Future<void> openProfile() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => TeacherProfileScreen(
+          repository: widget.repository,
+          account: widget.account,
+        ),
+      ),
+    );
+    if (mounted) await load();
+  }
+
   num number(dynamic value) => num.tryParse('$value') ?? 0;
   String money(dynamic value) => '${number(value).round()} د.ع';
 
@@ -148,6 +176,8 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
         onLogout: widget.onLogout,
       ),
       appBar: AppBar(
+        backgroundColor: Colors.white,
+        foregroundColor: BusinessBrand.ink,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -167,7 +197,16 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
             onPressed: openPublishing,
             icon: const Icon(Icons.upload_file_rounded),
           ),
-          IconButton(onPressed: load, icon: const Icon(Icons.refresh_rounded)),
+          IconButton(
+            tooltip: 'تحديث البيانات',
+            onPressed: load,
+            icon: const Icon(Icons.refresh_rounded),
+          ),
+          IconButton(
+            tooltip: 'الملف الشخصي',
+            onPressed: openProfile,
+            icon: const Icon(Icons.account_circle_outlined),
+          ),
           PopupMenuButton<String>(
             onSelected: (value) {
               if (value == 'logout') widget.onLogout();
@@ -252,6 +291,37 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                   ),
                 ),
                 const SizedBox(height: 12),
+                Wrap(
+                  spacing: 9,
+                  runSpacing: 9,
+                  children: [
+                    _shortcut(
+                      'رفع ومتابعة الملازم',
+                      Icons.upload_file_rounded,
+                      BusinessBrand.teal,
+                      openPublishing,
+                    ),
+                    _shortcut(
+                      'المبيعات والطلاب',
+                      Icons.receipt_long_rounded,
+                      const Color(0xFF4369A7),
+                      () => setState(() => tab = 'orders'),
+                    ),
+                    _shortcut(
+                      'الأرباح والتسويات',
+                      Icons.account_balance_wallet_rounded,
+                      BusinessBrand.success,
+                      () => setState(() => tab = 'finance'),
+                    ),
+                    _shortcut(
+                      'ملفي الشخصي',
+                      Icons.person_outline_rounded,
+                      const Color(0xFF7555A9),
+                      openProfile,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
                 if (loading)
                   const Padding(
                     padding: EdgeInsets.all(36),
@@ -291,6 +361,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                               'الملازم',
                               '${booklets.length}',
                               Icons.menu_book_rounded,
+                              const Color(0xFF397ACA),
                             ),
                           ),
                           SizedBox(
@@ -299,6 +370,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                               'الطلبات المكتملة',
                               '${doneOrders.length}',
                               Icons.check_circle_rounded,
+                              BusinessBrand.teal,
                             ),
                           ),
                           SizedBox(
@@ -307,6 +379,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                               'إجمالي الأرباح',
                               money(earned),
                               Icons.payments_rounded,
+                              const Color(0xFF8061B4),
                             ),
                           ),
                           SizedBox(
@@ -315,6 +388,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                               'الرصيد الحالي',
                               money(balance < 0 ? 0 : balance),
                               Icons.account_balance_wallet_rounded,
+                              BusinessBrand.success,
                             ),
                           ),
                         ],
@@ -366,44 +440,139 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     );
   }
 
-  Widget _metric(String label, String value, IconData icon) {
-    return Container(
-      constraints: const BoxConstraints(minHeight: 112),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFE3EAF1)),
+  Widget _shortcut(
+    String label, IconData icon, Color accent, VoidCallback onTap,
+  ) => Material(
+    color: BusinessBrand.pastel(accent, strength: .12),
+    borderRadius: BorderRadius.circular(14),
+    child: InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: accent.withValues(alpha: .2)),
+        ),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Icon(icon, size: 20, color: accent),
+          const SizedBox(width: 8),
+          Text(label, style: const TextStyle(
+            fontWeight: FontWeight.w800, color: BusinessBrand.ink)),
+        ]),
       ),
+    ),
+  );
+
+  Widget _metric(String label, String value, IconData icon, Color accent) {
+    return Container(
+      constraints: const BoxConstraints(minHeight: 110),
+      padding: const EdgeInsets.all(14),
+      decoration: BusinessBrand.pastelCard(accent, strength: .11),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: const Color(0xFF143B68)),
-          const Spacer(),
+          Container(
+            width: 36, height: 36,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: .75),
+              borderRadius: BorderRadius.circular(11),
+            ),
+            child: Icon(icon, color: accent, size: 20),
+          ),
+          const SizedBox(height: 10),
           Text(
             value,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
-              fontSize: 19,
-              fontWeight: FontWeight.w900,
-              color: Color(0xFF143B68),
+              fontSize: 19, fontWeight: FontWeight.w900,
+              color: BusinessBrand.ink,
             ),
           ),
-          Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 12,
+              color: BusinessBrand.muted, fontWeight: FontWeight.w700),
+          ),
         ],
       ),
     );
   }
 
+  Widget _filterChip(String label, String value, String selected,
+      ValueChanged<String> select) => Padding(
+    padding: const EdgeInsetsDirectional.only(end: 7),
+    child: ChoiceChip(
+      label: Text(label), selected: selected == value,
+      onSelected: (_) => select(value),
+    ),
+  );
+
+  Widget _searchBox(TextEditingController controller, String label) =>
+      TextField(
+        controller: controller,
+        onChanged: (_) => setState(() {}),
+        decoration: InputDecoration(
+          hintText: label,
+          prefixIcon: const Icon(Icons.search_rounded),
+          suffixIcon: controller.text.isEmpty ? null : IconButton(
+            tooltip: 'مسح البحث',
+            onPressed: () {
+              controller.clear();
+              setState(() {});
+            },
+            icon: const Icon(Icons.close_rounded),
+          ),
+          filled: true,
+          fillColor: BusinessBrand.softBlue,
+        ),
+      );
+
   Widget _booklets() {
+    final q = bookletSearchController.text.trim().toLowerCase();
+    final filtered = booklets.where((b) {
+      final st = bookletStatus(b);
+      if (bookletFilter != 'all' && bookletFilter != st) return false;
+      if (q.isEmpty) return true;
+      return [
+        b['title'], b['subject'], b['grade'], b['year'], b['edition']
+      ].map((v) => '${v ?? ''}'.toLowerCase()).join(' ').contains(q);
+    }).toList();
+
     if (booklets.isEmpty) {
       return const _TeacherEmpty(text: 'لا توجد ملازم مرتبطة بحسابك حالياً');
     }
     return Column(
-      children: booklets
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _searchBox(bookletSearchController, 'ابحث عن ملزمة أو مادة أو صف'),
+        const SizedBox(height: 10),
+        SingleChildScrollView(scrollDirection: Axis.horizontal,
+          child: Row(children: [
+            _filterChip('الكل', 'all', bookletFilter,
+              (v) => setState(() => bookletFilter = v)),
+            for (final state in [
+              'منشورة', 'بانتظار النشر', 'قيد المراجعة',
+              'مسودة/قيد المراجعة', 'مرفوضة',
+            ]) _filterChip(state, state, bookletFilter,
+              (v) => setState(() => bookletFilter = v)),
+          ]),
+        ),
+        const SizedBox(height: 9),
+        Text('${filtered.length} ملزمة مطابقة',
+          style: const TextStyle(color: BusinessBrand.muted)),
+        const SizedBox(height: 9),
+        if (filtered.isEmpty)
+          const _TeacherEmpty(text: 'لا توجد ملازم مطابقة للبحث'),
+        ...filtered.take(bookletLimit)
           .map(
             (b) => Card(
+              color: BusinessBrand.pastel(
+                bookletStatus(b) == 'منشورة' ? BusinessBrand.success : BusinessBrand.warning,
+                strength: .075),
               margin: const EdgeInsets.only(bottom: 10),
               child: ListTile(
                 leading: const CircleAvatar(
@@ -441,6 +610,13 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
             ),
           )
           .toList(),
+        if (filtered.length > bookletLimit)
+          OutlinedButton.icon(
+            onPressed: () => setState(() => bookletLimit += 36),
+            icon: const Icon(Icons.expand_more_rounded),
+            label: const Text('عرض المزيد من الملازم'),
+          ),
+      ],
     );
   }
 
@@ -499,13 +675,50 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
   }
 
   Widget _orders() {
+    final q = orderSearchController.text.trim().toLowerCase();
+    final filtered = orders.where((o) {
+      if (orderFilter == 'completed' && !isDone(o)) return false;
+      if (orderFilter == 'cancelled' && !isCancelled(o)) return false;
+      if (orderFilter == 'active' && (isDone(o) || isCancelled(o))) return false;
+      if (q.isEmpty) return true;
+      return [o['order_number'], o['id'], o['title'], o['student_name']]
+        .map((v) => '${v ?? ''}'.toLowerCase()).join(' ').contains(q);
+    }).toList();
+
     if (orders.isEmpty) {
       return const _TeacherEmpty(text: 'لا توجد طلبات مرتبطة بملازمك حالياً');
     }
     return Column(
-      children: orders
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _searchBox(orderSearchController, 'ابحث برقم الطلب أو الطالب أو الملزمة'),
+        const SizedBox(height: 10),
+        SingleChildScrollView(scrollDirection: Axis.horizontal,
+          child: Row(children: [
+            _filterChip('الكل', 'all', orderFilter,
+              (v) => setState(() => orderFilter = v)),
+            _filterChip('قيد التنفيذ', 'active', orderFilter,
+              (v) => setState(() => orderFilter = v)),
+            _filterChip('مكتملة', 'completed', orderFilter,
+              (v) => setState(() => orderFilter = v)),
+            _filterChip('ملغاة', 'cancelled', orderFilter,
+              (v) => setState(() => orderFilter = v)),
+          ]),
+        ),
+        const SizedBox(height: 9),
+        Text('${filtered.length} طلب مطابق',
+          style: const TextStyle(color: BusinessBrand.muted)),
+        const SizedBox(height: 9),
+        if (filtered.isEmpty)
+          const _TeacherEmpty(text: 'لا توجد مبيعات مطابقة'),
+        ...filtered.take(orderLimit)
           .map(
             (o) => Card(
+              color: BusinessBrand.pastel(
+                isCancelled(o) ? BusinessBrand.danger :
+                isDone(o) ? BusinessBrand.success : BusinessBrand.warning,
+                strength: .075,
+              ),
               margin: const EdgeInsets.only(bottom: 10),
               child: ListTile(
                 leading: Icon(
@@ -540,6 +753,13 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
             ),
           )
           .toList(),
+        if (filtered.length > orderLimit)
+          OutlinedButton.icon(
+            onPressed: () => setState(() => orderLimit += 36),
+            icon: const Icon(Icons.expand_more_rounded),
+            label: const Text('عرض المزيد من المبيعات'),
+          ),
+      ],
     );
   }
 
