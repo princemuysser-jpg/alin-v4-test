@@ -464,6 +464,45 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
     );
   }
 
+  Widget _sectionHeading() {
+    final color = CourierWorkspaceNavigation.color(filter);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(children: [
+        Container(
+          width: 45, height: 45,
+          decoration: BoxDecoration(
+            color: BusinessBrand.pastel(color, strength: .16),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Icon(CourierWorkspaceNavigation.icon(filter), color: color),
+        ),
+        const SizedBox(width: 11),
+        Expanded(child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(CourierWorkspaceNavigation.label(filter),
+              style: const TextStyle(color: BusinessBrand.ink,
+                fontSize: 22, fontWeight: FontWeight.w900)),
+            Text(switch(filter) {
+              'active' => 'الطلبات الجديدة والمقبولة وبالطريق',
+              'completed' => 'طلبات وصلت للطالب بنجاح',
+              'receipts' => 'وصولات التسليم والبحث فيها',
+              'finance' => 'أجور التوصيل والذمة والتسويات',
+              _ => 'ملخص نشاطك اليومي ومناطق عملك',
+            }, style: const TextStyle(
+              color: BusinessBrand.muted, fontSize: 12)),
+          ],
+        )),
+        IconButton(
+          onPressed: load,
+          tooltip: 'تحديث البيانات',
+          icon: const Icon(Icons.refresh_rounded, color: BusinessBrand.navy),
+        ),
+      ]),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final grouped = groupedOrders;
@@ -612,8 +651,12 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
             Container(
               clipBehavior: Clip.antiAlias,
               decoration: BoxDecoration(
-                gradient: BusinessBrand.heroGradient,
-                borderRadius: BorderRadius.circular(26),
+                gradient: const LinearGradient(
+                  begin: Alignment.topRight,
+                  end: Alignment.bottomLeft,
+                  colors: [Color(0xFF102B4E), Color(0xFF195F79), Color(0xFF1B8F8C)],
+                ),
+                borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
                     color: BusinessBrand.navy.withValues(alpha: .16),
@@ -2059,81 +2102,28 @@ class _Metric extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final deep = Color.lerp(accent, Colors.black, .10)!;
-
-    return Container(
-      constraints: const BoxConstraints(minHeight: 118),
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topRight,
-          end: Alignment.bottomLeft,
-          colors: [accent, deep],
+  Widget build(BuildContext context) => Container(
+    constraints: const BoxConstraints(minHeight: 116),
+    padding: const EdgeInsets.all(14),
+    decoration: BusinessBrand.pastelCard(accent, strength: .11),
+    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Container(
+        width: 36, height: 36,
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: .80),
+          borderRadius: BorderRadius.circular(11),
         ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: accent.withValues(alpha: .20),
-            blurRadius: 16,
-            offset: const Offset(0, 7),
-          ),
-        ],
+        child: Icon(icon, color: accent, size: 20),
       ),
-      child: Stack(
-        children: [
-          PositionedDirectional(
-            end: -8,
-            top: 24,
-            child: Icon(
-              icon,
-              size: 82,
-              color: Colors.white.withValues(alpha: .16),
-            ),
-          ),
-          Positioned(
-            left: 0,
-            right: 0,
-            top: 58,
-            child: Container(
-              height: 1,
-              color: Colors.black.withValues(alpha: .10),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 13.5,
-                    height: 1.15,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                const Spacer(),
-                Text(
-                  value,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 27,
-                    height: 1,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: .2,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+      const SizedBox(height: 10),
+      Text(value, maxLines: 1, overflow: TextOverflow.ellipsis,
+        style: const TextStyle(
+          fontSize: 20, color: BusinessBrand.ink,
+          fontWeight: FontWeight.w900)),
+      Text(label, maxLines: 2, overflow: TextOverflow.ellipsis,
+        style: const TextStyle(
+          fontSize: 12, color: BusinessBrand.muted,
+          fontWeight: FontWeight.w700)),
+    ]),
+  );
 }
