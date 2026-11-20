@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import '../widgets/business_brand.dart';
 import '../data/business_repository.dart';
 import '../models/business_account.dart';
-import '../widgets/business_role_navigation.dart';
+import '../widgets/business_app_mark.dart';
 import '../widgets/alin_receipt_template.dart';
 import 'teacher_publishing_screen.dart';
 import 'teacher_profile_screen.dart';
+import 'business_notifications_screen.dart';
 
 class TeacherDashboardScreen extends StatefulWidget {
   final BusinessRepository repository;
@@ -29,12 +30,11 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
   List<Map<String, dynamic>> settlements = [];
   bool loading = true;
   String? error;
-  String tab = 'booklets';
+  String tab = 'home';
   String bookletFilter = 'all';
   String orderFilter = 'all';
   int bookletLimit = 36;
   int orderLimit = 36;
-  int profitLimit = 24;
   final bookletSearchController = TextEditingController();
   final orderSearchController = TextEditingController();
 
@@ -152,317 +152,387 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     return 'مسودة/قيد المراجعة';
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final doneOrders = orders.where(isDone).toList();
-    final earned = doneOrders.fold<num>(
-      0,
-      (sum, o) => sum + number(o['teacher_profit']),
-    );
-    final paid = settlements
-        .where(
-          (s) => const {
-            'paid',
-            'received',
-          }.contains('${s['status']}'.toLowerCase()),
-        )
-        .fold<num>(0, (sum, s) => sum + number(s['amount']));
-    final balance = earned - paid;
+  static const _teacherTeal = Color(0xFF0EA99B);
+  static const _teacherPurple = Color(0xFF8661BE);
+  static const _teacherBlue = Color(0xFF4C83BD);
 
-    return Scaffold(
-      drawer: BusinessRoleNavigationDrawer(
-        repository: widget.repository,
-        account: widget.account,
-        onLogout: widget.onLogout,
-      ),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        foregroundColor: BusinessBrand.ink,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'لوحة المدرس',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
-            ),
-            Text(
-              widget.account.name,
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w400),
-            ),
-          ],
+  String get sectionTitle => switch (tab) {
+    'booklets' => 'ملازمي',
+    'orders' => 'المبيعات والطلاب',
+    'finance' => 'الأرباح والتسويات',
+    _ => 'الرئيسية',
+  };
+
+  IconData get sectionIcon => switch (tab) {
+    'booklets' => Icons.auto_stories_rounded,
+    'orders' => Icons.receipt_long_rounded,
+    'finance' => Icons.account_balance_wallet_rounded,
+    _ => Icons.dashboard_customize_rounded,
+  };
+
+  Color get sectionColor => switch (tab) {
+    'booklets' => _teacherBlue,
+    'orders' => _teacherPurple,
+    'finance' => BusinessBrand.success,
+    _ => _teacherTeal,
+  };
+
+  void selectTab(String value) {
+    if (tab == value) return;
+    setState(() => tab = value);
+  }
+
+  Future<void> openNotifications() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => BusinessNotificationsScreen(
+          repository: widget.repository,
         ),
-        actions: [
-          IconButton(
-            tooltip: 'رفع ومتابعة الملازم',
-            onPressed: openPublishing,
-            icon: const Icon(Icons.upload_file_rounded),
-          ),
-          IconButton(
-            tooltip: 'تحديث البيانات',
-            onPressed: load,
-            icon: const Icon(Icons.refresh_rounded),
-          ),
-          IconButton(
-            tooltip: 'الملف الشخصي',
-            onPressed: openProfile,
-            icon: const Icon(Icons.account_circle_outlined),
-          ),
-          PopupMenuButton<String>(
-            onSelected: (value) {
-              if (value == 'logout') widget.onLogout();
-            },
-            itemBuilder: (_) => const [
-              PopupMenuItem(value: 'logout', child: Text('تسجيل الخروج')),
-            ],
-          ),
-        ],
-      ),
-      body: LayoutBuilder(
-        builder: (context, pageConstraints) {
-          final pageWidth = pageConstraints.maxWidth;
-          final desktop = pageWidth >= 980;
-          final tablet = pageWidth >= 650;
-          final horizontalPadding = desktop
-              ? ((pageWidth - 1180) / 2).clamp(20.0, 120.0)
-              : tablet
-              ? 20.0
-              : 12.0;
-          return RefreshIndicator(
-            onRefresh: load,
-            child: ListView(
-              padding: EdgeInsets.fromLTRB(
-                horizontalPadding,
-                16,
-                horizontalPadding,
-                96,
-              ),
-              children: [
-                Container(
-                  padding: EdgeInsets.all(desktop ? 24 : 18),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF143B68), Color(0xFF255B91)],
-                    ),
-                    borderRadius: BorderRadius.circular(desktop ? 26 : 22),
-                  ),
-                  child: Wrap(
-                    spacing: 14,
-                    runSpacing: 12,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: [
-                      const CircleAvatar(
-                        radius: 27,
-                        backgroundColor: Color(0x26FFFFFF),
-                        child: Icon(
-                          Icons.school_rounded,
-                          color: Colors.white,
-                          size: 30,
-                        ),
-                      ),
-                      SizedBox(
-                        width: desktop
-                            ? pageWidth - (horizontalPadding * 2) - 270
-                            : null,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'مرحباً ${widget.account.name}',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: desktop ? 24 : 20,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            const Text(
-                              'ملازمك ومبيعاتك وأرباحك بمكان واحد',
-                              style: TextStyle(color: Colors.white70),
-                            ),
-                          ],
-                        ),
-                      ),
-                      FilledButton.tonalIcon(
-                        onPressed: openPublishing,
-                        icon: const Icon(Icons.upload_file_rounded),
-                        label: const Text('رفع ملزمة'),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 9,
-                  runSpacing: 9,
-                  children: [
-                    _shortcut(
-                      'رفع ومتابعة الملازم',
-                      Icons.upload_file_rounded,
-                      BusinessBrand.teal,
-                      openPublishing,
-                    ),
-                    _shortcut(
-                      'المبيعات والطلاب',
-                      Icons.receipt_long_rounded,
-                      const Color(0xFF4369A7),
-                      () => setState(() => tab = 'orders'),
-                    ),
-                    _shortcut(
-                      'الأرباح والتسويات',
-                      Icons.account_balance_wallet_rounded,
-                      BusinessBrand.success,
-                      () => setState(() => tab = 'finance'),
-                    ),
-                    _shortcut(
-                      'ملفي الشخصي',
-                      Icons.person_outline_rounded,
-                      const Color(0xFF7555A9),
-                      openProfile,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                if (loading)
-                  const Padding(
-                    padding: EdgeInsets.all(36),
-                    child: Center(child: CircularProgressIndicator()),
-                  )
-                else if (error != null)
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        children: [
-                          Text(error!, textAlign: TextAlign.center),
-                          const SizedBox(height: 8),
-                          OutlinedButton.icon(
-                            onPressed: load,
-                            icon: const Icon(Icons.refresh),
-                            label: const Text('إعادة المحاولة'),
-                          ),
-                        ],
-                      ),
-                    ),
-                  )
-                else ...[
-                  LayoutBuilder(
-                    builder: (context, c) {
-                      final columns = c.maxWidth >= 900 ? 4 : 2;
-                      final gap = 10.0;
-                      final cardWidth =
-                          (c.maxWidth - gap * (columns - 1)) / columns;
-                      return Wrap(
-                        spacing: gap,
-                        runSpacing: gap,
-                        children: [
-                          SizedBox(
-                            width: cardWidth,
-                            child: _metric(
-                              'الملازم',
-                              '${booklets.length}',
-                              Icons.menu_book_rounded,
-                              const Color(0xFF397ACA),
-                            ),
-                          ),
-                          SizedBox(
-                            width: cardWidth,
-                            child: _metric(
-                              'الطلبات المكتملة',
-                              '${doneOrders.length}',
-                              Icons.check_circle_rounded,
-                              BusinessBrand.teal,
-                            ),
-                          ),
-                          SizedBox(
-                            width: cardWidth,
-                            child: _metric(
-                              'إجمالي الأرباح',
-                              money(earned),
-                              Icons.payments_rounded,
-                              const Color(0xFF8061B4),
-                            ),
-                          ),
-                          SizedBox(
-                            width: cardWidth,
-                            child: _metric(
-                              'الرصيد الحالي',
-                              money(balance < 0 ? 0 : balance),
-                              Icons.account_balance_wallet_rounded,
-                              BusinessBrand.success,
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 15),
-                  Align(
-                    alignment: desktop
-                        ? Alignment.centerRight
-                        : Alignment.center,
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: SegmentedButton<String>(
-                        segments: const [
-                          ButtonSegment(
-                            value: 'booklets',
-                            label: Text('ملازمي'),
-                            icon: Icon(Icons.menu_book_rounded),
-                          ),
-                          ButtonSegment(
-                            value: 'orders',
-                            label: Text('المبيعات'),
-                            icon: Icon(Icons.receipt_long_rounded),
-                          ),
-                          ButtonSegment(
-                            value: 'finance',
-                            label: Text('التسويات'),
-                            icon: Icon(Icons.account_balance_wallet_rounded),
-                          ),
-                        ],
-                        selected: {tab},
-                        onSelectionChanged: (v) =>
-                            setState(() => tab = v.first),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  if (tab == 'booklets') _booklets(),
-                  if (tab == 'orders') _orders(),
-                  if (tab == 'finance')
-                    _finance(earned, paid, balance < 0 ? 0 : balance),
-                ],
-              ],
-            ),
-          );
-        },
       ),
     );
   }
 
-  Widget _shortcut(
-    String label, IconData icon, Color accent, VoidCallback onTap,
-  ) => Material(
-    color: BusinessBrand.pastel(accent, strength: .12),
-    borderRadius: BorderRadius.circular(14),
-    child: InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: accent.withValues(alpha: .2)),
+  Future<void> signOut() async => widget.onLogout();
+
+  Widget _sidebar() => Container(
+    width: 252,
+    decoration: const BoxDecoration(gradient: BusinessBrand.heroGradient),
+    child: SafeArea(child: Padding(
+      padding: const EdgeInsets.fromLTRB(15, 22, 15, 14),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Expanded(child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+        Row(children: [
+          const BusinessAppMark(size: 47),
+          const SizedBox(width: 12),
+          const Expanded(child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('منصة الين', style: TextStyle(
+                fontWeight: FontWeight.w900, color: Colors.white, fontSize: 19)),
+              Text('بوابة المدرس', style: TextStyle(
+                color: Color(0xFFA9DCD8), fontSize: 12)),
+            ],
+          )),
+        ]),
+        const SizedBox(height: 20),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: .09),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.white.withValues(alpha: .1)),
+          ),
+          child: Row(children: [
+            const CircleAvatar(
+              backgroundColor: Color(0xFF31647A),
+              child: Icon(Icons.school_rounded, color: Colors.white),
+            ),
+            const SizedBox(width: 9),
+            Expanded(child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(widget.account.name, overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white, fontWeight: FontWeight.w900)),
+                const Text('حساب المدرس', style: TextStyle(
+                  color: Colors.white70, fontSize: 11)),
+              ],
+            )),
+          ]),
         ),
-        child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Icon(icon, size: 20, color: accent),
-          const SizedBox(width: 8),
-          Text(label, style: const TextStyle(
-            fontWeight: FontWeight.w800, color: BusinessBrand.ink)),
+        const SizedBox(height: 25),
+        const Padding(
+          padding: EdgeInsetsDirectional.only(start: 9, bottom: 10),
+          child: Text('مساحة العمل', style: TextStyle(
+            color: Color(0xFFA5BCCD), fontSize: 11, fontWeight: FontWeight.w800)),
+        ),
+        _sideTab('home', Icons.dashboard_customize_rounded, 'الرئيسية'),
+        _sideTab('booklets', Icons.auto_stories_rounded, 'ملازمي'),
+        _sideTab('orders', Icons.receipt_long_rounded, 'المبيعات'),
+        _sideTab('finance', Icons.account_balance_wallet_rounded, 'الأرباح'),
+        const SizedBox(height: 16),
+        FilledButton.tonalIcon(
+          onPressed: openPublishing,
+          icon: const Icon(Icons.upload_file_rounded),
+          label: const Text('رفع ومتابعة الملازم'),
+          style: FilledButton.styleFrom(
+            backgroundColor: const Color(0xFFDDF8F0),
+            foregroundColor: BusinessBrand.navy,
+            padding: const EdgeInsets.symmetric(vertical: 14),
+          ),
+        ),
+          ],
+        )),
+        const SizedBox(height: 7),
+        Divider(color: Colors.white.withValues(alpha: .18)),
+        _sideAction(Icons.notifications_none_rounded, 'الإشعارات', openNotifications),
+        _sideAction(Icons.person_outline_rounded, 'الملف الشخصي', openProfile),
+        _sideAction(Icons.logout_rounded, 'تسجيل الخروج', signOut),
+      ]),
+    )),
+  );
+
+  Widget _sideTab(String value, IconData icon, String label) {
+    final selected = tab == value;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Material(
+        color: selected ? Colors.white.withValues(alpha: .16) : Colors.transparent,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          onTap: () => selectTab(value),
+          borderRadius: BorderRadius.circular(14),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 13),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: selected
+                ? Colors.white.withValues(alpha: .16) : Colors.transparent),
+            ),
+            child: Row(children: [
+              Icon(icon, color: selected ? const Color(0xFF6AF0D9) : Colors.white70,
+                size: 21),
+              const SizedBox(width: 12),
+              Text(label, style: TextStyle(
+                color: Colors.white, fontWeight: selected
+                  ? FontWeight.w900 : FontWeight.w700)),
+            ]),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _sideAction(IconData icon, String label, Future<void> Function() action) =>
+    Padding(padding: const EdgeInsets.only(top: 2),
+      child: TextButton.icon(
+        onPressed: action,
+        icon: Icon(icon, color: Colors.white70, size: 19),
+        label: Text(label, style: const TextStyle(
+          color: Colors.white70, fontWeight: FontWeight.w700)),
+        style: TextButton.styleFrom(alignment: Alignment.centerRight),
+      ),
+    );
+
+  Widget _mobileBar() => NavigationBar(
+    height: 70,
+    backgroundColor: Colors.white,
+    indicatorColor: BusinessBrand.softTeal,
+    selectedIndex: const ['home','booklets','orders','finance'].indexOf(tab),
+    onDestinationSelected: (index) => selectTab(
+      const ['home','booklets','orders','finance'][index]),
+    destinations: const [
+      NavigationDestination(icon: Icon(Icons.dashboard_outlined),
+        selectedIcon: Icon(Icons.dashboard_rounded), label: 'الرئيسية'),
+      NavigationDestination(icon: Icon(Icons.menu_book_outlined),
+        selectedIcon: Icon(Icons.menu_book_rounded), label: 'ملازمي'),
+      NavigationDestination(icon: Icon(Icons.receipt_long_outlined),
+        selectedIcon: Icon(Icons.receipt_long_rounded), label: 'المبيعات'),
+      NavigationDestination(icon: Icon(Icons.wallet_outlined),
+        selectedIcon: Icon(Icons.wallet_rounded), label: 'الأرباح'),
+    ],
+  );
+
+  Widget _sectionHeading() => Padding(
+    padding: const EdgeInsets.only(bottom: 17),
+    child: Row(children: [
+      Container(
+        width: 45, height: 45,
+        decoration: BoxDecoration(
+          color: BusinessBrand.pastel(sectionColor, strength: .16),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Icon(sectionIcon, color: sectionColor),
+      ),
+      const SizedBox(width: 11),
+      Expanded(child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(sectionTitle, style: const TextStyle(
+            fontSize: 22, fontWeight: FontWeight.w900,
+            color: BusinessBrand.ink)),
+          Text(switch(tab) {
+            'booklets' => 'الملفات وحالات النشر والمتابعة',
+            'orders' => 'طلبات الطلاب المرتبطة بملازمك',
+            'finance' => 'أرباحك وتسوياتك ووصولاتك',
+            _ => 'ملخص نشاطك التعليمي في مكان واحد',
+          }, style: const TextStyle(
+            fontSize: 12, color: BusinessBrand.muted)),
+        ],
+      )),
+      IconButton(
+        tooltip: 'تحديث البيانات',
+        onPressed: load,
+        icon: const Icon(Icons.refresh_rounded, color: BusinessBrand.navy),
+      ),
+    ]),
+  );
+
+  Widget _homeSummary(num earned, num balance, int completed) =>
+    Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      Container(
+        padding: const EdgeInsets.all(22),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topRight,
+            end: Alignment.bottomLeft,
+            colors: [Color(0xFF102B4E), Color(0xFF195F79), Color(0xFF1B8F8C)],
+          ),
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [BoxShadow(
+            color: BusinessBrand.navy.withValues(alpha: .12),
+            blurRadius: 24, offset: const Offset(0, 9),
+          )],
+        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const Row(children: [
+            Icon(Icons.auto_stories_rounded, color: Color(0xFFD5EDE8), size: 30),
+            SizedBox(width: 10),
+            Text('مساحة المدرس', style: TextStyle(
+              color: Color(0xFFA6F5E0), fontWeight: FontWeight.w800)),
+          ]),
+          const SizedBox(height: 14),
+          Text('أهلاً أستاذ ${widget.account.name}',
+            style: const TextStyle(
+              color: Colors.white, fontSize: 23, fontWeight: FontWeight.w900)),
+          const SizedBox(height: 6),
+          const Text('كل ما يخص ملازمك ومبيعاتك ومستحقاتك بواجهة واحدة.',
+            style: TextStyle(color: Colors.white70, fontSize: 13)),
         ]),
       ),
-    ),
-  );
+      const SizedBox(height: 20),
+      LayoutBuilder(builder: (context, constraints) {
+        final columns = constraints.maxWidth >= 930 ? 4 : 2;
+        final gap = 10.0;
+        final width = (constraints.maxWidth - gap * (columns - 1)) / columns;
+        return Wrap(spacing: gap, runSpacing: gap, children: [
+          SizedBox(width: width, child: _metric(
+            'ملازمي', '${booklets.length}',
+            Icons.menu_book_rounded, _teacherBlue)),
+          SizedBox(width: width, child: _metric(
+            'الطلبات المكتملة', '$completed',
+            Icons.task_alt_rounded, _teacherTeal)),
+          SizedBox(width: width, child: _metric(
+            'إجمالي الأرباح', money(earned),
+            Icons.payments_rounded, _teacherPurple)),
+          SizedBox(width: width, child: _metric(
+            'رصيدي الحالي', money(balance),
+            Icons.account_balance_wallet_rounded, BusinessBrand.success)),
+        ]);
+      }),
+      const SizedBox(height: 18),
+      Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BusinessBrand.pastelCard(_teacherTeal, strength: .055),
+        child: Row(children: [
+          const Icon(Icons.lightbulb_outline_rounded, color: BusinessBrand.teal),
+          const SizedBox(width: 11),
+          Expanded(child: Text(
+            'تابع ملازمك وطلبات الطلاب والأرباح من شريط التنقل.',
+            style: const TextStyle(color: BusinessBrand.ink, fontSize: 12.5),
+          )),
+        ]),
+      ),
+    ]);
+
+  @override
+  Widget build(BuildContext context) {
+    final completedOrders = orders.where(isDone).toList();
+    final earned = completedOrders.fold<num>(
+      0, (sum, o) => sum + number(o['teacher_profit']));
+    final paid = settlements.where((row) =>
+      const {'paid','received'}.contains('${row['status']}'.toLowerCase()))
+      .fold<num>(0, (sum, row) => sum + number(row['amount']));
+    final balance = earned - paid;
+    return LayoutBuilder(builder: (context, layout) {
+      final desktop = layout.maxWidth >= 1020;
+      final tablet = layout.maxWidth >= 680;
+      final sidePadding = desktop ? 28.0 : tablet ? 22.0 : 13.0;
+      return Scaffold(
+        backgroundColor: BusinessBrand.background,
+        appBar: desktop ? null : AppBar(
+          backgroundColor: Colors.white,
+          foregroundColor: BusinessBrand.navy,
+          automaticallyImplyLeading: false,
+          titleSpacing: 14,
+          title: Row(children: [
+            const BusinessAppMark(size: 37),
+            const SizedBox(width: 9),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Text('لوحة المدرس', style: TextStyle(
+                fontSize: 16, fontWeight: FontWeight.w900)),
+              Text(widget.account.name, maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 11, color: BusinessBrand.muted)),
+            ])),
+          ]),
+          actions: [
+            IconButton(
+              tooltip: 'رفع ملزمة',
+              onPressed: openPublishing,
+              icon: const Icon(Icons.upload_file_rounded),
+            ),
+            IconButton(
+              tooltip: 'الإشعارات',
+              onPressed: openNotifications,
+              icon: const Icon(Icons.notifications_none_rounded),
+            ),
+            PopupMenuButton<String>(
+              tooltip: 'إعدادات الحساب',
+              onSelected: (action) {
+                if (action == 'profile') openProfile();
+                if (action == 'logout') signOut();
+              },
+              itemBuilder: (_) => const [
+                PopupMenuItem(value: 'profile', child: Text('الملف الشخصي')),
+                PopupMenuItem(value: 'logout', child: Text('تسجيل الخروج')),
+              ],
+            ),
+          ],
+        ),
+        bottomNavigationBar: desktop ? null : _mobileBar(),
+        body: Row(children: [
+          if (desktop) _sidebar(),
+          Expanded(child: RefreshIndicator(
+            onRefresh: load,
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: EdgeInsets.fromLTRB(sidePadding, desktop ? 28 : 19,
+                sidePadding, 28),
+              children: [
+                _sectionHeading(),
+                if (loading)
+                  const Padding(padding: EdgeInsets.all(40),
+                    child: Center(child: CircularProgressIndicator()))
+                else if (error != null)
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BusinessBrand.pastelCard(BusinessBrand.danger,
+                      strength: .07),
+                    child: Column(children: [
+                      Text(error!, textAlign: TextAlign.center),
+                      const SizedBox(height: 10),
+                      FilledButton.icon(onPressed: load,
+                        icon: const Icon(Icons.refresh_rounded),
+                        label: const Text('إعادة المحاولة')),
+                    ]),
+                  )
+                else if (tab == 'home')
+                  _homeSummary(earned, balance < 0 ? 0 : balance,
+                    completedOrders.length)
+                else if (tab == 'booklets') _booklets()
+                else if (tab == 'orders') _orders()
+                else if (tab == 'finance')
+                  _finance(earned, paid, balance < 0 ? 0 : balance),
+              ],
+            ),
+          )),
+        ]),
+      );
+    });
+  }
 
   Widget _metric(String label, String value, IconData icon, Color accent) {
     return Container(
