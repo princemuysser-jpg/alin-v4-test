@@ -8,7 +8,6 @@ import '../data/business_finance_repository.dart';
 import '../data/business_notification_repository.dart';
 import '../data/business_repository.dart';
 import '../models/business_account.dart';
-import '../widgets/business_role_navigation.dart';
 import '../widgets/business_brand.dart';
 import '../widgets/grouped_order_receipt_list.dart';
 import 'business_notifications_screen.dart';
@@ -463,6 +462,275 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
     );
   }
 
+
+  String get _courierSectionTitle => switch (filter) {
+    'active' => 'طلبات التوصيل',
+    'completed' => 'الطلبات المكتملة',
+    'receipts' => 'الوصولات',
+    _ => 'الرئيسية',
+  };
+
+  IconData get _courierSectionIcon => switch (filter) {
+    'active' => Icons.local_shipping_rounded,
+    'completed' => Icons.task_alt_rounded,
+    'receipts' => Icons.receipt_long_rounded,
+    _ => Icons.dashboard_customize_rounded,
+  };
+
+  Color get _courierSectionColor => switch (filter) {
+    'active' => BusinessBrand.orange,
+    'completed' => BusinessBrand.success,
+    'receipts' => BusinessBrand.navy2,
+    _ => BusinessBrand.teal,
+  };
+
+  Widget _courierSectionHeader() => Row(
+    children: [
+      Container(
+        width: 45,
+        height: 45,
+        decoration: BoxDecoration(
+          color: BusinessBrand.pastel(_courierSectionColor, strength: .16),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Icon(_courierSectionIcon, color: _courierSectionColor),
+      ),
+      const SizedBox(width: 11),
+      Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              _courierSectionTitle,
+              style: const TextStyle(
+                color: BusinessBrand.ink,
+                fontWeight: FontWeight.w900,
+                fontSize: 22,
+              ),
+            ),
+            Text(
+              switch (filter) {
+                'active' => 'الجديدة والمقبولة وقيد التوصيل',
+                'completed' => 'جميع الطلبات التي تم تسليمها',
+                'receipts' => 'وصولات التسليم والبحث',
+                _ => 'ملخص طلباتك وأجورك وحالة عملك',
+              },
+              style: const TextStyle(
+                color: BusinessBrand.muted,
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
+      ),
+      IconButton(
+        tooltip: 'تحديث البيانات',
+        onPressed: load,
+        icon: const Icon(Icons.refresh_rounded, color: BusinessBrand.navy),
+      ),
+    ],
+  );
+
+  Widget _courierSidebarItem(String value, IconData icon, String title) {
+    final selected = filter == value;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Material(
+        color: selected
+            ? Colors.white.withValues(alpha: .16)
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: () => _selectCourierTab(value),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 13),
+            child: Row(
+              children: [
+                Icon(
+                  icon,
+                  color: selected ? const Color(0xFF6AF0D9) : Colors.white70,
+                  size: 21,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight:
+                          selected ? FontWeight.w900 : FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _courierSidebarAction(
+    IconData icon,
+    String title,
+    VoidCallback onTap,
+  ) => TextButton.icon(
+    onPressed: onTap,
+    style: TextButton.styleFrom(alignment: Alignment.centerRight),
+    icon: Icon(icon, size: 19, color: Colors.white70),
+    label: Text(
+      title,
+      style: const TextStyle(
+        color: Colors.white70,
+        fontWeight: FontWeight.w700,
+      ),
+    ),
+  );
+
+  Widget _courierSidebar() => Container(
+    width: 252,
+    decoration: const BoxDecoration(gradient: BusinessBrand.heroGradient),
+    child: SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(15, 22, 15, 14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              child: ListView(
+                padding: EdgeInsets.zero,
+                children: [
+                  const Row(
+                    children: [
+                      AlinBrandMark(size: 47, light: true),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'منصة آلين',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 19,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                            Text(
+                              'بوابة المندوب',
+                              style: TextStyle(
+                                color: Color(0xFFA9DCD8),
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: .09),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: .10),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        const CircleAvatar(
+                          backgroundColor: Color(0xFF31647A),
+                          child: Icon(
+                            Icons.delivery_dining_rounded,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(width: 9),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                widget.account.name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                              const Text(
+                                'حساب المندوب',
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 25),
+                  const Padding(
+                    padding: EdgeInsetsDirectional.only(start: 9, bottom: 10),
+                    child: Text(
+                      'مساحة العمل',
+                      style: TextStyle(
+                        color: Color(0xFFA5BCCD),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  _courierSidebarItem(
+                    'home', Icons.dashboard_customize_rounded, 'الرئيسية'),
+                  _courierSidebarItem(
+                    'active', Icons.local_shipping_rounded, 'طلبات التوصيل'),
+                  _courierSidebarItem(
+                    'completed', Icons.task_alt_rounded, 'المكتملة'),
+                  _courierSidebarItem(
+                    'receipts', Icons.receipt_long_rounded, 'الوصولات'),
+                  const SizedBox(height: 10),
+                  FilledButton.tonalIcon(
+                    onPressed: () => _selectCourierTab('finance'),
+                    icon: const Icon(Icons.account_balance_wallet_rounded),
+                    label: const Text('الحسابات والتسويات'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFFDDF8F0),
+                      foregroundColor: BusinessBrand.navy,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Divider(color: Colors.white.withValues(alpha: .18)),
+            _courierSidebarAction(
+              Icons.notifications_none_rounded,
+              'الإشعارات',
+              () => _selectCourierTab('notifications'),
+            ),
+            _courierSidebarAction(
+              Icons.person_outline_rounded,
+              'الملف الشخصي',
+              () => _selectCourierTab('profile'),
+            ),
+            _courierSidebarAction(
+              Icons.logout_rounded,
+              'تسجيل الخروج',
+              () => widget.onLogout(),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+
   @override
   Widget build(BuildContext context) {
     final grouped = groupedOrders;
@@ -520,7 +788,7 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
               selectedIcon: Icon(Icons.receipt_long_rounded), label: 'الوصولات'),
         ],
       ),
-      appBar: AppBar(
+      appBar: desktop ? null : AppBar(
         backgroundColor: Colors.white,
         foregroundColor: BusinessBrand.navy,
         automaticallyImplyLeading: false,
@@ -549,7 +817,6 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
           ],
         ),
         actions: [
-          IconButton(onPressed: load, icon: const Icon(Icons.refresh_rounded)),
           Stack(
             clipBehavior: Clip.none,
             children: [
@@ -628,16 +895,24 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
           ),
         ],
       ),
-      body: RefreshIndicator(
-        onRefresh: load,
-        child: ListView(
-          padding: EdgeInsets.symmetric(
-            horizontal: MediaQuery.sizeOf(context).width > 1280
-                ? (MediaQuery.sizeOf(context).width - 1240) / 2
-                : 16,
-            vertical: 16,
-          ),
-          children: [
+      body: Row(
+        children: [
+          if (desktop) _courierSidebar(),
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: load,
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: EdgeInsets.symmetric(
+                  horizontal: desktop ? 28 : 14,
+                  vertical: desktop ? 28 : 16,
+                ),
+                children: [
+                  if (filter != 'receipts') ...[
+                    _courierSectionHeader(),
+                    const SizedBox(height: 17),
+                  ],
+                  if (filter == 'home') ...[
             Container(
               clipBehavior: Clip.antiAlias,
               decoration: BoxDecoration(
@@ -856,62 +1131,8 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
                 );
               },
             ),
-            const SizedBox(height: 14),
-            if (desktop)
-              LayoutBuilder(
-                builder: (context, tabConstraints) {
-                  final tabs = SegmentedButton<String>(
-                    segments: const [
-                      ButtonSegment(
-                        value: 'home',
-                        label: Text('الرئيسية'),
-                        icon: Icon(Icons.home_rounded),
-                      ),
-                      ButtonSegment(
-                        value: 'active',
-                        label: Text('طلبات التوصيل'),
-                        icon: Icon(Icons.local_shipping_rounded),
-                      ),
-                      ButtonSegment(
-                        value: 'completed',
-                        label: Text('المكتملة'),
-                        icon: Icon(Icons.check_circle_outline),
-                      ),
-                      ButtonSegment(
-                        value: 'finance',
-                        label: Text('الحسابات'),
-                        icon: Icon(Icons.account_balance_wallet_rounded),
-                      ),
-                      ButtonSegment(
-                        value: 'receipts',
-                        label: Text('الوصولات'),
-                        icon: Icon(Icons.receipt_long_rounded),
-                      ),
-                      ButtonSegment(
-                        value: 'notifications',
-                        label: Text('الإشعارات'),
-                        icon: Icon(Icons.notifications_rounded),
-                      ),
-                      ButtonSegment(
-                        value: 'profile',
-                        label: Text('حسابي'),
-                        icon: Icon(Icons.account_circle_rounded),
-                      ),
-                    ],
-                    selected: {filter},
-                    onSelectionChanged: (value) => _selectCourierTab(value.first),
-                  );
-                  return SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Align(
-                      alignment: Alignment.centerRight,
-                      child: tabs,
-                    ),
-                  );
-                },
-              ),
-  
-            const SizedBox(height: 14),
+                  ],
+                  const SizedBox(height: 14),
             if (loading)
               const Padding(
                 padding: EdgeInsets.all(36),
@@ -957,8 +1178,11 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
               else
                 ...visibleOrders.map(orderCard),
             ],
-          ],
-        ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1002,335 +1226,125 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
   }
 
   Widget _homeCenter(List<Map<String, dynamic>> grouped) {
-    final current = grouped.where((o) => !isClosed(o)).take(5).toList();
+    final current = grouped.where((order) => !isClosed(order)).take(5).toList();
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final desktop = constraints.maxWidth >= 850;
-        final shortcutColumns = constraints.maxWidth >= 980
-            ? 4
-            : constraints.maxWidth >= 620
-            ? 2
-            : 1;
-
-        final shortcuts = GridView.count(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: shortcutColumns,
-          crossAxisSpacing: 10,
-          mainAxisSpacing: 10,
-          childAspectRatio: shortcutColumns == 1 ? 3.2 : 2.2,
-          children: [
-            _courierQuickCard(
-              title: 'طلبات التوصيل',
-              subtitle: 'الجديدة، المقبولة، المستلمة وبالطريق',
-              emoji: '🛵',
-              icon: Icons.local_shipping_rounded,
-              accent: const Color(0xFFFF7A00),
-              onTap: () => setState(() => filter = 'active'),
-            ),
-            _courierQuickCard(
-              title: 'الوصولات',
-              subtitle: 'الطلبات المكتملة ووصولات التسليم',
-              emoji: '🧾',
-              icon: Icons.receipt_long_rounded,
-              accent: const Color(0xFFE11D8A),
-              onTap: () => setState(() => filter = 'receipts'),
-            ),
-            _courierQuickCard(
-              title: 'الحساب المالي',
-              subtitle: 'الأجرة، الذمة، التسويات والوصولات',
-              emoji: '💰',
-              icon: Icons.account_balance_wallet_rounded,
-              accent: const Color(0xFF00A86B),
-              onTap: () => _selectCourierTab('finance'),
-            ),
-            _courierQuickCard(
-              title: 'الإشعارات',
-              subtitle: unreadNotifications > 0
-                  ? '$unreadNotifications إشعار غير مقروء'
-                  : 'لا توجد إشعارات جديدة',
-              emoji: '🔔',
-              icon: Icons.notifications_rounded,
-              accent: const Color(0xFF7C3AED),
-              onTap: () => _selectCourierTab('notifications'),
-            ),
-          ],
-        );
-
-        final statusCard = Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: const Color(0xFF14B8A6).withValues(alpha: .18),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF14B8A6).withValues(alpha: .06),
-                blurRadius: 14,
-                offset: const Offset(0, 5),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Row(
-                children: [
-                  Icon(
-                    Icons.work_history_rounded,
-                    color: Color(0xFF14B8A6),
-                  ),
-                  SizedBox(width: 8),
-                  Text(
-                    'حالة العمل',
-                    style: TextStyle(
-                      color: BusinessBrand.navy,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Text(
-                statusLabel(availability),
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w900,
-                  color: BusinessBrand.navy,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'مناطق العمل: ${[courierArea, ...courierAreas].where((e) => e.isNotEmpty).toSet().join('، ').isEmpty ? 'غير محددة' : [courierArea, ...courierAreas].where((e) => e.isNotEmpty).toSet().join('، ')}',
-                style: const TextStyle(color: BusinessBrand.muted),
-              ),
-
-            ],
-          ),
-        );
-
-        final ordersCard = Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: BusinessBrand.border),
-            boxShadow: [
-              BoxShadow(
-                color: BusinessBrand.navy.withValues(alpha: .05),
-                blurRadius: 14,
-                offset: const Offset(0, 5),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  const Expanded(
-                    child: Text(
-                      'طلبات تحتاج متابعة',
-                      style: TextStyle(
-                        color: BusinessBrand.navy,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  ),
-                  TextButton.icon(
-                    onPressed: () => setState(() => filter = 'active'),
-                    icon: const Icon(Icons.arrow_back_rounded, size: 17),
-                    label: const Text('عرض الكل'),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 6),
-              if (current.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 18),
-                  child: Text('لا توجد طلبات حالياً'),
-                )
-              else
-                ...current.map((order) {
-                  final accent = _courierStatusColor(
-                    '${order['status'] ?? ''}',
-                  );
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 7),
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: accent.withValues(alpha: .045),
-                      borderRadius: BorderRadius.circular(13),
-                      border: Border.all(
-                        color: accent.withValues(alpha: .13),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 38,
-                          height: 38,
-                          decoration: BoxDecoration(
-                            color: accent.withValues(alpha: .10),
-                            borderRadius: BorderRadius.circular(11),
-                          ),
-                          child: Icon(
-                            Icons.delivery_dining_rounded,
-                            color: accent,
-                            size: 20,
-                          ),
-                        ),
-                        const SizedBox(width: 9),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'طلب #${order['order_number'] ?? order['id'] ?? '—'}',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  color: BusinessBrand.navy,
-                                  fontWeight: FontWeight.w900,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                '${order['delivery_area'] ?? '—'} • ${order['_item_count'] ?? 1} مادة',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  color: BusinessBrand.muted,
-                                  fontSize: 11.5,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 7),
-                        Text(
-                          statusLabel('${order['status'] ?? ''}'),
-                          style: TextStyle(
-                            color: accent,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }),
-            ],
-          ),
-        );
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Align(
-              alignment: Alignment.centerRight,
-              child: Text(
-                'الوصول السريع',
-                style: TextStyle(
-                  color: BusinessBrand.navy,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-            ),
-            const SizedBox(height: 10),
-            shortcuts,
-            const SizedBox(height: 12),
-            if (!desktop) ...[
-              statusCard,
-              const SizedBox(height: 10),
-              ordersCard,
-            ] else
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(child: statusCard),
-                  const SizedBox(width: 10),
-                  Expanded(flex: 2, child: ordersCard),
-                ],
-              ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _courierQuickCard({
-    required String title,
-    required String subtitle,
-    required String emoji,
-    required IconData icon,
-    required Color accent,
-    required VoidCallback onTap,
-  }) {
-    return Material(
-      color: accent.withValues(alpha: .08),
-      borderRadius: BorderRadius.circular(18),
-      child: InkWell(
+    final ordersCard = Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.all(13),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: accent.withValues(alpha: .20)),
+        border: Border.all(color: BusinessBrand.border),
+        boxShadow: [
+          BoxShadow(
+            color: BusinessBrand.navy.withValues(alpha: .05),
+            blurRadius: 14,
+            offset: const Offset(0, 5),
           ),
-          child: Row(
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
             children: [
-              Container(
-                width: 45,
-                height: 45,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: .94),
-                  borderRadius: BorderRadius.circular(13),
+              const Expanded(
+                child: Text(
+                  'طلبات تحتاج متابعة',
+                  style: TextStyle(
+                    color: BusinessBrand.navy,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
-                child: Icon(icon, color: accent),
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
+              TextButton.icon(
+                onPressed: () => setState(() => filter = 'active'),
+                icon: const Icon(Icons.arrow_back_rounded, size: 17),
+                label: const Text('عرض الكل'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          if (current.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 18),
+              child: Text('لا توجد طلبات حالياً'),
+            )
+          else
+            ...current.map((order) {
+              final accent = _courierStatusColor(
+                '${order['status'] ?? ''}',
+              );
+              return Container(
+                margin: const EdgeInsets.only(bottom: 7),
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: .045),
+                  borderRadius: BorderRadius.circular(13),
+                  border: Border.all(
+                    color: accent.withValues(alpha: .13),
+                  ),
+                ),
+                child: Row(
                   children: [
+                    Container(
+                      width: 38,
+                      height: 38,
+                      decoration: BoxDecoration(
+                        color: accent.withValues(alpha: .10),
+                        borderRadius: BorderRadius.circular(11),
+                      ),
+                      child: Icon(
+                        Icons.delivery_dining_rounded,
+                        color: accent,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 9),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'طلب #${order['order_number'] ?? order['id'] ?? '—'}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: BusinessBrand.navy,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '${order['delivery_area'] ?? '—'} • ${order['_item_count'] ?? 1} مادة',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: BusinessBrand.muted,
+                              fontSize: 11.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 7),
                     Text(
-                      '$emoji $title',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      statusLabel('${order['status'] ?? ''}'),
                       style: TextStyle(
                         color: accent,
+                        fontSize: 11,
                         fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Color(0xFF667085),
-                        fontSize: 10.5,
-                        height: 1.25,
                       ),
                     ),
                   ],
                 ),
-              ),
-              Icon(Icons.chevron_left_rounded, color: accent),
-            ],
-          ),
-        ),
+              );
+            }),
+        ],
       ),
     );
+
+    return ordersCard;
   }
 
   Widget _receiptCenter(List<Map<String, dynamic>> grouped) {
