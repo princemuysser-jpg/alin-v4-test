@@ -984,7 +984,7 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
                                 courierAreas.isNotEmpty) ...[
                               const SizedBox(height: 6),
                               Text(
-                                'مناطقك: ${[courierArea, ...courierAreas].where((e) => e.isNotEmpty).toSet().join('، ')}',
+                                'مناطق العمل: ${[courierArea, ...courierAreas].where((e) => e.isNotEmpty).toSet().length} منطقة',
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
@@ -1062,11 +1062,11 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
             const SizedBox(height: 12),
             LayoutBuilder(
               builder: (context, constraints) {
-                final columns = constraints.maxWidth >= 1100
-                    ? 6
-                    : constraints.maxWidth >= 760
+                final columns = constraints.maxWidth >= 1040
                     ? 3
-                    : 2;
+                    : constraints.maxWidth >= 520
+                    ? 2
+                    : 1;
                 final gap = 10.0;
                 final width =
                     (constraints.maxWidth - (gap * (columns - 1))) / columns;
@@ -2395,7 +2395,7 @@ class _Metric extends StatelessWidget {
     final deep = Color.lerp(accent, Colors.black, .10)!;
 
     return Container(
-      constraints: const BoxConstraints(minHeight: 118),
+      constraints: const BoxConstraints(minHeight: 108),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -2448,15 +2448,15 @@ class _Metric extends StatelessWidget {
                     fontWeight: FontWeight.w900,
                   ),
                 ),
-                const Spacer(),
+                const SizedBox(height: 10),
                 Text(
                   value,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 27,
-                    height: 1,
+                    fontSize: 24,
+                    height: 1.1,
                     fontWeight: FontWeight.w800,
                     letterSpacing: .2,
                   ),
