@@ -593,11 +593,37 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
             ],
           ),
           PopupMenuButton<String>(
+            tooltip: 'إعدادات الحساب',
             onSelected: (value) {
+              if (value == 'profile') _selectCourierTab('profile');
+              if (value == 'finance') _selectCourierTab('finance');
               if (value == 'logout') widget.onLogout();
             },
             itemBuilder: (_) => const [
-              PopupMenuItem(value: 'logout', child: Text('تسجيل الخروج')),
+              PopupMenuItem(
+                value: 'profile',
+                child: ListTile(
+                  leading: Icon(Icons.account_circle_outlined),
+                  title: Text('الملف الشخصي'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              PopupMenuItem(
+                value: 'finance',
+                child: ListTile(
+                  leading: Icon(Icons.account_balance_wallet_outlined),
+                  title: Text('الحسابات'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              PopupMenuItem(
+                value: 'logout',
+                child: ListTile(
+                  leading: Icon(Icons.logout_rounded),
+                  title: Text('تسجيل الخروج'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
             ],
           ),
         ],
@@ -834,7 +860,6 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
             if (desktop)
               LayoutBuilder(
                 builder: (context, tabConstraints) {
-                  final wideTabs = tabConstraints.maxWidth >= 760;
                   final tabs = SegmentedButton<String>(
                     segments: const [
                       ButtonSegment(
@@ -876,12 +901,12 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
                     selected: {filter},
                     onSelectionChanged: (value) => _selectCourierTab(value.first),
                   );
-                  if (wideTabs) {
-                    return Align(alignment: Alignment.centerRight, child: tabs);
-                  }
                   return SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
-                    child: tabs,
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: tabs,
+                    ),
                   );
                 },
               ),
