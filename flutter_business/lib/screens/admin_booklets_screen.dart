@@ -169,7 +169,7 @@ class _AdminBookletsScreenState extends State<AdminBookletsScreen> {
                         'platform_share_percent' => 'حصة المنصة %',
                         'teacher_share_percent' => 'حصة المدرس %',
                         _ => 'حصة المكتبة %',
-                      }))),
+                      })),
                   ),
                 DropdownButtonFormField<String>(
                   key: ValueKey(teacherId),
