@@ -74387,14 +74387,17 @@ A.bhW.prototype={
 $1(a){return this.a.a1s(B.PP[a])},
 $S:17}
 A.bhV.prototype={
-$2(a,b){var s,r,q,p,o=this,n=null,m=b.b,l=m>=930?4:2,k=(m-10*(l-1))/l
-m=o.a
-s=A.b7(m.Ky("\u0645\u0644\u0627\u0632\u0645\u064a",""+J.bq(m.d),B.dm,B.oh),n,k)
-r=A.b7(m.Ky("\u0627\u0644\u0637\u0644\u0628\u0627\u062a \u0627\u0644\u0645\u0643\u062a\u0645\u0644\u0629",""+o.b,B.fz,B.vb),n,k)
-q=A.F(A.c(o.c))
-q=A.b7(m.Ky("\u0625\u062c\u0645\u0627\u0644\u064a \u0627\u0644\u0623\u0631\u0628\u0627\u062d",""+B.k.P(q==null?0:q)+" \u062f.\u0639",B.e5,B.oo),n,k)
-p=A.F(A.c(o.d))
-return A.dt(B.b0,A.b([s,r,q,A.b7(m.Ky("\u0631\u0635\u064a\u062f\u064a \u0627\u0644\u062d\u0627\u0644\u064a",""+B.k.P(p==null?0:p)+" \u062f.\u0639",B.c9,B.e4),n,k)],t.p),B.b8,10,10)},
+$2(a,b){var s,r,q,p,o,n,m=this,l=null,k=b.b
+if(k>=930)s=4
+else s=k>=460?2:1
+r=(k-10*(s-1))/s
+k=m.a
+q=A.b7(k.Ky("\u0645\u0644\u0627\u0632\u0645\u064a",""+J.bq(k.d),B.dm,B.oh),l,r)
+p=A.b7(k.Ky("\u0627\u0644\u0637\u0644\u0628\u0627\u062a \u0627\u0644\u0645\u0643\u062a\u0645\u0644\u0629",""+m.b,B.fz,B.vb),l,r)
+o=A.F(A.c(m.c))
+o=A.b7(k.Ky("\u0625\u062c\u0645\u0627\u0644\u064a \u0627\u0644\u0623\u0631\u0628\u0627\u062d",""+B.k.P(o==null?0:o)+" \u062f.\u0639",B.e5,B.oo),l,r)
+n=A.F(A.c(m.d))
+return A.dt(B.b0,A.b([q,p,o,A.b7(k.Ky("\u0631\u0635\u064a\u062f\u064a \u0627\u0644\u062d\u0627\u0644\u064a",""+B.k.P(n==null?0:n)+" \u062f.\u0639",B.c9,B.e4),l,r)],t.p),B.b8,10,10)},
 $S:53}
 A.bih.prototype={
 $2(a,b){var s=A.F(A.c(b.h(0,"teacher_profit")))
