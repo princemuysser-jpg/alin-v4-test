@@ -497,25 +497,43 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
     final debt = number(
       financeSummary['remaining'] ?? financeSummary['debt_total'],
     );
+    final desktop = MediaQuery.sizeOf(context).width >= 1020;
     return Scaffold(
-      drawer: BusinessRoleNavigationDrawer(
-        repository: widget.repository,
-        account: widget.account,
-        onLogout: widget.onLogout,
-        roleSection: filter,
-        onRoleSectionChanged: _selectCourierTab,
+      backgroundColor: BusinessBrand.background,
+      bottomNavigationBar: desktop ? null : NavigationBar(
+        height: 70,
+        backgroundColor: Colors.white,
+        indicatorColor: BusinessBrand.softTeal,
+        selectedIndex: const ['home', 'active', 'completed', 'receipts']
+            .indexOf(filter),
+        onDestinationSelected: (index) => _selectCourierTab(
+          const ['home', 'active', 'completed', 'receipts'][index],
+        ),
+        destinations: const [
+          NavigationDestination(icon: Icon(Icons.dashboard_outlined),
+              selectedIcon: Icon(Icons.dashboard_rounded), label: 'الرئيسية'),
+          NavigationDestination(icon: Icon(Icons.local_shipping_outlined),
+              selectedIcon: Icon(Icons.local_shipping_rounded), label: 'الطلبات'),
+          NavigationDestination(icon: Icon(Icons.task_alt_outlined),
+              selectedIcon: Icon(Icons.task_alt_rounded), label: 'المكتملة'),
+          NavigationDestination(icon: Icon(Icons.receipt_long_outlined),
+              selectedIcon: Icon(Icons.receipt_long_rounded), label: 'الوصولات'),
+        ],
       ),
       appBar: AppBar(
+        backgroundColor: Colors.white,
+        foregroundColor: BusinessBrand.navy,
+        automaticallyImplyLeading: false,
         title: Row(
           children: [
-            const AlinBrandMark(size: 36, light: true),
+            const AlinBrandMark(size: 36, light: false),
             const SizedBox(width: 10),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'آلين للمندوب',
+                    'لوحة المندوب',
                     style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20),
                   ),
                   Text(
@@ -813,7 +831,7 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
               },
             ),
             const SizedBox(height: 14),
-            if (MediaQuery.sizeOf(context).width >= 760)
+            if (desktop)
               LayoutBuilder(
                 builder: (context, tabConstraints) {
                   final wideTabs = tabConstraints.maxWidth >= 760;
@@ -1065,28 +1083,7 @@ class _CourierDashboardScreenState extends State<CourierDashboardScreen> {
                 'مناطق العمل: ${[courierArea, ...courierAreas].where((e) => e.isNotEmpty).toSet().join('، ').isEmpty ? 'غير محددة' : [courierArea, ...courierAreas].where((e) => e.isNotEmpty).toSet().join('، ')}',
                 style: const TextStyle(color: BusinessBrand.muted),
               ),
-              const SizedBox(height: 14),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  ChoiceChip(
-                    label: const Text('متاح'),
-                    selected: availability == 'available',
-                    onSelected: (_) => setAvailability('available'),
-                  ),
-                  ChoiceChip(
-                    label: const Text('مشغول'),
-                    selected: availability == 'busy',
-                    onSelected: (_) => setAvailability('busy'),
-                  ),
-                  ChoiceChip(
-                    label: const Text('خارج الخدمة'),
-                    selected: availability == 'offline',
-                    onSelected: (_) => setAvailability('offline'),
-                  ),
-                ],
-              ),
+
             ],
           ),
         );
