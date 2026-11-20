@@ -15,3 +15,8 @@ Future<bool> syncWebPush(String jwt,String key,String baseUrl) async =>
   (await _sync(jwt.toJS,key.toJS,baseUrl.toJS).toDart).toDart;
 Future<bool> disableWebPush(String jwt,String key,String baseUrl) async =>
   (await _disable(jwt.toJS,key.toJS,baseUrl.toJS).toDart).toDart;
+
+@JS('AlinBusinessPush.status')
+external JSString _status();
+
+String webPushPermissionStatus() => _status().toDart;
