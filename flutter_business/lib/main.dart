@@ -499,7 +499,6 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               ),
                               const SizedBox(height: 14),
-                              const SizedBox(height: 18),
                               SizedBox(
                                 height: 54,
                                 child: FilledButton.icon(
