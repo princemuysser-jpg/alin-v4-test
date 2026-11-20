@@ -2,6 +2,16 @@
   'use strict';
   const VAPID='BI-mAjJvDZXH9HEus8ypbEs85J4c47DL9CRibbrT54KYsFygUVbm1B2lYaDnnFKPqLSXmy6lv1rwBvU7dzjrzwc';
   const supported=()=>location.protocol==='https:'&&'Notification' in window&&'PushManager' in window&&'serviceWorker' in navigator;
+  const isIOS=()=>/iPhone|iPad|iPod/i.test(navigator.userAgent)
+    ||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  const standalone=()=>window.matchMedia('(display-mode: standalone)').matches
+    ||navigator.standalone===true;
+  // On iOS a Safari tab cannot request Web Push: only a Home Screen web app can.
+  const status=()=>{
+    if(isIOS()&&!standalone())return 'ios-browser';
+    if(!supported())return 'unsupported';
+    return Notification.permission; // default | denied | granted
+  };
   const raw=(bytes)=>{let result='';new Uint8Array(bytes).forEach(byte=>result+=String.fromCharCode(byte));return btoa(result).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');};
   const keyBytes=()=>Uint8Array.from(atob(VAPID.replace(/-/g,'+').replace(/_/g,'/')),ch=>ch.charCodeAt(0));
   async function registration(){
@@ -33,7 +43,8 @@
     return true;
   }
   async function enable(jwt,key,baseUrl) {
-    if(!supported())throw Error('المتصفح لا يدعم Web Push؛ على آيفون أضف الموقع للشاشة الرئيسية');
+    if(status()==='ios-browser')throw Error('على آيفون افتح لوحة التحكم من أيقونتها بالشاشة الرئيسية');
+    if(!supported())throw Error('هذا المتصفح لا يدعم إشعارات الويب');
     const permission=Notification.permission==='granted'
       ? 'granted' : await Notification.requestPermission();
     if(permission!=='granted')throw Error('اسمح بإشعارات لوحة تحكم منصة الين من إعدادات المتصفح');
@@ -90,5 +101,5 @@
       if(event.data?.type==='alin-business-push-received')playTone();
     });
   }
-  window.AlinBusinessPush=Object.freeze({enable,sync,disable,supported});
+  window.AlinBusinessPush=Object.freeze({enable,sync,disable,supported,status});
 })();

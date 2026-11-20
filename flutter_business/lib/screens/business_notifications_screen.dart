@@ -1,8 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 
 import '../core/business_notification_helpers.dart';
+import '../core/business_notification_service.dart';
+import '../core/business_web_push_stub.dart' if (dart.library.js_interop) '../core/business_web_push_web.dart' as browserPush;
 import '../core/business_notification_signal.dart';
 import '../data/business_notification_repository.dart';
 import '../data/business_repository.dart';
@@ -30,12 +33,16 @@ class _BusinessNotificationsScreenState extends State<BusinessNotificationsScree
   bool busy = false;
   bool _refreshing = false;
   bool unreadOnly = false;
+  bool pushBusy = false;
+  String pushStatus = 'default';
+  String? pushError;
   String? error;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _readPushStatus();
     BusinessNotificationSignal.revision.addListener(_onPush);
     _refreshTimer = Timer.periodic(
       const Duration(seconds: 20),
@@ -49,6 +56,7 @@ class _BusinessNotificationsScreenState extends State<BusinessNotificationsScree
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
+      _readPushStatus();
       unawaited(load(silent: true));
     }
   }
@@ -59,6 +67,97 @@ class _BusinessNotificationsScreenState extends State<BusinessNotificationsScree
     BusinessNotificationSignal.revision.removeListener(_onPush);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  void _readPushStatus() {
+    if (!kIsWeb) return;
+    try {
+      final value = browserPush.webPushPermissionStatus();
+      if (mounted) setState(() => pushStatus = value);
+    } catch (_) {
+      if (mounted) setState(() => pushStatus = 'unsupported');
+    }
+  }
+
+  Future<void> _enablePush() async {
+    if (!kIsWeb || pushBusy || pushStatus == 'ios-browser' ||
+        pushStatus == 'unsupported' || pushStatus == 'denied') return;
+    setState(() { pushBusy = true; pushError = null; });
+    try {
+      final ok = await BusinessNotificationService(
+        client: widget.repository.client,
+      ).requestPermissionAndRegister();
+      if (!mounted) return;
+      _readPushStatus();
+      if (ok) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('تم تفعيل إشعارات لوحة تحكم منصة الين بنجاح')));
+      } else {
+        setState(() => pushError = 'تعذر ربط الإشعارات. تحقق من الاتصال وحاول مجدداً.');
+      }
+    } catch (e) {
+      if (mounted) setState(() => pushError =
+        '$e'.replaceFirst('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => pushBusy = false);
+    }
+  }
+
+  Widget _pushSettings() {
+    if (!kIsWeb) return const SizedBox.shrink();
+    final iosBrowser = pushStatus == 'ios-browser';
+    final granted = pushStatus == 'granted';
+    final denied = pushStatus == 'denied';
+    final unsupported = pushStatus == 'unsupported';
+    final accent = granted ? BusinessBrand.success :
+      iosBrowser ? const Color(0xFF3C72A7) : BusinessBrand.teal;
+    final title = granted ? 'الإشعارات مفعّلة على هذا الجهاز' :
+      iosBrowser ? 'إشعارات الآيفون تحتاج أيقونة الشاشة الرئيسية' :
+      denied ? 'الإشعارات محظورة من المتصفح' :
+      unsupported ? 'إشعارات الويب غير مدعومة هنا' :
+      'تفعيل إشعارات الطلبات';
+    final description = granted
+      ? 'الإذن محفوظ بالمتصفح، وراح يبقى بدون طلب موافقة بكل دخول.'
+      : iosBrowser
+        ? 'من سفاري اضغط مشاركة، بعدها «إضافة إلى الشاشة الرئيسية». افتح لوحة التحكم من الأيقونة الجديدة، وفعّل الإشعارات مرة وحدة.'
+        : denied
+          ? 'افتح إعدادات الموقع في المتصفح واسمح بالإشعارات؛ التطبيق ما يگدر يغيّر الإذن تلقائياً.'
+          : unsupported
+            ? 'استخدم متصفحاً يدعم Web Push أو نسخة التطبيق الخاصة بالجهاز.'
+            : 'فعّلها مرة وحدة. بعد الموافقة، التطبيق يعيد تسجيل الجهاز تلقائياً عند تسجيل الدخول.';
+    return Container(
+      margin: const EdgeInsets.only(bottom: 13),
+      padding: const EdgeInsets.all(14),
+      decoration: BusinessBrand.pastelCard(accent, strength: .07),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Icon(granted ? Icons.notifications_active_rounded :
+          iosBrowser ? Icons.add_to_home_screen_rounded :
+          Icons.notifications_none_rounded, color: accent, size: 25),
+        const SizedBox(width: 11),
+        Expanded(child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(title, style: const TextStyle(
+              fontWeight: FontWeight.w900, color: BusinessBrand.ink)),
+            const SizedBox(height: 4),
+            Text(description, style: const TextStyle(
+              color: BusinessBrand.muted, fontSize: 12.5)),
+            if (!granted && !iosBrowser && !denied && !unsupported) ...[
+              const SizedBox(height: 9),
+              FilledButton.icon(
+                onPressed: pushBusy ? null : _enablePush,
+                icon: const Icon(Icons.notifications_active_rounded, size: 17),
+                label: Text(pushBusy ? 'جارٍ التفعيل...' : 'تفعيل الإشعارات'),
+              ),
+            ],
+            if (pushError != null) ...[
+              const SizedBox(height: 8),
+              Text(pushError!, style: const TextStyle(
+                fontSize: 12, color: BusinessBrand.danger)),
+            ],
+          ],
+        )),
+      ]),
+    );
   }
 
   Future<void> load({bool silent = false}) async {
@@ -191,6 +290,7 @@ class _BusinessNotificationsScreenState extends State<BusinessNotificationsScree
                     itemBuilder: (context, index) {
                       if (index == 0) {
                         return Column(children: [
+                          _pushSettings(),
                           Container(
                             width: double.infinity,
                             padding: const EdgeInsets.all(14),
