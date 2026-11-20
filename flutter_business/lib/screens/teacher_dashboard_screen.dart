@@ -502,14 +502,77 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     );
   }
 
+  Widget _filterChip(String label, String value, String selected,
+      ValueChanged<String> select) => Padding(
+    padding: const EdgeInsetsDirectional.only(end: 7),
+    child: ChoiceChip(
+      label: Text(label), selected: selected == value,
+      onSelected: (_) => select(value),
+    ),
+  );
+
+  Widget _searchBox(TextEditingController controller, String label) =>
+      TextField(
+        controller: controller,
+        onChanged: (_) => setState(() {}),
+        decoration: InputDecoration(
+          hintText: label,
+          prefixIcon: const Icon(Icons.search_rounded),
+          suffixIcon: controller.text.isEmpty ? null : IconButton(
+            tooltip: 'مسح البحث',
+            onPressed: () {
+              controller.clear();
+              setState(() {});
+            },
+            icon: const Icon(Icons.close_rounded),
+          ),
+          filled: true,
+          fillColor: BusinessBrand.softBlue,
+        ),
+      );
+
   Widget _booklets() {
+    final q = bookletSearchController.text.trim().toLowerCase();
+    final filtered = booklets.where((b) {
+      final st = bookletStatus(b);
+      if (bookletFilter != 'all' && bookletFilter != st) return false;
+      if (q.isEmpty) return true;
+      return [
+        b['title'], b['subject'], b['grade'], b['year'], b['edition']
+      ].map((v) => '${v ?? ''}'.toLowerCase()).join(' ').contains(q);
+    }).toList();
+
     if (booklets.isEmpty) {
       return const _TeacherEmpty(text: 'لا توجد ملازم مرتبطة بحسابك حالياً');
     }
     return Column(
-      children: booklets
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _searchBox(bookletSearchController, 'ابحث عن ملزمة أو مادة أو صف'),
+        const SizedBox(height: 10),
+        SingleChildScrollView(scrollDirection: Axis.horizontal,
+          child: Row(children: [
+            _filterChip('الكل', 'all', bookletFilter,
+              (v) => setState(() => bookletFilter = v)),
+            for (final state in [
+              'منشورة', 'بانتظار النشر', 'قيد المراجعة',
+              'مسودة/قيد المراجعة', 'مرفوضة',
+            ]) _filterChip(state, state, bookletFilter,
+              (v) => setState(() => bookletFilter = v)),
+          ]),
+        ),
+        const SizedBox(height: 9),
+        Text('${filtered.length} ملزمة مطابقة',
+          style: const TextStyle(color: BusinessBrand.muted)),
+        const SizedBox(height: 9),
+        if (filtered.isEmpty)
+          const _TeacherEmpty(text: 'لا توجد ملازم مطابقة للبحث'),
+        ...filtered.take(bookletLimit)
           .map(
             (b) => Card(
+              color: BusinessBrand.pastel(
+                bookletStatus(b) == 'منشورة' ? BusinessBrand.success : BusinessBrand.warning,
+                strength: .075),
               margin: const EdgeInsets.only(bottom: 10),
               child: ListTile(
                 leading: const CircleAvatar(
@@ -547,6 +610,13 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
             ),
           )
           .toList(),
+        if (filtered.length > bookletLimit)
+          OutlinedButton.icon(
+            onPressed: () => setState(() => bookletLimit += 36),
+            icon: const Icon(Icons.expand_more_rounded),
+            label: const Text('عرض المزيد من الملازم'),
+          ),
+      ],
     );
   }
 
@@ -605,13 +675,50 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
   }
 
   Widget _orders() {
+    final q = orderSearchController.text.trim().toLowerCase();
+    final filtered = orders.where((o) {
+      if (orderFilter == 'completed' && !isDone(o)) return false;
+      if (orderFilter == 'cancelled' && !isCancelled(o)) return false;
+      if (orderFilter == 'active' && (isDone(o) || isCancelled(o))) return false;
+      if (q.isEmpty) return true;
+      return [o['order_number'], o['id'], o['title'], o['student_name']]
+        .map((v) => '${v ?? ''}'.toLowerCase()).join(' ').contains(q);
+    }).toList();
+
     if (orders.isEmpty) {
       return const _TeacherEmpty(text: 'لا توجد طلبات مرتبطة بملازمك حالياً');
     }
     return Column(
-      children: orders
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _searchBox(orderSearchController, 'ابحث برقم الطلب أو الطالب أو الملزمة'),
+        const SizedBox(height: 10),
+        SingleChildScrollView(scrollDirection: Axis.horizontal,
+          child: Row(children: [
+            _filterChip('الكل', 'all', orderFilter,
+              (v) => setState(() => orderFilter = v)),
+            _filterChip('قيد التنفيذ', 'active', orderFilter,
+              (v) => setState(() => orderFilter = v)),
+            _filterChip('مكتملة', 'completed', orderFilter,
+              (v) => setState(() => orderFilter = v)),
+            _filterChip('ملغاة', 'cancelled', orderFilter,
+              (v) => setState(() => orderFilter = v)),
+          ]),
+        ),
+        const SizedBox(height: 9),
+        Text('${filtered.length} طلب مطابق',
+          style: const TextStyle(color: BusinessBrand.muted)),
+        const SizedBox(height: 9),
+        if (filtered.isEmpty)
+          const _TeacherEmpty(text: 'لا توجد مبيعات مطابقة'),
+        ...filtered.take(orderLimit)
           .map(
             (o) => Card(
+              color: BusinessBrand.pastel(
+                isCancelled(o) ? BusinessBrand.danger :
+                isDone(o) ? BusinessBrand.success : BusinessBrand.warning,
+                strength: .075,
+              ),
               margin: const EdgeInsets.only(bottom: 10),
               child: ListTile(
                 leading: Icon(
@@ -646,6 +753,13 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
             ),
           )
           .toList(),
+        if (filtered.length > orderLimit)
+          OutlinedButton.icon(
+            onPressed: () => setState(() => orderLimit += 36),
+            icon: const Icon(Icons.expand_more_rounded),
+            label: const Text('عرض المزيد من المبيعات'),
+          ),
+      ],
     );
   }
 
